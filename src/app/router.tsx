@@ -17,7 +17,7 @@ const AdminUsers     = lazy(() => import('../features/users/pages/AdminUsersPage
 function PageLoader() {
   return (
     <div className="flex justify-center items-center h-64">
-      <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+      <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
     </div>
   )
 }

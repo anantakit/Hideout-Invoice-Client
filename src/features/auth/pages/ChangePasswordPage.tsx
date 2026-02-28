@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
+import { Loader2 } from 'lucide-react'
 import { authApi } from '../api'
 import { useAuth } from '../../../app/providers/AuthProvider'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
@@ -52,13 +53,13 @@ export default function ChangePassword() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>เปลี่ยนรหัสผ่าน</CardTitle>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 border-b border-border">
+            <CardTitle className="text-base font-semibold tracking-tight">เปลี่ยนรหัสผ่าน</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-5">
             {user?.must_change_password && (
-              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              <p className="text-sm text-warning-muted-foreground bg-warning-muted border border-border rounded-lg px-3 py-2 mb-4">
                 กรุณาเปลี่ยนรหัสผ่านก่อนใช้งานระบบ
               </p>
             )}
@@ -110,14 +111,13 @@ export default function ChangePassword() {
                 />
                 <Button
                   type="submit"
-                  className="w-full mt-2"
+                  className="w-full min-h-[44px] rounded-xl font-medium mt-2 transition-transform duration-150 active:scale-[0.98]"
                   disabled={form.formState.isSubmitting}
                 >
-                  {form.formState.isSubmitting ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
-                  ) : (
-                    'บันทึกรหัสผ่านใหม่'
-                  )}
+                  {form.formState.isSubmitting
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : 'บันทึกรหัสผ่านใหม่'
+                  }
                 </Button>
               </form>
             </Form>

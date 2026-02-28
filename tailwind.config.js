@@ -5,14 +5,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          900: '#1e3a5f',
-        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
@@ -38,6 +30,30 @@ export default {
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+          muted: {
+            DEFAULT: 'hsl(var(--success-muted))',
+            foreground: 'hsl(var(--success-muted-foreground))',
+          },
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+          muted: {
+            DEFAULT: 'hsl(var(--warning-muted))',
+            foreground: 'hsl(var(--warning-muted-foreground))',
+          },
+        },
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))',
+          muted: {
+            DEFAULT: 'hsl(var(--info-muted))',
+            foreground: 'hsl(var(--info-muted-foreground))',
+          },
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

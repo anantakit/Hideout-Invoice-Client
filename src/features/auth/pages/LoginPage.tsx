@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
-import { Receipt } from 'lucide-react'
+import { Receipt, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../../shared/ui/form'
@@ -56,11 +56,11 @@ export default function Login() {
           <p className="text-sm text-muted-foreground mt-1">ระบบใบเสร็จรับเงิน</p>
         </div>
 
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle>เข้าสู่ระบบ</CardTitle>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 border-b border-border">
+            <CardTitle className="text-base font-semibold tracking-tight">เข้าสู่ระบบ</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-5">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -91,14 +91,13 @@ export default function Login() {
                 />
                 <Button
                   type="submit"
-                  className="w-full mt-2"
+                  className="w-full min-h-[44px] rounded-xl font-medium mt-2 transition-transform duration-150 active:scale-[0.98]"
                   disabled={form.formState.isSubmitting}
                 >
-                  {form.formState.isSubmitting ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
-                  ) : (
-                    'เข้าสู่ระบบ'
-                  )}
+                  {form.formState.isSubmitting
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : 'เข้าสู่ระบบ'
+                  }
                 </Button>
               </form>
             </Form>

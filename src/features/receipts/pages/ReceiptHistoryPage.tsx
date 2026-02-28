@@ -7,7 +7,7 @@ import { receiptsApi, type ReceiptQueryParams } from '../api'
 import { formatTHB, formatThaiDate } from '../../../shared/utils'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import Pagination from '../../../shared/ui/Pagination'
-import { Card, CardContent } from '../../../shared/ui/card'
+import { Card } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
 import {
@@ -29,6 +29,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '../../../shared/ui/alert-dialog'
+import { ReceiptDateFilter } from '../components/ReceiptDateFilter'
+import { BottomBar } from '../../../shared/ui/BottomBar'
 
 async function downloadReceipt(id: string, number: string) {
   try {
@@ -54,6 +56,12 @@ export default function ReceiptHistory() {
     setDownloadingId(null)
   }
 
+  const handleDateRangeChange = (start: string, end: string) => {
+    setStartDate(start)
+    setEndDate(end)
+    setPage(1)
+  }
+
   const params: ReceiptQueryParams = {
     ...paginationParams,
     ...(startDate && { start_date: startDate }),
@@ -75,17 +83,15 @@ export default function ReceiptHistory() {
     onError: (err: Error) => toast.error(err.message),
   })
 
-  const handleFilterChange = (fn: () => void) => {
-    fn()
-    setPage(1)
-  }
-
   const meta = data?.meta
   const totalPages = meta?.total_pages ?? 1
   const total = meta?.total ?? 0
+  const hasFilters = !!(searchInput || startDate || endDate)
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <>
+    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-28 md:pb-6">
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -94,7 +100,7 @@ export default function ReceiptHistory() {
             {data ? `ใบเสร็จทั้งหมด ${total} รายการ` : 'กำลังโหลด…'}
           </p>
         </div>
-        <Button asChild className="hidden sm:inline-flex">
+        <Button asChild className="hidden md:inline-flex">
           <Link to="/receipts/new">
             <Plus className="w-4 h-4" />
             สร้างใบเสร็จ
@@ -102,54 +108,43 @@ export default function ReceiptHistory() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-5">
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="ค้นหาชื่อลูกค้า, เลขห้อง หรือเลขที่ใบเสร็จ"
-                className="pl-9"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
+      {/* Filter card */}
+      <div className="bg-card rounded-2xl border border-border p-4 space-y-4 mb-6">
 
-            <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[320px]">
-              <span className="text-sm font-medium text-muted-foreground">ช่วงวันที่ออกใบเสร็จ</span>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => handleFilterChange(() => setStartDate(e.target.value))}
-                />
-                <span className="hidden sm:block text-muted-foreground">—</span>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => handleFilterChange(() => setEndDate(e.target.value))}
-                />
-              </div>
-            </div>
-          </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="ค้นหาชื่อลูกค้า, เลขห้อง หรือเลขที่ใบเสร็จ"
+            className="pl-9"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
 
-          {(searchInput || startDate || endDate) && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchInput('')
-                setStartDate('')
-                setEndDate('')
-                setPage(1)
-              }}
-              className="mt-2 text-xs text-muted-foreground hover:text-foreground underline"
-            >
-              ล้างตัวกรอง
-            </button>
-          )}
-        </CardContent>
-      </Card>
+        {/* Date range picker */}
+        <ReceiptDateFilter
+          startDate={startDate}
+          endDate={endDate}
+          onRangeChange={handleDateRangeChange}
+        />
+
+        {/* Clear all filters link */}
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchInput('')
+              setStartDate('')
+              setEndDate('')
+              setPage(1)
+            }}
+            className="text-xs text-muted-foreground hover:text-foreground underline transition-colors"
+          >
+            ล้างตัวกรอง
+          </button>
+        )}
+      </div>
 
       {/* Content */}
       <Card className="overflow-hidden">
@@ -160,16 +155,12 @@ export default function ReceiptHistory() {
         ) : !data || data.data.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <p className="text-sm">
-              {searchInput || startDate || endDate ? 'ไม่พบใบเสร็จที่ตรงกับเงื่อนไข' : 'ยังไม่มีใบเสร็จ'}
+              {hasFilters ? 'ไม่พบใบเสร็จที่ตรงกับเงื่อนไข' : 'ยังไม่มีใบเสร็จ'}
             </p>
-            {!searchInput && !startDate && !endDate && (
-              <Button asChild className="mt-4" size="sm">
-                <Link to="/receipts/new">สร้างใบเสร็จแรก</Link>
-              </Button>
-            )}
           </div>
         ) : (
           <div className={`transition-opacity duration-150 ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
+
             {/* Desktop table */}
             <div className="hidden sm:block">
               <Table>
@@ -191,8 +182,12 @@ export default function ReceiptHistory() {
                         </Link>
                       </TableCell>
                       <TableCell className="text-foreground/80">{receipt.customer?.name ?? '—'}</TableCell>
-                      <TableCell className="text-muted-foreground hidden md:table-cell">{formatThaiDate(receipt.issue_date)}</TableCell>
-                      <TableCell className="text-right font-semibold text-foreground">{formatTHB(receipt.total)}</TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">
+                        {formatThaiDate(receipt.issue_date)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-foreground">
+                        {formatTHB(receipt.total)}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
                           <Button variant="ghost" size="icon" className="w-8 h-8" asChild title="ดูรายละเอียด">
@@ -217,7 +212,7 @@ export default function ReceiptHistory() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
                                 title="ลบ"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -274,7 +269,7 @@ export default function ReceiptHistory() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -310,5 +305,16 @@ export default function ReceiptHistory() {
         )}
       </Card>
     </div>
+
+    {/* Mobile sticky action bar */}
+    <BottomBar>
+      <Button asChild className="w-full min-h-[48px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]">
+        <Link to="/receipts/new">
+          <Plus className="w-4 h-4" />
+          สร้างใบเสร็จ
+        </Link>
+      </Button>
+    </BottomBar>
+    </>
   )
 }

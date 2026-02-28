@@ -6,6 +6,7 @@ import { ChevronLeft, Download, Trash2, Loader2 } from 'lucide-react'
 import { receiptsApi } from '../api'
 import { formatTHB, formatThaiDate } from '../../../shared/utils'
 import { Card, CardContent, CardHeader } from '../../../shared/ui/card'
+import { BottomBar } from '../../../shared/ui/BottomBar'
 import { Button } from '../../../shared/ui/button'
 import {
   Table,
@@ -85,7 +86,8 @@ export default function ReceiptDetail() {
     (receipt.nights && receipt.nights > 0) || receipt.payment_method
 
   return (
-    <div className="px-4 py-6 sm:px-8 max-w-4xl mx-auto">
+    <>
+    <div className="px-4 py-6 sm:px-8 max-w-4xl mx-auto pb-24">
 
       {/* ── Header ── */}
       <div className="mb-8">
@@ -103,17 +105,17 @@ export default function ReceiptDetail() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
           {/* Identity */}
-          <div className="space-y-1">
+          <div>
             <h1 className="text-lg font-semibold tracking-tight text-foreground">
               {receipt.invoice_number}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-1">
               สร้างเมื่อ {formatThaiDate(receipt.created_at)}
             </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-col md:flex-row gap-3">
+          {/* Actions — desktop only; mobile uses sticky bottom bar */}
+          <div className="hidden md:flex md:flex-row gap-3">
             <Button
               onClick={handleDownload}
               disabled={downloading}
@@ -160,6 +162,33 @@ export default function ReceiptDetail() {
 
         {/* Meta */}
         <Card className="transition-shadow duration-200 md:hover:shadow-md">
+          {/* Trash icon — mobile only; desktop uses header action buttons */}
+          <CardHeader className="py-2 px-5 md:px-8 flex flex-row items-center justify-end md:hidden">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
+                  disabled={deleteMutation.isPending}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>ลบใบเสร็จ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    ลบใบเสร็จ {receipt.invoice_number}? การกระทำนี้ไม่สามารถย้อนกลับได้
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => deleteMutation.mutate()}>ลบ</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardHeader>
           <CardContent className="p-5 md:p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">เลขที่ใบเสร็จ</p>
@@ -274,5 +303,20 @@ export default function ReceiptDetail() {
 
       </div>
     </div>
+
+    <BottomBar>
+      <Button
+        onClick={handleDownload}
+        disabled={downloading}
+        className="w-full min-h-[52px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]"
+      >
+        {downloading
+          ? <Loader2 className="h-4 w-4 animate-spin" />
+          : <Download className="h-4 w-4" />
+        }
+        ดาวน์โหลด PDF
+      </Button>
+    </BottomBar>
+    </>
   )
 }

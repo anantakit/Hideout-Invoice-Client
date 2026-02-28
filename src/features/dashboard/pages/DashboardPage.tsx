@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Receipt, DollarSign, Users, CalendarDays } from 'lucide-react'
+import { Receipt, DollarSign, Users, CalendarDays, Plus } from 'lucide-react'
 import { receiptsApi } from '../../receipts/api'
 import { customersApi } from '../../customers/api'
 import { formatTHB, formatThaiDate } from '../../../shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import { Badge } from '../../../shared/ui/badge'
 import { Button } from '../../../shared/ui/button'
+import { BottomBar } from '../../../shared/ui/BottomBar'
 
 function StatCard({
   title,
@@ -63,43 +64,44 @@ export default function Dashboard() {
     .reduce((s, r) => s + r.total, 0)
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      <div className="mb-8">
+    <>
+    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-28 md:pb-6">
+      <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">ภาพรวม</h1>
         <p className="text-muted-foreground text-sm mt-1">สรุปกิจกรรมใบเสร็จรับเงิน</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           title="ใบเสร็จทั้งหมด"
           value={allReceipts?.meta.total ?? '—'}
           icon={Receipt}
-          iconClassName="bg-blue-50 text-blue-600"
+          iconClassName="bg-accent text-accent-foreground"
         />
         <StatCard
           title="รายรับรวม"
           value={formatTHB(totalRevenue)}
           icon={DollarSign}
-          iconClassName="bg-green-50 text-green-600"
+          iconClassName="bg-success-muted text-success-muted-foreground"
         />
         <StatCard
           title="ลูกค้าทั้งหมด"
           value={customers?.meta.total ?? '—'}
           icon={Users}
-          iconClassName="bg-purple-50 text-purple-600"
+          iconClassName="bg-info-muted text-info-muted-foreground"
         />
         <StatCard
           title="เดือนนี้"
           value={formatTHB(monthRevenue)}
           icon={CalendarDays}
-          iconClassName="bg-orange-50 text-orange-600"
+          iconClassName="bg-warning-muted text-warning-muted-foreground"
         />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between py-4 border-b border-border">
-          <CardTitle className="text-sm font-semibold">ใบเสร็จล่าสุด</CardTitle>
-          <Link to="/receipts" className="text-xs text-primary hover:text-primary/80 font-medium">
+      <Card className="shadow-sm">
+        <CardHeader className="px-5 md:px-6 py-4 border-b border-border flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base font-semibold tracking-tight">ใบเสร็จล่าสุด</CardTitle>
+          <Link to="/receipts" className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
             ดูทั้งหมด →
           </Link>
         </CardHeader>
@@ -118,7 +120,7 @@ export default function Dashboard() {
                 <Link
                   key={receipt.id}
                   to={`/receipts/${receipt.id}`}
-                  className="flex items-center justify-between px-6 py-4 hover:bg-muted/40 transition-colors"
+                  className="flex items-center justify-between px-5 md:px-6 py-4 hover:bg-muted/40 transition-colors"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -129,7 +131,7 @@ export default function Dashboard() {
                       ออกเมื่อ {formatThaiDate(receipt.issue_date)}
                     </p>
                   </div>
-                  <span className="text-sm font-bold text-foreground shrink-0 ml-4">
+                  <span className="text-sm font-semibold text-foreground shrink-0 ml-4">
                     {formatTHB(receipt.total)}
                   </span>
                 </Link>
@@ -139,5 +141,15 @@ export default function Dashboard() {
         </CardContent>
       </Card>
     </div>
+
+    <BottomBar>
+      <Button asChild className="w-full min-h-[48px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]">
+        <Link to="/receipts/new">
+          <Plus className="w-4 h-4" />
+          สร้างใบเสร็จ
+        </Link>
+      </Button>
+    </BottomBar>
+    </>
   )
 }

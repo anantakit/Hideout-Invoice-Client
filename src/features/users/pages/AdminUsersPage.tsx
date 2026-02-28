@@ -9,9 +9,10 @@ import Pagination from '../../../shared/ui/Pagination'
 import type { User } from '../../../shared/types/auth'
 import { formatThaiDate } from '../../../shared/utils'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
-import { Card, CardContent } from '../../../shared/ui/card'
+import { Card } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
+import { BottomBar } from '../../../shared/ui/BottomBar'
 import { Badge } from '../../../shared/ui/badge'
 import {
   Table,
@@ -86,7 +87,7 @@ export default function AdminUsers() {
 
   return (
     <>
-      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-28 md:pb-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">จัดการผู้ใช้</h1>
@@ -96,7 +97,7 @@ export default function AdminUsers() {
           </div>
           <Button
             onClick={() => { setEditingUser(undefined); setModalOpen(true) }}
-            className="hidden sm:inline-flex"
+            className="hidden md:inline-flex"
           >
             <Plus className="w-4 h-4" />
             เพิ่มผู้ใช้
@@ -104,19 +105,17 @@ export default function AdminUsers() {
         </div>
 
         {/* Search */}
-        <Card className="mb-5">
-          <CardContent className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="ค้นหาชื่อหรือ username…"
-                className="pl-9"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-card rounded-2xl border border-border p-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="ค้นหาชื่อหรือ username…"
+              className="pl-9"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
+        </div>
 
         <Card className="overflow-hidden">
           {isLoading ? (
@@ -147,7 +146,7 @@ export default function AdminUsers() {
                         <p className="font-medium text-foreground">{u.full_name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">@{u.username}</p>
                         {u.must_change_password && (
-                          <span className="text-xs text-amber-600">ต้องเปลี่ยนรหัสผ่าน</span>
+                          <span className="text-xs text-warning">ต้องเปลี่ยนรหัสผ่าน</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -174,7 +173,7 @@ export default function AdminUsers() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
                                 disabled={u.id === me?.id}
                                 title="ลบ"
                               >
@@ -223,6 +222,16 @@ export default function AdminUsers() {
           )}
         </Card>
       </div>
+
+      <BottomBar>
+        <Button
+          onClick={() => { setEditingUser(undefined); setModalOpen(true) }}
+          className="w-full min-h-[48px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]"
+        >
+          <Plus className="w-4 h-4" />
+          เพิ่มผู้ใช้
+        </Button>
+      </BottomBar>
 
       <UserModal open={modalOpen} onClose={handleClose} user={editingUser} />
     </>

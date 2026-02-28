@@ -13,6 +13,8 @@ import CustomerModal from '../../customers/components/CustomerModal'
 import SearchableComboBox from '../../../shared/ui/SearchableComboBox'
 import type { Customer } from '../../customers/types'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
+import { BottomBar } from '../../../shared/ui/BottomBar'
+import { DatePicker } from '../../../shared/ui/DatePicker'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../../shared/ui/form'
@@ -132,30 +134,30 @@ export default function CreateReceipt() {
 
   return (
     <>
-      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      <div className="px-4 md:px-6 py-6 max-w-4xl mx-auto pb-28 md:pb-6">
+        {/* Page header */}
         <div className="mb-6">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">สร้างใบเสร็จใหม่</h1>
           <p className="text-muted-foreground text-sm mt-1">กรอกรายละเอียดด้านล่างเพื่อออกใบเสร็จรับเงิน</p>
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
-            <div className="space-y-5">
+          <form id="create-receipt-form" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+            <div className="space-y-6">
+
               {/* Receipt Meta */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">รายละเอียดใบเสร็จ</CardTitle>
+              <Card className="shadow-sm">
+                <CardHeader className="px-5 md:px-6 pt-5 pb-3 border-b border-border">
+                  <CardTitle className="text-base font-semibold tracking-tight">รายละเอียดใบเสร็จ</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-5 md:p-6 space-y-4">
                   <FormField
                     control={form.control}
                     name="issue_date"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>วันที่ออกเอกสาร</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
+                        <DatePicker value={field.value ?? ''} onChange={field.onChange} />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -164,14 +166,14 @@ export default function CreateReceipt() {
               </Card>
 
               {/* Customer */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-3">
-                  <CardTitle className="text-sm">ผู้ชำระเงิน</CardTitle>
+              <Card className="shadow-sm">
+                <CardHeader className="px-5 md:px-6 pt-5 pb-3 border-b border-border flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="text-base font-semibold tracking-tight">ผู้ชำระเงิน</CardTitle>
                   <Button type="button" variant="outline" size="sm" onClick={() => setCustomerModalOpen(true)}>
                     + เพิ่มลูกค้าใหม่
                   </Button>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-5 md:p-6 space-y-4">
                   <Controller
                     name="customer_id"
                     control={form.control}
@@ -192,9 +194,8 @@ export default function CreateReceipt() {
                   {form.formState.errors.customer_id && (
                     <p className="text-xs font-medium text-destructive mt-1.5">{form.formState.errors.customer_id.message}</p>
                   )}
-
                   {selectedCustomer && (
-                    <div className="mt-3 p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground space-y-1 border border-border">
+                    <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground space-y-1 border border-border">
                       <p className="font-semibold text-foreground">{selectedCustomer.name}</p>
                       {selectedCustomer.address && <p>{selectedCustomer.address}</p>}
                       {selectedCustomer.phone && <p>โทร: {selectedCustomer.phone}</p>}
@@ -205,11 +206,11 @@ export default function CreateReceipt() {
               </Card>
 
               {/* Hotel Info */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">รายละเอียดการเข้าพัก</CardTitle>
+              <Card className="shadow-sm">
+                <CardHeader className="px-5 md:px-6 pt-5 pb-3 border-b border-border">
+                  <CardTitle className="text-base font-semibold tracking-tight">รายละเอียดการเข้าพัก</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-5 md:p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -249,7 +250,7 @@ export default function CreateReceipt() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>วันที่เข้าพัก</FormLabel>
-                          <FormControl><Input type="date" {...field} /></FormControl>
+                          <DatePicker value={field.value ?? ''} onChange={field.onChange} />
                         </FormItem>
                       )}
                     />
@@ -259,7 +260,7 @@ export default function CreateReceipt() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>วันที่ออก</FormLabel>
-                          <FormControl><Input type="date" {...field} /></FormControl>
+                          <DatePicker value={field.value ?? ''} onChange={field.onChange} />
                         </FormItem>
                       )}
                     />
@@ -295,12 +296,12 @@ export default function CreateReceipt() {
               </Card>
 
               {/* Line Items */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">รายการสินค้า</CardTitle>
+              <Card className="shadow-sm">
+                <CardHeader className="px-5 md:px-6 pt-5 pb-3 border-b border-border">
+                  <CardTitle className="text-base font-semibold tracking-tight">รายการสินค้า</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="hidden md:grid grid-cols-[1fr_100px_120px_100px_40px] gap-2 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
+                <CardContent className="p-5 md:p-6 space-y-3">
+                  <div className="hidden md:grid grid-cols-[1fr_100px_120px_100px_40px] gap-3 mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
                     <span>รายละเอียด</span>
                     <span className="text-center">จำนวน</span>
                     <span className="text-right">ราคาต่อหน่วย</span>
@@ -317,14 +318,14 @@ export default function CreateReceipt() {
                       return (
                         <div
                           key={field.id}
-                          className="grid grid-cols-1 md:grid-cols-[1fr_100px_120px_100px_40px] gap-2 items-start p-3 bg-muted/30 rounded-lg border border-border"
+                          className="grid grid-cols-1 md:grid-cols-[1fr_100px_120px_100px_40px] gap-3 items-start p-4 bg-background rounded-lg border border-border"
                         >
                           <div>
                             <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">รายละเอียด</label>
                             <textarea
                               rows={2}
                               placeholder="ชื่อสินค้า/บริการ…"
-                              className={`flex min-h-[60px] w-full rounded-lg border bg-card px-3 py-2 text-sm placeholder:text-muted-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary resize-none ${form.formState.errors.items?.[index]?.description ? 'border-destructive' : 'border-input'}`}
+                              className={`flex min-h-[60px] w-full rounded-lg border bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary resize-none ${form.formState.errors.items?.[index]?.description ? 'border-destructive' : 'border-input'}`}
                               {...form.register(`items.${index}.description`)}
                             />
                             {form.formState.errors.items?.[index]?.description && (
@@ -357,7 +358,7 @@ export default function CreateReceipt() {
                           </div>
 
                           <div className="flex items-center justify-end">
-                            <span className="text-sm font-semibold text-foreground">{formatTHB(lineTotal)}</span>
+                            <span className="text-sm font-medium text-foreground text-right">{formatTHB(lineTotal)}</span>
                           </div>
 
                           <div className="flex items-center justify-center">
@@ -365,7 +366,7 @@ export default function CreateReceipt() {
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
                               onClick={() => remove(index)}
                               disabled={fields.length === 1}
                               title="ลบรายการ"
@@ -386,7 +387,7 @@ export default function CreateReceipt() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="mt-3"
+                    className="mt-1"
                     onClick={() => append({ description: '', quantity: 1, unit_price: 0 })}
                   >
                     <Plus className="w-4 h-4" />
@@ -396,19 +397,21 @@ export default function CreateReceipt() {
               </Card>
 
               {/* Notes */}
-              <Card>
-                <CardContent className="pt-5">
+              <Card className="shadow-sm">
+                <CardHeader className="px-5 md:px-6 pt-5 pb-3 border-b border-border">
+                  <CardTitle className="text-base font-semibold tracking-tight">หมายเหตุ</CardTitle>
+                </CardHeader>
+                <CardContent className="p-5 md:p-6">
                   <FormField
                     control={form.control}
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>หมายเหตุ (ไม่บังคับ)</FormLabel>
                         <FormControl>
                           <textarea
                             rows={3}
                             placeholder="หมายเหตุเพิ่มเติม…"
-                            className="flex min-h-[80px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary resize-none"
+                            className="flex min-h-[80px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary resize-none"
                             {...field}
                           />
                         </FormControl>
@@ -418,22 +421,24 @@ export default function CreateReceipt() {
                 </CardContent>
               </Card>
 
-              {/* Summary */}
-              <Card>
-                <CardContent className="pt-5">
-                  <div className="max-w-xs ml-auto">
-                    <div className="flex justify-between">
-                      <span className="font-bold text-foreground">ยอดชำระทั้งหมด</span>
-                      <span className="font-bold text-lg text-primary">{formatTHB(total)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Total */}
+              <div className="rounded-xl border border-border bg-muted/30 p-5">
+                <div className="flex justify-between items-center">
+                  <span className="text-base font-semibold text-foreground">ยอดชำระทั้งหมด</span>
+                  <span className="text-lg font-semibold text-primary">{formatTHB(total)}</span>
+                </div>
+              </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => navigate(-1)}>ยกเลิก</Button>
-                <Button type="submit" disabled={form.formState.isSubmitting || createMutation.isPending}>
+              {/* Desktop actions */}
+              <div className="hidden md:flex justify-end gap-3">
+                <Button type="button" variant="outline" className="rounded-xl" onClick={() => navigate(-1)}>
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting || createMutation.isPending}
+                  className="min-h-[44px] px-6 rounded-xl font-medium"
+                >
                   {createMutation.isPending ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> กำลังสร้าง…</>
                   ) : (
@@ -441,10 +446,36 @@ export default function CreateReceipt() {
                   )}
                 </Button>
               </div>
+
             </div>
+
           </form>
         </Form>
       </div>
+
+      <BottomBar>
+        <Button
+          type="submit"
+          form="create-receipt-form"
+          disabled={form.formState.isSubmitting || createMutation.isPending}
+          className="w-full min-h-[52px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]"
+        >
+          {createMutation.isPending ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> กำลังสร้าง…</>
+          ) : (
+            <><Check className="w-4 h-4" /> สร้างใบเสร็จ</>
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          className="w-full text-muted-foreground"
+        >
+          ยกเลิก
+        </Button>
+      </BottomBar>
 
       <CustomerModal
         open={customerModalOpen}

@@ -8,9 +8,10 @@ import Pagination from '../../../shared/ui/Pagination'
 import type { Customer } from '../types'
 import { formatThaiDate } from '../../../shared/utils'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
-import { Card, CardContent } from '../../../shared/ui/card'
+import { Card } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
+import { BottomBar } from '../../../shared/ui/BottomBar'
 import {
   Table,
   TableBody,
@@ -73,7 +74,7 @@ export default function Customers() {
 
   return (
     <>
-      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-28 md:pb-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">รายการลูกค้า</h1>
@@ -83,7 +84,7 @@ export default function Customers() {
           </div>
           <Button
             onClick={() => { setEditingCustomer(null); setModalOpen(true) }}
-            className="hidden sm:inline-flex"
+            className="hidden md:inline-flex"
           >
             <Plus className="w-4 h-4" />
             เพิ่มลูกค้าใหม่
@@ -91,19 +92,17 @@ export default function Customers() {
         </div>
 
         {/* Search */}
-        <Card className="mb-5">
-          <CardContent className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="ค้นหาชื่อ เบอร์โทร หรือเลขผู้เสียภาษี…"
-                className="pl-9"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-card rounded-2xl border border-border p-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="ค้นหาชื่อ เบอร์โทร หรือเลขผู้เสียภาษี…"
+              className="pl-9"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
+        </div>
 
         {/* List */}
         <Card className="overflow-hidden">
@@ -155,7 +154,7 @@ export default function Customers() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
                                 title="ลบ"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -195,6 +194,16 @@ export default function Customers() {
           )}
         </Card>
       </div>
+
+      <BottomBar>
+        <Button
+          onClick={() => { setEditingCustomer(null); setModalOpen(true) }}
+          className="w-full min-h-[48px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]"
+        >
+          <Plus className="w-4 h-4" />
+          เพิ่มลูกค้าใหม่
+        </Button>
+      </BottomBar>
 
       <CustomerModal
         open={modalOpen}
