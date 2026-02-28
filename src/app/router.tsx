@@ -7,12 +7,12 @@ import Login from '../features/auth/pages/LoginPage'
 import ChangePassword from '../features/auth/pages/ChangePasswordPage'
 
 // Heavy pages are lazy-loaded so the initial bundle stays small.
-const Dashboard     = lazy(() => import('../features/dashboard/pages/DashboardPage'))
-const CreateInvoice = lazy(() => import('../features/receipts/pages/CreateReceiptPage'))
-const InvoiceHistory = lazy(() => import('../features/receipts/pages/InvoiceHistoryPage'))
-const InvoiceDetail = lazy(() => import('../features/receipts/pages/ReceiptDetailPage'))
-const Customers     = lazy(() => import('../features/customers/pages/CustomersPage'))
-const AdminUsers    = lazy(() => import('../features/users/pages/AdminUsersPage'))
+const Dashboard      = lazy(() => import('../features/dashboard/pages/DashboardPage'))
+const CreateReceipt  = lazy(() => import('../features/receipts/pages/CreateReceiptPage'))
+const ReceiptHistory = lazy(() => import('../features/receipts/pages/ReceiptHistoryPage'))
+const ReceiptDetail  = lazy(() => import('../features/receipts/pages/ReceiptDetailPage'))
+const Customers      = lazy(() => import('../features/customers/pages/CustomersPage'))
+const AdminUsers     = lazy(() => import('../features/users/pages/AdminUsersPage'))
 
 function PageLoader() {
   return (
@@ -49,9 +49,9 @@ export default function App() {
             >
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/invoices/new" element={<CreateInvoice />} />
-              <Route path="/invoices" element={<InvoiceHistory />} />
-              <Route path="/invoices/:id" element={<InvoiceDetail />} />
+              <Route path="/receipts/new" element={<CreateReceipt />} />
+              <Route path="/receipts" element={<ReceiptHistory />} />
+              <Route path="/receipts/:id" element={<ReceiptDetail />} />
               <Route path="/customers" element={<Customers />} />
               <Route
                 path="/admin/users"

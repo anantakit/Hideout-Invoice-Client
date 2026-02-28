@@ -1,12 +1,12 @@
 import { apiClient } from '../../shared/api/client'
 import type {
-  Invoice,
-  InvoiceListResponse,
-  CreateInvoicePayload,
+  Receipt,
+  ReceiptListResponse,
+  CreateReceiptPayload,
 } from './types'
 import type { ApiResponse } from '../../shared/types/api'
 
-export interface InvoiceQueryParams {
+export interface ReceiptQueryParams {
   search?: string
   start_date?: string
   end_date?: string
@@ -14,24 +14,24 @@ export interface InvoiceQueryParams {
   limit?: number
 }
 
-export const invoicesApi = {
-  list: async (params?: InvoiceQueryParams): Promise<InvoiceListResponse> => {
-    const { data } = await apiClient.get<ApiResponse<InvoiceListResponse>>(
+export const receiptsApi = {
+  list: async (params?: ReceiptQueryParams): Promise<ReceiptListResponse> => {
+    const { data } = await apiClient.get<ApiResponse<ReceiptListResponse>>(
       '/invoices',
       { params }
     )
     return data.data
   },
 
-  getById: async (id: string): Promise<Invoice> => {
-    const { data } = await apiClient.get<ApiResponse<Invoice>>(
+  getById: async (id: string): Promise<Receipt> => {
+    const { data } = await apiClient.get<ApiResponse<Receipt>>(
       `/invoices/${id}`
     )
     return data.data
   },
 
-  create: async (payload: CreateInvoicePayload): Promise<Invoice> => {
-    const { data } = await apiClient.post<ApiResponse<Invoice>>(
+  create: async (payload: CreateReceiptPayload): Promise<Receipt> => {
+    const { data } = await apiClient.post<ApiResponse<Receipt>>(
       '/invoices',
       payload
     )

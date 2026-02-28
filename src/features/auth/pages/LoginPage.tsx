@@ -1,7 +1,21 @@
-import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../../app/providers/AuthProvider'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import toast from 'react-hot-toast'
+import { Receipt } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
+import { Button } from '../../../shared/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../../shared/ui/form'
+import { Input } from '../../../shared/ui/input'
+
+const schema = z.object({
+  username: z.string().min(1, 'กรุณาระบุชื่อผู้ใช้'),
+  password: z.string().min(1, 'กรุณาระบุรหัสผ่าน'),
+})
+
+type FormValues = z.infer<typeof schema>
 
 export default function Login() {
   const { login, isAuthenticated, user } = useAuth()
@@ -9,11 +23,6 @@ export default function Login() {
   const location = useLocation()
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard'
 
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  // Already logged in
   if (isAuthenticated) {
     if (user?.must_change_password) {
       navigate('/change-password', { replace: true })
@@ -23,82 +32,78 @@ export default function Login() {
     return null
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!username.trim() || !password) return
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { username: '', password: '' },
+  })
 
-    setLoading(true)
+  const onSubmit = async (values: FormValues) => {
     try {
-      await login({ username: username.trim(), password })
-      // AuthContext sets user; redirect handled after re-render
+      await login({ username: values.username.trim(), password: values.password })
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ')
-    } finally {
-      setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-brand-600 flex items-center justify-center mb-3">
-            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                clipRule="evenodd"
-              />
-            </svg>
+          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center mb-3">
+            <Receipt className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900">Hideout Resort</h1>
-          <p className="text-sm text-gray-500 mt-1">ระบบใบเสร็จรับเงิน</p>
+          <h1 className="text-xl font-bold text-foreground">Hideout Resort</h1>
+          <p className="text-sm text-muted-foreground mt-1">ระบบใบเสร็จรับเงิน</p>
         </div>
 
-        <div className="card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">เข้าสู่ระบบ</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                ชื่อผู้ใช้
-              </label>
-              <input
-                type="text"
-                className="input"
-                placeholder="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                รหัสผ่าน
-              </label>
-              <input
-                type="password"
-                className="input"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading || !username.trim() || !password}
-              className="btn-primary w-full justify-center mt-2"
-            >
-              {loading ? (
-                <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-              ) : (
-                'เข้าสู่ระบบ'
-              )}
-            </button>
-          </form>
-        </div>
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle>เข้าสู่ระบบ</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ชื่อผู้ใช้</FormLabel>
+                      <FormControl>
+                        <Input placeholder="username" autoComplete="username" autoFocus {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>รหัสผ่าน</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" autoComplete="current-password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full mt-2"
+                  disabled={form.formState.isSubmitting}
+                >
+                  {form.formState.isSubmitting ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
+                  ) : (
+                    'เข้าสู่ระบบ'
+                  )}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

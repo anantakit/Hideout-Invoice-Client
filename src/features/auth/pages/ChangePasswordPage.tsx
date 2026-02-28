@@ -1,106 +1,128 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { authApi } from '../api'
 import { useAuth } from '../../../app/providers/AuthProvider'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
+import { Button } from '../../../shared/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../../shared/ui/form'
+import { Input } from '../../../shared/ui/input'
+
+const schema = z
+  .object({
+    currentPassword: z.string().min(1, 'กรุณาระบุรหัสผ่านปัจจุบัน'),
+    newPassword: z
+      .string()
+      .min(8, 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
+      .regex(/\d/, 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว'),
+    confirmPassword: z.string().min(1, 'กรุณายืนยันรหัสผ่านใหม่'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'รหัสผ่านใหม่ไม่ตรงกัน',
+    path: ['confirmPassword'],
+  })
+
+type FormValues = z.infer<typeof schema>
 
 export default function ChangePassword() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [loading, setLoading] = useState(false)
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (newPassword !== confirmPassword) {
-      toast.error('รหัสผ่านใหม่ไม่ตรงกัน')
-      return
-    }
-    if (newPassword.length < 8 || !/\d/.test(newPassword)) {
-      toast.error('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร และมีตัวเลข 1 ตัว')
-      return
-    }
-
-    setLoading(true)
+  const onSubmit = async (values: FormValues) => {
     try {
       await authApi.changePassword({
-        current_password: currentPassword,
-        new_password: newPassword,
+        current_password: values.currentPassword,
+        new_password: values.newPassword,
       })
       toast.success('เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่')
       logout()
       navigate('/login', { replace: true })
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'เกิดข้อผิดพลาด')
-    } finally {
-      setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">เปลี่ยนรหัสผ่าน</h2>
-          {user?.must_change_password && (
-            <p className="text-sm text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mb-4 mt-2">
-              กรุณาเปลี่ยนรหัสผ่านก่อนใช้งานระบบ
-            </p>
-          )}
-          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                รหัสผ่านปัจจุบัน
-              </label>
-              <input
-                type="password"
-                className="input"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                autoComplete="current-password"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                รหัสผ่านใหม่
-              </label>
-              <input
-                type="password"
-                className="input"
-                placeholder="อย่างน้อย 8 ตัวอักษร มีตัวเลข 1 ตัว"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                ยืนยันรหัสผ่านใหม่
-              </label>
-              <input
-                type="password"
-                className="input"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading || !currentPassword || !newPassword || !confirmPassword}
-              className="btn-primary w-full justify-center mt-2"
-            >
-              {loading ? (
-                <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-              ) : (
-                'บันทึกรหัสผ่านใหม่'
-              )}
-            </button>
-          </form>
-        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>เปลี่ยนรหัสผ่าน</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {user?.must_change_password && (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                กรุณาเปลี่ยนรหัสผ่านก่อนใช้งานระบบ
+              </p>
+            )}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>รหัสผ่านปัจจุบัน</FormLabel>
+                      <FormControl>
+                        <Input type="password" autoComplete="current-password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>รหัสผ่านใหม่</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="อย่างน้อย 8 ตัวอักษร มีตัวเลข 1 ตัว"
+                          autoComplete="new-password"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ยืนยันรหัสผ่านใหม่</FormLabel>
+                      <FormControl>
+                        <Input type="password" autoComplete="new-password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full mt-2"
+                  disabled={form.formState.isSubmitting}
+                >
+                  {form.formState.isSubmitting ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
+                  ) : (
+                    'บันทึกรหัสผ่านใหม่'
+                  )}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

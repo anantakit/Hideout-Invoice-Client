@@ -1,8 +1,26 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { Loader2 } from 'lucide-react'
 import { adminApi } from '../api'
 import type { User, CreateUserPayload, UpdateUserPayload } from '../../../shared/types/auth'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '../../../shared/ui/dialog'
+import { Button } from '../../../shared/ui/button'
+import { Input } from '../../../shared/ui/input'
+import { Label } from '../../../shared/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../shared/ui/select'
 
 interface Props {
   open: boolean
@@ -68,147 +86,94 @@ export default function UserModal({ open, onClose, user }: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (isEdit && user) {
-      const payload: UpdateUserPayload = {
-        full_name: fullName,
-        role,
-        must_change_password: mustChangePassword,
-      }
+      const payload: UpdateUserPayload = { full_name: fullName, role, must_change_password: mustChangePassword }
       if (password) payload.password = password
       updateMutation.mutate({ id: user.id, payload })
     } else {
-      const payload: CreateUserPayload = {
-        full_name: fullName,
-        username,
-        password,
-        role,
-        must_change_password: mustChangePassword,
-      }
+      const payload: CreateUserPayload = { full_name: fullName, username, password, role, must_change_password: mustChangePassword }
       createMutation.mutate(payload)
     }
   }
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">
-            {isEdit ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้ใหม่'}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isEdit ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้ใหม่'}</DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              ชื่อ-นามสกุล <span className="text-red-500">*</span>
+        <form onSubmit={handleSubmit}>
+          <div className="px-6 py-4 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="fullName">ชื่อ-นามสกุล <span className="text-destructive">*</span></Label>
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="username">Username <span className="text-destructive">*</span></Label>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={isEdit}
+                required={!isEdit}
+              />
+              {isEdit && <p className="text-xs text-muted-foreground">ไม่สามารถเปลี่ยน username ได้</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password">
+                รหัสผ่าน {!isEdit && <span className="text-destructive">*</span>}
+                {isEdit && <span className="text-muted-foreground font-normal"> (ปล่อยว่างเพื่อไม่เปลี่ยน)</span>}
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="อย่างน้อย 8 ตัวอักษร มีตัวเลข 1 ตัว"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required={!isEdit}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Role <span className="text-destructive">*</span></Label>
+              <Select value={role} onValueChange={(v) => setRole(v as 'admin' | 'staff' | 'viewer')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLES.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={mustChangePassword}
+                onChange={(e) => setMustChangePassword(e.target.checked)}
+                className="w-4 h-4 rounded accent-primary"
+              />
+              <span className="text-sm text-foreground">บังคับเปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบครั้งแรก</span>
             </label>
-            <input
-              type="text"
-              className="input"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-            />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Username <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              className="input"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={isEdit}
-              required={!isEdit}
-            />
-            {isEdit && (
-              <p className="text-xs text-gray-400 mt-1">ไม่สามารถเปลี่ยน username ได้</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              รหัสผ่าน {!isEdit && <span className="text-red-500">*</span>}
-              {isEdit && <span className="text-gray-400 font-normal">(ปล่อยว่างเพื่อไม่เปลี่ยน)</span>}
-            </label>
-            <input
-              type="password"
-              className="input"
-              placeholder="อย่างน้อย 8 ตัวอักษร มีตัวเลข 1 ตัว"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required={!isEdit}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Role <span className="text-red-500">*</span>
-            </label>
-            <select
-              className="input"
-              value={role}
-              onChange={(e) => setRole(e.target.value as 'admin' | 'staff' | 'viewer')}
-            >
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={mustChangePassword}
-              onChange={(e) => setMustChangePassword(e.target.checked)}
-              className="w-4 h-4 rounded accent-brand-600"
-            />
-            <span className="text-sm text-gray-700">บังคับเปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบครั้งแรก</span>
-          </label>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1 justify-center"
-            >
-              ยกเลิก
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="btn-primary flex-1 justify-center"
-            >
-              {isPending ? (
-                <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-              ) : isEdit ? (
-                'บันทึก'
-              ) : (
-                'สร้างผู้ใช้'
-              )}
-            </button>
-          </div>
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>ยกเลิก</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : isEdit ? 'บันทึก' : 'สร้างผู้ใช้'}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

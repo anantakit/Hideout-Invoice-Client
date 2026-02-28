@@ -1,4 +1,4 @@
-import { cn } from '../utils'
+import { Button } from './button'
 
 interface Props {
   page: number
@@ -17,7 +17,6 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
   const from = (page - 1) * limit + 1
   const to = Math.min(page * limit, total)
 
-  // Build page number window: always show first, last, and ±2 around current
   const pageNums: (number | '...')[] = []
   if (totalPages <= 7) {
     for (let i = 1; i <= totalPages; i++) pageNums.push(i)
@@ -32,16 +31,15 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-gray-100">
-      {/* Summary + per-page selector */}
-      <div className="flex items-center gap-3 text-sm text-gray-500 order-2 sm:order-1">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-border">
+      <div className="flex items-center gap-3 text-sm text-muted-foreground order-2 sm:order-1">
         <span>
           {total > 0 ? `${from}–${to} จาก ${total} รายการ` : 'ไม่มีรายการ'}
         </span>
         <select
           value={limit}
           onChange={(e) => { onLimitChange(Number(e.target.value)); onPageChange(1) }}
-          className="input !py-1 !px-2 w-auto text-xs"
+          className="h-8 rounded-lg border border-input bg-card px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
         >
           {LIMITS.map((l) => (
             <option key={l} value={l}>{l} ต่อหน้า</option>
@@ -49,75 +47,63 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
         </select>
       </div>
 
-      {/* Page controls */}
       <div className="flex items-center gap-1 order-1 sm:order-2">
-        {/* Desktop: numbered pages */}
         <div className="hidden sm:flex items-center gap-1">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => onPageChange(page - 1)}
             disabled={page === 1}
-            className={cn(
-              'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-              page === 1
-                ? 'text-gray-300 cursor-not-allowed'
-                : 'text-gray-600 hover:bg-gray-100'
-            )}
           >
             ←
-          </button>
+          </Button>
 
           {pageNums.map((n, i) =>
             n === '...' ? (
-              <span key={`ellipsis-${i}`} className="px-2 text-gray-400 text-sm select-none">…</span>
+              <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground text-sm select-none">…</span>
             ) : (
-              <button
+              <Button
                 key={n}
+                variant={n === page ? 'default' : 'ghost'}
+                size="icon"
+                className="w-8 h-8"
                 onClick={() => onPageChange(n as number)}
-                className={cn(
-                  'w-8 h-8 rounded-lg text-sm font-medium transition-colors',
-                  n === page
-                    ? 'bg-brand-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
-                )}
               >
                 {n}
-              </button>
+              </Button>
             )
           )}
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => onPageChange(page + 1)}
             disabled={page === totalPages}
-            className={cn(
-              'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-              page === totalPages
-                ? 'text-gray-300 cursor-not-allowed'
-                : 'text-gray-600 hover:bg-gray-100'
-            )}
           >
             →
-          </button>
+          </Button>
         </div>
 
-        {/* Mobile: prev | page/total | next */}
         <div className="flex sm:hidden items-center gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => onPageChange(page - 1)}
             disabled={page === 1}
-            className="btn-secondary text-xs disabled:opacity-40 px-3 py-1.5"
           >
             ← ก่อนหน้า
-          </button>
-          <span className="text-sm text-gray-600 whitespace-nowrap">
+          </Button>
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
             {page}/{totalPages}
           </span>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => onPageChange(page + 1)}
             disabled={page === totalPages}
-            className="btn-secondary text-xs disabled:opacity-40 px-3 py-1.5"
           >
             ถัดไป →
-          </button>
+          </Button>
         </div>
       </div>
     </div>

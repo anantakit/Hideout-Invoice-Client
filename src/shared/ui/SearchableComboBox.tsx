@@ -1,6 +1,9 @@
 import { useState, useEffect, useId } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { ChevronDown } from 'lucide-react'
 import { useDebounce } from '../hooks/useDebounce'
+import { Input } from './input'
+import { cn } from '../utils'
 
 interface FetchParams {
   search?: string
@@ -13,47 +16,18 @@ interface FetchResult<T> {
 }
 
 interface SearchableComboBoxProps<T extends object> {
-  /** The currently selected value (e.g. an ID string). */
   value: string
-  /** Called with the valueKey field of the selected item. */
   onChange: (value: string) => void
-  /** Optional: called with the full item when selection changes. */
   onSelectItem?: (item: T | null) => void
-  /** API function: called with {search?, page, limit}, must return {data: T[]}. */
   fetchFunction: (params: FetchParams) => Promise<FetchResult<T>>
   placeholder?: string
-  /** Key of T whose value is displayed in the list. */
   labelKey: keyof T
-  /** Key of T whose value is used as the form value. */
   valueKey: keyof T
-  /**
-   * Text to show in the input box when an item is selected externally
-   * (e.g. after creating a new item via a modal).
-   */
   displayValue?: string
   error?: boolean
   disabled?: boolean
 }
 
-/**
- * SearchableComboBox — a reusable, API-driven search combobox.
- *
- * On first open it fetches the latest 20 records (no search term).
- * While typing it debounces 300ms then searches via fetchFunction.
- * Fully controlled: value/onChange are the source of truth.
- *
- * @example
- * <SearchableComboBox
- *   value={field.value}
- *   onChange={(id) => field.onChange(id)}
- *   onSelectItem={(item) => setSelected(item as Customer)}
- *   fetchFunction={(p) => customersApi.list(p)}
- *   labelKey="name"
- *   valueKey="id"
- *   displayValue={selected?.name}
- *   placeholder="ค้นหาลูกค้า…"
- * />
- */
 export default function SearchableComboBox<T extends object>({
   value,
   onChange,
@@ -66,7 +40,6 @@ export default function SearchableComboBox<T extends object>({
   error,
   disabled,
 }: SearchableComboBoxProps<T>) {
-  // Stable unique key per component instance for the TanStack Query cache.
   const instanceId = useId()
 
   const [inputText, setInputText] = useState(displayValue ?? '')
@@ -74,16 +47,12 @@ export default function SearchableComboBox<T extends object>({
 
   const debouncedSearch = useDebounce(inputText, 1000)
 
-  // Sync display text when an item is selected externally (e.g. via modal).
   useEffect(() => {
     if (displayValue !== undefined) {
       setInputText(displayValue)
     }
   }, [displayValue])
 
-  // Clear the input when value is reset from outside, but only while the
-  // dropdown is closed (prevents clearing mid-keystroke when the user is
-  // typing and clears the selection internally).
   useEffect(() => {
     if (!value && !isOpen) {
       setInputText('')
@@ -118,62 +87,45 @@ export default function SearchableComboBox<T extends object>({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(e.target.value)
     if (!isOpen) setIsOpen(true)
-    // Clear current selection so form knows value is unset while typing.
     if (value) {
       onChange('')
       onSelectItem?.(null)
     }
   }
 
-  const handleFocus = () => {
-    setIsOpen(true)
-  }
-
-  const handleBlur = () => {
-    setIsOpen(false)
-  }
-
   return (
     <div className="relative">
       <div className="relative">
-        <input
+        <Input
           type="text"
           value={inputText}
           onChange={handleInputChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setIsOpen(false)}
           placeholder={placeholder}
           disabled={disabled}
           autoComplete="off"
           role="combobox"
           aria-expanded={isOpen}
           aria-autocomplete="list"
-          className={`w-full pr-8 ${error ? 'input-error' : 'input'}`}
+          className={cn('pr-8', error && 'border-destructive focus-visible:ring-destructive')}
         />
-        {/* Chevron */}
-        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-          <svg
-            className={`w-4 h-4 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+          <ChevronDown className={cn('w-4 h-4 transition-transform duration-150', isOpen && 'rotate-180')} />
         </span>
       </div>
 
       {isOpen && (
         <div
           role="listbox"
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-lg max-h-60 overflow-y-auto"
         >
           {isLoading ? (
             <div className="flex justify-center py-4">
-              <div className="w-5 h-5 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+              <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
             </div>
           ) : items.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-400 text-center">
+            <div className="px-4 py-3 text-sm text-muted-foreground text-center">
               {debouncedSearch ? 'ไม่พบผลลัพธ์' : 'ไม่มีข้อมูล'}
             </div>
           ) : (
@@ -186,15 +138,14 @@ export default function SearchableComboBox<T extends object>({
                   type="button"
                   role="option"
                   aria-selected={itemVal === value}
-                  // Prevent blur before click fires so the dropdown doesn't
-                  // close before the selection is processed.
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSelect(item)}
-                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                  className={cn(
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors',
                     itemVal === value
-                      ? 'bg-brand-50 text-brand-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-foreground hover:bg-muted'
+                  )}
                 >
                   {itemLabel}
                 </button>

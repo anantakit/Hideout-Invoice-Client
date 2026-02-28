@@ -3,59 +3,33 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    @apply border-gray-200;
+  :root {
+    --background: 240 5% 96%;
+    --foreground: 220 13% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 13%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 13% 13%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 13% 13%;
+    --radius: 0.75rem;
   }
-  body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
-  }
-}
 
-@layer components {
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:pointer-events-none disabled:opacity-50;
+  * {
+    @apply border-border;
   }
-  .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-900;
-  }
-  .btn-secondary {
-    @apply btn bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100;
-  }
-  .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 active:bg-red-800;
-  }
-  .btn-ghost {
-    @apply btn text-gray-600 hover:bg-gray-100 active:bg-gray-200;
-  }
-  .input {
-    @apply block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500;
-  }
-  .input-error {
-    @apply input border-red-400 focus:border-red-500 focus:ring-red-500/20;
-  }
-  .label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
-  }
-  .card {
-    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
-  }
-  .field-error {
-    @apply mt-1 text-xs text-red-600;
-  }
-  .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
-  }
-  .badge-blue {
-    @apply badge bg-blue-100 text-blue-800;
-  }
-  .badge-green {
-    @apply badge bg-green-100 text-green-800;
-  }
-  .badge-red {
-    @apply badge bg-red-100 text-red-800;
-  }
-  .badge-gray {
-    @apply badge bg-gray-100 text-gray-700;
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }
 

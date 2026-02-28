@@ -1,8 +1,9 @@
 import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 import { parseISO } from 'date-fns'
 
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs)
+  return twMerge(clsx(inputs))
 }
 
 // Thai Baht formatting — matches backend locale.FormatTHB convention

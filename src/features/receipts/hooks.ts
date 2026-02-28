@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { invoicesApi } from './api'
-import type { InvoiceQueryParams } from './api'
+import { receiptsApi } from './api'
+import type { ReceiptQueryParams } from './api'
 
-export function useInvoices(params?: InvoiceQueryParams) {
+export function useReceipts(params?: ReceiptQueryParams) {
   return useQuery({
-    queryKey: ['invoices', params],
-    queryFn: () => invoicesApi.list(params),
+    queryKey: ['receipts', params],
+    queryFn: () => receiptsApi.list(params),
     placeholderData: (prev) => prev,
   })
 }
