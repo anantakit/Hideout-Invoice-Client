@@ -81,9 +81,7 @@ export default function ReceiptDetail() {
     )
   }
 
-  const hasHotelInfo =
-    receipt.room_number || receipt.check_in_date || receipt.check_out_date ||
-    (receipt.nights && receipt.nights > 0) || receipt.payment_method
+  const hasStayInfo = receipt.check_in_date || receipt.payment_method
 
   return (
     <>
@@ -216,34 +214,16 @@ export default function ReceiptDetail() {
           </CardContent>
         </Card>
 
-        {/* Hotel Info */}
-        {hasHotelInfo && (
+        {/* Stay Info */}
+        {hasStayInfo && (
           <Card className="transition-shadow duration-200 md:hover:shadow-md">
             <CardContent className="p-5 md:p-8 space-y-4">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">รายละเอียดการเข้าพัก</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
-                {receipt.room_number && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">เลขห้อง</span>
-                    <span className="text-sm font-medium text-foreground">{receipt.room_number}</span>
-                  </div>
-                )}
                 {receipt.check_in_date && (
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">วันที่เข้าพัก</span>
                     <span className="text-sm font-medium text-foreground">{formatThaiDate(receipt.check_in_date)}</span>
-                  </div>
-                )}
-                {receipt.check_out_date && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">วันที่ออก</span>
-                    <span className="text-sm font-medium text-foreground">{formatThaiDate(receipt.check_out_date)}</span>
-                  </div>
-                )}
-                {receipt.nights && receipt.nights > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">จำนวนคืน</span>
-                    <span className="text-sm font-medium text-foreground">{receipt.nights} คืน</span>
                   </div>
                 )}
                 {receipt.payment_method && (
@@ -257,17 +237,17 @@ export default function ReceiptDetail() {
           </Card>
         )}
 
-        {/* Line items */}
+        {/* Room items */}
         <Card className="overflow-hidden transition-shadow duration-200 md:hover:shadow-md">
           <CardHeader className="py-4 px-5 md:px-8 border-b border-border">
-            <h2 className="text-sm font-medium text-foreground">รายการสินค้า</h2>
+            <h2 className="text-sm font-medium text-foreground">รายการห้องพัก</h2>
           </CardHeader>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>รายละเอียด</TableHead>
-                <TableHead className="text-center">จำนวน</TableHead>
-                <TableHead className="text-right">ราคาต่อหน่วย</TableHead>
+                <TableHead>ห้อง / รายละเอียด</TableHead>
+                <TableHead className="text-center">จำนวนคืน</TableHead>
+                <TableHead className="text-right">ราคาต่อคืน (บาท)</TableHead>
                 <TableHead className="text-right">รวมเงิน</TableHead>
               </TableRow>
             </TableHeader>

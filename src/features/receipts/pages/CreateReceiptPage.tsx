@@ -27,7 +27,7 @@ import {
 } from '../../../shared/ui/select'
 
 const itemSchema = z.object({
-  description: z.string().min(1, 'กรุณาระบุรายละเอียด'),
+  description: z.string().min(1, 'กรุณาระบุเลขห้อง / รายละเอียด'),
   quantity: z.coerce.number().gt(0, 'ต้องมากกว่า 0'),
   unit_price: z.coerce.number().gte(0, 'ต้องไม่ติดลบ'),
 })
@@ -36,29 +36,18 @@ const receiptSchema = z.object({
   customer_id: z.string().uuid('กรุณาเลือกลูกค้า'),
   issue_date: z.string().min(1, 'กรุณาระบุวันที่ออกเอกสาร'),
   notes: z.string().max(1000),
-  items: z.array(itemSchema).min(1, 'กรุณาเพิ่มรายการอย่างน้อย 1 รายการ'),
+  items: z.array(itemSchema).min(1, 'กรุณาเพิ่มรายการอย่างน้อย 1 ห้อง'),
   check_in_date: z.string().optional(),
-  check_out_date: z.string().optional(),
-  nights: z.coerce.number().int().min(0).optional(),
-  room_number: z.string().max(50).optional(),
   payment_method: z.string().max(50).optional(),
 })
 
 type ReceiptFormValues = z.infer<typeof receiptSchema>
-
-const ROOM_TYPE_TEMPLATES = {
-  เตียงเดี่ยว: { description: 'ค่าห้องพัก', quantity: 1, unit_price: 500 },
-  เตียงคู่: { description: 'ค่าห้องพัก', quantity: 1, unit_price: 650 },
-} as const
-
-type RoomType = keyof typeof ROOM_TYPE_TEMPLATES | ''
 
 export default function CreateReceipt() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [roomType, setRoomType] = useState<RoomType>('')
 
   const form = useForm<ReceiptFormValues>({
     resolver: zodResolver(receiptSchema),
@@ -66,14 +55,13 @@ export default function CreateReceipt() {
       customer_id: '',
       issue_date: todayISO(),
       notes: '',
-      items: [{ description: 'ค่าห้องพัก', quantity: 1, unit_price: 0 }],
+      items: [{ description: '', quantity: 1, unit_price: 0 }],
       check_in_date: todayISO(),
-      room_number: '',
       payment_method: '',
     },
   })
 
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'items',
   })
@@ -105,22 +93,9 @@ export default function CreateReceipt() {
         unit_price: Number(item.unit_price),
       })),
       check_in_date: values.check_in_date ? new Date(values.check_in_date).toISOString() : undefined,
-      check_out_date: values.check_out_date ? new Date(values.check_out_date).toISOString() : undefined,
-      nights: values.nights || undefined,
-      room_number: values.room_number || undefined,
       payment_method: values.payment_method || undefined,
     })
   }
-
-  const handleRoomTypeChange = useCallback(
-    (type: RoomType) => {
-      setRoomType(type)
-      if (type && ROOM_TYPE_TEMPLATES[type]) {
-        replace([{ ...ROOM_TYPE_TEMPLATES[type] }])
-      }
-    },
-    [replace],
-  )
 
   const handleCustomerCreated = useCallback(
     (customer: Customer) => {
@@ -205,7 +180,7 @@ export default function CreateReceipt() {
                 </CardContent>
               </Card>
 
-              {/* Hotel Info */}
+              {/* Stay Info */}
               <Card className="shadow-sm">
                 <CardHeader className="px-5 md:px-6 pt-5 pb-3 border-b border-border">
                   <CardTitle className="text-base font-semibold tracking-tight">รายละเอียดการเข้าพัก</CardTitle>
@@ -214,11 +189,12 @@ export default function CreateReceipt() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="room_number"
+                      name="check_in_date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>เลขห้อง</FormLabel>
-                          <FormControl><Input placeholder="101" {...field} /></FormControl>
+                          <FormLabel>วันที่เข้าพัก</FormLabel>
+                          <DatePicker value={field.value ?? ''} onChange={field.onChange} />
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -244,67 +220,20 @@ export default function CreateReceipt() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="check_in_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>วันที่เข้าพัก</FormLabel>
-                          <DatePicker value={field.value ?? ''} onChange={field.onChange} />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="check_out_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>วันที่ออก</FormLabel>
-                          <DatePicker value={field.value ?? ''} onChange={field.onChange} />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="md:col-span-2">
-                      <FormItem>
-                        <FormLabel>ประเภทห้องพัก (ไม่บังคับ)</FormLabel>
-                        <Select onValueChange={(v) => handleRoomTypeChange(v as RoomType)} value={roomType}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="เลือกประเภทห้อง (ใส่รายการอัตโนมัติ)…" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.keys(ROOM_TYPE_TEMPLATES).map((t) => (
-                              <SelectItem key={t} value={t}>{t}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground mt-1">เลือกเพื่อใส่รายการสินค้าตัวอย่างอัตโนมัติ — แก้ไขได้ภายหลัง</p>
-                      </FormItem>
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="nights"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>จำนวนคืน</FormLabel>
-                          <FormControl><Input type="number" min="0" placeholder="1" {...field} /></FormControl>
-                          <p className="text-xs text-muted-foreground mt-1">หากระบุวันเข้า-ออก ระบบจะคำนวณให้อัตโนมัติ</p>
-                        </FormItem>
-                      )}
-                    />
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Line Items */}
+              {/* Room Items */}
               <Card className="shadow-sm">
                 <CardHeader className="px-5 md:px-6 pt-5 pb-3 border-b border-border">
-                  <CardTitle className="text-base font-semibold tracking-tight">รายการสินค้า</CardTitle>
+                  <CardTitle className="text-base font-semibold tracking-tight">รายการห้องพัก</CardTitle>
                 </CardHeader>
                 <CardContent className="p-5 md:p-6 space-y-3">
-                  <div className="hidden md:grid grid-cols-[1fr_100px_120px_100px_40px] gap-3 mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
-                    <span>รายละเอียด</span>
-                    <span className="text-center">จำนวน</span>
-                    <span className="text-right">ราคาต่อหน่วย</span>
+                  <div className="hidden md:grid grid-cols-[1fr_100px_130px_100px_40px] gap-3 mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
+                    <span>ห้อง / รายละเอียด</span>
+                    <span className="text-center">จำนวนคืน</span>
+                    <span className="text-right">ราคาต่อคืน (บาท)</span>
                     <span className="text-right">รวมเงิน</span>
                     <span />
                   </div>
@@ -318,14 +247,13 @@ export default function CreateReceipt() {
                       return (
                         <div
                           key={field.id}
-                          className="grid grid-cols-1 md:grid-cols-[1fr_100px_120px_100px_40px] gap-3 items-start p-4 bg-background rounded-lg border border-border"
+                          className="grid grid-cols-1 md:grid-cols-[1fr_100px_130px_100px_40px] gap-3 items-start p-4 bg-background rounded-lg border border-border"
                         >
                           <div>
-                            <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">รายละเอียด</label>
-                            <textarea
-                              rows={2}
-                              placeholder="ชื่อสินค้า/บริการ…"
-                              className={`flex min-h-[60px] w-full rounded-lg border bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary resize-none ${form.formState.errors.items?.[index]?.description ? 'border-destructive' : 'border-input'}`}
+                            <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">ห้อง / รายละเอียด</label>
+                            <Input
+                              placeholder="เช่น ห้อง 101"
+                              className={form.formState.errors.items?.[index]?.description ? 'border-destructive' : ''}
                               {...form.register(`items.${index}.description`)}
                             />
                             {form.formState.errors.items?.[index]?.description && (
@@ -334,11 +262,11 @@ export default function CreateReceipt() {
                           </div>
 
                           <div>
-                            <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">จำนวน</label>
+                            <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">จำนวนคืน</label>
                             <Input
                               type="number"
-                              step="0.01"
-                              min="0"
+                              step="1"
+                              min="1"
                               placeholder="1"
                               className={`text-center ${form.formState.errors.items?.[index]?.quantity ? 'border-destructive' : ''}`}
                               {...form.register(`items.${index}.quantity`)}
@@ -346,7 +274,7 @@ export default function CreateReceipt() {
                           </div>
 
                           <div>
-                            <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">ราคาต่อหน่วย</label>
+                            <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">ราคาต่อคืน (บาท)</label>
                             <Input
                               type="number"
                               step="0.01"
@@ -369,7 +297,7 @@ export default function CreateReceipt() {
                               className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
                               onClick={() => remove(index)}
                               disabled={fields.length === 1}
-                              title="ลบรายการ"
+                              title="ลบห้อง"
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -391,7 +319,7 @@ export default function CreateReceipt() {
                     onClick={() => append({ description: '', quantity: 1, unit_price: 0 })}
                   >
                     <Plus className="w-4 h-4" />
-                    เพิ่มรายการ
+                    เพิ่มห้อง
                   </Button>
                 </CardContent>
               </Card>
