@@ -13,6 +13,11 @@ const ReceiptHistory = lazy(() => import('../features/receipts/pages/ReceiptHist
 const ReceiptDetail  = lazy(() => import('../features/receipts/pages/ReceiptDetailPage'))
 const Customers      = lazy(() => import('../features/customers/pages/CustomersPage'))
 const AdminUsers     = lazy(() => import('../features/users/pages/AdminUsersPage'))
+const CreateBooking     = lazy(() => import('../features/bookings/pages/CreateBookingPage'))
+const BookingList       = lazy(() => import('../features/bookings/pages/BookingListPage'))
+const BookingDetail     = lazy(() => import('../features/bookings/pages/BookingDetailPage'))
+const TodayBoard        = lazy(() => import('../features/operations/pages/TodayBoardPage'))
+const MonthlyOccupancy  = lazy(() => import('../features/operations/pages/MonthlyOccupancyPage'))
 
 function PageLoader() {
   return (
@@ -53,6 +58,11 @@ export default function App() {
               <Route path="/receipts" element={<ReceiptHistory />} />
               <Route path="/receipts/:id" element={<ReceiptDetail />} />
               <Route path="/customers" element={<Customers />} />
+              <Route path="/bookings" element={<BookingList />} />
+              <Route path="/bookings/new" element={<CreateBooking />} />
+              <Route path="/bookings/:id" element={<BookingDetail />} />
+              <Route path="/operations/today" element={<TodayBoard />} />
+              <Route path="/occupancy/month" element={<MonthlyOccupancy />} />
               <Route
                 path="/admin/users"
                 element={

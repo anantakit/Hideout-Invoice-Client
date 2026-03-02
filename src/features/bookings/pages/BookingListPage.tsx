@@ -1,0 +1,305 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Search, ChevronRight, AlertCircle, CalendarX } from 'lucide-react'
+import { formatThaiDate } from '../../../shared/utils'
+import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
+import { useBookings } from '../hooks'
+import { Badge } from '../../../shared/ui/badge'
+import { Button } from '../../../shared/ui/button'
+import { Input } from '../../../shared/ui/input'
+import { Card, CardContent } from '../../../shared/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../shared/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../../shared/ui/table'
+import Pagination from '../../../shared/ui/Pagination'
+import type { BookingResponse } from '../types'
+
+// ─── Status display maps ───────────────────────────────────────────────────────
+
+type BadgeVariant = 'blue' | 'green' | 'gray' | 'red'
+
+const STATUS_LABELS: Record<string, string> = {
+  CONFIRMED: 'ยืนยันแล้ว',
+  CHECKED_IN: 'เช็คอินแล้ว',
+  CHECKED_OUT: 'เช็คเอาท์แล้ว',
+  CANCELLED: 'ยกเลิก',
+}
+
+const STATUS_VARIANTS: Record<string, BadgeVariant> = {
+  CONFIRMED: 'blue',
+  CHECKED_IN: 'green',
+  CHECKED_OUT: 'gray',
+  CANCELLED: 'red',
+}
+
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <Badge variant={STATUS_VARIANTS[status] ?? 'gray'}>
+      {STATUS_LABELS[status] ?? status}
+    </Badge>
+  )
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
+
+export default function BookingListPage() {
+  const navigate = useNavigate()
+  const [status, setStatus] = useState('')
+
+  const { page, limit, searchInput, params, setPage, setLimit, setSearchInput } =
+    usePaginatedQuery({ defaultLimit: 20 })
+
+  const { data, isLoading, isError, refetch, isFetching } = useBookings({
+    ...params,
+    ...(status && { status }),
+  })
+
+  const bookings = data?.data ?? []
+  const total = data?.meta.total ?? 0
+  const totalPages = data?.meta.total_pages ?? 1
+
+  // ── Early returns ────────────────────────────────────────────────────────────
+
+  if (isLoading) return <LoadingState />
+
+  if (isError) return <ErrorState onRetry={refetch} />
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">รายการจอง</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {data ? `ทั้งหมด ${total} รายการ` : ''}
+          </p>
+        </div>
+        <Button onClick={() => navigate('/bookings/new')} className="shrink-0">
+          <Plus className="w-4 h-4 mr-1.5" />
+          <span className="hidden sm:inline">สร้างการจอง</span>
+          <span className="sm:hidden">สร้าง</span>
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-card rounded-2xl border border-border p-4 mb-6 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="ค้นหาชื่อ หรือเบอร์โทร…"
+            className="pl-9"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
+        <Select
+          value={status || '_all'}
+          onValueChange={(v) => {
+            setStatus(v === '_all' ? '' : v)
+            setPage(1)
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue placeholder="ทุกสถานะ" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="_all">ทุกสถานะ</SelectItem>
+            <SelectItem value="CONFIRMED">ยืนยันแล้ว</SelectItem>
+            <SelectItem value="CHECKED_IN">เช็คอินแล้ว</SelectItem>
+            <SelectItem value="CHECKED_OUT">เช็คเอาท์แล้ว</SelectItem>
+            <SelectItem value="CANCELLED">ยกเลิก</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Content */}
+      {bookings.length === 0 ? (
+        <EmptyState hasFilters={Boolean(searchInput || status)} />
+      ) : (
+        <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+          {/* ── Desktop table (hidden below md) ──────────────────────────────── */}
+          <Card className="hidden md:block overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ผู้เข้าพัก</TableHead>
+                  <TableHead>สถานะ</TableHead>
+                  <TableHead className="text-center">ห้อง</TableHead>
+                  <TableHead>วันที่จอง</TableHead>
+                  <TableHead className="text-right">จัดการ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bookings.map((booking) => (
+                  <DesktopRow
+                    key={booking.id}
+                    booking={booking}
+                    onView={() => navigate(`/bookings/${booking.id}`)}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={limit}
+              onPageChange={setPage}
+              onLimitChange={setLimit}
+            />
+          </Card>
+
+          {/* ── Mobile card list (hidden at md+) ─────────────────────────────── */}
+          <div className="md:hidden space-y-3">
+            {bookings.map((booking) => (
+              <MobileCard
+                key={booking.id}
+                booking={booking}
+                onClick={() => navigate(`/bookings/${booking.id}`)}
+              />
+            ))}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={limit}
+              onPageChange={setPage}
+              onLimitChange={setLimit}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Desktop row ───────────────────────────────────────────────────────────────
+
+function DesktopRow({
+  booking,
+  onView,
+}: {
+  booking: BookingResponse
+  onView: () => void
+}) {
+  return (
+    <TableRow>
+      <TableCell>
+        <p className="font-medium">{booking.guest_name}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{booking.guest_phone}</p>
+      </TableCell>
+      <TableCell>
+        <StatusBadge status={booking.status} />
+      </TableCell>
+      <TableCell className="text-center text-sm text-muted-foreground">
+        {booking.room_stays.length} ห้อง
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {formatThaiDate(booking.created_at)}
+      </TableCell>
+      <TableCell className="text-right">
+        <Button variant="ghost" size="sm" onClick={onView}>
+          ดูรายละเอียด
+        </Button>
+      </TableCell>
+    </TableRow>
+  )
+}
+
+// ─── Mobile card ───────────────────────────────────────────────────────────────
+
+function MobileCard({
+  booking,
+  onClick,
+}: {
+  booking: BookingResponse
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-2xl"
+      onClick={onClick}
+    >
+      <Card className="transition-colors active:bg-muted/50">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-semibold truncate">{booking.guest_name}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{booking.guest_phone}</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+          </div>
+
+          <div className="flex items-center gap-2 mt-3">
+            <StatusBadge status={booking.status} />
+            <span className="text-xs text-muted-foreground">
+              {booking.room_stays.length} ห้อง
+            </span>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {formatThaiDate(booking.created_at)}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </button>
+  )
+}
+
+// ─── State components ──────────────────────────────────────────────────────────
+
+function LoadingState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 gap-3">
+      <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      <p className="text-sm text-muted-foreground">กำลังโหลด…</p>
+    </div>
+  )
+}
+
+function ErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 gap-4 text-center px-4">
+      <AlertCircle className="w-10 h-10 text-destructive/60" />
+      <div>
+        <p className="font-medium">โหลดข้อมูลไม่สำเร็จ</p>
+        <p className="text-sm text-muted-foreground mt-1">กรุณาตรวจสอบการเชื่อมต่อและลองใหม่</p>
+      </div>
+      <Button variant="outline" onClick={onRetry}>
+        ลองอีกครั้ง
+      </Button>
+    </div>
+  )
+}
+
+function EmptyState({ hasFilters }: { hasFilters: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 gap-3 text-center px-4">
+      <CalendarX className="w-10 h-10 text-muted-foreground/50" />
+      <div>
+        <p className="font-medium text-foreground">
+          {hasFilters ? 'ไม่พบรายการที่ตรงกัน' : 'ยังไม่มีรายการจอง'}
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {hasFilters
+            ? 'ลองเปลี่ยนคำค้นหาหรือสถานะ'
+            : 'กดปุ่ม "สร้างการจอง" เพื่อเริ่มต้น'}
+        </p>
+      </div>
+    </div>
+  )
+}

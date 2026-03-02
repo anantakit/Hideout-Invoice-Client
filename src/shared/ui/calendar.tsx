@@ -9,7 +9,7 @@ import {
   isToday,
 } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/shared/utils'
 
 // ─── Thai locale constants ────────────────────────────────────────────────────
 
