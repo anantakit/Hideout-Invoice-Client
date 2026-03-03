@@ -9,6 +9,9 @@ import type {
   BookingListResponse,
   BookingQueryParams,
   CreateBookingPayload,
+  CreatePaymentPayload,
+  ExtendStayPayload,
+  PaymentResponse,
 } from './types'
 
 export const bookingsApi = {
@@ -61,15 +64,34 @@ export const bookingsApi = {
     return data.data
   },
 
-  assignRoom: async (bookingId: string, stayId: string, roomId: string): Promise<void> => {
-    await apiClient.post(`/bookings/${bookingId}/stays/${stayId}/assign`, { room_id: roomId })
-  },
-
   cancelStay: async (bookingId: string, stayId: string): Promise<void> => {
     await apiClient.post(`/bookings/${bookingId}/stays/${stayId}/cancel`)
   },
 
-  checkInStay: async (bookingId: string, stayId: string): Promise<void> => {
-    await apiClient.post(`/bookings/${bookingId}/stays/${stayId}/checkin`)
+  checkInRooms: async (
+    bookingId: string,
+    stays: { room_stay_id: string; room_id: string }[],
+  ): Promise<BookingResponse> => {
+    const { data } = await apiClient.post<ApiResponse<BookingResponse>>(
+      `/bookings/${bookingId}/checkin`,
+      { stays },
+    )
+    return data.data
+  },
+
+  createPayment: async (bookingId: string, payload: CreatePaymentPayload): Promise<PaymentResponse> => {
+    const { data } = await apiClient.post<ApiResponse<PaymentResponse>>(
+      `/bookings/${bookingId}/payments`,
+      payload,
+    )
+    return data.data
+  },
+
+  extendStay: async (bookingId: string, stayId: string, payload: ExtendStayPayload): Promise<BookingResponse> => {
+    const { data } = await apiClient.patch<ApiResponse<BookingResponse>>(
+      `/bookings/${bookingId}/stays/${stayId}/extend`,
+      payload,
+    )
+    return data.data
   },
 }

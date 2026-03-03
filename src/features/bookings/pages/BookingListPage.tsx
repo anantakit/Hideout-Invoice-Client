@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ChevronRight, AlertCircle, CalendarX } from 'lucide-react'
+import { Plus, Search, ChevronRight, AlertCircle, CalendarX, X } from 'lucide-react'
 import { formatThaiDate } from '../../../shared/utils'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import { useBookings } from '../hooks'
@@ -24,24 +24,27 @@ import {
   TableRow,
 } from '../../../shared/ui/table'
 import Pagination from '../../../shared/ui/Pagination'
+import { DateRangePicker } from '../components/DateRangePicker'
 import type { BookingResponse } from '../types'
 
 // ─── Status display maps ───────────────────────────────────────────────────────
 
-type BadgeVariant = 'blue' | 'green' | 'gray' | 'red'
+type BadgeVariant = 'blue' | 'green' | 'gray' | 'red' | 'amber'
 
 const STATUS_LABELS: Record<string, string> = {
-  CONFIRMED: 'ยืนยันแล้ว',
-  CHECKED_IN: 'เช็คอินแล้ว',
-  CHECKED_OUT: 'เช็คเอาท์แล้ว',
-  CANCELLED: 'ยกเลิก',
+  RESERVED:             'รอดำเนินการ',
+  PARTIALLY_CHECKED_IN: 'เช็คอินบางส่วน',
+  CHECKED_IN:           'เช็คอินแล้ว',
+  CHECKED_OUT:          'เช็คเอาท์แล้ว',
+  CANCELLED:            'ยกเลิก',
 }
 
 const STATUS_VARIANTS: Record<string, BadgeVariant> = {
-  CONFIRMED: 'blue',
-  CHECKED_IN: 'green',
-  CHECKED_OUT: 'gray',
-  CANCELLED: 'red',
+  RESERVED:             'gray',
+  PARTIALLY_CHECKED_IN: 'amber',
+  CHECKED_IN:           'green',
+  CHECKED_OUT:          'gray',
+  CANCELLED:            'red',
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -52,34 +55,81 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
+// ─── Date display helper ───────────────────────────────────────────────────────
+
+const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+]
+
+function formatDateShort(iso: string): string {
+  if (!iso) return ''
+  const [y, m, d] = iso.split('-').map(Number)
+  if (!y || !m || !d) return iso
+  return `${d} ${THAI_MONTHS_SHORT[m - 1]} ${y + 543}`
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function BookingListPage() {
   const navigate = useNavigate()
-  const [status, setStatus] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
 
+  // ── URL-backed filter state ─────────────────────────────────────────────────
+  const statusParam = searchParams.get('status') ?? ''
+  const startDate   = searchParams.get('start_date') ?? ''
+  const endDate     = searchParams.get('end_date') ?? ''
+
+  const hasDateFilter = Boolean(startDate && endDate)
+
+  function updateUrlParams(updates: Record<string, string>) {
+    const next = new URLSearchParams(searchParams)
+    for (const [k, v] of Object.entries(updates)) {
+      if (v) next.set(k, v)
+      else   next.delete(k)
+    }
+    setSearchParams(next, { replace: true })
+  }
+
+  function setStatus(v: string) {
+    updateUrlParams({ status: v })
+    setPage(1)
+  }
+
+  function setDateRange(range: { checkIn: string; checkOut: string }) {
+    updateUrlParams({ start_date: range.checkIn, end_date: range.checkOut })
+    setPage(1)
+  }
+
+  function clearDateRange() {
+    setDateRange({ checkIn: '', checkOut: '' })
+  }
+
+  // ── Pagination + search (local state, debounced) ────────────────────────────
   const { page, limit, searchInput, params, setPage, setLimit, setSearchInput } =
     usePaginatedQuery({ defaultLimit: 20 })
 
+  // ── Data fetch ──────────────────────────────────────────────────────────────
   const { data, isLoading, isError, refetch, isFetching } = useBookings({
     ...params,
-    ...(status && { status }),
+    ...(statusParam                  && { status:     statusParam }),
+    ...(startDate && endDate         && { start_date: startDate, end_date: endDate }),
   })
 
-  const bookings = data?.data ?? []
-  const total = data?.meta.total ?? 0
+  const bookings   = data?.data ?? []
+  const total      = data?.meta.total ?? 0
   const totalPages = data?.meta.total_pages ?? 1
 
-  // ── Early returns ────────────────────────────────────────────────────────────
+  // ── Early returns ───────────────────────────────────────────────────────────
 
   if (isLoading) return <LoadingState />
+  if (isError)   return <ErrorState onRetry={refetch} />
 
-  if (isError) return <ErrorState onRetry={refetch} />
-
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+
       {/* Header */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
@@ -96,42 +146,76 @@ export default function BookingListPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-card rounded-2xl border border-border p-4 mb-6 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="ค้นหาชื่อ หรือเบอร์โทร…"
-            className="pl-9"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
+      <div className="bg-card rounded-2xl border border-border p-4 mb-6 space-y-3">
+
+        {/* Row 1: search + status */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="ค้นหาชื่อ หรือเบอร์โทร…"
+              className="pl-9"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
+          <Select
+            value={statusParam || '_all'}
+            onValueChange={(v) => setStatus(v === '_all' ? '' : v)}
+          >
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="ทุกสถานะ" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_all">ทุกสถานะ</SelectItem>
+              <SelectItem value="RESERVED">รอดำเนินการ</SelectItem>
+              <SelectItem value="PARTIALLY_CHECKED_IN">เช็คอินบางส่วน</SelectItem>
+              <SelectItem value="CHECKED_IN">เช็คอินแล้ว</SelectItem>
+              <SelectItem value="CHECKED_OUT">เช็คเอาท์แล้ว</SelectItem>
+              <SelectItem value="CANCELLED">ยกเลิก</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select
-          value={status || '_all'}
-          onValueChange={(v) => {
-            setStatus(v === '_all' ? '' : v)
-            setPage(1)
-          }}
-        >
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder="ทุกสถานะ" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="_all">ทุกสถานะ</SelectItem>
-            <SelectItem value="CONFIRMED">ยืนยันแล้ว</SelectItem>
-            <SelectItem value="CHECKED_IN">เช็คอินแล้ว</SelectItem>
-            <SelectItem value="CHECKED_OUT">เช็คเอาท์แล้ว</SelectItem>
-            <SelectItem value="CANCELLED">ยกเลิก</SelectItem>
-          </SelectContent>
-        </Select>
+
+        {/* Row 2: date range picker + clear */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <DateRangePicker
+              value={{ checkIn: startDate, checkOut: endDate }}
+              onChange={setDateRange}
+              placeholder="กรองตามช่วงวันเช็คอิน – เช็คเอาท์"
+            />
+          </div>
+          {hasDateFilter && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearDateRange}
+              className="shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4 mr-1" />
+              ล้าง
+            </Button>
+          )}
+        </div>
+
+        {/* Active date filter badge */}
+        {hasDateFilter && (
+          <div className="flex items-center gap-2 pt-0.5">
+            <Badge variant="secondary" className="text-xs gap-1.5">
+              ช่วงวันพัก: {formatDateShort(startDate)} – {formatDateShort(endDate)}
+            </Badge>
+          </div>
+        )}
       </div>
 
       {/* Content */}
       {bookings.length === 0 ? (
-        <EmptyState hasFilters={Boolean(searchInput || status)} />
+        <EmptyState hasFilters={Boolean(searchInput || statusParam || hasDateFilter)} />
       ) : (
         <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
-          {/* ── Desktop table (hidden below md) ──────────────────────────────── */}
+
+          {/* Desktop table */}
           <Card className="hidden md:block overflow-hidden">
             <Table>
               <TableHeader>
@@ -163,7 +247,7 @@ export default function BookingListPage() {
             />
           </Card>
 
-          {/* ── Mobile card list (hidden at md+) ─────────────────────────────── */}
+          {/* Mobile card list */}
           <div className="md:hidden space-y-3">
             {bookings.map((booking) => (
               <MobileCard
@@ -296,7 +380,7 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
         </p>
         <p className="text-sm text-muted-foreground mt-1">
           {hasFilters
-            ? 'ลองเปลี่ยนคำค้นหาหรือสถานะ'
+            ? 'ลองเปลี่ยนคำค้นหา สถานะ หรือช่วงวันที่'
             : 'กดปุ่ม "สร้างการจอง" เพื่อเริ่มต้น'}
         </p>
       </div>

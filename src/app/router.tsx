@@ -16,6 +16,7 @@ const AdminUsers     = lazy(() => import('../features/users/pages/AdminUsersPage
 const CreateBooking     = lazy(() => import('../features/bookings/pages/CreateBookingPage'))
 const BookingList       = lazy(() => import('../features/bookings/pages/BookingListPage'))
 const BookingDetail     = lazy(() => import('../features/bookings/pages/BookingDetailPage'))
+const GroupCheckIn      = lazy(() => import('../features/bookings/pages/GroupCheckInPage'))
 const TodayBoard        = lazy(() => import('../features/operations/pages/TodayBoardPage'))
 const MonthlyOccupancy  = lazy(() => import('../features/operations/pages/MonthlyOccupancyPage'))
 
@@ -60,6 +61,7 @@ export default function App() {
               <Route path="/customers" element={<Customers />} />
               <Route path="/bookings" element={<BookingList />} />
               <Route path="/bookings/new" element={<CreateBooking />} />
+              <Route path="/bookings/:id/checkin" element={<GroupCheckIn />} />
               <Route path="/bookings/:id" element={<BookingDetail />} />
               <Route path="/operations/today" element={<TodayBoard />} />
               <Route path="/occupancy/month" element={<MonthlyOccupancy />} />

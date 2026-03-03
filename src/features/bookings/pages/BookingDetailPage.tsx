@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { differenceInDays, isToday, isBefore, startOfDay, parseISO } from 'date-fns'
-import { ArrowLeft, BedDouble, LogIn, X, Loader2, Phone, User } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Badge } from '../../../shared/ui/badge'
 import { Separator } from '../../../shared/ui/separator'
+import { Input } from '../../../shared/ui/input'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -18,38 +20,43 @@ import {
   AlertDialogCancel,
 } from '../../../shared/ui/alert-dialog'
 import { formatThaiDate } from '../../../shared/utils'
-import { useBooking, useStayActions } from '../hooks'
-import { AssignRoomModal } from '../components/AssignRoomModal'
+import { ROUTES } from '@/app/routes'
+import { useBooking, useCancelStay, useExtendStay } from '../hooks'
+import { PaymentPanel } from '../components/PaymentPanel'
 import type { RoomStayResponse } from '../types'
 
-// ─── Overall status helpers ───────────────────────────────────────────────────
-
-// Backend stay statuses (domain.RoomStayStatus*):
-//   RESERVED   → newly created, waiting for room assignment
-//   ASSIGNED   → specific room assigned, waiting for check-in
-//   CHECKED_IN → guest checked in
-//   CANCELLED  → stay cancelled
-
-type OverallStatus = 'RESERVED' | 'PARTIAL_ASSIGNED' | 'CHECKED_IN' | 'CANCELLED'
-
-function computeOverallStatus(stays: RoomStayResponse[]): OverallStatus {
-  if (stays.length === 0) return 'RESERVED'
-  const active = stays.filter((s) => s.status !== 'CANCELLED')
-  if (active.length === 0) return 'CANCELLED'
-  if (active.every((s) => s.status === 'CHECKED_IN')) return 'CHECKED_IN'
-  if (active.some((s) => s.status === 'ASSIGNED' || s.status === 'CHECKED_IN'))
-    return 'PARTIAL_ASSIGNED'
-  return 'RESERVED'
-}
+// ─── Status helpers ────────────────────────────────────────────────────────────
 
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'gray' | 'green' | 'red' | 'amber'
+
+function bookingStatusVariant(status: string): BadgeVariant {
+  switch (status) {
+    case 'PARTIALLY_CHECKED_IN': return 'amber'
+    case 'CHECKED_IN':           return 'green'
+    case 'CHECKED_OUT':          return 'gray'
+    case 'CANCELLED':            return 'red'
+    default:                     return 'gray'  // RESERVED
+  }
+}
+
+function bookingStatusLabel(status: string): string {
+  switch (status) {
+    case 'RESERVED':             return 'รอดำเนินการ'
+    case 'PARTIALLY_CHECKED_IN': return 'เช็คอินบางส่วน'
+    case 'CHECKED_IN':           return 'เช็คอินแล้ว'
+    case 'CHECKED_OUT':          return 'เช็คเอาท์แล้ว'
+    case 'CANCELLED':            return 'ยกเลิกแล้ว'
+    default:                     return status
+  }
+}
 
 function stayStatusVariant(status: string): BadgeVariant {
   switch (status) {
     case 'ASSIGNED':    return 'default'
     case 'CHECKED_IN':  return 'green'
+    case 'CHECKED_OUT': return 'gray'
     case 'CANCELLED':   return 'red'
-    default:            return 'gray'   // RESERVED
+    default:            return 'gray'  // RESERVED
   }
 }
 
@@ -58,32 +65,14 @@ function stayStatusLabel(status: string): string {
     case 'RESERVED':    return 'รอกำหนดห้อง'
     case 'ASSIGNED':    return 'กำหนดห้องแล้ว'
     case 'CHECKED_IN':  return 'เช็คอินแล้ว'
+    case 'CHECKED_OUT': return 'เช็คเอาท์แล้ว'
     case 'CANCELLED':   return 'ยกเลิกแล้ว'
     default:            return status
   }
 }
 
-function overallStatusVariant(status: OverallStatus): BadgeVariant {
-  switch (status) {
-    case 'PARTIAL_ASSIGNED': return 'default'
-    case 'CHECKED_IN':       return 'green'
-    case 'CANCELLED':        return 'red'
-    default:                 return 'gray'
-  }
-}
+// ─── Date helpers ─────────────────────────────────────────────────────────────
 
-function overallStatusLabel(status: OverallStatus): string {
-  switch (status) {
-    case 'RESERVED':         return 'รอดำเนินการ'
-    case 'PARTIAL_ASSIGNED': return 'กำลังดำเนินการ'
-    case 'CHECKED_IN':       return 'เช็คอินแล้ว'
-    case 'CANCELLED':        return 'ยกเลิกแล้ว'
-  }
-}
-
-// ─── Date helpers (safeguards 4, 5, 6) ───────────────────────────────────────
-
-/** #6 — Derive nights from the actual date range, ignoring backend stay.nights. */
 function calcNights(checkIn: string, checkOut: string): number {
   try {
     return Math.max(0, differenceInDays(parseISO(checkOut), parseISO(checkIn)))
@@ -92,7 +81,6 @@ function calcNights(checkIn: string, checkOut: string): number {
   }
 }
 
-/** #4 — True when the check-in calendar date equals today. */
 function isCheckInToday(checkIn: string): boolean {
   try {
     return isToday(parseISO(checkIn))
@@ -101,7 +89,6 @@ function isCheckInToday(checkIn: string): boolean {
   }
 }
 
-/** #5 — True when the check-in calendar date is strictly before today. */
 function isCheckInOverdue(checkIn: string): boolean {
   try {
     return isBefore(startOfDay(parseISO(checkIn)), startOfDay(new Date()))
@@ -142,7 +129,9 @@ export default function BookingDetailPage() {
     )
   }
 
-  const overallStatus = computeOverallStatus(booking.room_stays)
+  const pendingStays = booking.room_stays.filter(
+    (s) => s.status === 'RESERVED' || s.status === 'ASSIGNED',
+  )
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-6 pb-10 space-y-6">
@@ -166,8 +155,8 @@ export default function BookingDetailPage() {
               สร้างเมื่อ {formatThaiDate(booking.created_at)}
             </p>
           </div>
-          <Badge variant={overallStatusVariant(overallStatus)}>
-            {overallStatusLabel(overallStatus)}
+          <Badge variant={bookingStatusVariant(booking.status)}>
+            {bookingStatusLabel(booking.status)}
           </Badge>
         </div>
       </div>
@@ -176,13 +165,23 @@ export default function BookingDetailPage() {
 
       <GuestInfoCard guestName={booking.guest_name} guestPhone={booking.guest_phone} />
 
+      <PaymentPanel booking={booking} />
+
       <div className="space-y-4">
-        <h2 className="text-base font-semibold">
-          รายการห้องพัก
-          <span className="ml-2 text-sm font-normal text-muted-foreground">
-            {booking.room_stays.length} ห้อง
-          </span>
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold">
+            รายการห้องพัก
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              {booking.room_stays.length} ห้อง
+            </span>
+          </h2>
+          {pendingStays.length > 0 && (
+            <Button size="sm" onClick={() => navigate(ROUTES.bookings.groupCheckIn(id))}>
+              <CheckCircle2 className="w-4 h-4 mr-1.5" />
+              เช็คอิน
+            </Button>
+          )}
+        </div>
         {booking.room_stays.map((stay) => (
           <StayCardOperational key={stay.id} bookingId={booking.id} stay={stay} />
         ))}
@@ -222,32 +221,27 @@ function StayCardOperational({
   bookingId: string
   stay: RoomStayResponse
 }) {
-  const [assignOpen,  setAssignOpen]  = useState(false)
-  const [cancelOpen,  setCancelOpen]  = useState(false)
-  const [checkInOpen, setCheckInOpen] = useState(false)
+  const [cancelOpen, setCancelOpen]   = useState(false)
+  const [extendOpen, setExtendOpen]   = useState(false)
+  const [newCheckOut, setNewCheckOut] = useState('')
 
-  const actions = useStayActions(bookingId, stay.id)
+  const cancel = useCancelStay(bookingId)
+  const extend = useExtendStay(bookingId)
 
-  // ── Derived state ──────────────────────────────────────────────────────────
-
-  // #6 — Nights from actual dates, not backend value.
-  const nights = calcNights(stay.check_in, stay.check_out)
-
+  const nights       = calcNights(stay.check_in, stay.check_out)
   const checkInDate  = formatThaiDate(stay.check_in)
   const checkOutDate = formatThaiDate(stay.check_out)
 
-  const isActive = stay.status === 'RESERVED' || stay.status === 'ASSIGNED'
-
-  // #4 — Check-in is today (only meaningful while still actionable).
+  const isActive         = stay.status === 'RESERVED' || stay.status === 'ASSIGNED'
+  const isCheckedIn      = stay.status === 'CHECKED_IN'
+  const canExtend        = isActive || isCheckedIn
   const showTodayBadge   = isActive && isCheckInToday(stay.check_in)
-  // #5 — Check-in date has passed without the guest being checked in.
   const showOverdueBadge = isActive && isCheckInOverdue(stay.check_in)
 
-  // #2 — room_id must be set before check-in is permitted.
-  const hasRoom = Boolean(stay.room_id)
+  // Minimum date for extend is the day after current check-out
+  const currentCheckOutISO = stay.check_out.slice(0, 10)
 
   return (
-    // #5 — Subtle red border when overdue.
     <Card className={cn(showOverdueBadge && 'border-destructive/40')}>
       <CardContent className="p-5 space-y-4">
 
@@ -260,11 +254,8 @@ function StayCardOperational({
             )}
           </div>
 
-          {/* Status + urgency badges */}
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            {/* #5 — Overdue takes priority over today badge. */}
             {showOverdueBadge && <Badge variant="red">เกินกำหนด</Badge>}
-            {/* #4 — Today warning (only when not also overdue). */}
             {showTodayBadge && !showOverdueBadge && <Badge variant="amber">เช็คอินวันนี้</Badge>}
             <Badge variant={stayStatusVariant(stay.status)}>
               {stayStatusLabel(stay.status)}
@@ -272,92 +263,50 @@ function StayCardOperational({
           </div>
         </div>
 
-        {/* ── Dates — #5 red text when overdue ──────────────────────────── */}
+        {/* ── Dates ────────────────────────────────────────────────────────── */}
         <p className={cn(
           'text-sm',
           showOverdueBadge ? 'text-destructive' : 'text-muted-foreground',
         )}>
           {checkInDate} → {checkOutDate}
-          {/* #6 — nights derived from date arithmetic */}
           <span className="ml-2">({nights} คืน)</span>
         </p>
 
-        {/* ── Action buttons ─────────────────────────────────────────────── */}
-        {isActive && (
-          <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-1">
-
-            {/* Assign room — #3 visible for RESERVED + ASSIGNED; disabled once assigned. */}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={stay.status !== 'RESERVED' || actions.loading}
-              onClick={() => setAssignOpen(true)}
-            >
-              <BedDouble className="w-4 h-4 mr-2" />
-              กำหนดห้อง
-            </Button>
-
-            {/* Check-in — only for ASSIGNED; #2 further gated on room_id presence. */}
-            {stay.status === 'ASSIGNED' && (
+        {/* ── Action buttons ──────────────────────────────────────────────── */}
+        {(isActive || canExtend) && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {canExtend && (
               <Button
+                variant="outline"
                 size="sm"
-                disabled={!hasRoom || actions.loading}
-                onClick={() => setCheckInOpen(true)}
+                onClick={() => { setNewCheckOut(''); setExtendOpen(true) }}
               >
-                {actions.loading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <LogIn className="w-4 h-4 mr-2" />
-                )}
-                เช็คอิน
+                <CalendarClock className="w-4 h-4 mr-2" />
+                ขยายวันเช็คเอาท์
               </Button>
             )}
-
-            {/* #1 — Cancel always opens a confirmation dialog (never fires directly). */}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={actions.loading}
-              className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setCancelOpen(true)}
-            >
-              {actions.loading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <X className="w-4 h-4 mr-2" />
-              )}
-              ยกเลิก
-            </Button>
+            {isActive && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={cancel.isPending}
+                className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setCancelOpen(true)}
+              >
+                {cancel.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <X className="w-4 h-4 mr-2" />
+                )}
+                ยกเลิก
+              </Button>
+            )}
           </div>
-        )}
-
-        {/* #2 — Hint when assigned but room_id is unexpectedly absent. */}
-        {stay.status === 'ASSIGNED' && !hasRoom && (
-          <p className="text-xs text-muted-foreground">
-            ยังไม่ได้กำหนดห้องพัก — กรุณากำหนดห้องก่อนเช็คอิน
-          </p>
-        )}
-
-        {/* Inline error to complement the toast */}
-        {actions.error && (
-          <p className="text-xs text-destructive">{actions.error}</p>
         )}
 
       </CardContent>
 
-      {/* ── Assign room modal ─────────────────────────────────────────────── */}
-      <AssignRoomModal
-        open={assignOpen}
-        onClose={() => setAssignOpen(false)}
-        stay={stay}
-        confirmLoading={actions.loading}
-        onConfirm={(roomId) => {
-          setAssignOpen(false)
-          actions.assignRoom(roomId)
-        }}
-      />
-
-      {/* ── #1 Cancel confirmation ────────────────────────────────────────── */}
+      {/* ── Cancel confirmation ─────────────────────────────────────────────── */}
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -368,10 +317,20 @@ function StayCardOperational({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={actions.loading}>ไม่ยกเลิก</AlertDialogCancel>
+            <AlertDialogCancel disabled={cancel.isPending}>ไม่ยกเลิก</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={actions.cancelStay}
+              onClick={() => {
+                cancel.mutate(stay.id, {
+                  onSuccess: () => {
+                    setCancelOpen(false)
+                    toast.success('ยกเลิกรายการสำเร็จ')
+                  },
+                  onError: (err) => {
+                    toast.error(err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+                  },
+                })
+              }}
             >
               ยืนยันยกเลิก
             </AlertDialogAction>
@@ -379,20 +338,44 @@ function StayCardOperational({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Check-in confirmation ─────────────────────────────────────────── */}
-      <AlertDialog open={checkInOpen} onOpenChange={setCheckInOpen}>
+      {/* ── Extend stay dialog ─────────────────────────────────────────────── */}
+      <AlertDialog open={extendOpen} onOpenChange={setExtendOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>ยืนยันการเช็คอิน</AlertDialogTitle>
+            <AlertDialogTitle>ขยายวันเช็คเอาท์</AlertDialogTitle>
             <AlertDialogDescription>
-              เช็คอิน{stay.room_number ? ` ห้อง ${stay.room_number}` : ''} ({stay.room_type_name})
-              วันที่ {checkInDate} ถึง {checkOutDate} ใช่หรือไม่?
+              วันเช็คเอาท์ปัจจุบัน: {checkOutDate}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="px-1 py-2">
+            <label className="text-sm font-medium block mb-1.5">วันเช็คเอาท์ใหม่</label>
+            <Input
+              type="date"
+              min={currentCheckOutISO}
+              value={newCheckOut}
+              onChange={(e) => setNewCheckOut(e.target.value)}
+            />
+          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={actions.loading}>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction onClick={actions.checkInStay}>
-              ยืนยันเช็คอิน
+            <AlertDialogCancel disabled={extend.isPending}>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!newCheckOut || newCheckOut <= currentCheckOutISO || extend.isPending}
+              onClick={() => {
+                extend.mutate(
+                  { stayId: stay.id, payload: { new_check_out: newCheckOut } },
+                  {
+                    onSuccess: () => {
+                      setExtendOpen(false)
+                      toast.success('ขยายวันเช็คเอาท์สำเร็จ')
+                    },
+                    onError: (err) => {
+                      toast.error((err as Error).message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+                    },
+                  },
+                )
+              }}
+            >
+              {extend.isPending ? 'กำลังบันทึก…' : 'ยืนยัน'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

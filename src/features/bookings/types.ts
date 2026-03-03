@@ -27,7 +27,20 @@ export interface RoomStayResponse {
   check_out: string
   nights: number
   status: string
+  assigned_at?: string
+  checked_in_at?: string
+  checked_out_at?: string
   created_at: string
+}
+
+export interface PaymentResponse {
+  id: string
+  booking_id: string
+  amount: number
+  method: 'CASH' | 'TRANSFER'
+  note?: string
+  created_at: string
+  created_by: string
 }
 
 export interface BookingResponse {
@@ -35,7 +48,12 @@ export interface BookingResponse {
   guest_name: string
   guest_phone: string
   status: string
+  total_amount: number
+  discount_amount: number
+  paid_amount: number
+  balance_amount: number
   room_stays: RoomStayResponse[]
+  payments: PaymentResponse[]
   created_at: string
 }
 
@@ -84,6 +102,9 @@ export interface BookingQueryParams {
   limit?: number
   search?: string
   status?: string
+  /** YYYY-MM-DD — filter by stay overlap; both required or neither sent */
+  start_date?: string
+  end_date?: string
 }
 
 // ─── API request payload (transformed from form before sending) ───────────────
@@ -99,4 +120,14 @@ export interface CreateBookingPayload {
   guest_name: string
   guest_phone: string
   room_requests: RoomRequestItem[]
+}
+
+export interface CreatePaymentPayload {
+  amount: number
+  method: 'CASH' | 'TRANSFER'
+  note?: string
+}
+
+export interface ExtendStayPayload {
+  new_check_out: string // YYYY-MM-DD
 }
