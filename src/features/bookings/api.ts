@@ -116,10 +116,13 @@ export const bookingsApi = {
   getAvailabilityGrouped: async (
     checkIn: string,
     checkOut: string,
+    excludeBookingId?: string,
   ): Promise<AvailabilityGroupedResponse> => {
+    const params: Record<string, string> = { check_in: checkIn, check_out: checkOut }
+    if (excludeBookingId) params.exclude_booking_id = excludeBookingId
     const { data } = await apiClient.get<ApiResponse<AvailabilityGroupedResponse>>(
       '/rooms/availability-grouped',
-      { params: { check_in: checkIn, check_out: checkOut } },
+      { params },
     )
     return data.data
   },

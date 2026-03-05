@@ -1,6 +1,7 @@
 import React from 'react'
-import { format, parseISO } from 'date-fns'
+import { differenceInDays, parseISO } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
+import { DoorOpen, CheckCircle2, CircleAlert } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -13,34 +14,46 @@ import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import type { TimelineBooking } from '../../types'
 
+// ─── Public types ─────────────────────────────────────────────────────────────
+
+export interface SelectedBookingContext {
+  booking: TimelineBooking
+  roomNumbers: string[]
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+
 interface BookingBottomSheetProps {
-  booking: TimelineBooking | null
+  selected: SelectedBookingContext | null
   onClose: () => void
 }
 
-/** Maps booking status string to badge variant for consistent status coloring. */
-function statusVariant(status: string): 'default' | 'amber' | 'green' | 'gray' | 'red' {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
+const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+]
+
+function fmtThaiDate(iso: string): string {
+  try {
+    const d = parseISO(iso)
+    return `${THAI_DAYS[d.getDay()]} ${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
+  } catch { return iso }
+}
+
+function statusVariant(status: string): 'default' | 'amber' | 'green' | 'gray' | 'red' | 'blue' {
   switch (status) {
-    case 'CONFIRMED':
-    case 'PARTIALLY_CHECKED_IN':
-      return 'default'
-    case 'CHECKED_IN':
-      return 'green'
-    case 'CHECKED_OUT':
-      return 'gray'
-    case 'CANCELLED':
-      return 'red'
-    default:
-      return 'default'
+    case 'CONFIRMED':             return 'blue'
+    case 'PARTIALLY_CHECKED_IN':  return 'amber'
+    case 'CHECKED_IN':            return 'green'
+    case 'CHECKED_OUT':           return 'gray'
+    case 'CANCELLED':             return 'red'
+    default:                      return 'default'
   }
 }
 
-/** Formats a YYYY-MM-DD date string to a human-readable date. */
-function formatDate(iso: string): string {
-  return format(parseISO(iso), 'MMM d, yyyy')
-}
-
-/** Formats balance_amount as Thai Baht currency string. */
 function formatTHB(amount: number): string {
   return new Intl.NumberFormat('th-TH', {
     style: 'currency',
@@ -49,67 +62,86 @@ function formatTHB(amount: number): string {
   }).format(amount)
 }
 
-/**
- * Bottom sheet displayed when a BookingBlock is tapped.
- *
- * Uses the existing Sheet component from the design system.
- * All typography and color references use design-system tokens only.
- */
+// ─── Component ────────────────────────────────────────────────────────────────
+
 const BookingBottomSheet = React.memo(function BookingBottomSheet({
-  booking,
+  selected,
   onClose,
 }: BookingBottomSheetProps) {
   const navigate = useNavigate()
+  const isOpen = selected !== null
 
-  const isOpen = booking !== null
-
-  function handleOpenDetail() {
-    if (!booking) return
-    navigate(`/bookings/${booking.booking_id}`)
+  if (!selected) {
+    return (
+      <Sheet open={false} onOpenChange={() => {}}>
+        <SheetContent side="bottom" className="rounded-t-2xl px-6 pb-8 pt-6" />
+      </Sheet>
+    )
   }
 
-  const hasBalance = booking && Number(booking.balance_amount) > 0
+  const { booking, roomNumbers } = selected
+  const hasBalance = Number(booking.balance_amount) > 0
+  const nights = differenceInDays(parseISO(booking.check_out), parseISO(booking.check_in))
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="bottom" className="rounded-t-2xl px-6 pb-8 pt-6">
-        {booking && (
-          <>
-            <SheetHeader className="mb-4">
-              <div className="flex items-start justify-between gap-3">
-                <SheetTitle className="text-lg font-semibold text-foreground leading-tight">
-                  {booking.guest_name}
-                </SheetTitle>
-                <Badge variant={statusVariant(booking.status)}>
-                  {booking.status}
+        {/* ── Header ──────────────────────────────────────────────── */}
+        <SheetHeader className="mb-3">
+          <div className="flex items-start justify-between gap-3">
+            <SheetTitle className="text-lg font-semibold text-foreground leading-tight">
+              {booking.guest_name}
+            </SheetTitle>
+            <Badge variant={statusVariant(booking.status)}>
+              {booking.status}
+            </Badge>
+          </div>
+          <SheetDescription className="text-sm text-muted-foreground">
+            {fmtThaiDate(booking.check_in)} → {fmtThaiDate(booking.check_out)}
+            <span className="ml-1.5">({nights} คืน)</span>
+          </SheetDescription>
+        </SheetHeader>
+
+        <Separator className="mb-3" />
+
+        {/* ── Room numbers ────────────────────────────────────────── */}
+        {roomNumbers.length > 0 && (
+          <div className="flex items-center gap-2 mb-3">
+            <DoorOpen className="w-4 h-4 text-muted-foreground shrink-0" />
+            <span className="text-sm text-muted-foreground">ห้อง</span>
+            <div className="flex flex-wrap gap-1.5">
+              {roomNumbers.map((rn) => (
+                <Badge key={rn} variant="outline" className="text-xs px-2 py-0">
+                  {rn}
                 </Badge>
-              </div>
-              <SheetDescription className="text-sm text-muted-foreground">
-                {formatDate(booking.check_in)} → {formatDate(booking.check_out)}
-              </SheetDescription>
-            </SheetHeader>
-
-            <Separator className="mb-4" />
-
-            {/* Balance */}
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-sm text-muted-foreground">Balance</span>
-              <span
-                className={
-                  hasBalance
-                    ? 'text-sm font-semibold text-warning'
-                    : 'text-sm font-semibold text-success'
-                }
-              >
-                {formatTHB(Number(booking.balance_amount))}
-              </span>
+              ))}
             </div>
-
-            <Button className="w-full" onClick={handleOpenDetail}>
-              Open Booking Detail
-            </Button>
-          </>
+          </div>
         )}
+
+        {/* ── Balance ─────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm text-muted-foreground">ยอดค้างชำระ</span>
+          {hasBalance ? (
+            <span className="flex items-center gap-1 text-sm font-semibold text-warning">
+              <CircleAlert className="w-3.5 h-3.5" />
+              {formatTHB(Number(booking.balance_amount))}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-sm font-semibold text-success">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              ชำระแล้ว
+            </span>
+          )}
+        </div>
+
+        {/* ── Actions ─────────────────────────────────────────────── */}
+        <Button
+          className="w-full"
+          onClick={() => navigate(`/bookings/${booking.booking_id}`)}
+        >
+          เปิดรายละเอียด
+        </Button>
       </SheetContent>
     </Sheet>
   )

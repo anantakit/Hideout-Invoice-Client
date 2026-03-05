@@ -1,79 +1,104 @@
 import React from 'react'
-import { differenceInDays, parseISO, max, min } from 'date-fns'
+import { addDays, differenceInDays, format, isToday, parseISO, max, min, startOfDay } from 'date-fns'
 import { cn } from '@/shared/utils'
 import type { TimelineRoom, TimelineBooking } from '../../types'
 import BookingBlock from './BookingBlock'
+import { TIMELINE_WINDOW_DAYS } from './tokens'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface RoomRowProps {
   room: TimelineRoom
+  /** Room type name — shown as a label under the room number. */
+  roomTypeName?: string
   windowStart: Date
   windowEnd: Date
-  onSelectBooking: (booking: TimelineBooking) => void
+  onSelectBooking: (booking: TimelineBooking, roomNumbers?: string[]) => void
+  isEven?: boolean
+  bookingColorMap: Record<string, string>
+  bookingRoomCountMap: Record<string, number>
+  hoveredBookingId: string | null
+  onBookingHoverStart: (bookingId: string) => void
+  onBookingHoverEnd: () => void
 }
 
-/**
- * Maps the physical room status + booking presence to a display status.
- * The backend returns ACTIVE/CLEANING/MAINTENANCE for the room's physical state.
- * OCCUPIED is derived: ACTIVE room with at least one booking in the window.
- */
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function deriveDisplayStatus(
   room: TimelineRoom,
 ): 'AVAILABLE' | 'OCCUPIED' | 'CLEANING' | 'MAINTENANCE' {
   if (room.status === 'MAINTENANCE') return 'MAINTENANCE'
-  if (room.status === 'CLEANING') return 'CLEANING'
-  if (room.bookings.length > 0) return 'OCCUPIED'
+  if (room.status === 'CLEANING')    return 'CLEANING'
+  // Check if any booking covers today (not just "has bookings in window")
+  const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd')
+  const isOccupiedToday = room.bookings.some(
+    (b) => b.check_in <= todayStr && b.check_out > todayStr,
+  )
+  if (isOccupiedToday) return 'OCCUPIED'
   return 'AVAILABLE'
 }
 
-/** Maps display status to the dot color via design-system tokens. */
 const STATUS_DOT_CLASS: Record<string, string> = {
-  AVAILABLE:   'bg-muted-foreground/40',
-  OCCUPIED:    'bg-success',
+  AVAILABLE:   'bg-success/60',
+  OCCUPIED:    'bg-info',
   CLEANING:    'bg-warning',
   MAINTENANCE: 'bg-destructive',
 }
 
-/**
- * Memoized row representing one room in the timeline grid.
- *
- * The row consists of:
- *  1. A sticky room-label column (left side) — always visible while scrolling.
- *  2. A horizontally-spanning booking area with absolutely-positioned BookingBlocks.
- *
- * Date math uses date-fns exclusively (per spec). Blocks whose clamped span
- * is ≤ 0 are not rendered.
- */
+// ─── RoomRow ──────────────────────────────────────────────────────────────────
+
 const RoomRow = React.memo(function RoomRow({
   room,
+  roomTypeName,
   windowStart,
   windowEnd,
   onSelectBooking,
+  isEven = false,
+  bookingColorMap,
+  bookingRoomCountMap,
+  hoveredBookingId,
+  onBookingHoverStart,
+  onBookingHoverEnd,
 }: RoomRowProps) {
   const displayStatus = deriveDisplayStatus(room)
+  const isEmpty = room.bookings.length === 0
+  const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd')
 
   return (
-    <div className="flex h-timeline-row border-b border-border">
+    <div className={cn(
+      'flex h-timeline-row border-b border-border/60',
+      isEmpty && 'hover:bg-muted/30 transition-colors',
+    )}>
+
       {/* ── Sticky room-label column ─────────────────────────────────────── */}
       <div
         className={cn(
           'sticky left-0 z-10',
-          'w-timeline-room-col min-w-timeline-room-col',
-          'flex flex-col items-center justify-center gap-0.5',
+          'w-timeline-room-col min-w-timeline-room-col max-w-timeline-room-col',
+          'flex items-center gap-1.5 px-2',
           'bg-card border-r border-border',
           'flex-shrink-0',
         )}
       >
-        <span className="text-xs font-semibold text-foreground leading-none">
-          {room.room_number}
-        </span>
-        {/* Status indicator dot */}
+        {/* Status dot */}
         <span
           className={cn(
-            'w-1.5 h-1.5 rounded-full',
+            'w-2 h-2 rounded-full shrink-0',
             STATUS_DOT_CLASS[displayStatus] ?? 'bg-muted-foreground/40',
           )}
           aria-label={displayStatus}
         />
+        {/* Room number + type */}
+        <div className="min-w-0 flex flex-col">
+          <span className="text-xs font-semibold text-foreground leading-none">
+            {room.room_number}
+          </span>
+          {roomTypeName && (
+            <span className="text-[9px] text-muted-foreground leading-tight truncate mt-0.5">
+              {roomTypeName}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* ── Booking area ─────────────────────────────────────────────────── */}
@@ -81,37 +106,60 @@ const RoomRow = React.memo(function RoomRow({
         className="relative flex-1 min-w-timeline-7"
         style={{ height: 'var(--timeline-row-height)' }}
       >
-        {/* Cell grid lines (visual columns separator) */}
+        {/* Column grid lines + today highlight + alternating row stripe */}
         <div className="absolute inset-0 flex pointer-events-none" aria-hidden>
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div
-              key={i}
-              className="border-r border-border/50"
-              style={{ width: 'var(--timeline-cell-width)', flexShrink: 0 }}
-            />
-          ))}
+          {Array.from({ length: TIMELINE_WINDOW_DAYS }).map((_, i) => {
+            const cellDate  = addDays(windowStart, i)
+            const todayCell = isToday(cellDate)
+            return (
+              <div
+                key={i}
+                className={cn(
+                  'border-r border-border/40 flex-shrink-0',
+                  todayCell ? 'bg-accent/50' : isEven && 'bg-muted/15',
+                )}
+                style={{ width: 'var(--timeline-cell-width)' }}
+              />
+            )
+          })}
         </div>
 
         {/* Booking blocks */}
         {room.bookings.map((booking) => {
-          // Clamp to window boundaries (check_out is exclusive)
-          const checkIn  = parseISO(booking.check_in)
-          const checkOut = parseISO(booking.check_out)
+          const checkIn      = parseISO(booking.check_in)
+          const checkOut     = parseISO(booking.check_out)
           const clampedStart = max([checkIn, windowStart])
           const clampedEnd   = min([checkOut, windowEnd])
 
           const spanDays   = differenceInDays(clampedEnd, clampedStart)
           const offsetDays = differenceInDays(clampedStart, windowStart)
 
-          // Skip bookings that don't overlap the current window
           if (spanDays <= 0) return null
+
+          const colorClass = bookingColorMap[booking.booking_id]   ?? 'bg-secondary text-secondary-foreground'
+          const roomCount  = bookingRoomCountMap[booking.booking_id] ?? 1
+          const isHighlighted: boolean | null =
+            hoveredBookingId === null
+              ? null
+              : hoveredBookingId === booking.booking_id
+          const isUpcoming = booking.check_in > todayStr
+          // Show checkout edge when checkout falls within the visible window
+          const showCheckoutEdge = checkOut > windowStart && checkOut <= windowEnd
 
           return (
             <BookingBlock
               key={booking.booking_id}
               booking={booking}
+              roomNumber={room.room_number}
+              roomCount={roomCount}
               offsetDays={offsetDays}
               spanDays={spanDays}
+              colorClass={colorClass}
+              isHighlighted={isHighlighted}
+              isUpcoming={isUpcoming}
+              showCheckoutEdge={showCheckoutEdge}
+              onHoverStart={() => onBookingHoverStart(booking.booking_id)}
+              onHoverEnd={onBookingHoverEnd}
               onTap={onSelectBooking}
             />
           )

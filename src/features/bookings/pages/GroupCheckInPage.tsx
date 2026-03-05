@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
@@ -17,7 +17,7 @@ import {
 } from '@/shared/ui/select'
 import { Separator } from '@/shared/ui/separator'
 import { ROUTES } from '@/app/routes'
-import { useBooking, useCheckInRooms, useRooms } from '../hooks'
+import { useBooking, useCheckInRooms, useAvailabilityGrouped } from '../hooks'
 import type { RoomStayResponse } from '../types'
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -35,16 +35,31 @@ function StayStatusBadge({ status }: { status: string }) {
 
 // ─── Room select for one stay ─────────────────────────────────────────────────
 
+interface AvailableRoom {
+  room_id: string
+  room_number: string
+  available: boolean
+}
+
 interface StayRoomSelectorProps {
-  roomTypeId: string
+  rooms: AvailableRoom[]
+  isLoading: boolean
+  /** Room IDs already chosen by other stays in this booking (should be disabled). */
+  otherSelectedRoomIds: Set<string>
+  /** The room_id already assigned to this stay (always selectable). */
+  ownRoomId?: string
   value: string
   onChange: (roomId: string) => void
 }
 
-function StayRoomSelector({ roomTypeId, value, onChange }: StayRoomSelectorProps) {
-  const { data: rooms = [], isLoading } = useRooms(roomTypeId)
-  const activeRooms = rooms.filter((r) => r.status === 'ACTIVE')
-
+function StayRoomSelector({
+  rooms,
+  isLoading,
+  otherSelectedRoomIds,
+  ownRoomId,
+  value,
+  onChange,
+}: StayRoomSelectorProps) {
   if (isLoading) {
     return (
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -54,8 +69,13 @@ function StayRoomSelector({ roomTypeId, value, onChange }: StayRoomSelectorProps
     )
   }
 
-  if (activeRooms.length === 0) {
-    return <p className="text-xs text-muted-foreground">ไม่มีห้องพักสำหรับประเภทนี้</p>
+  // Show rooms that are available OR already assigned to this stay
+  const selectableRooms = rooms.filter(
+    (r) => r.available || r.room_id === ownRoomId,
+  )
+
+  if (selectableRooms.length === 0) {
+    return <p className="text-xs text-muted-foreground">ไม่มีห้องว่างสำหรับประเภทนี้</p>
   }
 
   return (
@@ -64,11 +84,14 @@ function StayRoomSelector({ roomTypeId, value, onChange }: StayRoomSelectorProps
         <SelectValue placeholder="เลือกห้อง" />
       </SelectTrigger>
       <SelectContent>
-        {activeRooms.map((room) => (
-          <SelectItem key={room.id} value={room.id}>
-            ห้อง {room.number}
-          </SelectItem>
-        ))}
+        {selectableRooms.map((room) => {
+          const takenByOther = otherSelectedRoomIds.has(room.room_id) && room.room_id !== value
+          return (
+            <SelectItem key={room.room_id} value={room.room_id} disabled={takenByOther}>
+              ห้อง {room.room_number}{takenByOther ? ' (เลือกแล้ว)' : ''}
+            </SelectItem>
+          )
+        })}
       </SelectContent>
     </Select>
   )
@@ -80,9 +103,12 @@ interface StayRowProps {
   stay: RoomStayResponse
   selectedRoomId: string
   onRoomChange: (roomId: string) => void
+  availableRooms: AvailableRoom[]
+  availabilityLoading: boolean
+  otherSelectedRoomIds: Set<string>
 }
 
-function StayRow({ stay, selectedRoomId, onRoomChange }: StayRowProps) {
+function StayRow({ stay, selectedRoomId, onRoomChange, availableRooms, availabilityLoading, otherSelectedRoomIds }: StayRowProps) {
   const isCheckedIn = stay.status === 'CHECKED_IN'
   const isCancelled = stay.status === 'CANCELLED'
   const isDisabled  = isCheckedIn || isCancelled
@@ -119,7 +145,10 @@ function StayRow({ stay, selectedRoomId, onRoomChange }: StayRowProps) {
       {!isDisabled && (
         <div className="mt-3">
           <StayRoomSelector
-            roomTypeId={stay.room_type_id}
+            rooms={availableRooms}
+            isLoading={availabilityLoading}
+            otherSelectedRoomIds={otherSelectedRoomIds}
+            ownRoomId={stay.room_id}
             value={selectedRoomId}
             onChange={onRoomChange}
           />
@@ -140,6 +169,23 @@ export default function GroupCheckInPage() {
 
   // stayId → roomId
   const [selections, setSelections] = useState<Record<string, string>>({})
+  const [initialized, setInitialized] = useState(false)
+
+  // Initialize selections from already-assigned rooms
+  useEffect(() => {
+    if (booking && !initialized) {
+      const initial: Record<string, string> = {}
+      for (const stay of booking.room_stays) {
+        if (stay.room_id && (stay.status === 'RESERVED' || stay.status === 'ASSIGNED')) {
+          initial[stay.id] = stay.room_id
+        }
+      }
+      if (Object.keys(initial).length > 0) {
+        setSelections(initial)
+      }
+      setInitialized(true)
+    }
+  }, [booking, initialized])
 
   const allStays     = booking?.room_stays ?? []
   const pendingStays = allStays.filter(
@@ -147,6 +193,36 @@ export default function GroupCheckInPage() {
   )
   const selectedCount = pendingStays.filter((s) => selections[s.id]).length
   const canSubmit     = selectedCount > 0 && !checkIn.isPending
+
+  // Derive date range from stays for availability query
+  // Use the earliest check_in and latest check_out across all pending stays
+  const checkInDate  = pendingStays.length > 0
+    ? pendingStays.reduce((min, s) => s.check_in < min ? s.check_in : min, pendingStays[0].check_in)
+    : ''
+  const checkOutDate = pendingStays.length > 0
+    ? pendingStays.reduce((max, s) => s.check_out > max ? s.check_out : max, pendingStays[0].check_out)
+    : ''
+
+  const { data: availability, isLoading: availabilityLoading } =
+    useAvailabilityGrouped(checkInDate, checkOutDate, true, id)
+
+  // Build a map: roomTypeId → rooms with availability
+  const roomsByType = new Map<string, AvailableRoom[]>()
+  if (availability) {
+    for (const rt of availability.room_types) {
+      roomsByType.set(
+        rt.room_type_id,
+        rt.rooms.map((r) => ({
+          room_id: r.room_id,
+          room_number: r.room_number,
+          available: r.available,
+        })),
+      )
+    }
+  }
+
+  // Collect room IDs already selected across all stays (for cross-stay dedup)
+  const allSelectedRoomIds = new Set(Object.values(selections).filter(Boolean))
 
   function handleSubmit() {
     if (!canSubmit) return
@@ -223,6 +299,9 @@ export default function GroupCheckInPage() {
               onRoomChange={(roomId) =>
                 setSelections((prev) => ({ ...prev, [stay.id]: roomId }))
               }
+              availableRooms={roomsByType.get(stay.room_type_id) ?? []}
+              availabilityLoading={availabilityLoading}
+              otherSelectedRoomIds={allSelectedRoomIds}
             />
           ))}
         </div>

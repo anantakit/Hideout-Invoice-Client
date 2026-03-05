@@ -1,6 +1,8 @@
 import React from 'react'
-import { format, isToday } from 'date-fns'
+import { isToday } from 'date-fns'
 import { cn } from '@/shared/utils'
+
+const THAI_DAYS_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
 
 interface TimelineHeaderProps {
   /** Memoized array of 7 Date objects for the current window. */
@@ -38,24 +40,30 @@ const TimelineHeader = React.memo(function TimelineHeader({ days }: TimelineHead
             )}
             style={{ width: 'var(--timeline-cell-width)' }}
           >
-            {/* Day of week — e.g. "Mon" */}
+            {/* Day of week */}
             <span
               className={cn(
                 'text-xs font-medium leading-none',
                 today ? 'text-accent-foreground' : 'text-muted-foreground',
               )}
             >
-              {format(day, 'EEE')}
+              {THAI_DAYS_SHORT[day.getDay()]}
             </span>
-            {/* Day number — e.g. "4" */}
+            {/* Day number */}
             <span
               className={cn(
                 'text-sm font-semibold leading-none',
                 today ? 'text-foreground' : 'text-foreground/70',
               )}
             >
-              {format(day, 'd')}
+              {day.getDate()}
             </span>
+            {/* "วันนี้" indicator */}
+            {today && (
+              <span className="text-[8px] font-medium text-accent-foreground/70 leading-none">
+                วันนี้
+              </span>
+            )}
           </div>
         )
       })}

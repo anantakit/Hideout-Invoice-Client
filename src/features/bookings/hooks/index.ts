@@ -2,8 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingsApi } from '../api'
 import type { CreateBookingPayload, BookingQueryParams, CreatePaymentPayload, ExtendStayPayload } from '../types'
 
-export const AVAILABILITY_GROUPED_KEY = (checkIn: string, checkOut: string) =>
-  ['availability-grouped', checkIn, checkOut] as const
+export const AVAILABILITY_GROUPED_KEY = (checkIn: string, checkOut: string, excludeBookingId?: string) =>
+  ['availability-grouped', checkIn, checkOut, excludeBookingId ?? ''] as const
 
 export const BOOKING_KEYS = {
   roomTypes: ['room-types'] as const,
@@ -97,6 +97,7 @@ export function useCreateBooking() {
   return useMutation({
     mutationFn: (payload: CreateBookingPayload) => bookingsApi.create(payload),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] })
       queryClient.invalidateQueries({ queryKey: ['availability'] })
       queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
       queryClient.invalidateQueries({ queryKey: ['timeline'] })
@@ -108,10 +109,10 @@ export function useCreateBooking() {
  * Fetch room types with their physical rooms and per-room availability.
  * Only enabled when both check-in and check-out dates are non-empty.
  */
-export function useAvailabilityGrouped(checkIn: string, checkOut: string, enabled = true) {
+export function useAvailabilityGrouped(checkIn: string, checkOut: string, enabled = true, excludeBookingId?: string) {
   return useQuery({
-    queryKey: AVAILABILITY_GROUPED_KEY(checkIn, checkOut),
-    queryFn: () => bookingsApi.getAvailabilityGrouped(checkIn, checkOut),
+    queryKey: AVAILABILITY_GROUPED_KEY(checkIn, checkOut, excludeBookingId),
+    queryFn: () => bookingsApi.getAvailabilityGrouped(checkIn, checkOut, excludeBookingId),
     enabled: enabled && Boolean(checkIn && checkOut && checkOut > checkIn),
     staleTime: 30 * 1000,
     placeholderData: (prev) => prev,

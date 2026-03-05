@@ -67,6 +67,9 @@ export default {
         'timeline-room-col': 'var(--timeline-room-col-width)',
         'timeline-7': 'calc(7 * var(--timeline-cell-width))',
       },
+      maxWidth: {
+        'timeline-room-col': 'var(--timeline-room-col-width)',
+      },
       height: {
         'timeline-row': 'var(--timeline-row-height)',
       },

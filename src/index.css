@@ -55,8 +55,8 @@
     /* ── Timeline View ─────────────────────────────────────────────── */
     /* JS constants in timeline/tokens.ts must mirror these values.    */
     --timeline-cell-width: 6rem;
-    --timeline-row-height: 3.5rem;
-    --timeline-room-col-width: 3rem;
+    --timeline-row-height: 3rem;
+    --timeline-room-col-width: 4.5rem;
   }
 
   * {
@@ -77,7 +77,7 @@
  */
 @layer components {
   .tl-booking-block {
-    left: calc(var(--tl-offset, 0) * var(--timeline-cell-width));
-    width: calc(var(--tl-span, 1) * var(--timeline-cell-width) - 0.25rem);
+    left: calc(var(--tl-offset, 0) * var(--timeline-cell-width) + 2px);
+    width: calc(var(--tl-span, 1) * var(--timeline-cell-width) - 4px);
   }
 }
