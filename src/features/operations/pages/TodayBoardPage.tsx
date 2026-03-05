@@ -38,7 +38,7 @@ function QuickWalkInButton() {
   return (
     <div className="flex flex-col sm:flex-row gap-3 pt-2">
       <Button asChild size="lg" className="w-full sm:w-auto">
-        <Link to={ROUTES.bookings.walkin}>
+        <Link to={ROUTES.bookings.new}>
           <LogIn className="w-4 h-4" />
           Walk-in Check-in
         </Link>

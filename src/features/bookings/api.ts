@@ -12,6 +12,8 @@ import type {
   CreatePaymentPayload,
   ExtendStayPayload,
   PaymentResponse,
+  TimelineResponse,
+  AvailabilityGroupedResponse,
 } from './types'
 
 export const bookingsApi = {
@@ -91,6 +93,33 @@ export const bookingsApi = {
     const { data } = await apiClient.patch<ApiResponse<BookingResponse>>(
       `/bookings/${bookingId}/stays/${stayId}/extend`,
       payload,
+    )
+    return data.data
+  },
+
+  /**
+   * Fetch the 7-day rolling timeline.
+   * @param from YYYY-MM-DD inclusive
+   * @param to   YYYY-MM-DD exclusive
+   */
+  getTimeline: async (from: string, to: string): Promise<TimelineResponse> => {
+    const { data } = await apiClient.get<ApiResponse<TimelineResponse>>('/timeline', {
+      params: { from, to },
+    })
+    return data.data
+  },
+
+  /**
+   * Returns all room types with their physical rooms and per-room availability
+   * for the given date window.  Used by the unified booking creation form.
+   */
+  getAvailabilityGrouped: async (
+    checkIn: string,
+    checkOut: string,
+  ): Promise<AvailabilityGroupedResponse> => {
+    const { data } = await apiClient.get<ApiResponse<AvailabilityGroupedResponse>>(
+      '/rooms/availability-grouped',
+      { params: { check_in: checkIn, check_out: checkOut } },
     )
     return data.data
   },

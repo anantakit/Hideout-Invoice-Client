@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingsApi } from '../api'
 import type { CreateBookingPayload, BookingQueryParams, CreatePaymentPayload, ExtendStayPayload } from '../types'
 
+export const AVAILABILITY_GROUPED_KEY = (checkIn: string, checkOut: string) =>
+  ['availability-grouped', checkIn, checkOut] as const
+
 export const BOOKING_KEYS = {
   roomTypes: ['room-types'] as const,
   availability: (roomTypeId: string, checkIn: string, checkOut: string) =>
@@ -95,7 +98,23 @@ export function useCreateBooking() {
     mutationFn: (payload: CreateBookingPayload) => bookingsApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
     },
+  })
+}
+
+/**
+ * Fetch room types with their physical rooms and per-room availability.
+ * Only enabled when both check-in and check-out dates are non-empty.
+ */
+export function useAvailabilityGrouped(checkIn: string, checkOut: string, enabled = true) {
+  return useQuery({
+    queryKey: AVAILABILITY_GROUPED_KEY(checkIn, checkOut),
+    queryFn: () => bookingsApi.getAvailabilityGrouped(checkIn, checkOut),
+    enabled: enabled && Boolean(checkIn && checkOut && checkOut > checkIn),
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
   })
 }
 
@@ -120,5 +139,23 @@ export function useExtendStay(bookingId: string) {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
       queryClient.invalidateQueries({ queryKey: ['availability'] })
     },
+  })
+}
+
+/**
+ * Fetch the 7-day rolling timeline.
+ * Re-fetches when the window changes. Stale time is short (30 s) because
+ * room status can change frequently during operations hours.
+ *
+ * @param from YYYY-MM-DD inclusive
+ * @param to   YYYY-MM-DD exclusive
+ */
+export function useTimeline(from: string, to: string) {
+  return useQuery({
+    queryKey: ['timeline', from, to] as const,
+    queryFn: () => bookingsApi.getTimeline(from, to),
+    enabled: Boolean(from && to),
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
   })
 }

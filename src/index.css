@@ -51,6 +51,12 @@
     --destructive-foreground: 0 0% 100%;
 
     --radius: 0.85rem;
+
+    /* ── Timeline View ─────────────────────────────────────────────── */
+    /* JS constants in timeline/tokens.ts must mirror these values.    */
+    --timeline-cell-width: 6rem;
+    --timeline-row-height: 3.5rem;
+    --timeline-room-col-width: 3rem;
   }
 
   * {
@@ -59,5 +65,19 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+/*
+ * Timeline booking-block positioning.
+ * `left` and `width` are computed from CSS custom properties set inline
+ * on each block (--tl-offset, --tl-span) multiplied by the cell-width
+ * token. Tailwind cannot generate these calc() expressions at build time,
+ * so they live here in the components layer.
+ */
+@layer components {
+  .tl-booking-block {
+    left: calc(var(--tl-offset, 0) * var(--timeline-cell-width));
+    width: calc(var(--tl-span, 1) * var(--timeline-cell-width) - 0.25rem);
   }
 }

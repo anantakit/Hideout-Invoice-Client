@@ -1,16 +1,10 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { Receipt, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { cn } from '../utils'
 import { Sheet, SheetContent } from '../ui/sheet'
 import { Button } from '../ui/button'
-import { SidebarContent } from './Sidebar'
-
-const Logo = () => (
-  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-    <Receipt className="w-4 h-4 text-primary-foreground" />
-  </div>
-)
+import { SidebarContent, Logo } from './Sidebar'
 
 export default function Layout() {
   const [sheetOpen, setSheetOpen] = useState(false)

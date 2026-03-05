@@ -59,6 +59,17 @@ export default {
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
       },
+      width: {
+        'timeline-cell': 'var(--timeline-cell-width)',
+        'timeline-room-col': 'var(--timeline-room-col-width)',
+      },
+      minWidth: {
+        'timeline-room-col': 'var(--timeline-room-col-width)',
+        'timeline-7': 'calc(7 * var(--timeline-cell-width))',
+      },
+      height: {
+        'timeline-row': 'var(--timeline-row-height)',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',

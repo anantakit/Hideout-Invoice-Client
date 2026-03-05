@@ -12,7 +12,6 @@ export const ROUTES = {
   bookings: {
     list: '/bookings',
     new: '/bookings/new',
-    walkin: '/bookings/new?mode=walkin',
     detail: (id: string) => `/bookings/${id}`,
     groupCheckIn: (id: string) => `/bookings/${id}/checkin`,
   },

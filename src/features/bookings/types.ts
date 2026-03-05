@@ -47,6 +47,7 @@ export interface BookingResponse {
   id: string
   guest_name: string
   guest_phone: string
+  source: string
   status: string
   total_amount: number
   discount_amount: number
@@ -77,6 +78,8 @@ export interface RoomAvailabilityResponse {
 
 export interface StayFormItem {
   room_type_id: string
+  /** Optional physical room selected by the user; null when unassigned. */
+  room_id: string | null
   check_in: string  // YYYY-MM-DD
   check_out: string // YYYY-MM-DD — nights are derived, never stored
 }
@@ -107,19 +110,28 @@ export interface BookingQueryParams {
   end_date?: string
 }
 
-// ─── API request payload (transformed from form before sending) ───────────────
+// ─── API request payload ───────────────────────────────────────────────────────
 
-export interface RoomRequestItem {
+export interface CreateBookingPaymentPayload {
+  amount: number
+  method: 'CASH' | 'TRANSFER'
+}
+
+/** One stay slot in a CreateBookingPayload.  room_id is optional — omit or
+ *  set to null to create an unassigned (RESERVED) stay. */
+export interface RoomStayPayload {
   room_type_id: string
-  quantity: number
-  check_in: string  // RFC3339 e.g. "2026-03-01T00:00:00Z"
-  check_out: string // RFC3339
+  room_id?: string | null
+  check_in: string   // YYYY-MM-DD
+  check_out: string  // YYYY-MM-DD
 }
 
 export interface CreateBookingPayload {
+  source: 'walk_in' | 'staff' | 'online'
   guest_name: string
   guest_phone: string
-  room_requests: RoomRequestItem[]
+  stays: RoomStayPayload[]
+  payment?: CreateBookingPaymentPayload
 }
 
 export interface CreatePaymentPayload {
@@ -130,4 +142,68 @@ export interface CreatePaymentPayload {
 
 export interface ExtendStayPayload {
   new_check_out: string // YYYY-MM-DD
+}
+
+// ─── Timeline API ───────────────────────────────────────────────────────────
+
+/** Booking entry as returned by GET /timeline. */
+export interface TimelineBooking {
+  booking_id: string
+  guest_name: string
+  /** YYYY-MM-DD inclusive */
+  check_in: string
+  /** YYYY-MM-DD exclusive */
+  check_out: string
+  status: string
+  balance_amount: number
+}
+
+/**
+ * Room entry as returned by GET /timeline.
+ *
+ * `status` reflects the physical room state (ACTIVE | CLEANING | MAINTENANCE).
+ * The derived display state (AVAILABLE | OCCUPIED | CLEANING | MAINTENANCE)
+ * is computed in the component layer based on status + bookings presence.
+ */
+export interface TimelineRoom {
+  id: string
+  room_number: string
+  status: 'ACTIVE' | 'CLEANING' | 'MAINTENANCE'
+  bookings: TimelineBooking[]
+}
+
+export interface UnassignedStay {
+  booking_id: string
+  guest_name: string
+  room_type_id: string
+  room_type_name: string
+  check_in: string
+  check_out: string
+  status: string
+}
+
+export interface TimelineResponse {
+  rooms: TimelineRoom[]
+  unassigned_stays: UnassignedStay[]
+}
+
+// ─── Availability Grouped ─────────────────────────────────────────────────────
+
+export interface AvailabilityGroupedRoom {
+  room_id: string
+  room_number: string
+  available: boolean
+}
+
+export interface AvailabilityGroupedRoomType {
+  room_type_id: string
+  room_type_name: string
+  price_per_night: number
+  rooms: AvailabilityGroupedRoom[]
+}
+
+export interface AvailabilityGroupedResponse {
+  check_in: string
+  check_out: string
+  room_types: AvailabilityGroupedRoomType[]
 }

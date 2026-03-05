@@ -1,53 +1,127 @@
-import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  Activity,
-  BarChart2,
-  CalendarDays,
+  BarChart3,
+  BedDouble,
+  Building2,
+  Calendar,
+  CalendarRange,
+  FileText,
   LogOut,
-  Plus,
-  Receipt,
   UserCog,
   Users,
   X,
 } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 
-// ─── Logo ─────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-const Logo = () => (
-  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-    <Receipt className="w-4 h-4 text-primary-foreground" />
-  </div>
-)
+interface NavItemConfig {
+  to: string
+  label: string
+  icon: React.ElementType
+  /**
+   * When true, only renders for users with role === 'admin'.
+   * Applied at the item level — a section with all admin-only items
+   * is automatically suppressed for non-admin users.
+   */
+  requireAdmin?: boolean
+  /**
+   * Passed to NavLink's `end` prop.
+   * Must be true for items whose `to` is a prefix of other routes
+   * (e.g. `/bookings` would otherwise match `/bookings/timeline`).
+   */
+  end?: boolean
+}
 
-// ─── SectionTitle ─────────────────────────────────────────────────────────────
+interface NavSectionConfig {
+  id: string
+  label: string
+  items: NavItemConfig[]
+}
 
-// Hidden on the icon-only md sidebar; visible on lg+ and in the mobile sheet.
+// ── Navigation structure ───────────────────────────────────────────────────────
+//
+// HOW TO ADD A NEW MODULE:
+//
+//   1. Add an item to an existing section:
+//        { to: '/housekeeping', label: 'Housekeeping', icon: Sparkles, end: true }
+//
+//   2. Or add a new section at the end of NAV_SECTIONS:
+//        { id: 'housekeeping', label: 'Housekeeping', items: [...] }
+//
+//   No other code needs to change.
+
+const NAV_SECTIONS: NavSectionConfig[] = [
+  {
+    id: 'operations',
+    label: 'Operations',
+    items: [
+      { to: '/bookings/timeline', label: 'ไทม์ไลน์', icon: CalendarRange, end: true },
+      { to: '/bookings',          label: 'การจอง',    icon: BedDouble,     end: true },
+      { to: '/occupancy/month',   label: 'ปฏิทิน',   icon: Calendar,      end: true },
+    ],
+  },
+  {
+    id: 'management',
+    label: 'Management',
+    items: [
+      { to: '/customers',   label: 'ลูกค้า', icon: Users,   end: true },
+      { to: '/admin/users', label: 'ผู้ใช้', icon: UserCog, end: true, requireAdmin: true },
+    ],
+  },
+  {
+    id: 'finance',
+    label: 'Finance',
+    items: [
+      { to: '/dashboard', label: 'รายได้',   icon: BarChart3, end: true },
+      { to: '/receipts',  label: 'ใบเสร็จ', icon: FileText,  end: true },
+    ],
+  },
+]
+
+// ── Logo ──────────────────────────────────────────────────────────────────────
+
+/** Shared logo mark — used by both the sidebar and the mobile top bar. */
+export function Logo() {
+  return (
+    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+      <Building2 className="w-4 h-4 text-primary-foreground" aria-hidden />
+    </div>
+  )
+}
+
+// ── SectionTitle ──────────────────────────────────────────────────────────────
+//
+// Hidden on the icon-only md sidebar; visible on lg+ and inside the mobile
+// Sheet where viewport is below md breakpoint.
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 pt-3 pb-1 text-[10px] font-semibold tracking-widest uppercase text-muted-foreground md:hidden lg:block">
+    <p className="px-3 pt-3 pb-1 text-xs font-semibold tracking-widest uppercase text-muted-foreground md:hidden lg:block">
       {children}
     </p>
   )
 }
 
-// ─── NavItem ──────────────────────────────────────────────────────────────────
+// ── NavItem ───────────────────────────────────────────────────────────────────
 
-interface NavItemProps {
-  to: string
-  label: string
-  icon: React.ElementType
-  onClose?: () => void
-}
-
-function NavItem({ to, label, icon: Icon, onClose }: NavItemProps) {
+function NavItem({
+  to,
+  label,
+  icon: Icon,
+  end,
+  onClose,
+}: NavItemConfig & { onClose?: () => void }) {
   return (
     <NavLink
       to={to}
+      end={end}
       onClick={onClose}
       title={label}
+      aria-label={label}
       className={({ isActive }) =>
         cn(
           'flex items-center gap-3 rounded-lg text-sm font-medium transition-colors',
@@ -58,16 +132,15 @@ function NavItem({ to, label, icon: Icon, onClose }: NavItemProps) {
         )
       }
     >
-      <Icon className="w-5 h-5 shrink-0" />
+      <Icon className="w-5 h-5 shrink-0" aria-hidden />
       <span className="md:hidden lg:inline">{label}</span>
     </NavLink>
   )
 }
 
-// ─── SidebarContent ───────────────────────────────────────────────────────────
+// ── SidebarContent ────────────────────────────────────────────────────────────
 
 export function SidebarContent({ onClose }: { onClose?: () => void }) {
-  const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
 
@@ -79,87 +152,73 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
   return (
     <div className="flex flex-col h-full">
 
-      {/* ── Logo ─────────────────────────────────────────────────────────── */}
+      {/* ── Wordmark ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-border overflow-hidden">
         <Logo />
-        <div className="lg:block md:hidden">
+        <div className="flex-1 min-w-0 md:hidden lg:block">
           <p className="text-sm font-bold text-foreground whitespace-nowrap">Hideout Resort</p>
-          <p className="text-xs text-muted-foreground whitespace-nowrap">ระบบใบเสร็จรับเงิน</p>
+          <p className="text-xs text-muted-foreground whitespace-nowrap">Hotel Operations</p>
         </div>
         {onClose && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="ml-auto p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors lg:hidden md:hidden"
+            className="ml-auto shrink-0 lg:hidden"
             aria-label="ปิดเมนู"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         )}
       </div>
 
       {/* ── Navigation ───────────────────────────────────────────────────── */}
-      <nav className="flex-1 px-2 py-2 overflow-y-auto space-y-0.5">
+      <nav className="flex-1 px-2 py-2 overflow-y-auto" aria-label="Main navigation">
+        {NAV_SECTIONS.map((section, index) => {
+          const visibleItems = section.items.filter(
+            (item) => !item.requireAdmin || user?.role === 'admin',
+          )
 
-        {/* ── OPERATIONS section ────────────────────────────────────────── */}
-        <SectionTitle>Operations</SectionTitle>
+          if (visibleItems.length === 0) return null
 
-        <NavItem to="/operations/today" label="วันนี้"             icon={Activity}    onClose={onClose} />
-        <NavItem to="/bookings"         label="การจอง"             icon={CalendarDays} onClose={onClose} />
-        <NavItem to="/occupancy/month"  label="ปฏิทินรายเดือน"    icon={BarChart2}    onClose={onClose} />
-
-        {/* ── Divider ───────────────────────────────────────────────────── */}
-        <div className="py-2 md:hidden lg:block">
-          <Separator />
-        </div>
-
-        {/* ── MANAGEMENT section ────────────────────────────────────────── */}
-        <SectionTitle>Management</SectionTitle>
-
-        <NavItem to="/receipts"  label="ใบเสร็จ" icon={Receipt} onClose={onClose} />
-        <NavItem to="/customers" label="ลูกค้า"  icon={Users}   onClose={onClose} />
-
-        {user?.role === 'admin' && (
-          <NavItem to="/admin/users" label="ผู้ใช้" icon={UserCog} onClose={onClose} />
-        )}
-
+          return (
+            <div key={section.id}>
+              {index > 0 && (
+                <div className="py-2 md:hidden lg:block">
+                  <Separator />
+                </div>
+              )}
+              <SectionTitle>{section.label}</SectionTitle>
+              <div className="space-y-0.5">
+                {visibleItems.map((item) => (
+                  <NavItem key={item.to} {...item} onClose={onClose} />
+                ))}
+              </div>
+            </div>
+          )
+        })}
       </nav>
 
-      {/* ── Create receipt CTA ───────────────────────────────────────────── */}
-      <div className="p-3 border-t border-border">
-        <Link
-          to="/receipts/new"
-          onClick={onClose}
-          title="สร้างใบเสร็จ"
-          className={cn(
-            'inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 w-full px-4 py-2',
-            location.pathname === '/receipts/new' ? 'opacity-60 pointer-events-none' : '',
-            'md:w-10 md:h-10 md:rounded-full md:p-0 lg:w-full lg:h-auto lg:rounded-lg lg:px-4 lg:py-2',
-          )}
-        >
-          <Plus className="w-4 h-4 shrink-0" />
-          <span className="md:hidden lg:inline">สร้างใบเสร็จ</span>
-        </Link>
-      </div>
-
-      {/* ── User info + logout ───────────────────────────────────────────── */}
+      {/* ── User + logout ─────────────────────────────────────────────────── */}
       <div className="p-3 border-t border-border">
         <div className="flex items-center gap-2 md:justify-center lg:justify-start">
-          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 select-none">
             {user?.full_name?.charAt(0).toUpperCase() ?? '?'}
           </div>
           <div className="flex-1 min-w-0 md:hidden lg:block">
             <p className="text-xs font-medium text-foreground truncate">{user?.full_name}</p>
             <p className="text-xs text-muted-foreground truncate">@{user?.username}</p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleLogout}
             title="ออกจากระบบ"
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+            aria-label="ออกจากระบบ"
+            className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
           >
             <LogOut className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
