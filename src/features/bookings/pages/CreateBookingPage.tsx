@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFormContext, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import toast from 'react-hot-toast'
@@ -39,7 +39,12 @@ function tomorrowStr(): string {
 
 export default function CreateBookingPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const createBooking = useCreateBooking()
+
+  // Allow pre-filling dates from URL: /bookings/new?check_in=2026-03-06&check_out=2026-03-08
+  const urlCheckIn  = searchParams.get('check_in')  || todayStr()
+  const urlCheckOut = searchParams.get('check_out') || tomorrowStr()
 
   const form = useForm<CreateBookingFormValues>({
     resolver: zodResolver(createBookingSchema),
@@ -53,8 +58,8 @@ export default function CreateBookingPage() {
         {
           room_type_id: '',
           quantity: 1,
-          check_in: todayStr(),
-          check_out: tomorrowStr(),
+          check_in: urlCheckIn,
+          check_out: urlCheckOut,
           assigned_room_ids: [],
         },
       ],

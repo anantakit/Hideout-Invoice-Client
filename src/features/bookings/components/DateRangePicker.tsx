@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { isValid, isBefore, isSameDay } from 'date-fns'
+import { isValid, isBefore, isSameDay, differenceInDays } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { Calendar } from '../../../shared/ui/calendar'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../../shared/ui/sheet'
@@ -136,6 +136,11 @@ export function DateRangePicker({
 
   const hasRange = Boolean(value.checkIn && value.checkOut)
 
+  // Compute nights for the hint
+  const nights = hasRange && parsedCheckIn && parsedCheckOut
+    ? differenceInDays(parsedCheckOut, parsedCheckIn)
+    : null
+
   let displayLabel: string | undefined
   if (phase === 'selecting-end' && selectionStart) {
     displayLabel = `${formatThai(toISO(selectionStart))} → เลือกวันออก…`
@@ -162,6 +167,11 @@ export function DateRangePicker({
       <span className="flex-1 truncate">{displayLabel ?? placeholder}</span>
       {phase === 'selecting-end' && (
         <span className="text-xs text-primary font-medium shrink-0">เลือกวันออก</span>
+      )}
+      {nights != null && nights > 0 && phase === 'idle' && (
+        <span className="text-xs text-muted-foreground font-medium shrink-0">
+          {nights} คืน
+        </span>
       )}
     </button>
   )

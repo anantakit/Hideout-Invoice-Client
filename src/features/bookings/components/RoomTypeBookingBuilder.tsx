@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { useRoomTypes, useAvailabilityGrouped } from '../hooks'
+import { DateRangePicker } from './DateRangePicker'
+import type { DateRange } from './DateRangePicker'
 import type { CreateBookingFormValues } from '../createBookingSchema'
 import type { RoomTypeResponse } from '../types'
 
@@ -169,6 +171,10 @@ function RoomTypeBookingItemCard({
   const roomsForType =
     availData?.room_types.find((rt) => rt.room_type_id === roomTypeId)?.rooms ?? []
 
+  // Max quantity = number of available rooms for this type (0 if not yet loaded)
+  const availableCount = roomsForType.filter((r) => r.available).length
+  const maxQuantity    = availableCount > 0 ? availableCount : Infinity
+
   const assignedCount = assignedRoomIds.length
   const canSelectMore = assignedCount < quantity
   const remaining     = quantity - assignedCount
@@ -301,10 +307,11 @@ function RoomTypeBookingItemCard({
                     <Input
                       type="number"
                       min={1}
+                      max={maxQuantity === Infinity ? undefined : maxQuantity}
                       className="h-9 w-16 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       value={field.value}
                       onChange={(e) => {
-                        const val = Math.max(1, parseInt(e.target.value) || 1)
+                        const val = Math.min(maxQuantity, Math.max(1, parseInt(e.target.value) || 1))
                         field.onChange(val)
                         trimAssignedIfNeeded(val)
                       }}
@@ -314,7 +321,11 @@ function RoomTypeBookingItemCard({
                       variant="outline"
                       size="icon"
                       className="h-9 w-9 shrink-0"
-                      onClick={() => field.onChange(field.value + 1)}
+                      disabled={field.value >= maxQuantity}
+                      onClick={() => {
+                        const next = Math.min(maxQuantity, field.value + 1)
+                        field.onChange(next)
+                      }}
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </Button>
@@ -326,48 +337,29 @@ function RoomTypeBookingItemCard({
           />
         </div>
 
-        {/* ── Row 2: date pickers (hidden for items 1+ when same_dates) ── */}
+        {/* Available rooms hint */}
+        {showRoomPicker && availableCount > 0 && (
+          <p className="text-[11px] text-muted-foreground -mt-2">
+            ห้องว่าง {availableCount} ห้อง
+            {quantity > availableCount && (
+              <span className="text-destructive font-medium ml-1">
+                (เกินจำนวนห้องว่าง)
+              </span>
+            )}
+          </p>
+        )}
+
+        {/* ── Row 2: date range picker (hidden for items 1+ when same_dates) ── */}
         {!hideDates && (
-          <div className="grid grid-cols-2 gap-3">
-            <FormField
-              control={form.control}
-              name={`items.${index}.check_in`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>เช็คอิน</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e)
-                        form.setValue(`items.${index}.assigned_room_ids`, [])
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`items.${index}.check_out`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>เช็คเอาท์</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e)
-                        form.setValue(`items.${index}.assigned_room_ids`, [])
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
+          <div>
+            <FormLabel className="mb-1.5 block">วันเช็คอิน → เช็คเอาท์</FormLabel>
+            <DateRangePicker
+              value={{ checkIn: ownCheckIn, checkOut: ownCheckOut }}
+              onChange={(range: DateRange) => {
+                form.setValue(`items.${index}.check_in`, range.checkIn, { shouldValidate: true })
+                form.setValue(`items.${index}.check_out`, range.checkOut, { shouldValidate: true })
+                form.setValue(`items.${index}.assigned_room_ids`, [])
+              }}
             />
           </div>
         )}

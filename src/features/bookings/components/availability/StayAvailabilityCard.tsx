@@ -1,102 +1,71 @@
-import { useState } from 'react'
 import { format, addDays } from 'date-fns'
-import { Loader2, Search } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
-import { Input } from '@/shared/ui/input'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import { ROUTES } from '@/app/routes'
 import { useStayAvailability } from '../../hooks/useStayAvailability'
 import { RoomTypeAvailabilityRow } from './RoomTypeAvailabilityRow'
+import { DateRangePicker } from '../DateRangePicker'
+import type { DateRange } from '../DateRangePicker'
 
-export function StayAvailabilityCard() {
+interface StayAvailabilityCardProps {
+  /** Controlled range — parent owns the state for free-room toggle. */
+  range?: DateRange
+  onRangeChange?: (range: DateRange) => void
+}
+
+export function StayAvailabilityCard({ range, onRangeChange }: StayAvailabilityCardProps) {
   const navigate = useNavigate()
   const today = format(new Date(), 'yyyy-MM-dd')
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
-  const [checkIn, setCheckIn] = useState(today)
-  const [checkOut, setCheckOut] = useState(tomorrow)
-  const [searchDates, setSearchDates] = useState({ checkIn: '', checkOut: '' })
+  // Use controlled props if provided, otherwise this is a no-op (shouldn't happen)
+  const currentRange = range ?? { checkIn: today, checkOut: tomorrow }
+  const handleChange = onRangeChange ?? (() => {})
 
-  const isValid = checkIn && checkOut && checkOut > checkIn
-  const dateError = checkIn && checkOut && checkOut <= checkIn
-    ? 'วันเช็คเอาท์ต้องหลังวันเช็คอิน'
-    : ''
+  const isValid = currentRange.checkIn && currentRange.checkOut && currentRange.checkOut > currentRange.checkIn
 
+  // Auto-fetch when both dates are valid
   const { data, isLoading, isFetching } = useStayAvailability(
-    searchDates.checkIn,
-    searchDates.checkOut,
+    isValid ? currentRange.checkIn : '',
+    isValid ? currentRange.checkOut : '',
   )
 
-  function handleSearch() {
-    if (!isValid) return
-    setSearchDates({ checkIn, checkOut })
-  }
-
   const totalAvailable = data?.roomTypes.reduce((s, rt) => s + rt.available, 0) ?? 0
-  const hasResults = data && searchDates.checkIn
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm">Check Stay Availability</CardTitle>
+        <CardTitle className="text-sm">ตรวจสอบห้องว่างตามช่วงเข้าพัก</CardTitle>
         <CardDescription className="text-xs">
-          ตรวจสอบห้องว่างตามช่วงวันที่
+          เลือกวันเช็คอิน-เช็คเอาท์เพื่อดูห้องว่างอัตโนมัติ
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Date inputs */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label className="text-[11px] font-medium text-muted-foreground">Check-in</label>
-            <Input
-              type="date"
-              value={checkIn}
-              min={today}
-              onChange={(e) => setCheckIn(e.target.value)}
-              className="h-9 text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[11px] font-medium text-muted-foreground">Check-out</label>
-            <Input
-              type="date"
-              value={checkOut}
-              min={checkIn || today}
-              onChange={(e) => setCheckOut(e.target.value)}
-              className="h-9 text-sm"
-            />
-          </div>
-        </div>
+      <CardContent className="space-y-3">
+        <DateRangePicker
+          value={currentRange}
+          onChange={handleChange}
+          placeholder="เลือกวันเช็คอิน → เช็คเอาท์"
+        />
 
-        {dateError && (
-          <p className="text-xs text-destructive">{dateError}</p>
+        {/* Loading indicator */}
+        {isValid && isLoading && (
+          <div className="flex items-center justify-center py-2">
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          </div>
         )}
 
-        <Button
-          onClick={handleSearch}
-          disabled={!isValid || isLoading}
-          className="w-full"
-          size="sm"
-        >
-          {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-          ) : (
-            <Search className="w-4 h-4 mr-2" />
-          )}
-          Check Rooms
-        </Button>
-
-        {/* Results */}
-        {hasResults && (
+        {/* Results — shown automatically when dates are valid */}
+        {data && isValid && (
           <>
             <Separator />
 
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">
-                Available for entire stay
+                ห้องว่างตลอดช่วงเข้าพัก
                 {isFetching && <Loader2 className="w-3 h-3 animate-spin inline ml-1" />}
               </p>
 
@@ -129,9 +98,9 @@ export function StayAvailabilityCard() {
                 variant="outline"
                 size="sm"
                 className="w-full"
-                onClick={() => navigate(ROUTES.bookings.new)}
+                onClick={() => navigate(`${ROUTES.bookings.new}?check_in=${currentRange.checkIn}&check_out=${currentRange.checkOut}`)}
               >
-                Create Booking
+                สร้างการจอง
               </Button>
             )}
           </>

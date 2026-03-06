@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { differenceInDays, isToday, isBefore, startOfDay, parseISO } from 'date-fns'
-import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock } from 'lucide-react'
+import { differenceInDays, isToday, isBefore, startOfDay, parseISO, format, addDays } from 'date-fns'
+import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock, Calendar } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
@@ -21,7 +21,7 @@ import {
 } from '../../../shared/ui/alert-dialog'
 import { formatThaiDate } from '../../../shared/utils'
 import { ROUTES } from '@/app/routes'
-import { useBooking, useCancelStay, useExtendStay } from '../hooks'
+import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useAvailabilityGrouped } from '../hooks'
 import { PaymentPanel } from '../components/PaymentPanel'
 import type { RoomStayResponse } from '../types'
 
@@ -31,17 +31,18 @@ type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'gray'
 
 function bookingStatusVariant(status: string): BadgeVariant {
   switch (status) {
+    case 'CONFIRMED':            return 'default'
     case 'PARTIALLY_CHECKED_IN': return 'amber'
     case 'CHECKED_IN':           return 'green'
     case 'CHECKED_OUT':          return 'gray'
     case 'CANCELLED':            return 'red'
-    default:                     return 'gray'  // RESERVED
+    default:                     return 'gray'
   }
 }
 
 function bookingStatusLabel(status: string): string {
   switch (status) {
-    case 'RESERVED':             return 'รอดำเนินการ'
+    case 'CONFIRMED':            return 'ยืนยันแล้ว'
     case 'PARTIALLY_CHECKED_IN': return 'เช็คอินบางส่วน'
     case 'CHECKED_IN':           return 'เช็คอินแล้ว'
     case 'CHECKED_OUT':          return 'เช็คเอาท์แล้ว'
@@ -73,6 +74,11 @@ function stayStatusLabel(status: string): string {
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
+const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+]
+
 function calcNights(checkIn: string, checkOut: string): number {
   try {
     return Math.max(0, differenceInDays(parseISO(checkOut), parseISO(checkIn)))
@@ -97,6 +103,22 @@ function isCheckInOverdue(checkIn: string): boolean {
   }
 }
 
+function fmtShortISO(iso: string): string {
+  try {
+    const d = parseISO(iso)
+    return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
+  } catch { return iso }
+}
+
+/**
+ * Near-full: only for room types with total >= 5 and available <= 20%.
+ * Small inventory types (< 5 rooms) never show near-full.
+ */
+function isNearFull(available: number, total: number): boolean {
+  if (available === 0 || total < 5) return false
+  return available / total <= 0.20
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function BookingDetailPage() {
@@ -104,7 +126,88 @@ export default function BookingDetailPage() {
   const navigate = useNavigate()
 
   const { data: booking, isLoading, isError } = useBooking(id)
+  const assignRoom = useCheckInRooms(id)
 
+  const [availMode, setAvailMode] = useState<'range' | 'today'>('range')
+  const [assigningRoomId, setAssigningRoomId] = useState<string | null>(null)
+
+  // ── Derived booking data ──────────────────────────────────────────────────
+  const bd = useMemo(() => {
+    if (!booking) return null
+
+    const active = booking.room_stays.filter((s) => s.status !== 'CANCELLED')
+    const pending = active.filter((s) => s.status === 'RESERVED' || s.status === 'ASSIGNED')
+    const unassigned = pending.filter((s) => !s.room_id)
+    const assignedCount = active.filter(
+      (s) => s.room_id || s.status === 'CHECKED_IN' || s.status === 'CHECKED_OUT',
+    ).length
+
+    const assignedRoomIds = new Set(
+      active.filter((s) => s.room_id).map((s) => s.room_id!),
+    )
+
+    const unassignedByType = new Map<string, RoomStayResponse[]>()
+    for (const s of unassigned) {
+      const list = unassignedByType.get(s.room_type_id) ?? []
+      list.push(s)
+      unassignedByType.set(s.room_type_id, list)
+    }
+
+    const rangeCI = pending.length > 0
+      ? pending.reduce((min, s) => (s.check_in < min ? s.check_in : min), pending[0].check_in).slice(0, 10)
+      : ''
+    const rangeCO = pending.length > 0
+      ? pending.reduce((max, s) => (s.check_out > max ? s.check_out : max), pending[0].check_out).slice(0, 10)
+      : ''
+
+    return {
+      active,
+      pending,
+      unassigned,
+      assignedCount,
+      totalActive: active.length,
+      assignedRoomIds,
+      unassignedByType,
+      rangeCI,
+      rangeCO,
+      allAssigned: unassigned.length === 0,
+    }
+  }, [booking])
+
+  // ── Availability query ────────────────────────────────────────────────────
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const tomorrowStr = format(addDays(new Date(), 1), 'yyyy-MM-dd')
+
+  const effCI = availMode === 'today' ? todayStr : (bd?.rangeCI ?? '')
+  const effCO = availMode === 'today' ? tomorrowStr : (bd?.rangeCO ?? '')
+  const hasPending = (bd?.pending.length ?? 0) > 0
+
+  const { data: availability, isLoading: availLoading } = useAvailabilityGrouped(
+    effCI, effCO, hasPending, id,
+  )
+
+  // ── Quick assign handler ──────────────────────────────────────────────────
+  function handleQuickAssign(roomTypeId: string, roomId: string) {
+    const staysOfType = bd?.unassignedByType.get(roomTypeId)
+    if (!staysOfType?.[0]) return
+
+    setAssigningRoomId(roomId)
+    assignRoom.mutate(
+      [{ room_stay_id: staysOfType[0].id, room_id: roomId }],
+      {
+        onSuccess: () => {
+          toast.success('กำหนดห้องเรียบร้อย')
+          setAssigningRoomId(null)
+        },
+        onError: (err: Error) => {
+          toast.error(err.message || 'เกิดข้อผิดพลาด')
+          setAssigningRoomId(null)
+        },
+      },
+    )
+  }
+
+  // ── Loading / Error ───────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -113,7 +216,7 @@ export default function BookingDetailPage() {
     )
   }
 
-  if (isError || !booking) {
+  if (isError || !booking || !bd) {
     return (
       <div className="max-w-2xl mx-auto px-4 pt-6 space-y-4">
         <Button variant="ghost" size="sm" onClick={() => navigate('/bookings')}>
@@ -129,13 +232,15 @@ export default function BookingDetailPage() {
     )
   }
 
-  const pendingStays = booking.room_stays.filter(
-    (s) => s.status === 'RESERVED' || s.status === 'ASSIGNED',
-  )
+  // Check if ALL room types show zero availability
+  const noRoomsAvailable = availability != null &&
+    availability.room_types.every((rt) => rt.rooms.every((r) => !r.available))
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto px-4 pt-6 pb-10 space-y-6">
-      {/* Back + title */}
+
+      {/* ── 1. Header ──────────────────────────────────────────────────── */}
       <div className="space-y-1">
         <Button
           variant="ghost"
@@ -163,29 +268,200 @@ export default function BookingDetailPage() {
 
       <Separator />
 
+      {/* ── 2. Reservation Summary (Guest Info) ────────────────────────── */}
       <GuestInfoCard guestName={booking.guest_name} guestPhone={booking.guest_phone} />
 
-      <PaymentPanel booking={booking} />
+      {/* ── 3. Room Assignment Status ──────────────────────────────────── */}
+      {bd.totalActive > 0 && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold">สถานะกำหนดห้อง</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {bd.assignedCount} / {bd.totalActive} ห้องกำหนดแล้ว
+                </p>
+              </div>
+              <Badge variant={bd.allAssigned ? 'green' : 'amber'}>
+                {bd.allAssigned ? 'ครบแล้ว' : `เหลือ ${bd.unassigned.length} ห้อง`}
+              </Badge>
+            </div>
 
+            {/* Progress bar */}
+            <div className="h-2 rounded-full bg-secondary overflow-hidden">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all',
+                  bd.allAssigned ? 'bg-success' : 'bg-primary',
+                )}
+                style={{ width: `${(bd.assignedCount / bd.totalActive) * 100}%` }}
+              />
+            </div>
+
+            {bd.pending.length > 0 && (
+              <Button
+                variant={bd.allAssigned ? 'default' : 'outline'}
+                size="sm"
+                className="w-full"
+                onClick={() => navigate(ROUTES.bookings.groupCheckIn(id))}
+              >
+                <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                {bd.allAssigned
+                  ? `เช็คอิน (${bd.pending.length} ห้อง)`
+                  : `กำหนดห้อง + เช็คอิน (${bd.pending.length} ห้อง)`}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── 4. Available Rooms ─────────────────────────────────────────── */}
+      {hasPending && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-sm">ห้องว่าง</CardTitle>
+              <div className="flex rounded-lg border border-border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setAvailMode('today')}
+                  className={cn(
+                    'px-2.5 py-1 text-[11px] font-medium transition-colors',
+                    availMode === 'today'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card text-muted-foreground hover:bg-muted',
+                  )}
+                >
+                  วันนี้
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAvailMode('range')}
+                  className={cn(
+                    'px-2.5 py-1 text-[11px] font-medium transition-colors',
+                    availMode === 'range'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card text-muted-foreground hover:bg-muted',
+                  )}
+                >
+                  ช่วงเข้าพัก
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {availMode === 'today'
+                ? 'ห้องว่างสำหรับวันนี้'
+                : `ว่างตลอดช่วง ${fmtShortISO(effCI)} → ${fmtShortISO(effCO)}`}
+            </p>
+          </CardHeader>
+
+          <CardContent className="pt-0 space-y-3">
+            {bd.allAssigned ? (
+              <div className="py-4 text-center">
+                <CheckCircle2 className="w-5 h-5 mx-auto text-success mb-1.5" />
+                <p className="text-sm text-muted-foreground">ทุกห้องกำหนดเรียบร้อยแล้ว</p>
+              </div>
+            ) : availLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : noRoomsAvailable ? (
+              <div className="py-4 text-center space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  ไม่มีห้องว่างสำหรับช่วงเวลาที่เลือก
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(ROUTES.occupancy.month)}
+                >
+                  <Calendar className="w-4 h-4 mr-1.5" />
+                  ดูปฏิทินห้องว่าง
+                </Button>
+              </div>
+            ) : availability ? (
+              <div className="space-y-3">
+                {availability.room_types.map((rt) => {
+                  const totalRooms = rt.rooms.length
+                  const availableRooms = rt.rooms.filter(
+                    (r) => r.available && !bd.assignedRoomIds.has(r.room_id),
+                  )
+                  const availableCount = availableRooms.length
+                  const isFull = availableCount === 0
+                  const nearFull = isNearFull(availableCount, totalRooms)
+                  const canAssign = bd.unassignedByType.has(rt.room_type_id) && availableCount > 0
+
+                  return (
+                    <div key={rt.room_type_id}>
+                      {/* Room type header */}
+                      <div className="flex items-center justify-between py-1.5">
+                        <span className="text-sm font-medium">{rt.room_type_name}</span>
+                        <div className="flex items-center gap-1.5">
+                          {isFull && (
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">เต็ม</Badge>
+                          )}
+                          {nearFull && !isFull && (
+                            <Badge variant="amber" className="text-[10px] px-1.5 py-0">ใกล้เต็ม</Badge>
+                          )}
+                          <span className={cn(
+                            'text-sm font-semibold tabular-nums',
+                            isFull ? 'text-destructive' : 'text-foreground',
+                          )}>
+                            {availableCount} ว่าง
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Assignable rooms */}
+                      {canAssign && (
+                        <div className="ml-1 space-y-1.5 mt-1 mb-2">
+                          {availableRooms.map((room) => (
+                            <div
+                              key={room.room_id}
+                              className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
+                            >
+                              <span className="text-sm">ห้อง {room.room_number}</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-3 text-xs"
+                                disabled={assignRoom.isPending}
+                                onClick={() => handleQuickAssign(rt.room_type_id, room.room_id)}
+                              >
+                                {assigningRoomId === room.room_id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  'Assign'
+                                )}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── 5. Room Stays ──────────────────────────────────────────────── */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold">
-            รายการห้องพัก
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              {booking.room_stays.length} ห้อง
-            </span>
-          </h2>
-          {pendingStays.length > 0 && (
-            <Button size="sm" onClick={() => navigate(ROUTES.bookings.groupCheckIn(id))}>
-              <CheckCircle2 className="w-4 h-4 mr-1.5" />
-              เช็คอิน
-            </Button>
-          )}
-        </div>
+        <h2 className="text-base font-semibold">
+          รายการห้องพัก
+          <span className="ml-2 text-sm font-normal text-muted-foreground">
+            {booking.room_stays.length} ห้อง
+          </span>
+        </h2>
         {booking.room_stays.map((stay) => (
           <StayCardOperational key={stay.id} bookingId={booking.id} stay={stay} />
         ))}
       </div>
+
+      {/* ── 6. Payment ─────────────────────────────────────────────────── */}
+      <PaymentPanel booking={booking} />
     </div>
   )
 }

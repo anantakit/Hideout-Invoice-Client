@@ -78,6 +78,47 @@ export function useCancelStay(bookingId: string) {
   })
 }
 
+/** Transfer a CHECKED_IN stay to a different physical room. */
+export function useTransferRoom(bookingId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ stayId, roomId }: { stayId: string; roomId: string }) =>
+      bookingsApi.transferRoom(bookingId, stayId, roomId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
+      queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
+    },
+  })
+}
+
+/** Remove room assignment from a stay. ASSIGNED → RESERVED. */
+export function useUnassignRoom(bookingId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (stayId: string) => bookingsApi.unassignRoom(bookingId, stayId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
+      queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
+    },
+  })
+}
+
+/** Assign rooms to stays without checking in. Stays move RESERVED → ASSIGNED. */
+export function useAssignRooms(bookingId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (stays: { room_stay_id: string; room_id: string }[]) =>
+      bookingsApi.assignRooms(bookingId, stays),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
+      queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
+    },
+  })
+}
+
 /** Group check-in: assigns rooms and checks in all listed stays atomically. */
 export function useCheckInRooms(bookingId: string) {
   const queryClient = useQueryClient()

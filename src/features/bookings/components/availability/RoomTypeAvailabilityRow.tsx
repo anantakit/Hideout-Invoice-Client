@@ -7,9 +7,9 @@ interface RoomTypeAvailabilityRowProps {
   total: number
 }
 
-export function RoomTypeAvailabilityRow({ name, available }: RoomTypeAvailabilityRowProps) {
+export function RoomTypeAvailabilityRow({ name, available, total }: RoomTypeAvailabilityRowProps) {
   const isFull = available === 0
-  const isLow = !isFull && available < 3
+  const isLow = !isFull && (total >= 5 ? available / total <= 0.20 : available === 1)
 
   return (
     <div className="flex items-center justify-between py-1">
