@@ -15,6 +15,7 @@ import type {
   PaymentResponse,
   TimelineResponse,
   AvailabilityGroupedResponse,
+  AutoAssignResponse,
 } from './types'
 
 export const bookingsApi = {
@@ -137,6 +138,11 @@ export const bookingsApi = {
       `/bookings/${bookingId}/checkout`,
       { stay_ids: stayIds },
     )
+    return data.data
+  },
+
+  autoAssignRooms: async (): Promise<AutoAssignResponse> => {
+    const { data } = await apiClient.post<ApiResponse<AutoAssignResponse>>('/bookings/auto-assign')
     return data.data
   },
 

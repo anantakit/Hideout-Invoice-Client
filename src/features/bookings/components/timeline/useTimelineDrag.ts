@@ -388,9 +388,13 @@ export function useTimelineDrag({
       const state = dragStateRef.current
 
       if (state) {
+        // Normalize original dates to yyyy-MM-dd — booking dates from the API
+        // may be full ISO timestamps while snapped dates are always yyyy-MM-dd.
+        const origCheckIn = format(toDate(ref.booking.check_in), 'yyyy-MM-dd')
+        const origCheckOut = format(toDate(ref.booking.check_out), 'yyyy-MM-dd')
         const moved =
-          state.newCheckIn !== ref.booking.check_in ||
-          state.newCheckOut !== ref.booking.check_out ||
+          state.newCheckIn !== origCheckIn ||
+          state.newCheckOut !== origCheckOut ||
           state.newRoomId !== ref.sourceRoomId
 
         if (moved && !state.hasConflict && !state.isMaintenanceRoom) {

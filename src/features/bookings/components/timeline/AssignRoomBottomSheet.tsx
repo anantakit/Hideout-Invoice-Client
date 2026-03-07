@@ -85,7 +85,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
   const availStay = transferringStay ?? unassignedStays[0] ?? assignedStays[0] ?? checkedInStays[0]
   const ciDate = availStay?.check_in?.slice(0, 10) ?? ''
   const coDate = availStay?.check_out?.slice(0, 10) ?? ''
-  const isCheckInDay = ciDate === today
+  const isCheckInDay = ciDate <= today
   const nights = ciDate && coDate ? differenceInDays(parseISO(coDate), parseISO(ciDate)) : 0
 
   // ── Availability query ──────────────────────────────────────────────────

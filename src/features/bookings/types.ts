@@ -13,6 +13,8 @@ export interface RoomResponse {
   room_type_id: string
   room_type: RoomTypeResponse
   status: string
+  coord_x: number
+  coord_y: number
   created_at: string
 }
 
@@ -192,6 +194,33 @@ export interface UnassignedStay {
 export interface TimelineResponse {
   rooms: TimelineRoom[]
   unassigned_stays: UnassignedStay[]
+}
+
+// ─── Auto Assign ─────────────────────────────────────────────────────────────
+
+export interface AutoAssignAssignment {
+  room_stay_id: string
+  booking_id: string
+  guest_name: string
+  room_id: string
+  room_number: string
+  room_type_name: string
+}
+
+export interface AutoAssignSkipped {
+  booking_id: string
+  guest_name: string
+  room_type_name: string
+  check_in: string
+  check_out: string
+  reason: string
+}
+
+export interface AutoAssignResponse {
+  assigned_count: number
+  skipped_count: number
+  assignments: AutoAssignAssignment[]
+  skipped: AutoAssignSkipped[]
 }
 
 // ─── Availability Grouped ─────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ import {
   XCircle,
   CalendarRange,
 } from 'lucide-react'
+import { startOfDay, parseISO } from 'date-fns'
 import { cn } from '@/shared/utils'
 import type { TimelineBooking } from '../../types'
 
@@ -151,7 +152,10 @@ const BookingContextMenu = React.memo(function BookingContextMenu({
     }
   }, [])
 
-  const canCheckIn = status === 'RESERVED' || status === 'ASSIGNED'
+  // Only allow check-in on or after the stay's check-in date (not early).
+  const today = startOfDay(new Date())
+  const stayCheckIn = startOfDay(parseISO(booking.check_in))
+  const canCheckIn = (status === 'RESERVED' || status === 'ASSIGNED') && stayCheckIn <= today
   const canCheckOut = status === 'CHECKED_IN'
   const canCancel = status === 'RESERVED' || status === 'ASSIGNED' || status === 'CHECKED_IN'
   const isTerminal = status === 'CHECKED_OUT' || status === 'CANCELLED'

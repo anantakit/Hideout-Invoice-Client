@@ -1,12 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { parseISO } from 'date-fns'
-import { ChevronDown, ChevronUp, BedDouble, ArrowRight } from 'lucide-react'
+import { ChevronDown, ChevronUp, BedDouble, ArrowRight, Wand2, Loader2 } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import { Card } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { ROUTES } from '@/app/routes'
+import { bookingsApi } from '../../api'
 import type { UnassignedStay } from '../../types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -43,7 +46,41 @@ export const PendingAssignmentsPanel = React.memo(function PendingAssignmentsPan
   stays,
 }: PendingAssignmentsPanelProps) {
   const navigate    = useNavigate()
+  const qc          = useQueryClient()
   const [isExpanded, setIsExpanded] = useState(false)
+
+  const autoAssign = useMutation({
+    mutationFn: () => bookingsApi.autoAssignRooms(),
+    onSuccess: (resp) => {
+      qc.invalidateQueries({ queryKey: ['timeline'] })
+      qc.invalidateQueries({ queryKey: ['bookings'] })
+      qc.invalidateQueries({ queryKey: ['availability'] })
+      qc.invalidateQueries({ queryKey: ['availability-grouped'] })
+
+      if (resp.assigned_count > 0 && resp.skipped_count === 0) {
+        toast.success(`มอบหมายห้องสำเร็จ ${resp.assigned_count} รายการ`)
+      } else if (resp.assigned_count > 0 && resp.skipped_count > 0) {
+        toast.success(
+          `มอบหมายสำเร็จ ${resp.assigned_count} รายการ, ข้าม ${resp.skipped_count} รายการ`,
+        )
+      } else if (resp.assigned_count === 0 && resp.skipped_count > 0) {
+        toast.error(`ไม่สามารถมอบหมายห้องได้ — ${resp.skipped[0]?.reason ?? 'ไม่มีห้องว่าง'}`)
+      } else {
+        toast('ไม่มีรายการที่ต้องมอบหมาย')
+      }
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error ?? 'มอบหมายห้องอัตโนมัติไม่สำเร็จ')
+    },
+  })
+
+  const handleAutoAssign = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      autoAssign.mutate()
+    },
+    [autoAssign],
+  )
 
   if (stays.length === 0) return null
 
@@ -63,10 +100,30 @@ export const PendingAssignmentsPanel = React.memo(function PendingAssignmentsPan
           <span className="text-sm font-semibold text-foreground">รอมอบหมายห้อง</span>
           <Badge variant="amber" className="tabular-nums">{stays.length}</Badge>
         </div>
-        {isExpanded
-          ? <ChevronUp  className="w-4 h-4 text-muted-foreground" />
-          : <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        }
+
+        <div className="flex items-center gap-2">
+          {/* Auto Assign button */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={autoAssign.isPending}
+            onClick={handleAutoAssign}
+            className="h-7 px-2.5 text-xs gap-1.5"
+          >
+            {autoAssign.isPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Wand2 className="w-3.5 h-3.5" />
+            )}
+            มอบหมายอัตโนมัติ
+          </Button>
+
+          {isExpanded
+            ? <ChevronUp  className="w-4 h-4 text-muted-foreground" />
+            : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          }
+        </div>
       </Button>
 
       {/* Expanded list */}

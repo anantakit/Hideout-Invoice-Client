@@ -188,8 +188,10 @@ export default function GroupCheckInPage() {
   }, [booking, initialized])
 
   const allStays     = booking?.room_stays ?? []
+  const todayStr = new Date().toISOString().slice(0, 10)
   const pendingStays = allStays.filter(
-    (s) => s.status === 'RESERVED' || s.status === 'ASSIGNED',
+    (s) => (s.status === 'RESERVED' || s.status === 'ASSIGNED') &&
+      s.check_in.slice(0, 10) <= todayStr,
   )
   const selectedCount = pendingStays.filter((s) => selections[s.id]).length
   const canSubmit     = selectedCount > 0 && !checkIn.isPending

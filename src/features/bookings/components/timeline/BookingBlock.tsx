@@ -1,5 +1,5 @@
 import React, { type CSSProperties, useCallback, useMemo } from 'react'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, startOfDay } from 'date-fns'
 import { Users, Clock, LogIn, LogOut } from 'lucide-react'
 import {
   TIMELINE_BLOCK_HEIGHT_PX,
@@ -132,7 +132,8 @@ const BookingBlock = React.memo(function BookingBlock({
 
   const isMultiRoom = roomCount > 1
   const status = booking.status
-  const canCheckIn = status === 'RESERVED' || status === 'ASSIGNED'
+  const canCheckIn = (status === 'RESERVED' || status === 'ASSIGNED') &&
+    startOfDay(parseISO(booking.check_in)) <= startOfDay(new Date())
   const canCheckOut = status === 'CHECKED_IN'
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
