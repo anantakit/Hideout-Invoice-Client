@@ -12,6 +12,7 @@ import { Badge } from '@/shared/ui/badge'
 import { Separator } from '@/shared/ui/separator'
 import type { TimelineBooking } from '../../types'
 import { useHoveredBookingId, useBookingHoverHandlers } from './HoverContext'
+import type { DragMode, DragState } from './useTimelineDrag'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,10 +33,14 @@ function statusBadgeVariant(
   }
 }
 
+/** Statuses that can be dragged/resized. */
+const DRAGGABLE_STATUSES = new Set(['CONFIRMED', 'RESERVED', 'ASSIGNED', 'CHECKED_IN', 'PARTIALLY_CHECKED_IN'])
+
 // ─── BookingBlock ─────────────────────────────────────────────────────────────
 
 export interface BookingBlockProps {
   booking: TimelineBooking
+  roomId: string
   roomNumber: string
   roomCount: number
   offsetDays: number
@@ -50,10 +55,20 @@ export interface BookingBlockProps {
   /** Total number of layers in this room row. */
   totalLayers?: number
   onTap: (booking: TimelineBooking) => void
+  /** Called when user starts a drag or resize. */
+  onDragStart?: (
+    e: React.PointerEvent,
+    booking: TimelineBooking,
+    roomId: string,
+    mode: DragMode,
+  ) => void
+  /** Current drag state — used to dim the source block while dragging. */
+  dragState?: DragState | null
 }
 
 const BookingBlock = React.memo(function BookingBlock({
   booking,
+  roomId,
   roomNumber,
   roomCount,
   offsetDays,
@@ -64,6 +79,8 @@ const BookingBlock = React.memo(function BookingBlock({
   layerIndex = 0,
   totalLayers = 1,
   onTap,
+  onDragStart,
+  dragState,
 }: BookingBlockProps) {
   // Read hover state from external store — only this component re-renders on hover change
   const hoveredBookingId = useHoveredBookingId()
@@ -74,6 +91,11 @@ const BookingBlock = React.memo(function BookingBlock({
       ? null
       : hoveredBookingId === booking.booking_id
   const isMultiLayer = totalLayers > 1
+
+  const isDraggable = DRAGGABLE_STATUSES.has(booking.status)
+  const isBeingDragged =
+    dragState?.booking.room_stay_id === booking.room_stay_id &&
+    dragState?.sourceRoomId === roomId
 
   const positionStyle = useMemo<CSSProperties>(() => {
     const base = {
@@ -102,6 +124,39 @@ const BookingBlock = React.memo(function BookingBlock({
     }
   }, [onTap, booking])
 
+  // ── Drag handlers ──────────────────────────────────────────────────────
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (e.button !== 0) return
+      if (!isDraggable || !onDragStart) return
+      // Don't preventDefault — let click events fire normally for taps.
+      // The drag hook uses a threshold before activating drag mode.
+      onDragStart(e, booking, roomId, 'move')
+    },
+    [isDraggable, onDragStart, booking, roomId],
+  )
+
+  const handleResizeLeftDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.stopPropagation()
+      if (e.button !== 0) return
+      if (!isDraggable || !onDragStart) return
+      onDragStart(e, booking, roomId, 'resize-left')
+    },
+    [isDraggable, onDragStart, booking, roomId],
+  )
+
+  const handleResizeRightDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.stopPropagation()
+      if (e.button !== 0) return
+      if (!isDraggable || !onDragStart) return
+      onDragStart(e, booking, roomId, 'resize-right')
+    },
+    [isDraggable, onDragStart, booking, roomId],
+  )
+
   return (
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
@@ -116,36 +171,65 @@ const BookingBlock = React.memo(function BookingBlock({
             'rounded-lg border overflow-hidden',
             // Layout
             'flex items-center px-2.5 gap-1.5',
-            'cursor-pointer select-none',
+            'select-none',
             // Hover & highlight transitions
             'transition-[opacity,box-shadow,filter,transform] duration-150',
             // Focus-visible for keyboard navigation
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+            // Cursor
+            isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
+            // Dragging state — dim the source block
+            isBeingDragged && 'opacity-30 pointer-events-none',
+            // Group for resize handle hover
+            'group/block',
             // ── Upcoming vs active styling ──
-            isUpcoming
-              ? [
-                  'border-dashed border-border bg-muted/40 text-muted-foreground',
-                  isHighlighted === null  && 'opacity-70 hover:opacity-90 hover:shadow-md hover:brightness-105',
-                  isHighlighted === true  && 'opacity-90 shadow-md ring-2 ring-inset ring-primary/30',
-                  isHighlighted === false && 'opacity-20',
-                ]
-              : [
-                  'border-current/15 shadow-card',
-                  colorClass,
-                  isHighlighted === null  && 'opacity-95 hover:opacity-100 hover:shadow-md hover:brightness-[1.03]',
-                  isHighlighted === true  && 'opacity-100 shadow-md ring-2 ring-inset ring-current/30',
-                  isHighlighted === false && 'opacity-25',
-                ],
+            !isBeingDragged && (
+              isUpcoming
+                ? [
+                    'border-dashed border-border bg-muted/40 text-muted-foreground',
+                    isHighlighted === null  && 'opacity-70 hover:opacity-90 hover:shadow-md hover:brightness-105',
+                    isHighlighted === true  && 'opacity-90 shadow-md ring-2 ring-inset ring-primary/30',
+                    isHighlighted === false && 'opacity-20',
+                  ]
+                : [
+                    'border-current/15 shadow-card',
+                    colorClass,
+                    isHighlighted === null  && 'opacity-95 hover:opacity-100 hover:shadow-md hover:brightness-[1.03]',
+                    isHighlighted === true  && 'opacity-100 shadow-md ring-2 ring-inset ring-current/30',
+                    isHighlighted === false && 'opacity-25',
+                  ]
+            ),
           )}
           style={positionStyle}
           onMouseEnter={() => onHoverStart(booking.booking_id)}
           onMouseLeave={onHoverEnd}
           onFocus={() => onHoverStart(booking.booking_id)}
           onBlur={onHoverEnd}
-          onClick={() => onTap(booking)}
+          onClick={() => !isBeingDragged && onTap(booking)}
           onKeyDown={handleKeyDown}
+          onPointerDown={handlePointerDown}
           aria-label={`${booking.guest_name} — ห้อง ${roomNumber}`}
         >
+          {/* Resize handle — left edge */}
+          {isDraggable && !isBeingDragged && (
+            <div
+              className="absolute left-0 inset-y-0 w-2 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
+              onPointerDown={handleResizeLeftDown}
+            >
+              <div className="w-0.5 h-4 rounded-full bg-current/40" />
+            </div>
+          )}
+
+          {/* Resize handle — right edge */}
+          {isDraggable && !isBeingDragged && (
+            <div
+              className="absolute right-0 inset-y-0 w-2 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
+              onPointerDown={handleResizeRightDown}
+            >
+              <div className="w-0.5 h-4 rounded-full bg-current/40" />
+            </div>
+          )}
+
           {/* Left accent bar for multi-room bookings */}
           {isMultiRoom && (
             <div className={cn(

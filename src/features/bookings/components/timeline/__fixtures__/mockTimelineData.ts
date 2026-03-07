@@ -46,6 +46,7 @@ function booking(
   overrides: Partial<TimelineBooking> & { check_in: string; check_out: string; guest_name: string },
 ): TimelineBooking {
   return {
+    room_stay_id: uid(),
     booking_id: uid(),
     status: 'CHECKED_IN',
     balance_amount: 0,
@@ -417,6 +418,7 @@ export function generateMockTimeline(from: string, _to: string): TimelineRespons
       status: 'ACTIVE',
       bookings: [
         {
+          room_stay_id: uid(),
           booking_id: multiRoomBookingId,
           guest_name: 'กลุ่มทัวร์ บริษัท ABC',
           check_in: d(2, base),
@@ -434,6 +436,7 @@ export function generateMockTimeline(from: string, _to: string): TimelineRespons
       status: 'ACTIVE',
       bookings: [
         {
+          room_stay_id: uid(),
           booking_id: multiRoomBookingId,
           guest_name: 'กลุ่มทัวร์ บริษัท ABC',
           check_in: d(2, base),
@@ -451,6 +454,7 @@ export function generateMockTimeline(from: string, _to: string): TimelineRespons
       status: 'ACTIVE',
       bookings: [
         {
+          room_stay_id: uid(),
           booking_id: multiRoomBookingId,
           guest_name: 'กลุ่มทัวร์ บริษัท ABC',
           check_in: d(2, base),

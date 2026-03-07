@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingsApi } from '../api'
-import type { CreateBookingPayload, BookingQueryParams, CreatePaymentPayload, ExtendStayPayload } from '../types'
+import type { CreateBookingPayload, BookingQueryParams, CreatePaymentPayload, ExtendStayPayload, MoveStayPayload } from '../types'
 
 export const AVAILABILITY_GROUPED_KEY = (checkIn: string, checkOut: string, excludeBookingId?: string) =>
   ['availability-grouped', checkIn, checkOut, excludeBookingId ?? ''] as const
@@ -188,6 +188,21 @@ export function useCreatePayment(bookingId: string) {
     mutationFn: (payload: CreatePaymentPayload) => bookingsApi.createPayment(bookingId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
+    },
+  })
+}
+
+/** Move a stay to a different room and/or date range (timeline drag-and-drop). */
+export function useMoveStay() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId, stayId, payload }: { bookingId: string; stayId: string; payload: MoveStayPayload }) =>
+      bookingsApi.moveStay(bookingId, stayId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] })
+      queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
     },
   })
 }

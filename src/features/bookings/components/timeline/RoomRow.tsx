@@ -5,6 +5,7 @@ import type { TimelineRoom, TimelineBooking } from '../../types'
 import BookingBlock from './BookingBlock'
 import { TIMELINE_WINDOW_DAYS } from './tokens'
 import { computeRoomLayout } from './bookingLayout'
+import type { DragMode, DragState } from './useTimelineDrag'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,15 @@ interface RoomRowProps {
   isEven?: boolean
   bookingColorMap: Record<string, string>
   bookingRoomCountMap: Record<string, number>
+  /** Called when user starts a drag or resize on a booking block. */
+  onDragStart?: (
+    e: React.PointerEvent,
+    booking: TimelineBooking,
+    roomId: string,
+    mode: DragMode,
+  ) => void
+  /** Current drag state — passed through to BookingBlock for visual dimming. */
+  dragState?: DragState | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -121,6 +131,8 @@ const RoomRow = React.memo(function RoomRow({
   isEven = false,
   bookingColorMap,
   bookingRoomCountMap,
+  onDragStart,
+  dragState,
 }: RoomRowProps) {
   const displayStatus = deriveDisplayStatus(room)
   const isEmpty = room.bookings.length === 0
@@ -253,8 +265,9 @@ const RoomRow = React.memo(function RoomRow({
 
           return (
             <BookingBlock
-              key={booking.booking_id}
+              key={booking.room_stay_id}
               booking={booking}
+              roomId={room.id}
               roomNumber={room.room_number}
               roomCount={roomCount}
               offsetDays={offsetDays}
@@ -265,6 +278,8 @@ const RoomRow = React.memo(function RoomRow({
               layerIndex={layerInfo?.layerIndex ?? 0}
               totalLayers={layout.totalLayers}
               onTap={onSelectBooking}
+              onDragStart={onDragStart}
+              dragState={dragState}
             />
           )
         })}

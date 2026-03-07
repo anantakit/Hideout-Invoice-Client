@@ -11,6 +11,7 @@ import type {
   CreateBookingPayload,
   CreatePaymentPayload,
   ExtendStayPayload,
+  MoveStayPayload,
   PaymentResponse,
   TimelineResponse,
   AvailabilityGroupedResponse,
@@ -118,6 +119,14 @@ export const bookingsApi = {
   extendStay: async (bookingId: string, stayId: string, payload: ExtendStayPayload): Promise<BookingResponse> => {
     const { data } = await apiClient.patch<ApiResponse<BookingResponse>>(
       `/bookings/${bookingId}/stays/${stayId}/extend`,
+      payload,
+    )
+    return data.data
+  },
+
+  moveStay: async (bookingId: string, stayId: string, payload: MoveStayPayload): Promise<BookingResponse> => {
+    const { data } = await apiClient.patch<ApiResponse<BookingResponse>>(
+      `/bookings/${bookingId}/stays/${stayId}/move`,
       payload,
     )
     return data.data

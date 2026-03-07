@@ -144,10 +144,17 @@ export interface ExtendStayPayload {
   new_check_out: string // YYYY-MM-DD
 }
 
+export interface MoveStayPayload {
+  room_id: string
+  check_in: string   // YYYY-MM-DD
+  check_out: string  // YYYY-MM-DD
+}
+
 // ─── Timeline API ───────────────────────────────────────────────────────────
 
 /** Booking entry as returned by GET /timeline. */
 export interface TimelineBooking {
+  room_stay_id: string
   booking_id: string
   guest_name: string
   /** YYYY-MM-DD inclusive */

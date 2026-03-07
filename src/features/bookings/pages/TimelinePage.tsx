@@ -6,12 +6,14 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { ChevronLeft, ChevronRight, CalendarPlus } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { TooltipProvider } from '@/shared/ui/tooltip'
-import { useTimeline, useAvailabilityGrouped } from '../hooks'
+import toast from 'react-hot-toast'
+import { useTimeline, useAvailabilityGrouped, useMoveStay } from '../hooks'
 import type { TimelineBooking } from '../types'
 import type { SelectedBookingContext } from '../components/timeline/BookingBottomSheet'
 import TimelineHeader from '../components/timeline/TimelineHeader'
 import RoomRow from '../components/timeline/RoomRow'
 import BookingBottomSheet from '../components/timeline/BookingBottomSheet'
+import DragPreview from '../components/timeline/DragPreview'
 import { AvailabilitySummary } from '../components/timeline/AvailabilitySummary'
 import type { RoomAvailability } from '../components/timeline/AvailabilitySummary'
 import { PendingAssignmentsPanel } from '../components/timeline/PendingAssignmentsPanel'
@@ -24,6 +26,7 @@ import {
   computeRowHeight,
 } from '../components/timeline/tokens'
 import { computeRoomLayout } from '../components/timeline/bookingLayout'
+import { useTimelineDrag } from '../components/timeline/useTimelineDrag'
 
 // ─── Booking color utilities ──────────────────────────────────────────────────
 
@@ -99,6 +102,9 @@ export default function TimelinePage() {
 
   const { data: availData, isLoading: availLoading } =
     useAvailabilityGrouped(fromStr, availTo)
+
+  // ── Move stay mutation ──────────────────────────────────────────────────
+  const moveStayMutation = useMoveStay()
 
   // ── Derived data ──────────────────────────────────────────────────────────
   const allRooms        = timelineData?.rooms           ?? []
@@ -237,6 +243,102 @@ export default function TimelinePage() {
     getScrollElement: () => scrollContainerRef.current,
     estimateSize:     getRowHeight,
     overscan:         TIMELINE_OVERSCAN_ROWS,
+  })
+
+  // ── Room position helpers for drag ────────────────────────────────────
+  const gridContainerRef = useRef<HTMLDivElement>(null)
+
+  const getRoomTop = useCallback(
+    (roomId: string): number | undefined => {
+      const idx = filteredRooms.findIndex((r) => r.id === roomId)
+      if (idx === -1) return undefined
+      // Compute cumulative height so this works for ALL rooms,
+      // not just ones currently visible in the virtualizer
+      let top = 0
+      for (let i = 0; i < idx; i++) top += getRowHeight(i)
+      return top
+    },
+    [filteredRooms, getRowHeight],
+  )
+
+  const getRoomHeight = useCallback(
+    (roomId: string): number => {
+      const layers = roomLayerCountMap[roomId] ?? 1
+      return computeRowHeight(layers)
+    },
+    [roomLayerCountMap],
+  )
+
+  // ── Drag and drop ──────────────────────────────────────────────────────
+  const handleMoveStay = useCallback(
+    (payload: {
+      bookingId: string
+      stayId: string
+      newRoomId: string
+      newCheckIn: string
+      newCheckOut: string
+    }) => {
+      const targetRoom = allRooms.find((r) => r.id === payload.newRoomId)
+      const roomLabel = targetRoom ? `ห้อง ${targetRoom.room_number}` : 'ห้องที่เลือก'
+
+      moveStayMutation.mutate(
+        {
+          bookingId: payload.bookingId,
+          stayId: payload.stayId,
+          payload: {
+            room_id: payload.newRoomId,
+            check_in: payload.newCheckIn,
+            check_out: payload.newCheckOut,
+          },
+        },
+        {
+          onSuccess: () => {
+            toast.success(`ย้ายไป${roomLabel} (${payload.newCheckIn} → ${payload.newCheckOut}) สำเร็จ`)
+          },
+          onError: (err: any) => {
+            const serverMsg: string = err?.response?.data?.error ?? ''
+            let msg: string
+
+            if (serverMsg.includes('room type mismatch')) {
+              msg = `ไม่สามารถย้ายข้ามประเภทห้องได้ — ${roomLabel}เป็นคนละประเภทกับห้องเดิม`
+            } else if (serverMsg.includes('room unavailable')) {
+              msg = `${roomLabel}ไม่ว่างในช่วง ${payload.newCheckIn} → ${payload.newCheckOut}`
+            } else if (serverMsg.includes('room is not active')) {
+              msg = `${roomLabel}ปิดใช้งานอยู่ ไม่สามารถย้ายเข้าได้`
+            } else if (serverMsg.includes('room stay not found')) {
+              msg = 'ไม่พบข้อมูลการเข้าพักนี้ อาจถูกยกเลิกไปแล้ว'
+            } else if (serverMsg.includes('room not found')) {
+              msg = `ไม่พบ${roomLabel}ในระบบ`
+            } else if (serverMsg.includes('CHECKED_OUT') || serverMsg.includes('CANCELLED')) {
+              msg = 'ไม่สามารถย้ายได้ — การจองนี้เช็คเอาท์หรือยกเลิกไปแล้ว'
+            } else if (serverMsg.includes('check_out must be after check_in')) {
+              msg = 'วันเช็คเอาท์ต้องอยู่หลังวันเช็คอิน'
+            } else {
+              msg = serverMsg || 'ไม่สามารถย้ายการจองได้ กรุณาลองใหม่'
+            }
+
+            toast.error(msg)
+          },
+        },
+      )
+    },
+    [moveStayMutation, allRooms],
+  )
+
+  const {
+    dragState,
+    previewPos,
+    isDragging,
+    handleDragStart,
+  } = useTimelineDrag({
+    rooms: filteredRooms,
+    windowStart,
+    windowDays: TIMELINE_WINDOW_DAYS,
+    scrollContainerRef,
+    gridContainerRef,
+    onMoveStay: handleMoveStay,
+    getRoomTop,
+    getRoomHeight,
   })
 
   // ── Render ──────────────────────────────────────────────────────────────
@@ -451,6 +553,7 @@ export default function TimelinePage() {
 
                     {filteredRooms.length > 0 && (
                       <div
+                        ref={gridContainerRef}
                         style={{
                           height:   rowVirtualizer.getTotalSize(),
                           position: 'relative',
@@ -480,10 +583,20 @@ export default function TimelinePage() {
                                 isEven={virtualRow.index % 2 === 0}
                                 bookingColorMap={bookingColorMap}
                                 bookingRoomCountMap={bookingRoomCountMap}
+                                onDragStart={handleDragStart}
+                                dragState={dragState}
                               />
                             </div>
                           )
                         })}
+
+                        {/* Drag preview overlay */}
+                        {isDragging && dragState && previewPos && (
+                          <DragPreview
+                            dragState={dragState}
+                            position={previewPos}
+                          />
+                        )}
                       </div>
                     )}
                   </div>
