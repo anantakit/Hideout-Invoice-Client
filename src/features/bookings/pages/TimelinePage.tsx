@@ -27,6 +27,18 @@ import {
 } from '../components/timeline/tokens'
 import { computeRoomLayout } from '../components/timeline/bookingLayout'
 import { useTimelineDrag } from '../components/timeline/useTimelineDrag'
+import { useTimelineActions } from '../components/timeline/useTimelineActions'
+import BookingContextMenu, { type ContextMenuState } from '../components/timeline/BookingContextMenu'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/shared/ui/alert-dialog'
 
 // ─── Booking color utilities ──────────────────────────────────────────────────
 
@@ -80,6 +92,10 @@ export default function TimelinePage() {
   // ── Bottom-sheet state ────────────────────────────────────────────────────
   const [selectedBooking, setSelectedBooking] = useState<SelectedBookingContext | null>(null)
 
+  // ── Context menu + cancel dialog state ──────────────────────────────────
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<TimelineBooking | null>(null)
+
   // ── Mobile single-day offset (0–6 within window) ──────────────────────────
   const [mobileDayOffset, setMobileDayOffset] = useState(3) // start on "today"
 
@@ -105,6 +121,9 @@ export default function TimelinePage() {
 
   // ── Move stay mutation ──────────────────────────────────────────────────
   const moveStayMutation = useMoveStay()
+
+  // ── Timeline quick actions (check-in / check-out / cancel) ────────────
+  const timelineActions = useTimelineActions()
 
   // ── Derived data ──────────────────────────────────────────────────────────
   const allRooms        = timelineData?.rooms           ?? []
@@ -224,6 +243,59 @@ export default function TimelinePage() {
     if (roomTypeId) params.set('room_type_id', roomTypeId)
     navigate(`${ROUTES.bookings.new}?${params.toString()}`)
   }, [navigate, roomTypeIdByRoomId])
+
+  // ── Context menu + quick actions ────────────────────────────────────────
+  const handleOpenContextMenu = useCallback(
+    (booking: TimelineBooking, roomId: string, roomNumber: string, x: number, y: number) => {
+      setContextMenu({ booking, roomId, roomNumber, x, y })
+    },
+    [],
+  )
+  const handleCloseContextMenu = useCallback(() => setContextMenu(null), [])
+
+  const handleQuickCheckIn = useCallback(
+    (booking: TimelineBooking, roomId: string) => {
+      timelineActions.checkIn({
+        bookingId: booking.booking_id,
+        roomStayId: booking.room_stay_id,
+        roomId,
+      })
+    },
+    [timelineActions],
+  )
+
+  const handleQuickCheckOut = useCallback(
+    (booking: TimelineBooking) => {
+      timelineActions.checkOut({
+        bookingId: booking.booking_id,
+        roomStayId: booking.room_stay_id,
+      })
+    },
+    [timelineActions],
+  )
+
+  const handleContextOpenDetail = useCallback(
+    (booking: TimelineBooking) => {
+      navigate(ROUTES.bookings.detail(booking.booking_id))
+    },
+    [navigate],
+  )
+
+  const handleContextCancel = useCallback(
+    (booking: TimelineBooking) => {
+      setCancelTarget(booking)
+    },
+    [],
+  )
+
+  const handleConfirmCancel = useCallback(() => {
+    if (!cancelTarget) return
+    timelineActions.cancelStay({
+      bookingId: cancelTarget.booking_id,
+      stayId: cancelTarget.room_stay_id,
+    })
+    setCancelTarget(null)
+  }, [cancelTarget, timelineActions])
 
   // ── Virtualisation ──────────────────────────────────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -585,6 +657,9 @@ export default function TimelinePage() {
                                 bookingRoomCountMap={bookingRoomCountMap}
                                 onDragStart={handleDragStart}
                                 dragState={dragState}
+                                onContextMenu={handleOpenContextMenu}
+                                onQuickCheckIn={handleQuickCheckIn}
+                                onQuickCheckOut={handleQuickCheckOut}
                               />
                             </div>
                           )
@@ -608,6 +683,38 @@ export default function TimelinePage() {
 
         {/* Booking detail bottom sheet */}
         <BookingBottomSheet selected={selectedBooking} onClose={handleCloseSheet} />
+
+        {/* Context menu (portal-rendered) */}
+        {contextMenu && (
+          <BookingContextMenu
+            state={contextMenu}
+            onClose={handleCloseContextMenu}
+            onCheckIn={handleQuickCheckIn}
+            onCheckOut={handleQuickCheckOut}
+            onOpenDetail={handleContextOpenDetail}
+            onCancel={handleContextCancel}
+          />
+        )}
+
+        {/* Cancel confirmation dialog */}
+        <AlertDialog open={cancelTarget !== null} onOpenChange={(open) => !open && setCancelTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>ยืนยันการยกเลิก</AlertDialogTitle>
+              <AlertDialogDescription>
+                ต้องการยกเลิกการจองของ <strong>{cancelTarget?.guest_name}</strong>{' '}
+                ({cancelTarget?.check_in} → {cancelTarget?.check_out}) ใช่หรือไม่?
+                การดำเนินการนี้ไม่สามารถย้อนกลับได้
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmCancel}>
+                ยืนยัน ยกเลิกการจอง
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TooltipProvider>
   )

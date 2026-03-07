@@ -31,6 +31,18 @@ interface RoomRowProps {
   ) => void
   /** Current drag state — passed through to BookingBlock for visual dimming. */
   dragState?: DragState | null
+  /** Called to open context menu on a booking block. */
+  onContextMenu?: (
+    booking: TimelineBooking,
+    roomId: string,
+    roomNumber: string,
+    x: number,
+    y: number,
+  ) => void
+  /** Quick action: check-in. */
+  onQuickCheckIn?: (booking: TimelineBooking, roomId: string) => void
+  /** Quick action: check-out. */
+  onQuickCheckOut?: (booking: TimelineBooking) => void
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -133,6 +145,9 @@ const RoomRow = React.memo(function RoomRow({
   bookingRoomCountMap,
   onDragStart,
   dragState,
+  onContextMenu,
+  onQuickCheckIn,
+  onQuickCheckOut,
 }: RoomRowProps) {
   const displayStatus = deriveDisplayStatus(room)
   const isEmpty = room.bookings.length === 0
@@ -280,6 +295,9 @@ const RoomRow = React.memo(function RoomRow({
               onTap={onSelectBooking}
               onDragStart={onDragStart}
               dragState={dragState}
+              onContextMenu={onContextMenu}
+              onQuickCheckIn={onQuickCheckIn}
+              onQuickCheckOut={onQuickCheckOut}
             />
           )
         })}

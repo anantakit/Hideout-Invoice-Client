@@ -1,6 +1,6 @@
 import React, { type CSSProperties, useCallback, useMemo } from 'react'
 import { format, parseISO } from 'date-fns'
-import { Users, Clock } from 'lucide-react'
+import { Users, Clock, LogIn, LogOut } from 'lucide-react'
 import {
   TIMELINE_BLOCK_HEIGHT_PX,
   TIMELINE_BLOCK_GAP_PX,
@@ -64,6 +64,18 @@ export interface BookingBlockProps {
   ) => void
   /** Current drag state — used to dim the source block while dragging. */
   dragState?: DragState | null
+  /** Called to open context menu at a given position. */
+  onContextMenu?: (
+    booking: TimelineBooking,
+    roomId: string,
+    roomNumber: string,
+    x: number,
+    y: number,
+  ) => void
+  /** Quick action: check-in. */
+  onQuickCheckIn?: (booking: TimelineBooking, roomId: string) => void
+  /** Quick action: check-out. */
+  onQuickCheckOut?: (booking: TimelineBooking) => void
 }
 
 const BookingBlock = React.memo(function BookingBlock({
@@ -81,6 +93,9 @@ const BookingBlock = React.memo(function BookingBlock({
   onTap,
   onDragStart,
   dragState,
+  onContextMenu,
+  onQuickCheckIn,
+  onQuickCheckOut,
 }: BookingBlockProps) {
   // Read hover state from external store — only this component re-renders on hover change
   const hoveredBookingId = useHoveredBookingId()
@@ -116,13 +131,22 @@ const BookingBlock = React.memo(function BookingBlock({
   }, [offsetDays, spanDays, isMultiLayer, layerIndex])
 
   const isMultiRoom = roomCount > 1
+  const status = booking.status
+  const canCheckIn = status === 'RESERVED' || status === 'ASSIGNED'
+  const canCheckOut = status === 'CHECKED_IN'
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       onTap(booking)
     }
-  }, [onTap, booking])
+    // Shift+F10 opens context menu (standard keyboard shortcut)
+    if (e.key === 'F10' && e.shiftKey && onContextMenu) {
+      e.preventDefault()
+      const rect = (e.target as HTMLElement).getBoundingClientRect()
+      onContextMenu(booking, roomId, roomNumber, rect.left + rect.width / 2, rect.top + rect.height / 2)
+    }
+  }, [onTap, booking, onContextMenu, roomId, roomNumber])
 
   // ── Drag handlers ──────────────────────────────────────────────────────
 
@@ -157,8 +181,20 @@ const BookingBlock = React.memo(function BookingBlock({
     [isDraggable, onDragStart, booking, roomId],
   )
 
+  // ── Context menu handler ───────────────────────────────────────────────
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (!onContextMenu) return
+      e.preventDefault()
+      e.stopPropagation()
+      onContextMenu(booking, roomId, roomNumber, e.clientX, e.clientY)
+    },
+    [onContextMenu, booking, roomId, roomNumber],
+  )
+
   return (
-    <Tooltip delayDuration={200}>
+    <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>
         <button
           type="button"
@@ -208,25 +244,63 @@ const BookingBlock = React.memo(function BookingBlock({
           onClick={() => !isBeingDragged && onTap(booking)}
           onKeyDown={handleKeyDown}
           onPointerDown={handlePointerDown}
+          onContextMenu={handleContextMenu}
           aria-label={`${booking.guest_name} — ห้อง ${roomNumber}`}
         >
           {/* Resize handle — left edge */}
           {isDraggable && !isBeingDragged && (
             <div
-              className="absolute left-0 inset-y-0 w-2 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
+              className="absolute -left-1 inset-y-0 w-4 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
               onPointerDown={handleResizeLeftDown}
             >
-              <div className="w-0.5 h-4 rounded-full bg-current/40" />
+              <div className="flex gap-px">
+                <div className="w-[2px] h-5 rounded-full bg-current/50" />
+                <div className="w-[2px] h-5 rounded-full bg-current/50" />
+              </div>
             </div>
           )}
 
           {/* Resize handle — right edge */}
           {isDraggable && !isBeingDragged && (
             <div
-              className="absolute right-0 inset-y-0 w-2 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
+              className="absolute -right-1 inset-y-0 w-4 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
               onPointerDown={handleResizeRightDown}
             >
-              <div className="w-0.5 h-4 rounded-full bg-current/40" />
+              <div className="flex gap-px">
+                <div className="w-[2px] h-5 rounded-full bg-current/50" />
+                <div className="w-[2px] h-5 rounded-full bg-current/50" />
+              </div>
+            </div>
+          )}
+
+          {/* ── Quick action button (hover overlay) ──────────────────────── */}
+          {!isBeingDragged && canCheckIn && onQuickCheckIn && (
+            <div
+              className="absolute top-0.5 right-4 z-10 opacity-0 group-hover/block:opacity-100 transition-opacity"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); onQuickCheckIn(booking, roomId) }}
+            >
+              <div
+                className="flex items-center justify-center w-5 h-5 rounded bg-success/90 text-white shadow-sm hover:bg-success transition-colors"
+                title="เช็คอิน"
+              >
+                <LogIn className="w-3 h-3" />
+              </div>
+            </div>
+          )}
+
+          {!isBeingDragged && canCheckOut && onQuickCheckOut && (
+            <div
+              className="absolute top-0.5 right-4 z-10 opacity-0 group-hover/block:opacity-100 transition-opacity"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); onQuickCheckOut(booking) }}
+            >
+              <div
+                className="flex items-center justify-center w-5 h-5 rounded bg-info/90 text-white shadow-sm hover:bg-info transition-colors"
+                title="เช็คเอาท์"
+              >
+                <LogOut className="w-3 h-3" />
+              </div>
             </div>
           )}
 
@@ -336,6 +410,10 @@ const BookingBlock = React.memo(function BookingBlock({
             {booking.status}
           </Badge>
         </div>
+
+        <p className="text-[9px] text-muted-foreground/50 mt-1.5">
+          คลิกขวาเพื่อดูเมนู
+        </p>
       </TooltipContent>
     </Tooltip>
   )
