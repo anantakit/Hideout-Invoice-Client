@@ -123,6 +123,14 @@ export const bookingsApi = {
     return data.data
   },
 
+  checkoutRooms: async (bookingId: string, stayIds: string[]): Promise<BookingResponse> => {
+    const { data } = await apiClient.post<ApiResponse<BookingResponse>>(
+      `/bookings/${bookingId}/checkout`,
+      { stay_ids: stayIds },
+    )
+    return data.data
+  },
+
   /**
    * Fetch the 7-day rolling timeline.
    * @param from YYYY-MM-DD inclusive

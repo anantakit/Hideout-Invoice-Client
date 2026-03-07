@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { format, addDays } from 'date-fns'
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form'
 import { Plus, Minus, Trash2, Loader2, Wand2 } from 'lucide-react'
 import { cn } from '@/shared/utils'
@@ -28,12 +29,10 @@ import type { RoomTypeResponse } from '../types'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function todayStr(): string {
-  return new Date().toISOString().split('T')[0]
+  return format(new Date(), 'yyyy-MM-dd')
 }
 function tomorrowStr(): string {
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  return d.toISOString().split('T')[0]
+  return format(addDays(new Date(), 1), 'yyyy-MM-dd')
 }
 
 // ─── RoomTypeBookingBuilder ────────────────────────────────────────────────────

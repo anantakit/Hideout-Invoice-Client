@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react'
-import { parseISO, isToday, differenceInDays, format } from 'date-fns'
+import { parseISO, isToday, differenceInDays, format, addDays } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/shared/utils'
@@ -21,12 +21,6 @@ function toDateStr(s: string): string {
   return s.slice(0, 10)
 }
 
-function isOccupied(stay: { check_in: string; check_out: string }, dateStr: string): boolean {
-  const ci = toDateStr(stay.check_in)
-  const co = toDateStr(stay.check_out)
-  return ci <= dateStr && dateStr < co
-}
-
 function fmtShort(d: Date): string {
   return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
 }
@@ -44,37 +38,160 @@ function overlapsRange(stay: { check_in: string; check_out: string }, rangeStart
   return ci < rangeEnd && co > rangeStart
 }
 
-// ─── Room list status types ──────────────────────────────────────────────────
+// ─── Room state classification ───────────────────────────────────────────────
+// Each room belongs to exactly ONE state on a given date.
+// This is the single source of truth for KPI, room list, and filter chips.
 
-type RoomStatus = 'free' | 'occupied' | 'checkout' | 'out_of_service'
-type FilterValue = RoomStatus | 'all'
+type RoomStatus = 'available' | 'reserved' | 'checked_in' | 'checkout_today' | 'turnover' | 'maintenance'
+type RangeStatus = 'range_available' | 'range_occupied' | 'maintenance'
+type FilterValue = RoomStatus | RangeStatus | 'all'
 
 interface RoomEntry {
   room: TimelineRoom
   typeName: string
-  status: RoomStatus
+  status: RoomStatus | RangeStatus
   guestName?: string
   booking?: TimelineBooking
   balance?: number
+  /** For turnover: the guest checking out */
+  checkoutGuestName?: string
+  checkoutBooking?: TimelineBooking
+  checkoutBalance?: number
 }
 
-const STATUS_CFG: Record<RoomStatus, {
+type RoomCounts = Record<RoomStatus, number>
+
+const STATUS_CFG: Record<RoomStatus | RangeStatus, {
   label: string
-  badge: 'green' | 'blue' | 'amber' | 'gray'
+  badge: 'green' | 'blue' | 'amber' | 'gray' | 'red'
   border: string
 }> = {
-  free:           { label: 'ว่าง',        badge: 'green', border: 'border-l-success' },
-  occupied:       { label: 'เข้าพัก',     badge: 'blue',  border: 'border-l-primary' },
-  checkout:       { label: 'เช็คเอาท์',   badge: 'amber', border: 'border-l-warning' },
-  out_of_service: { label: 'ปิดปรับปรุง',  badge: 'gray',  border: 'border-l-muted-foreground/40' },
+  available:       { label: 'ว่าง',        badge: 'green', border: 'border-l-success' },
+  reserved:        { label: 'จองแล้ว',     badge: 'amber', border: 'border-l-warning' },
+  checked_in:      { label: 'เข้าพัก',     badge: 'blue',  border: 'border-l-primary' },
+  checkout_today:  { label: 'เช็คเอาท์',   badge: 'amber', border: 'border-l-warning' },
+  turnover:        { label: 'เปลี่ยนแขก',  badge: 'red',   border: 'border-l-destructive' },
+  maintenance:     { label: 'ปิดปรับปรุง',  badge: 'gray',  border: 'border-l-muted-foreground/40' },
+  range_available: { label: 'ว่าง',        badge: 'green', border: 'border-l-success' },
+  range_occupied:  { label: 'ไม่ว่าง',     badge: 'red',   border: 'border-l-destructive' },
 }
 
-const FILTERS: { value: FilterValue; label: string }[] = [
-  { value: 'all',      label: 'ทั้งหมด' },
-  { value: 'free',     label: 'ว่าง' },
-  { value: 'occupied', label: 'เข้าพัก' },
-  { value: 'checkout', label: 'เช็คเอาท์' },
+const ALL_FILTERS: { value: FilterValue; label: string }[] = [
+  { value: 'all',           label: 'ทั้งหมด' },
+  { value: 'available',     label: 'ว่าง' },
+  { value: 'reserved',      label: 'จองแล้ว' },
+  { value: 'checked_in',    label: 'เข้าพัก' },
+  { value: 'checkout_today', label: 'เช็คเอาท์' },
+  { value: 'turnover',      label: 'เปลี่ยนแขก' },
+  { value: 'maintenance',   label: 'ปิดปรับปรุง' },
 ]
+
+const RANGE_FILTERS: { value: FilterValue; label: string }[] = [
+  { value: 'all',             label: 'ทั้งหมด' },
+  { value: 'range_available', label: 'ว่าง' },
+  { value: 'range_occupied',  label: 'ไม่ว่าง' },
+  { value: 'maintenance',     label: 'ปิดปรับปรุง' },
+]
+
+/**
+ * Classify every room into exactly ONE state using strict priority evaluation.
+ * This is the single source of truth for KPI, room list, and filter chips.
+ *
+ * Priority order (first match wins):
+ *   P1  ปิดปรับปรุง   room.status IN (MAINTENANCE, CLEANING)
+ *   P2  เปลี่ยนแขก    EXISTS stay check_out=D AND EXISTS stay check_in=D (different booking)
+ *   P3  เช็คเอาท์      EXISTS stay check_out=D (and not turnover)
+ *   P4  เข้าพัก        stay.status=CHECKED_IN AND overlaps D (check_in<=D AND check_out>D)
+ *   P5  จองแล้ว       stay.status IN (RESERVED,ASSIGNED) AND overlaps D
+ *   P6  ว่าง          none of the above
+ */
+function classifyRooms(
+  rooms: TimelineRoom[],
+  dateStr: string,
+  roomTypeNameMap: Record<string, string>,
+): { entries: RoomEntry[]; counts: RoomCounts } {
+  const result: RoomEntry[] = []
+  const c: RoomCounts = { available: 0, reserved: 0, checked_in: 0, checkout_today: 0, turnover: 0, maintenance: 0 }
+
+  for (const room of rooms) {
+    const typeName = roomTypeNameMap[room.id] ?? ''
+
+    // ── P1: MAINTENANCE ──────────────────────────────────────────────
+    if (room.status !== 'ACTIVE') {
+      c.maintenance++
+      result.push({ room, typeName, status: 'maintenance' })
+      continue
+    }
+
+    // Precompute: checkout today (check_out = D) and checkin today (check_in = D)
+    const coStay = room.bookings.find((b) => toDateStr(b.check_out) === dateStr)
+    const ciStay = room.bookings.find((b) => toDateStr(b.check_in) === dateStr)
+
+    // ── P2: TURNOVER ─────────────────────────────────────────────────
+    if (coStay && ciStay && coStay.booking_id !== ciStay.booking_id) {
+      c.turnover++
+      result.push({
+        room, typeName, status: 'turnover',
+        guestName: ciStay.guest_name,
+        booking: ciStay,
+        balance: ciStay.balance_amount,
+        checkoutGuestName: coStay.guest_name,
+        checkoutBooking: coStay,
+        checkoutBalance: coStay.balance_amount,
+      })
+      continue
+    }
+
+    // ── P3: CHECKOUT TODAY ───────────────────────────────────────────
+    if (coStay) {
+      c.checkout_today++
+      result.push({
+        room, typeName, status: 'checkout_today',
+        guestName: coStay.guest_name,
+        booking: coStay,
+        balance: coStay.balance_amount,
+      })
+      continue
+    }
+
+    // Stay overlapping D: check_in <= D AND check_out > D
+    const overlapping = room.bookings.find((b) => {
+      const ci = toDateStr(b.check_in)
+      const co = toDateStr(b.check_out)
+      return ci <= dateStr && co > dateStr
+    })
+
+    // ── P4: CHECKED_IN ───────────────────────────────────────────────
+    if (overlapping?.status === 'CHECKED_IN') {
+      c.checked_in++
+      result.push({
+        room, typeName, status: 'checked_in',
+        guestName: overlapping.guest_name,
+        booking: overlapping,
+        balance: overlapping.balance_amount,
+      })
+      continue
+    }
+
+    // ── P5: RESERVED ─────────────────────────────────────────────────
+    if (overlapping && (overlapping.status === 'RESERVED' || overlapping.status === 'ASSIGNED')) {
+      c.reserved++
+      result.push({
+        room, typeName, status: 'reserved',
+        guestName: overlapping.guest_name,
+        booking: overlapping,
+        balance: overlapping.balance_amount,
+      })
+      continue
+    }
+
+    // ── P6: AVAILABLE ────────────────────────────────────────────────
+    c.available++
+    result.push({ room, typeName, status: 'available' })
+  }
+
+  return { entries: result, counts: c }
+}
 
 // ─── Operations types ────────────────────────────────────────────────────────
 
@@ -94,6 +211,8 @@ interface CheckoutBooking {
   guestName: string
   roomNumbers: string[]
   balance: number
+  checkIn: string
+  nights: number
   booking?: TimelineBooking
 }
 
@@ -129,55 +248,88 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
 
   const selectedDate = parseISO(selectedDateStr)
   const viewingToday = isToday(selectedDate)
-  const todayStr = format(new Date(), 'yyyy-MM-dd')
   const stayRangeValid = stayRange.checkIn && stayRange.checkOut && stayRange.checkOut > stayRange.checkIn
 
   // ══════════════════════════════════════════════════════════════════════════
-  // TODAY KPI — always computed from today
+  // KPI — follows selectedDate
   // ══════════════════════════════════════════════════════════════════════════
 
-  const todayKPI = useMemo(() => {
-    let freeCount = 0
-    let checkinCount = 0
-    let checkoutCount = 0
-    const checkinBookingIds = new Set<string>()
-    const checkoutBookingIds = new Set<string>()
+  const totalActiveRooms = useMemo(
+    () => rooms.filter((r) => r.status === 'ACTIVE').length,
+    [rooms],
+  )
+
+  const dateKPI = useMemo(() => {
+    const classification = classifyRooms(rooms, selectedDateStr, roomTypeNameMap)
+    const tc = classification.counts
+    const availableCount = tc.available
+
+    // Availability by room type
+    const byType = new Map<string, { total: number; available: number }>()
+    for (const e of classification.entries) {
+      if (e.room.status !== 'ACTIVE') continue
+      const t = byType.get(e.typeName) ?? { total: 0, available: 0 }
+      t.total++
+      if (e.status === 'available') t.available++
+      byType.set(e.typeName, t)
+    }
+
+    // Check-in/check-out progress (per-stay, not per-room)
+    let checkinTotal = 0
+    let checkinDone = 0
+    let checkoutTotal = 0
+    let checkoutDone = 0
 
     for (const room of rooms) {
       if (room.status !== 'ACTIVE') continue
-      let roomOccupiedToday = false
-
       for (const b of room.bookings) {
-        const ci = toDateStr(b.check_in)
-        const co = toDateStr(b.check_out)
-
-        if (ci === todayStr) {
-          roomOccupiedToday = true
-          checkinBookingIds.add(b.booking_id)
-        } else if (isOccupied(b, todayStr)) {
-          roomOccupiedToday = true
+        if (toDateStr(b.check_in) === selectedDateStr) {
+          checkinTotal++
+          if (b.status === 'CHECKED_IN' || b.status === 'CHECKED_OUT') checkinDone++
         }
-
-        if (co === todayStr) {
-          checkoutBookingIds.add(b.booking_id)
+        if (toDateStr(b.check_out) === selectedDateStr) {
+          checkoutTotal++
+          if (b.status === 'CHECKED_OUT') checkoutDone++
         }
       }
-
-      if (!roomOccupiedToday) freeCount++
     }
 
-    // Count unassigned stays checking in today as checkins too
+    // Unassigned stays checking in on selectedDate
     for (const s of unassignedStays) {
-      if (toDateStr(s.check_in) === todayStr) {
-        checkinBookingIds.add(s.booking_id)
+      if (toDateStr(s.check_in) === selectedDateStr) {
+        checkinTotal++
+        if (s.status === 'CHECKED_IN' || s.status === 'CHECKED_OUT') checkinDone++
       }
     }
 
-    checkinCount = checkinBookingIds.size
-    checkoutCount = checkoutBookingIds.size
+    // Unassigned stays that consume inventory (no physical room yet)
+    let unassignedReserved = 0
+    for (const s of unassignedStays) {
+      const ci = toDateStr(s.check_in)
+      const co = toDateStr(s.check_out)
+      if (ci <= selectedDateStr && co > selectedDateStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT') {
+        unassignedReserved++
+      }
+    }
 
-    return { freeCount, checkinCount, checkoutCount }
-  }, [rooms, todayStr, unassignedStays])
+    return {
+      availableCount: availableCount - unassignedReserved,
+      unassignedReserved,
+      byType: Array.from(byType.entries()).map(([name, v]) => ({ name, ...v })),
+      checkinTotal, checkinDone,
+      checkoutTotal, checkoutDone,
+    }
+  }, [rooms, selectedDateStr, roomTypeNameMap, unassignedStays])
+
+  const availablePct = totalActiveRooms > 0
+    ? Math.round((Math.max(0, dateKPI.availableCount) / totalActiveRooms) * 100)
+    : 0
+  const checkinPct = dateKPI.checkinTotal > 0
+    ? Math.round((dateKPI.checkinDone / dateKPI.checkinTotal) * 100)
+    : 0
+  const checkoutPct = dateKPI.checkoutTotal > 0
+    ? Math.round((dateKPI.checkoutDone / dateKPI.checkoutTotal) * 100)
+    : 0
 
   // ══════════════════════════════════════════════════════════════════════════
   // OPERATIONS — scoped to selectedDate (unified check-in section)
@@ -225,6 +377,8 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
               guestName: b.guest_name,
               roomNumbers: [room.room_number],
               balance: b.balance_amount,
+              checkIn: ci,
+              nights: differenceInDays(parseISO(b.check_out), parseISO(b.check_in)),
               booking: b,
             })
           }
@@ -260,65 +414,49 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   }, [rooms, selectedDateStr, roomTypeNameMap, unassignedStays])
 
   // ══════════════════════════════════════════════════════════════════════════
-  // ROOM LIST — scoped to selectedDate
+  // ROOM LIST — scoped to selectedDate, uses same classifyRooms as KPI
   // ══════════════════════════════════════════════════════════════════════════
 
-  const { entries, counts } = useMemo(() => {
-    const dateStr = selectedDateStr
-    const result: RoomEntry[] = []
-    const c = { free: 0, occupied: 0, checkout: 0, out_of_service: 0 }
+  const { entries, counts } = useMemo(
+    () => classifyRooms(rooms, selectedDateStr, roomTypeNameMap),
+    [rooms, selectedDateStr, roomTypeNameMap],
+  )
 
-    for (const room of rooms) {
-      const typeName = roomTypeNameMap[room.id] ?? ''
-
-      if (room.status !== 'ACTIVE') {
-        c.out_of_service++
-        result.push({ room, typeName, status: 'out_of_service' })
-        continue
+  // Unassigned stays overlapping selectedDate (reservations without a physical room)
+  const unassignedForDate = useMemo(() => {
+    let count = 0
+    for (const s of unassignedStays) {
+      const ci = toDateStr(s.check_in)
+      const co = toDateStr(s.check_out)
+      if (ci <= selectedDateStr && co > selectedDateStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT') {
+        count++
       }
-
-      const occupying = room.bookings.find((b) => isOccupied(b, dateStr))
-      if (occupying) {
-        c.occupied++
-        result.push({
-          room, typeName, status: 'occupied',
-          guestName: occupying.guest_name,
-          booking: occupying,
-          balance: occupying.balance_amount,
-        })
-        continue
-      }
-
-      const checkingOut = room.bookings.find((b) => toDateStr(b.check_out) === dateStr)
-      if (checkingOut) {
-        c.checkout++
-        result.push({
-          room, typeName, status: 'checkout',
-          guestName: checkingOut.guest_name,
-          booking: checkingOut,
-          balance: checkingOut.balance_amount,
-        })
-        continue
-      }
-
-      c.free++
-      result.push({ room, typeName, status: 'free' })
     }
+    return count
+  }, [unassignedStays, selectedDateStr])
 
+  // ── Rooms classified for stay range ─────────────────────────────────────
+  const rangeEntries = useMemo(() => {
+    if (!stayRangeValid) return { entries: [] as RoomEntry[], counts: { range_available: 0, range_occupied: 0, maintenance: 0 } }
+    const result: RoomEntry[] = []
+    const c = { range_available: 0, range_occupied: 0, maintenance: 0 }
+    for (const e of entries) {
+      if (e.room.status !== 'ACTIVE') {
+        c.maintenance++
+        result.push({ ...e, status: 'maintenance' })
+      } else if (e.room.bookings.some((b) => overlapsRange(b, stayRange.checkIn, stayRange.checkOut))) {
+        c.range_occupied++
+        result.push({ ...e, status: 'range_occupied' })
+      } else {
+        c.range_available++
+        result.push({ ...e, status: 'range_available' })
+      }
+    }
     return { entries: result, counts: c }
-  }, [rooms, selectedDateStr, roomTypeNameMap])
-
-  // ── Free rooms for stay range ────────────────────────────────────────────
-  const freeForRange = useMemo(() => {
-    if (!stayRangeValid) return []
-    return entries.filter((e) => {
-      if (e.room.status !== 'ACTIVE') return false
-      return !e.room.bookings.some((b) => overlapsRange(b, stayRange.checkIn, stayRange.checkOut))
-    })
   }, [entries, stayRange, stayRangeValid])
 
   const displayedEntries = freeRoomMode === 'range' && stayRangeValid
-    ? freeForRange
+    ? rangeEntries.entries
     : entries
 
   const filtered = useMemo(
@@ -328,9 +466,20 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
 
   const handleTap = useCallback(
     (entry: RoomEntry) => {
+      if (entry.status === 'available') {
+        const nextDay = format(addDays(parseISO(selectedDateStr), 1), 'yyyy-MM-dd')
+        navigate(`${ROUTES.bookings.new}?check_in=${selectedDateStr}&check_out=${nextDay}`)
+        return
+      }
+      if (entry.status === 'range_available' || entry.status === 'range_occupied') return
+      // For turnover, show the checkout booking (the one that needs action first)
+      if (entry.status === 'turnover' && entry.checkoutBooking) {
+        onSelectBooking(entry.checkoutBooking)
+        return
+      }
       if (entry.booking) onSelectBooking(entry.booking)
     },
-    [onSelectBooking],
+    [onSelectBooking, navigate, selectedDateStr],
   )
 
   const total = displayedEntries.length
@@ -341,50 +490,113 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     <div className="flex-1 overflow-auto pb-6">
 
       {/* ════════════════════════════════════════════════════════════════════
-          SECTION: Today KPI — always today's numbers
+          SECTION 1: สถานะโรงแรม — follows selectedDate
           ════════════════════════════════════════════════════════════════════ */}
-      <div className="px-4 pt-3 pb-1">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-          สรุปวันนี้
+      <div className="px-4 pt-3 pb-1 space-y-2">
+        <p className="text-lg font-semibold text-foreground">
+          สถานะโรงแรม · {fmtShort(selectedDate)} {selectedDate.getFullYear() + 543}
         </p>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-xl border border-border bg-card px-3 py-2.5 text-center">
-            <p className="text-2xl font-bold tabular-nums text-success leading-none">
-              {todayKPI.freeCount}
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-1">ว่าง</p>
+
+        {/* Available rooms — hero number */}
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm text-muted-foreground">ห้องว่าง</span>
+            <div className="flex items-baseline gap-1">
+              <span className={cn(
+                'text-3xl font-semibold tabular-nums leading-none',
+                dateKPI.availableCount <= 0 ? 'text-destructive' : 'text-success',
+              )}>
+                {Math.max(0, dateKPI.availableCount)}
+              </span>
+              <span className="text-sm text-muted-foreground">/ {totalActiveRooms}</span>
+              {dateKPI.availableCount <= 0 && totalActiveRooms > 0 && (
+                <Badge variant="red" className="text-xs px-1.5 py-0 ml-1">เต็ม</Badge>
+              )}
+            </div>
           </div>
-          <div className="rounded-xl border border-border bg-card px-3 py-2.5 text-center">
-            <p className="text-2xl font-bold tabular-nums text-primary leading-none">
-              {todayKPI.checkinCount}
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-1">เช็คอิน</p>
+          <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-success transition-all duration-300"
+              style={{ width: `${availablePct}%` }}
+            />
           </div>
-          <div className="rounded-xl border border-border bg-card px-3 py-2.5 text-center">
-            <p className="text-2xl font-bold tabular-nums text-warning leading-none">
-              {todayKPI.checkoutCount}
+
+          {/* Breakdown by room type */}
+          {dateKPI.byType.length > 0 && (
+            <div className="flex gap-3 mt-2.5 flex-wrap">
+              {dateKPI.byType.map((t) => (
+                <div key={t.name} className="flex items-baseline gap-1">
+                  <span className="text-xs text-muted-foreground">{t.name}</span>
+                  <span className="text-sm font-semibold tabular-nums text-foreground">{t.available}</span>
+                  <span className="text-xs text-muted-foreground/50">/{t.total}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {dateKPI.unassignedReserved > 0 && (
+            <p className="text-xs text-muted-foreground mt-1.5 tabular-nums">
+              รอกำหนดห้อง {dateKPI.unassignedReserved} รายการ
             </p>
-            <p className="text-[10px] text-muted-foreground mt-1">เช็คเอาท์</p>
-          </div>
+          )}
         </div>
+
+        {/* Check-in & Check-out — compact inline */}
+        {(dateKPI.checkinTotal > 0 || dateKPI.checkoutTotal > 0) && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-border bg-card px-3 py-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">เช็คอิน</span>
+                <span className="text-sm font-semibold tabular-nums text-primary">
+                  {dateKPI.checkinDone}<span className="text-xs font-normal text-muted-foreground">/{dateKPI.checkinTotal}</span>
+                </span>
+              </div>
+              {dateKPI.checkinTotal > 0 && (
+                <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-300"
+                    style={{ width: `${checkinPct}%` }}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="rounded-xl border border-border bg-card px-3 py-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">เช็คเอาท์</span>
+                <span className="text-sm font-semibold tabular-nums text-warning">
+                  {dateKPI.checkoutDone}<span className="text-xs font-normal text-muted-foreground">/{dateKPI.checkoutTotal}</span>
+                </span>
+              </div>
+              {dateKPI.checkoutTotal > 0 && (
+                <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-warning transition-all duration-300"
+                    style={{ width: `${checkoutPct}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          SECTION: Operations — scoped to selectedDate
+          SECTION 2: งานประจำวัน — scoped to selectedDate
           ════════════════════════════════════════════════════════════════════ */}
       {hasOps && (
-        <div className="px-4 pt-4 space-y-4">
+        <div className="px-4 pt-5 space-y-4">
 
           {/* ── Check-in ─────────────────────────────────────────────── */}
           {dateOps.checkins.length > 0 && (
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-lg font-semibold text-foreground">
                 เช็คอิน{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`} ({dateOps.checkins.length})
               </p>
               {dateOps.checkins.map((ci) => {
                 const needsAssign = ci.unassignedCount > 0
                 const assignedCount = ci.totalStays - ci.unassignedCount
                 const allAssigned = ci.unassignedCount === 0
+                const progressPct = ci.totalStays > 0 ? (assignedCount / ci.totalStays) * 100 : 0
+
                 return (
                   <button
                     key={ci.bookingId}
@@ -392,32 +604,50 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                     onClick={() => setAssignSheetBookingId(ci.bookingId)}
                     className="w-full rounded-xl border border-primary/20 bg-accent/5 px-3 py-3 text-left active:bg-accent/10 transition-colors"
                   >
+                    {/* Row 1: name + rooms · nights */}
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-semibold truncate">{ci.guestName}</span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Badge
-                          variant={allAssigned ? 'green' : 'amber'}
-                          className="text-[9px] px-1.5 py-0"
-                        >
-                          Assigned {assignedCount}/{ci.totalStays}
-                        </Badge>
-                        <span className="text-[11px] text-muted-foreground">{ci.nights} คืน</span>
-                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {ci.totalStays} ห้อง · {ci.nights} คืน
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+
+                    {/* Row 2: type · assigned rooms */}
+                    <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
                       <span>{ci.typeName}</span>
                       {ci.assignedRooms.length > 0 && (
-                        <span className="font-medium text-foreground/70">
-                          ห้อง {ci.assignedRooms.join(', ')}
-                        </span>
+                        <>
+                          <span>·</span>
+                          <span className="font-medium text-foreground/70">
+                            ห้อง {ci.assignedRooms.join(', ')}
+                          </span>
+                        </>
                       )}
                     </div>
+
+                    {/* Row 3: mini progress bar + count */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={cn(
+                            'h-full rounded-full transition-all duration-300',
+                            allAssigned ? 'bg-success' : 'bg-warning',
+                          )}
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium tabular-nums text-muted-foreground shrink-0">
+                        กำหนดแล้ว {assignedCount}/{ci.totalStays}
+                      </span>
+                    </div>
+
+                    {/* Row 4: CTA */}
                     <div className="flex justify-end mt-2">
                       <span className={cn(
                         'text-xs font-medium flex items-center gap-0.5',
                         needsAssign ? 'text-warning' : 'text-primary',
                       )}>
-                        {needsAssign ? 'Assign + Check-in' : 'Check-in'}
+                        {needsAssign ? 'กำหนดห้อง' : 'เช็คอิน'}
                         <ChevronRight className="w-3.5 h-3.5" />
                       </span>
                     </div>
@@ -430,7 +660,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           {/* ── Check-out ────────────────────────────────────────────── */}
           {dateOps.checkouts.length > 0 && (
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-lg font-semibold text-foreground">
                 เช็คเอาท์{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`} ({dateOps.checkouts.length})
               </p>
               {dateOps.checkouts.map((co) => {
@@ -442,22 +672,29 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                     onClick={() => navigate(ROUTES.bookings.detail(co.bookingId))}
                     className="w-full rounded-xl border border-warning/20 bg-warning-muted/30 px-3 py-3 text-left active:bg-warning-muted/50 transition-colors"
                   >
+                    {/* Row 1: name + balance */}
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-semibold truncate">{co.guestName}</span>
                       {hasBalance && (
-                        <span className="text-[10px] text-destructive font-medium shrink-0">
+                        <span className="text-xs text-destructive font-medium shrink-0">
                           ค้าง ฿{co.balance.toLocaleString()}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+
+                    {/* Row 2: rooms · check-in date (nights) */}
+                    <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
                       <span className="font-medium text-foreground/70">
                         ห้อง {co.roomNumbers.join(', ')}
                       </span>
+                      <span>·</span>
+                      <span>เข้าพัก {fmtShortISO(co.checkIn)} ({co.nights} คืน)</span>
                     </div>
+
+                    {/* Row 3: CTA */}
                     <div className="flex justify-end mt-2">
                       <span className="text-xs font-medium text-warning flex items-center gap-0.5">
-                        Check-out
+                        เช็คเอาท์
                         <ChevronRight className="w-3.5 h-3.5" />
                       </span>
                     </div>
@@ -470,42 +707,29 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
       )}
 
       {/* ════════════════════════════════════════════════════════════════════
-          SECTION: Stay Availability Checker
+          SECTION 3: ตรวจสอบห้องว่างสำหรับการจอง
           ════════════════════════════════════════════════════════════════════ */}
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-5">
         <StayAvailabilityCard range={stayRange} onRangeChange={setStayRange} />
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          SECTION: Room Availability — scoped to selectedDate or range
+          SECTION 4: รายการห้องพัก
           ════════════════════════════════════════════════════════════════════ */}
-      <div className="pt-4">
+      <div className="pt-5">
         {/* Section header + summary */}
         <div className="px-4 pb-2">
           {/* Section title + mode toggle */}
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                ห้องพัก
-              </p>
-              {freeRoomMode === 'selected' ? (
-                viewingToday ? (
-                  <Badge variant="default" className="text-[10px] px-1.5 py-0">วันนี้</Badge>
-                ) : (
-                  <span className="text-[11px] text-muted-foreground">{fmtShort(selectedDate)}</span>
-                )
-              ) : (
-                <span className="text-[10px] text-muted-foreground">
-                  {fmtShortISO(stayRange.checkIn)} → {fmtShortISO(stayRange.checkOut)}
-                </span>
-              )}
-            </div>
+            <p className="text-lg font-semibold text-foreground">
+              รายการห้องพัก
+            </p>
 
             {/* Toggle: วันที่เลือก / ช่วงเข้าพัก */}
             <div className="flex rounded-lg border border-border overflow-hidden">
               <button
                 type="button"
-                onClick={() => setFreeRoomMode('selected')}
+                onClick={() => { setFreeRoomMode('selected'); setFilter('all') }}
                 className={cn(
                   'px-2.5 py-1 text-[10px] font-medium transition-colors',
                   freeRoomMode === 'selected'
@@ -517,7 +741,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
               </button>
               <button
                 type="button"
-                onClick={() => setFreeRoomMode('range')}
+                onClick={() => { setFreeRoomMode('range'); setFilter('all') }}
                 disabled={!stayRangeValid}
                 className={cn(
                   'px-2.5 py-1 text-[10px] font-medium transition-colors',
@@ -532,46 +756,47 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
             </div>
           </div>
 
-          {/* Summary counts */}
-          <div className="flex items-center gap-3 text-[11px] font-medium tabular-nums mb-2">
-            {freeRoomMode === 'selected' ? (
+          {/* Filter chips — all chips always visible, muted when count=0 */}
+          {(() => {
+            const chipList = freeRoomMode === 'range' && stayRangeValid ? RANGE_FILTERS : ALL_FILTERS
+            const chipCounts = freeRoomMode === 'range' && stayRangeValid ? rangeEntries.counts : counts
+            return (
               <>
-                <span className="text-success">{counts.free} ว่าง</span>
-                <span className="text-primary">{counts.occupied} เข้าพัก</span>
-                {counts.checkout > 0 && (
-                  <span className="text-warning">{counts.checkout} CO</span>
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+                  {chipList.map(({ value, label }) => {
+                    const count = value === 'all' ? total : (chipCounts as Record<string, number>)[value] ?? 0
+                    const isZero = count === 0 && value !== 'all'
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setFilter(value)}
+                        className={cn(
+                          'shrink-0 h-8 px-3 rounded-full text-xs font-medium transition-colors',
+                          filter === value
+                            ? 'bg-primary text-primary-foreground'
+                            : isZero
+                              ? 'bg-secondary/40 text-muted-foreground/50'
+                              : 'bg-secondary/70 text-secondary-foreground active:bg-secondary',
+                        )}
+                      >
+                        {label} {count}
+                      </button>
+                    )
+                  })}
+                </div>
+                {freeRoomMode === 'selected' && unassignedForDate > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    + จองที่ยังไม่กำหนดห้อง {unassignedForDate} รายการ
+                  </p>
                 )}
               </>
-            ) : (
-              <span className="text-success">{freeForRange.length} ว่างตลอดช่วง</span>
-            )}
-          </div>
-
-          {/* Filter chips */}
-          <div className="flex gap-1.5 overflow-x-auto">
-            {FILTERS.map(({ value, label }) => {
-              const count = value === 'all' ? total : counts[value]
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setFilter(value)}
-                  className={cn(
-                    'shrink-0 h-8 px-3 rounded-full text-xs font-medium transition-colors',
-                    filter === value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary/70 text-secondary-foreground active:bg-secondary',
-                  )}
-                >
-                  {label} {count}
-                </button>
-              )
-            })}
-          </div>
+            )
+          })()}
         </div>
 
         {/* Room cards */}
-        <div className="px-4 pt-2 space-y-1.5">
+        <div className="px-4 pt-2 space-y-1">
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">ไม่พบห้อง</p>
           ) : (
@@ -601,51 +826,76 @@ const RoomCard = React.memo(function RoomCard({
   onTap: (entry: RoomEntry) => void
 }) {
   const cfg = STATUS_CFG[entry.status]
-  const hasTap = entry.status === 'occupied' || entry.status === 'checkout'
+  const isInteractive = entry.status !== 'maintenance'
+    && entry.status !== 'range_available'
+    && entry.status !== 'range_occupied'
   const hasBalance = (entry.balance ?? 0) > 0
+  const hasGuest = entry.status !== 'available' && entry.status !== 'maintenance'
+    && entry.status !== 'range_available' && entry.status !== 'range_occupied'
 
   const cardClasses = cn(
-    'w-full rounded-xl border border-border bg-card px-3 py-3',
+    'w-full rounded-lg border border-border bg-card px-3 py-2.5',
     'border-l-[3px]',
     cfg.border,
-    entry.status === 'out_of_service' && 'opacity-50',
+    entry.status === 'maintenance' && 'opacity-50',
   )
+
+  const checkoutHasBalance = (entry.checkoutBalance ?? 0) > 0
 
   const cardBody = (
-    <>
-      {/* Main row */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="text-sm font-bold tabular-nums shrink-0">
-            {entry.room.room_number}
-          </span>
-          <span className="text-[11px] text-muted-foreground truncate">
-            {entry.typeName}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 shrink-0">
-          {hasBalance && (
-            <span className="text-[10px] text-destructive font-medium">
-              ค้าง ฿{entry.balance!.toLocaleString()}
-            </span>
-          )}
-          <Badge variant={cfg.badge} className="text-[10px] px-2 py-0">
-            {cfg.label}
-          </Badge>
-        </div>
+    <div className="flex items-center gap-3">
+      {/* Left: room number (hero) */}
+      <div className="shrink-0 w-10">
+        <span className="text-xl font-semibold tabular-nums leading-none">
+          {entry.room.room_number}
+        </span>
       </div>
 
-      {/* Guest name (occupied/checkout only) */}
-      {entry.guestName && (
-        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-          {entry.guestName}
-        </p>
-      )}
-    </>
+      {/* Center: type + guest info */}
+      <div className="flex-1 min-w-0">
+        <span className="text-xs text-muted-foreground leading-none">
+          {entry.typeName}
+        </span>
+        {entry.status === 'turnover' ? (
+          <div className="mt-0.5 space-y-0 text-xs leading-tight">
+            <p className="text-warning truncate">
+              ออก: {entry.checkoutGuestName}
+              {checkoutHasBalance && (
+                <span className="text-destructive font-medium ml-1">
+                  ฿{entry.checkoutBalance!.toLocaleString()}
+                </span>
+              )}
+            </p>
+            <p className="text-primary truncate">เข้า: {entry.guestName}</p>
+          </div>
+        ) : hasGuest && (
+          <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground leading-tight">
+            {entry.guestName && <span className="truncate">{entry.guestName}</span>}
+            {entry.booking && (
+              <>
+                {entry.guestName && <span>·</span>}
+                <span className="shrink-0">CO {fmtShortISO(entry.booking.check_out)}</span>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Right: balance + badge */}
+      <div className="shrink-0 flex flex-col items-end gap-0.5">
+        <Badge variant={cfg.badge} className="text-xs px-2 py-0 leading-relaxed">
+          {cfg.label}
+        </Badge>
+        {hasBalance && (
+          <span className="text-xs text-destructive font-medium tabular-nums">
+            ค้าง ฿{entry.balance!.toLocaleString()}
+          </span>
+        )}
+      </div>
+    </div>
   )
 
-  if (hasTap) {
+  if (isInteractive) {
     return (
       <button
         type="button"

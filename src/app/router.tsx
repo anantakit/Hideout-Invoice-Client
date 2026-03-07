@@ -54,7 +54,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route index element={<Navigate to="/bookings/timeline" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/receipts/new" element={<CreateReceipt />} />
               <Route path="/receipts" element={<ReceiptHistory />} />

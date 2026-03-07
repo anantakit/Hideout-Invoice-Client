@@ -1,3 +1,4 @@
+import { format, addDays } from 'date-fns'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFormContext, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -27,12 +28,10 @@ import { ROUTES } from '@/app/routes'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function todayStr(): string {
-  return new Date().toISOString().split('T')[0]
+  return format(new Date(), 'yyyy-MM-dd')
 }
 function tomorrowStr(): string {
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  return d.toISOString().split('T')[0]
+  return format(addDays(new Date(), 1), 'yyyy-MM-dd')
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────

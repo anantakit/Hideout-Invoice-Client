@@ -74,6 +74,8 @@ export function useCancelStay(bookingId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
       queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
     },
   })
 }
@@ -87,6 +89,7 @@ export function useTransferRoom(bookingId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
       queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
       queryClient.invalidateQueries({ queryKey: ['timeline'] })
     },
   })
@@ -100,6 +103,7 @@ export function useUnassignRoom(bookingId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
       queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
       queryClient.invalidateQueries({ queryKey: ['timeline'] })
     },
   })
@@ -114,6 +118,7 @@ export function useAssignRooms(bookingId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
       queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
       queryClient.invalidateQueries({ queryKey: ['timeline'] })
     },
   })
@@ -128,6 +133,22 @@ export function useCheckInRooms(bookingId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
       queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
+    },
+  })
+}
+
+/** Checkout rooms: moves CHECKED_IN stays to CHECKED_OUT atomically. */
+export function useCheckoutRooms(bookingId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (stayIds: string[]) => bookingsApi.checkoutRooms(bookingId, stayIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
+      queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
     },
   })
 }
@@ -180,6 +201,8 @@ export function useExtendStay(bookingId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
       queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
     },
   })
 }

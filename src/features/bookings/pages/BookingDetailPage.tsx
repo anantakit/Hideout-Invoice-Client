@@ -21,7 +21,7 @@ import {
 } from '../../../shared/ui/alert-dialog'
 import { formatThaiDate } from '../../../shared/utils'
 import { ROUTES } from '@/app/routes'
-import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useAvailabilityGrouped } from '../hooks'
+import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useCheckoutRooms, useAvailabilityGrouped } from '../hooks'
 import { PaymentPanel } from '../components/PaymentPanel'
 import type { RoomStayResponse } from '../types'
 
@@ -497,12 +497,14 @@ function StayCardOperational({
   bookingId: string
   stay: RoomStayResponse
 }) {
-  const [cancelOpen, setCancelOpen]   = useState(false)
-  const [extendOpen, setExtendOpen]   = useState(false)
-  const [newCheckOut, setNewCheckOut] = useState('')
+  const [cancelOpen, setCancelOpen]     = useState(false)
+  const [extendOpen, setExtendOpen]     = useState(false)
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [newCheckOut, setNewCheckOut]   = useState('')
 
-  const cancel = useCancelStay(bookingId)
-  const extend = useExtendStay(bookingId)
+  const cancel   = useCancelStay(bookingId)
+  const extend   = useExtendStay(bookingId)
+  const checkout = useCheckoutRooms(bookingId)
 
   const nights       = calcNights(stay.check_in, stay.check_out)
   const checkInDate  = formatThaiDate(stay.check_in)
@@ -551,6 +553,21 @@ function StayCardOperational({
         {/* ── Action buttons ──────────────────────────────────────────────── */}
         {(isActive || canExtend) && (
           <div className="flex flex-wrap gap-2 pt-1">
+            {isCheckedIn && (
+              <Button
+                variant="default"
+                size="sm"
+                disabled={checkout.isPending}
+                onClick={() => setCheckoutOpen(true)}
+              >
+                {checkout.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                )}
+                เช็คเอาท์
+              </Button>
+            )}
             {canExtend && (
               <Button
                 variant="outline"
@@ -652,6 +669,37 @@ function StayCardOperational({
               }}
             >
               {extend.isPending ? 'กำลังบันทึก…' : 'ยืนยัน'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Checkout confirmation ─────────────────────────────────────────── */}
+      <AlertDialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันเช็คเอาท์</AlertDialogTitle>
+            <AlertDialogDescription>
+              ต้องการเช็คเอาท์ห้อง {stay.room_number ?? stay.room_type_name} ใช่หรือไม่?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={checkout.isPending}>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={checkout.isPending}
+              onClick={() => {
+                checkout.mutate([stay.id], {
+                  onSuccess: () => {
+                    setCheckoutOpen(false)
+                    toast.success('เช็คเอาท์สำเร็จ')
+                  },
+                  onError: (err) => {
+                    toast.error((err as Error).message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+                  },
+                })
+              }}
+            >
+              {checkout.isPending ? 'กำลังดำเนินการ…' : 'ยืนยันเช็คเอาท์'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

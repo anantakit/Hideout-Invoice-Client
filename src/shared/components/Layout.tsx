@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { cn } from '../utils'
-import { Sheet, SheetContent } from '../ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
 import { Button } from '../ui/button'
 import { SidebarContent, Logo } from './Sidebar'
 
@@ -14,7 +14,8 @@ export default function Layout() {
 
       {/* ── Mobile sheet sidebar ── */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="left" className="p-0 w-64 lg:hidden">
+        <SheetContent side="left" className="p-0 w-64 lg:hidden" aria-describedby={undefined}>
+          <SheetTitle className="sr-only">เมนูนำทาง</SheetTitle>
           <SidebarContent onClose={() => setSheetOpen(false)} />
         </SheetContent>
       </Sheet>
