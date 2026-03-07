@@ -123,7 +123,7 @@ function CalendarGrid({
         <button
           type="button"
           onClick={() => setViewDate(v => subMonths(v, 1))}
-          className={cn('rounded-lg hover:bg-accent transition-colors', navPad)}
+          className={cn('radius-button hover:bg-accent transition-colors', navPad)}
         >
           <ChevronLeft className={cn('text-muted-foreground', navIcon)} />
         </button>
@@ -133,7 +133,7 @@ function CalendarGrid({
         <button
           type="button"
           onClick={() => setViewDate(v => addMonths(v, 1))}
-          className={cn('rounded-lg hover:bg-accent transition-colors', navPad)}
+          className={cn('radius-button hover:bg-accent transition-colors', navPad)}
         >
           <ChevronRight className={cn('text-muted-foreground', navIcon)} />
         </button>
@@ -182,13 +182,13 @@ function CalendarGrid({
                   onMouseEnter={() => onDayHover(day)}
                   onMouseLeave={() => onDayHover(null)}
                   className={cn(
-                    'relative z-10 flex items-center justify-center text-sm rounded-full transition-colors',
+                    'relative z-10 flex items-center justify-center text-sm radius-badge transition-colors',
                     btnSz,
                     !inCurrentMonth && 'text-muted-foreground/25 pointer-events-none',
                     inCurrentMonth && !isStart && !isEnd && dayIsToday &&
                       'ring-1 ring-primary/40 font-semibold text-primary',
                     inCurrentMonth && !isStart && !isEnd && 'hover:bg-accent',
-                    (isStart || isEnd) && 'bg-primary text-primary-foreground font-medium',
+                    (isStart || isEnd) && 'date-selected font-medium',
                   )}
                 >
                   {format(day, 'd')}
@@ -238,7 +238,7 @@ function PickerInner({
 
       <div className="border-t border-border my-3" />
 
-      <p className="text-xs text-muted-foreground px-1 pb-2">หรือเลือกเอง:</p>
+      <p className="text-helper px-1 pb-2">หรือเลือกเอง:</p>
 
       <CalendarGrid
         pendingStart={pendingStart}
@@ -316,7 +316,7 @@ function DesktopPopover({ triggerRef, onClose, children }: DesktopPopoverProps) 
         width: popoverW,
         zIndex: 50,
       }}
-      className="bg-card border border-border rounded-xl shadow-md p-4"
+      className="bg-card border border-border radius-card shadow-popover p-4"
     >
       {children}
     </div>,
@@ -422,7 +422,7 @@ export function DateRangeFilter({ startDate, endDate, onRangeChange }: DateRange
   return (
     <div className="space-y-3">
       {/* Section label */}
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">ช่วงวันที่ออกใบเสร็จ</p>
+      <p className="text-helper uppercase tracking-wide">ช่วงวันที่ออกใบเสร็จ</p>
 
       {/* Quick range chips */}
       <div className="flex gap-2 flex-wrap">
@@ -435,7 +435,7 @@ export function DateRangeFilter({ startDate, endDate, onRangeChange }: DateRange
               type="button"
               onClick={() => applyQuickPreset(preset)}
               className={cn(
-                'rounded-full px-3 py-1.5 text-xs border transition-colors',
+                'radius-badge px-3 py-1.5 text-xs border transition-colors',
                 isActive
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-background text-foreground border-border hover:border-primary/40 hover:bg-accent/60',
@@ -455,7 +455,7 @@ export function DateRangeFilter({ startDate, endDate, onRangeChange }: DateRange
         className={cn(
           'w-full h-11 rounded-xl border px-4',
           'flex justify-between items-center gap-2',
-          'text-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'text-body transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring',
           hasRange
             ? 'bg-accent/60 border-primary/30 text-foreground'
             : 'bg-background border-border text-muted-foreground hover:bg-accent/40',

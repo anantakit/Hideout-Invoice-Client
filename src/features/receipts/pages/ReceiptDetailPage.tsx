@@ -104,10 +104,10 @@ export default function ReceiptDetail() {
 
           {/* Identity */}
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">
+            <h1 className="text-section">
               {receipt.invoice_number}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-helper mt-1">
               สร้างเมื่อ {formatThaiDate(receipt.created_at)}
             </p>
           </div>
@@ -117,7 +117,7 @@ export default function ReceiptDetail() {
             <Button
               onClick={handleDownload}
               disabled={downloading}
-              className="w-full md:w-auto h-10 rounded-xl text-sm font-medium bg-primary/90 hover:bg-primary transition-all duration-150 ease-out hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full md:w-auto h-10 radius-card text-sm font-medium bg-primary/90 hover:bg-primary transition-all duration-150 ease-out hover:scale-[1.01] active:scale-[0.99]"
             >
               {downloading
                 ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -131,7 +131,7 @@ export default function ReceiptDetail() {
                 <Button
                   variant="destructive"
                   disabled={deleteMutation.isPending}
-                  className="w-full md:w-auto h-10 rounded-xl text-sm font-medium bg-destructive/90 hover:bg-destructive transition-all duration-150 ease-out hover:scale-[1.01] active:scale-[0.99]"
+                  className="w-full md:w-auto h-10 radius-card text-sm font-medium bg-destructive/90 hover:bg-destructive transition-all duration-150 ease-out hover:scale-[1.01] active:scale-[0.99]"
                 >
                   <Trash2 className="h-4 w-4" />
                   ลบใบเสร็จ
@@ -167,7 +167,7 @@ export default function ReceiptDetail() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
+                  className="h-9 w-9 radius-button text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
                   disabled={deleteMutation.isPending}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -189,11 +189,11 @@ export default function ReceiptDetail() {
           </CardHeader>
           <CardContent className="p-5 md:p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">เลขที่ใบเสร็จ</p>
+              <p className="text-helper uppercase tracking-wide mb-1">เลขที่ใบเสร็จ</p>
               <p className="text-base font-medium text-foreground">{receipt.invoice_number}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">วันที่ออกเอกสาร</p>
+              <p className="text-helper uppercase tracking-wide mb-1">วันที่ออกเอกสาร</p>
               <p className="text-base font-medium text-foreground">{formatThaiDate(receipt.issue_date)}</p>
             </div>
           </CardContent>
@@ -202,7 +202,7 @@ export default function ReceiptDetail() {
         {/* Customer */}
         <Card className="transition-shadow duration-200 md:hover:shadow-md">
           <CardContent className="p-5 md:p-8 space-y-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">ผู้ชำระเงิน</p>
+            <p className="text-helper uppercase tracking-wide">ผู้ชำระเงิน</p>
             <div>
               <p className="text-base font-medium text-foreground">{receipt.customer.name}</p>
               <div className="mt-1.5 space-y-1 text-sm text-muted-foreground">
@@ -218,7 +218,7 @@ export default function ReceiptDetail() {
         {hasStayInfo && (
           <Card className="transition-shadow duration-200 md:hover:shadow-md">
             <CardContent className="p-5 md:p-8 space-y-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">รายละเอียดการเข้าพัก</p>
+              <p className="text-helper uppercase tracking-wide">รายละเอียดการเข้าพัก</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                 {receipt.check_in_date && (
                   <div className="flex justify-between">
@@ -240,7 +240,7 @@ export default function ReceiptDetail() {
         {/* Room items */}
         <Card className="overflow-hidden transition-shadow duration-200 md:hover:shadow-md">
           <CardHeader className="py-4 px-5 md:px-8 border-b border-border">
-            <h2 className="text-sm font-medium text-foreground">รายการห้องพัก</h2>
+            <h2 className="text-body font-medium text-foreground">รายการห้องพัก</h2>
           </CardHeader>
           <Table>
             <TableHeader>
@@ -275,8 +275,8 @@ export default function ReceiptDetail() {
         {receipt.notes && (
           <Card className="transition-shadow duration-200 md:hover:shadow-md">
             <CardContent className="p-5 md:p-8 space-y-2">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">หมายเหตุ</p>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{receipt.notes}</p>
+              <p className="text-helper uppercase tracking-wide">หมายเหตุ</p>
+              <p className="text-helper whitespace-pre-wrap">{receipt.notes}</p>
             </CardContent>
           </Card>
         )}
@@ -288,7 +288,7 @@ export default function ReceiptDetail() {
       <Button
         onClick={handleDownload}
         disabled={downloading}
-        className="w-full min-h-[52px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]"
+        className="w-full min-h-[52px] radius-card font-medium transition-transform duration-150 active:scale-[0.98]"
       >
         {downloading
           ? <Loader2 className="h-4 w-4 animate-spin" />

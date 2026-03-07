@@ -87,7 +87,7 @@ const NAV_SECTIONS: NavSectionConfig[] = [
 /** Shared logo mark — used by both the sidebar and the mobile top bar. */
 export function Logo() {
   return (
-    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+    <div className="w-8 h-8 radius-button bg-primary flex items-center justify-center shrink-0">
       <Building2 className="w-4 h-4 text-primary-foreground" aria-hidden />
     </div>
   )
@@ -124,7 +124,7 @@ function NavItem({
       aria-label={label}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 rounded-lg text-sm font-medium transition-colors',
+          'flex items-center gap-3 radius-button text-sm font-medium transition-colors',
           'px-3 py-2.5 md:px-2.5 md:justify-center lg:px-3 lg:justify-start',
           isActive
             ? 'bg-primary/10 text-primary'
@@ -157,7 +157,7 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
         <Logo />
         <div className="flex-1 min-w-0 md:hidden lg:block">
           <p className="text-sm font-bold text-foreground whitespace-nowrap">Hideout Resort</p>
-          <p className="text-xs text-muted-foreground whitespace-nowrap">Hotel Operations</p>
+          <p className="text-helper whitespace-nowrap">Hotel Operations</p>
         </div>
         {onClose && (
           <Button
@@ -202,12 +202,12 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
       {/* ── User + logout ─────────────────────────────────────────────────── */}
       <div className="p-3 border-t border-border">
         <div className="flex items-center gap-2 md:justify-center lg:justify-start">
-          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 select-none">
+          <div className="w-8 h-8 radius-badge bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 select-none">
             {user?.full_name?.charAt(0).toUpperCase() ?? '?'}
           </div>
           <div className="flex-1 min-w-0 md:hidden lg:block">
             <p className="text-xs font-medium text-foreground truncate">{user?.full_name}</p>
-            <p className="text-xs text-muted-foreground truncate">@{user?.username}</p>
+            <p className="text-helper truncate">@{user?.username}</p>
           </div>
           <Button
             variant="ghost"

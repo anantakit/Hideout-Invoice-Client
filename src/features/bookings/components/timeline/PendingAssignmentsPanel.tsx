@@ -99,7 +99,7 @@ export const PendingAssignmentsPanel = React.memo(function PendingAssignmentsPan
               </span>
 
               {/* Date range */}
-              <span className="shrink-0 flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+              <span className="shrink-0 flex items-center gap-1 text-helper tabular-nums">
                 {fmtThaiShort(stay.check_in)}
                 <ArrowRight className="w-3 h-3" />
                 {fmtThaiShort(stay.check_out)}

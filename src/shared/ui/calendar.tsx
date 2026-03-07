@@ -92,12 +92,12 @@ export function Calendar({
           type="button"
           aria-label="เดือนก่อนหน้า"
           onClick={() => setViewDate(v => subMonths(v, 1))}
-          className="p-2 rounded-full hover:bg-muted transition-colors duration-150"
+          className="p-2 radius-badge hover:bg-muted transition-colors duration-150"
         >
           <ChevronLeft className="w-4 h-4 text-muted-foreground" />
         </button>
 
-        <span className="text-sm font-semibold text-foreground">
+        <span className="text-body font-semibold text-foreground">
           {THAI_MONTHS[viewDate.getMonth()]} {viewDate.getFullYear() + 543}
         </span>
 
@@ -105,7 +105,7 @@ export function Calendar({
           type="button"
           aria-label="เดือนถัดไป"
           onClick={() => setViewDate(v => addMonths(v, 1))}
-          className="p-2 rounded-full hover:bg-muted transition-colors duration-150"
+          className="p-2 radius-badge hover:bg-muted transition-colors duration-150"
         >
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </button>
@@ -116,7 +116,7 @@ export function Calendar({
         {DAY_HEADERS.map(label => (
           <div
             key={label}
-            className="text-center text-xs font-medium text-muted-foreground py-1"
+            className="text-center text-helper font-medium py-1"
           >
             {label}
           </div>
@@ -147,7 +147,7 @@ export function Calendar({
                 onMouseLeave={() => onDayHover(null)}
                 className={cn(
                   // Base
-                  'min-h-[40px] w-full rounded-xl flex items-center justify-center text-sm transition-colors',
+                  'min-h-[40px] w-full radius-card flex items-center justify-center text-sm transition-colors',
                   // Out-of-month
                   !inMonth && 'opacity-40 pointer-events-none text-foreground',
                   // In-month defaults
@@ -159,7 +159,7 @@ export function Calendar({
                   // Hover (not selected, not in-range)
                   inMonth && !selected && !inRange && 'hover:bg-muted',
                   // Selected
-                  selected && 'bg-primary text-primary-foreground',
+                  selected && 'date-selected',
                 )}
               >
                 {format(day, 'd')}

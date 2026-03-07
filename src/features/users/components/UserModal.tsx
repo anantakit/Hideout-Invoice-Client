@@ -123,7 +123,7 @@ export default function UserModal({ open, onClose, user }: Props) {
                 disabled={isEdit}
                 required={!isEdit}
               />
-              {isEdit && <p className="text-xs text-muted-foreground">ไม่สามารถเปลี่ยน username ได้</p>}
+              {isEdit && <p className="text-helper">ไม่สามารถเปลี่ยน username ได้</p>}
             </div>
 
             <div className="space-y-1.5">
@@ -162,7 +162,7 @@ export default function UserModal({ open, onClose, user }: Props) {
                 onChange={(e) => setMustChangePassword(e.target.checked)}
                 className="w-4 h-4 rounded accent-primary"
               />
-              <span className="text-sm text-foreground">บังคับเปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบครั้งแรก</span>
+              <span className="text-body text-foreground">บังคับเปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบครั้งแรก</span>
             </label>
           </div>
 

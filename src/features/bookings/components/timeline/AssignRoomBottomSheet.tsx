@@ -143,7 +143,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
       const toastId = toast.success(
         (t) => (
           <div className="flex items-center gap-3">
-            <span className="text-sm">กำหนดห้อง {roomNumber} แล้ว</span>
+            <span className="text-body">กำหนดห้อง {roomNumber} แล้ว</span>
             <button
               type="button"
               className="text-xs font-semibold text-primary underline shrink-0"
@@ -335,7 +335,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                             type="button"
                             disabled={isBusy}
                             onClick={() => handleTransferPick(room.room_id, room.room_number)}
-                            className="w-full flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 min-h-[44px] text-left active:bg-primary/10 transition-colors disabled:opacity-50"
+                            className="w-full flex items-center justify-between radius-card border border-primary/30 bg-primary/5 px-4 py-3 min-h-[44px] text-left active:bg-primary/10 transition-colors disabled:opacity-50"
                           >
                             <div>
                               <p className="text-sm font-bold tabular-nums">ห้อง {room.room_number}</p>
@@ -386,7 +386,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                                 type="button"
                                 disabled={isBusy}
                                 onClick={() => handleAssign(typeId, room.room_id, room.room_number)}
-                                className="w-full flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 min-h-[44px] text-left active:bg-accent/10 transition-colors disabled:opacity-50"
+                                className="w-full flex items-center justify-between radius-card border border-border bg-card px-4 py-3 min-h-[44px] text-left active:bg-accent/10 transition-colors disabled:opacity-50"
                               >
                                 <div>
                                   <p className="text-sm font-bold tabular-nums">ห้อง {room.room_number}</p>
@@ -416,7 +416,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                   {assignedStays.map((stay) => (
                     <div
                       key={stay.id}
-                      className="flex items-center justify-between rounded-xl border border-success/30 bg-success/5 px-4 py-3 min-h-[44px]"
+                      className="flex items-center justify-between radius-card border border-success/30 bg-success/5 px-4 py-3 min-h-[44px]"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Check className="w-4 h-4 text-success shrink-0" />
@@ -463,7 +463,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                     return (
                       <div
                         key={stay.id}
-                        className={`flex items-center justify-between rounded-xl border px-4 py-3 min-h-[44px] ${
+                        className={`flex items-center justify-between radius-card border px-4 py-3 min-h-[44px] ${
                           isTransferring
                             ? 'border-primary/40 bg-primary/5'
                             : 'border-border bg-card'
@@ -495,8 +495,8 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                   Check-in Actions
                   ═══════════════════════════════════════════════════════ */}
               {assignedStays.length > 0 && !isCheckInDay && (
-                <div className="rounded-xl border border-info/30 bg-info-muted px-4 py-3 text-center">
-                  <p className="text-sm text-info-muted-foreground">
+                <div className="radius-card border border-info/30 bg-info-muted px-4 py-3 text-center">
+                  <p className="text-body text-info-muted-foreground">
                     เช็คอินได้วันที่ {fmtShortISO(ciDate)}
                   </p>
                 </div>
@@ -521,7 +521,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
               {allAssigned && checkedInStays.length === 0 && assignedStays.length === 0 && (
                 <div className="text-center py-6">
                   <Check className="w-8 h-8 text-success mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">เช็คอินครบทุกห้องแล้ว</p>
+                  <p className="text-body text-muted-foreground">เช็คอินครบทุกห้องแล้ว</p>
                 </div>
               )}
             </>

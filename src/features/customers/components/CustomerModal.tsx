@@ -137,7 +137,7 @@ export default function CustomerModal({ open, onClose, onCreated, customer }: Pr
                       <textarea
                         rows={3}
                         placeholder="เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์"
-                        className="flex min-h-[80px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                        className="flex min-h-[80px] w-full radius-button border border-input bg-card px-3 py-2 text-body placeholder:text-muted-foreground shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                         {...field}
                       />
                     </FormControl>

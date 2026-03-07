@@ -21,12 +21,12 @@ function StatCard({ title, value, badgeLabel, badgeVariant }: StatCardProps) {
     <Card>
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-2 mb-3">
-          <p className="text-sm font-medium text-muted-foreground leading-snug">{title}</p>
+          <p className="text-helper font-medium leading-snug">{title}</p>
           <Badge variant={badgeVariant} className="shrink-0">
             {badgeLabel}
           </Badge>
         </div>
-        <p className="text-3xl font-semibold tracking-tight text-foreground">{value}</p>
+        <p className="text-metric tracking-tight text-foreground">{value}</p>
       </CardContent>
     </Card>
   )
@@ -132,11 +132,11 @@ export default function TodayBoardPage() {
 function PageHeader({ date }: { date?: string }) {
   return (
     <div className="space-y-1">
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+      <h1 className="text-section text-2xl">
         Today Operations
       </h1>
       {date && (
-        <p className="text-sm text-muted-foreground">{date}</p>
+        <p className="text-helper">{date}</p>
       )}
     </div>
   )

@@ -90,8 +90,8 @@ export default function AdminUsers() {
       <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-28 md:pb-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">จัดการผู้ใช้</h1>
-            <p className="text-muted-foreground text-sm mt-1">
+            <h1 className="text-section text-2xl">จัดการผู้ใช้</h1>
+            <p className="text-helper mt-1">
               {data ? `ผู้ใช้ทั้งหมด ${total} คน` : 'กำลังโหลด…'}
             </p>
           </div>
@@ -105,7 +105,7 @@ export default function AdminUsers() {
         </div>
 
         {/* Search */}
-        <div className="bg-card rounded-2xl border border-border p-4 mb-6">
+        <div className="bg-card radius-card border border-border p-4 mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -144,7 +144,7 @@ export default function AdminUsers() {
                     <TableRow key={u.id}>
                       <TableCell>
                         <p className="font-medium text-foreground">{u.full_name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">@{u.username}</p>
+                        <p className="text-helper mt-0.5">@{u.username}</p>
                         {u.must_change_password && (
                           <span className="text-xs text-warning">ต้องเปลี่ยนรหัสผ่าน</span>
                         )}
@@ -173,7 +173,7 @@ export default function AdminUsers() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
+                                className="h-9 w-9 radius-button text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
                                 disabled={u.id === me?.id}
                                 title="ลบ"
                               >
@@ -226,7 +226,7 @@ export default function AdminUsers() {
       <BottomBar>
         <Button
           onClick={() => { setEditingUser(undefined); setModalOpen(true) }}
-          className="w-full min-h-[48px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]"
+          className="w-full min-h-[48px] radius-card font-medium transition-transform duration-150 active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" />
           เพิ่มผู้ใช้

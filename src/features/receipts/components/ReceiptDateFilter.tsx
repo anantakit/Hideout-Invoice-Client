@@ -125,7 +125,7 @@ function DesktopPopover({ triggerRef, onClose, children }: DesktopPopoverProps) 
     <div
       ref={popoverRef}
       style={{ position: 'fixed', top: coords.top, left: coords.left, width: 380, zIndex: 50 }}
-      className="bg-card rounded-3xl p-6 shadow-lg border border-border"
+      className="bg-card rounded-3xl p-6 shadow-popover border border-border"
     >
       {children}
     </div>,
@@ -163,7 +163,7 @@ function PickerBody({ pendingStart, pendingEnd, hoveredDate, onDayClick, onDayHo
       {/* Range preview block — always visible so layout doesn't jump */}
       <div
         className={cn(
-          'bg-muted rounded-xl p-3 text-sm text-center transition-colors duration-150',
+          'bg-muted radius-card p-3 text-body text-center transition-colors duration-150',
           rangeLabel ? 'text-foreground' : 'text-muted-foreground',
         )}
       >
@@ -389,7 +389,7 @@ export function ReceiptDateFilter({ startDate, endDate, onRangeChange }: Receipt
                 onClick={clearCustomRange}
                 onKeyDown={e => e.key === 'Enter' && clearCustomRange(e)}
                 className={cn(
-                  'flex items-center justify-center w-4 h-4 rounded-full shrink-0',
+                  'flex items-center justify-center w-4 h-4 radius-badge shrink-0',
                   'bg-primary-foreground/20 hover:bg-primary-foreground/35',
                   'transition-colors duration-150',
                 )}
@@ -403,7 +403,7 @@ export function ReceiptDateFilter({ startDate, endDate, onRangeChange }: Receipt
 
       {/* ── PART 3: Active filter summary ────────────────────────────────────── */}
       {activeSummaryLabel && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           กำลังแสดงข้อมูล:{' '}
           <span className="text-foreground font-medium">{activeSummaryLabel}</span>
         </p>

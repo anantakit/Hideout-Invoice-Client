@@ -118,7 +118,7 @@ export default function SearchableComboBox<T extends object>({
       {isOpen && (
         <div
           role="listbox"
-          className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-lg max-h-60 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-card border border-border radius-card shadow-popover max-h-60 overflow-y-auto"
         >
           {isLoading ? (
             <div className="flex justify-center py-4">

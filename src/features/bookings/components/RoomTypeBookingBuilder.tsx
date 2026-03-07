@@ -99,7 +99,7 @@ export function RoomTypeBookingBuilder() {
             }}
             className="rounded border-border accent-primary"
           />
-          <span className="text-sm">ใช้วันที่เดิมสำหรับทุกรายการ</span>
+          <span className="text-body">ใช้วันที่เดิมสำหรับทุกรายการ</span>
         </label>
       )}
 
@@ -294,7 +294,7 @@ function RoomTypeBookingItemCard({
                       variant="outline"
                       size="icon"
                       className="h-9 w-9 shrink-0"
-                      disabled={field.value <= 1}
+                      disabled={!roomTypeId || field.value <= 1}
                       onClick={() => {
                         const next = Math.max(1, field.value - 1)
                         field.onChange(next)
@@ -309,6 +309,7 @@ function RoomTypeBookingItemCard({
                       max={maxQuantity === Infinity ? undefined : maxQuantity}
                       className="h-9 w-16 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       value={field.value}
+                      disabled={!roomTypeId}
                       onChange={(e) => {
                         const val = Math.min(maxQuantity, Math.max(1, parseInt(e.target.value) || 1))
                         field.onChange(val)
@@ -320,7 +321,7 @@ function RoomTypeBookingItemCard({
                       variant="outline"
                       size="icon"
                       className="h-9 w-9 shrink-0"
-                      disabled={field.value >= maxQuantity}
+                      disabled={!roomTypeId || field.value >= maxQuantity}
                       onClick={() => {
                         const next = Math.min(maxQuantity, field.value + 1)
                         field.onChange(next)
@@ -427,7 +428,7 @@ function RoomTypeBookingItemCard({
                               disabled={isDisabled || isFull}
                               onClick={() => toggleRoom(room.room_id)}
                               className={cn(
-                                'w-14 h-10 rounded-lg border text-xs font-semibold transition-colors',
+                                'w-14 h-10 radius-button border text-xs font-semibold transition-colors',
                                 isSelected
                                   ? 'border-primary bg-primary text-primary-foreground'
                                   : isDisabled || isFull

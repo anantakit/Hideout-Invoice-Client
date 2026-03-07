@@ -49,16 +49,16 @@ export default function Login() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center mb-3">
+          <div className="w-12 h-12 radius-card bg-primary flex items-center justify-center mb-3">
             <Receipt className="w-6 h-6 text-primary-foreground" />
           </div>
           <h1 className="text-xl font-bold text-foreground">Hideout Resort</h1>
-          <p className="text-sm text-muted-foreground mt-1">ระบบใบเสร็จรับเงิน</p>
+          <p className="text-helper mt-1">ระบบใบเสร็จรับเงิน</p>
         </div>
 
-        <Card className="shadow-sm">
+        <Card className="shadow-card">
           <CardHeader className="pb-3 border-b border-border">
-            <CardTitle className="text-base font-semibold tracking-tight">เข้าสู่ระบบ</CardTitle>
+            <CardTitle className="text-section">เข้าสู่ระบบ</CardTitle>
           </CardHeader>
           <CardContent className="pt-5">
             <Form {...form}>
@@ -91,7 +91,7 @@ export default function Login() {
                 />
                 <Button
                   type="submit"
-                  className="w-full min-h-[44px] rounded-xl font-medium mt-2 transition-transform duration-150 active:scale-[0.98]"
+                  className="w-full min-h-[44px] radius-card font-medium mt-2 transition-transform duration-150 active:scale-[0.98]"
                   disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting

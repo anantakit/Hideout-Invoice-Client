@@ -133,8 +133,8 @@ export default function BookingListPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">รายการจอง</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-section text-2xl">รายการจอง</h1>
+          <p className="text-helper mt-1">
             {data ? `ทั้งหมด ${total} รายการ` : ''}
           </p>
         </div>
@@ -146,7 +146,7 @@ export default function BookingListPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-card rounded-2xl border border-border p-4 mb-6 space-y-3">
+      <div className="bg-card radius-card border border-border p-4 mb-6 space-y-3">
 
         {/* Row 1: search + status */}
         <div className="flex flex-col sm:flex-row gap-3">
@@ -284,15 +284,15 @@ function DesktopRow({
     <TableRow>
       <TableCell>
         <p className="font-medium">{booking.guest_name}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{booking.guest_phone}</p>
+        <p className="text-helper mt-0.5">{booking.guest_phone}</p>
       </TableCell>
       <TableCell>
         <StatusBadge status={booking.status} />
       </TableCell>
-      <TableCell className="text-center text-sm text-muted-foreground">
+      <TableCell className="text-center text-body text-muted-foreground">
         {booking.room_stays.length} ห้อง
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">
+      <TableCell className="text-body text-muted-foreground">
         {formatThaiDate(booking.created_at)}
       </TableCell>
       <TableCell className="text-right">
@@ -316,7 +316,7 @@ function MobileCard({
   return (
     <button
       type="button"
-      className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-2xl"
+      className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 radius-card"
       onClick={onClick}
     >
       <Card className="transition-colors active:bg-muted/50">
@@ -324,17 +324,17 @@ function MobileCard({
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="font-semibold truncate">{booking.guest_name}</p>
-              <p className="text-sm text-muted-foreground mt-0.5">{booking.guest_phone}</p>
+              <p className="text-helper mt-0.5">{booking.guest_phone}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
           </div>
 
           <div className="flex items-center gap-2 mt-3">
             <StatusBadge status={booking.status} />
-            <span className="text-xs text-muted-foreground">
+            <span className="text-helper">
               {booking.room_stays.length} ห้อง
             </span>
-            <span className="text-xs text-muted-foreground ml-auto">
+            <span className="text-helper ml-auto">
               {formatThaiDate(booking.created_at)}
             </span>
           </div>
@@ -350,7 +350,7 @@ function LoadingState() {
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-3">
       <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      <p className="text-sm text-muted-foreground">กำลังโหลด…</p>
+      <p className="text-helper">กำลังโหลด…</p>
     </div>
   )
 }
@@ -361,7 +361,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       <AlertCircle className="w-10 h-10 text-destructive/60" />
       <div>
         <p className="font-medium">โหลดข้อมูลไม่สำเร็จ</p>
-        <p className="text-sm text-muted-foreground mt-1">กรุณาตรวจสอบการเชื่อมต่อและลองใหม่</p>
+        <p className="text-helper mt-1">กรุณาตรวจสอบการเชื่อมต่อและลองใหม่</p>
       </div>
       <Button variant="outline" onClick={onRetry}>
         ลองอีกครั้ง
@@ -378,7 +378,7 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
         <p className="font-medium text-foreground">
           {hasFilters ? 'ไม่พบรายการที่ตรงกัน' : 'ยังไม่มีรายการจอง'}
         </p>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-helper mt-1">
           {hasFilters
             ? 'ลองเปลี่ยนคำค้นหา สถานะ หรือช่วงวันที่'
             : 'กดปุ่ม "สร้างการจอง" เพื่อเริ่มต้น'}

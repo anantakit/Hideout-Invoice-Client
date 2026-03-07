@@ -70,7 +70,19 @@ export default function CreateBookingPage() {
 
   const source      = useWatch({ control: form.control, name: 'source' })
   const paymentMode = useWatch({ control: form.control, name: 'payment_mode' })
+  const guestName   = useWatch({ control: form.control, name: 'guest_name' })
+  const guestPhone  = useWatch({ control: form.control, name: 'guest_phone' })
+  const items       = useWatch({ control: form.control, name: 'items' })
+  const paymentAmount = useWatch({ control: form.control, name: 'payment_amount' })
   const isSubmitting = createBooking.isPending
+
+  // Disable submit until all required fields are filled
+  const hasGuest = guestName.trim().length > 0 && guestPhone.trim().length > 0
+  const hasValidItems = items.every(
+    (item) => item.room_type_id && item.check_in && item.check_out && item.check_out > item.check_in,
+  )
+  const hasPayment = paymentMode === 'reserve' || (paymentAmount != null && paymentAmount > 0)
+  const canSubmit = hasGuest && hasValidItems && hasPayment && !isSubmitting
 
   const submitLabel =
     source === 'walk_in'
@@ -150,7 +162,7 @@ export default function CreateBookingPage() {
                             type="button"
                             onClick={() => field.onChange(opt.value)}
                             className={cn(
-                              'flex flex-col items-center gap-0.5 rounded-xl border px-3 py-3 text-center transition-colors',
+                              'flex flex-col items-center gap-0.5 radius-card border px-3 py-3 text-center transition-colors',
                               field.value === opt.value
                                 ? 'border-primary bg-primary/5 text-primary'
                                 : 'border-border text-muted-foreground hover:border-muted-foreground/50',
@@ -236,7 +248,7 @@ export default function CreateBookingPage() {
                             type="button"
                             onClick={() => field.onChange(opt.value)}
                             className={cn(
-                              'flex flex-col items-center gap-0.5 rounded-xl border px-2 py-3 text-center transition-colors',
+                              'flex flex-col items-center gap-0.5 radius-card border px-2 py-3 text-center transition-colors',
                               field.value === opt.value
                                 ? 'border-primary bg-primary/5 text-primary'
                                 : 'border-border text-muted-foreground hover:border-muted-foreground/50',
@@ -260,7 +272,7 @@ export default function CreateBookingPage() {
 
             {/* Desktop submit */}
             <div className="hidden md:flex md:justify-end md:pt-2">
-              <Button type="submit" disabled={isSubmitting} className="min-w-36">
+              <Button type="submit" disabled={!canSubmit} className="min-w-36">
                 {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {submitLabel}
               </Button>
@@ -273,7 +285,7 @@ export default function CreateBookingPage() {
       <BottomBar>
         <Button
           type="button"
-          disabled={isSubmitting}
+          disabled={!canSubmit}
           className="w-full"
           onClick={onSubmit}
         >
@@ -335,7 +347,7 @@ function PaymentFields() {
                     type="button"
                     onClick={() => field.onChange(m)}
                     className={cn(
-                      'rounded-lg border px-2 py-2 text-xs font-medium transition-colors',
+                      'radius-button border px-2 py-2 text-xs font-medium transition-colors',
                       field.value === m
                         ? 'border-primary bg-primary/5 text-primary'
                         : 'border-border text-muted-foreground hover:border-muted-foreground/50',

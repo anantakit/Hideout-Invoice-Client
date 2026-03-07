@@ -218,7 +218,7 @@ function DayCell({
         {/* Visual circle */}
         <span
           className={cn(
-            'w-10 h-10 rounded-full flex items-center justify-center text-sm select-none relative z-10 transition-colors',
+            'w-10 h-10 radius-badge flex items-center justify-center text-sm select-none relative z-10 transition-colors',
             // Out-of-month
             !inMonth && 'opacity-30 text-muted-foreground',
             // Full: dimmed + line-through
@@ -230,7 +230,7 @@ function DayCell({
             // Hover (only available + not selected)
             inMonth && !selected && !isFull && 'group-hover:bg-muted',
             // Selected
-            selected && 'bg-primary text-primary-foreground shadow-sm',
+            selected && 'date-selected shadow-card',
           )}
         >
           <span className={cn(isFull && 'line-through')}>
@@ -361,7 +361,7 @@ function ModalHeader({
       <button
         type="button"
         onClick={() => onMonthChange(subMonths(month, 1))}
-        className="p-2 rounded-full hover:bg-muted transition-colors"
+        className="p-2 radius-badge hover:bg-muted transition-colors"
         aria-label="เดือนก่อนหน้า"
       >
         <ChevronLeft className="w-4 h-4 text-muted-foreground" />
@@ -374,7 +374,7 @@ function ModalHeader({
       <button
         type="button"
         onClick={() => onMonthChange(addMonths(month, 1))}
-        className="p-2 rounded-full hover:bg-muted transition-colors"
+        className="p-2 radius-badge hover:bg-muted transition-colors"
         aria-label="เดือนถัดไป"
       >
         <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -384,7 +384,7 @@ function ModalHeader({
       <DialogPrimitive.Close asChild>
         <button
           type="button"
-          className="p-2 rounded-full hover:bg-muted transition-colors ml-1"
+          className="p-2 radius-badge hover:bg-muted transition-colors ml-1"
           aria-label="ปิด"
         >
           <X className="w-4 h-4 text-muted-foreground" />
@@ -449,7 +449,7 @@ function ModalFooter({
 
   return (
     <div className="flex items-center gap-3 px-4 py-4 border-t border-border shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <p className="flex-1 text-xs text-muted-foreground truncate">{hint}</p>
+      <p className="flex-1 text-helper truncate">{hint}</p>
       <div className="flex items-center gap-2 shrink-0">
         {(hasCheckIn || isMidSelect) && (
           <Button type="button" variant="ghost" size="sm" onClick={onClear}>

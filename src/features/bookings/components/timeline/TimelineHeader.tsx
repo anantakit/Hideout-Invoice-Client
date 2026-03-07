@@ -21,7 +21,7 @@ interface TimelineHeaderProps {
  */
 const TimelineHeader = React.memo(function TimelineHeader({ days }: TimelineHeaderProps) {
   return (
-    <div className="flex sticky top-0 z-30 bg-card border-b border-border shadow-sm">
+    <div className="flex sticky top-0 z-30 bg-card border-b border-border shadow-card">
       {/* Room-label column spacer — matches RoomRow's sticky column width */}
       <div
         className="sticky left-0 z-40 bg-card border-r border-border flex-shrink-0"

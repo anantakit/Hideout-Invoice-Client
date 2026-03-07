@@ -89,14 +89,14 @@ const BookingBottomSheet = React.memo(function BookingBottomSheet({
         {/* ── Header ──────────────────────────────────────────────── */}
         <SheetHeader className="mb-3">
           <div className="flex items-start justify-between gap-3">
-            <SheetTitle className="text-lg font-semibold text-foreground leading-tight">
+            <SheetTitle className="text-section leading-tight">
               {booking.guest_name}
             </SheetTitle>
             <Badge variant={statusVariant(booking.status)}>
               {booking.status}
             </Badge>
           </div>
-          <SheetDescription className="text-sm text-muted-foreground">
+          <SheetDescription className="text-body text-muted-foreground">
             {fmtThaiDate(booking.check_in)} → {fmtThaiDate(booking.check_out)}
             <span className="ml-1.5">({nights} คืน)</span>
           </SheetDescription>
@@ -108,7 +108,7 @@ const BookingBottomSheet = React.memo(function BookingBottomSheet({
         {roomNumbers.length > 0 && (
           <div className="flex items-center gap-2 mb-3">
             <DoorOpen className="w-4 h-4 text-muted-foreground shrink-0" />
-            <span className="text-sm text-muted-foreground">ห้อง</span>
+            <span className="text-body text-muted-foreground">ห้อง</span>
             <div className="flex flex-wrap gap-1.5">
               {roomNumbers.map((rn) => (
                 <Badge key={rn} variant="outline" className="text-xs px-2 py-0">
@@ -121,7 +121,7 @@ const BookingBottomSheet = React.memo(function BookingBottomSheet({
 
         {/* ── Balance ─────────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-4">
-          <span className="text-sm text-muted-foreground">ยอดค้างชำระ</span>
+          <span className="text-body text-muted-foreground">ยอดค้างชำระ</span>
           {hasBalance ? (
             <span className="flex items-center gap-1 text-sm font-semibold text-warning">
               <CircleAlert className="w-3.5 h-3.5" />

@@ -86,7 +86,7 @@ export function BookingSummary() {
     <Card className="bg-muted/30">
       <CardContent className="pt-4 pb-4 space-y-2">
         {lines.map((line) => (
-          <div key={line.index} className="flex justify-between text-sm">
+          <div key={line.index} className="flex justify-between text-body">
             <span className="text-muted-foreground">
               {line.name}
               {' × '}
@@ -103,7 +103,7 @@ export function BookingSummary() {
         {lines.length > 1 && (
           <>
             <Separator />
-            <div className="flex justify-between text-sm font-semibold">
+            <div className="flex justify-between text-body font-semibold">
               <span>รวมทั้งหมด</span>
               <span className="tabular-nums">{formatTHB(total)}</span>
             </div>
@@ -113,7 +113,7 @@ export function BookingSummary() {
         {paymentMode !== 'reserve' && paymentAmount != null && paymentAmount > 0 && (
           <>
             <Separator />
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body">
               <span className="text-muted-foreground">ชำระเดี๋ยวนี้</span>
               <span className="font-semibold text-primary tabular-nums">
                 {formatTHB(paymentAmount)}

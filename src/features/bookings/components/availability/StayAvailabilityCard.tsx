@@ -38,8 +38,8 @@ export function StayAvailabilityCard({ range, onRangeChange }: StayAvailabilityC
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm">ตรวจสอบห้องว่างสำหรับการจอง</CardTitle>
-        <CardDescription className="text-xs">
+        <CardTitle className="text-body">ตรวจสอบห้องว่างสำหรับการจอง</CardTitle>
+        <CardDescription className="text-helper">
           เลือกวันเช็คอิน–เช็คเอาท์เพื่อดูห้องว่าง
         </CardDescription>
       </CardHeader>
@@ -63,8 +63,8 @@ export function StayAvailabilityCard({ range, onRangeChange }: StayAvailabilityC
           <>
             <Separator />
 
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">
+            <div className="space-list">
+              <p className="text-helper font-medium">
                 ห้องว่างในช่วงที่เลือก
                 {isFetching && <Loader2 className="w-3 h-3 animate-spin inline ml-1" />}
               </p>
@@ -84,8 +84,8 @@ export function StayAvailabilityCard({ range, onRangeChange }: StayAvailabilityC
                 <>
                   <Separator className="my-2" />
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">รวม</span>
-                    <span className="text-sm font-bold tabular-nums">
+                    <span className="text-body font-medium">รวม</span>
+                    <span className="text-body font-bold tabular-nums">
                       {totalAvailable} ว่าง
                     </span>
                   </div>

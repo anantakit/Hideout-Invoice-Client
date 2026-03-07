@@ -78,7 +78,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold text-muted-foreground">การชำระเงิน</CardTitle>
+        <CardTitle className="text-helper font-semibold">การชำระเงิน</CardTitle>
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
 
@@ -104,7 +104,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
         {/* ── Payment history ─────────────────────────────────────────────── */}
         {booking.payments.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">ประวัติการชำระ</p>
+            <p className="text-helper font-medium">ประวัติการชำระ</p>
             <div className="space-y-1.5">
               {booking.payments.map((p) => (
                 <div
@@ -124,7 +124,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{formatTHB(p.amount)}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-helper">
                       {formatThaiDate(p.created_at)}
                     </span>
                   </div>
@@ -141,7 +141,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">รับชำระเงิน</p>
+                    <p className="text-body font-medium">รับชำระเงิน</p>
                     <button
                       type="button"
                       onClick={() => { setShowForm(false); form.reset() }}

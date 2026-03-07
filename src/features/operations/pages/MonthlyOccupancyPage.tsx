@@ -78,7 +78,7 @@ function MonthSelector({
       <Button variant="outline" size="icon" onClick={onPrev} aria-label="Previous month">
         <ChevronLeft className="w-4 h-4" />
       </Button>
-      <span className="text-sm font-semibold min-w-[160px] text-center">
+      <span className="text-body font-semibold min-w-[160px] text-center">
         {monthLabel(year, month)}
       </span>
       <Button variant="outline" size="icon" onClick={onNext} aria-label="Next month">
@@ -103,7 +103,7 @@ function RoomTypeCard({
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <CardTitle className="text-base font-semibold">{name}</CardTitle>
+          <CardTitle className="text-section">{name}</CardTitle>
           <Badge variant="gray">{capacity} ห้อง</Badge>
         </div>
       </CardHeader>
@@ -121,19 +121,19 @@ function RoomTypeCard({
             <span className={cn(badgeVariants({ variant: 'green' }), 'rounded px-1.5 py-0.5 text-[10px]')}>
               ว่าง
             </span>
-            <span className="text-xs text-muted-foreground">remaining &gt; 2</span>
+            <span className="text-helper">remaining &gt; 2</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className={cn(badgeVariants({ variant: 'amber' }), 'rounded px-1.5 py-0.5 text-[10px]')}>
               ใกล้เต็ม
             </span>
-            <span className="text-xs text-muted-foreground">remaining ≤ 2</span>
+            <span className="text-helper">remaining ≤ 2</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className={cn(badgeVariants({ variant: 'red' }), 'rounded px-1.5 py-0.5 text-[10px]')}>
               เต็ม
             </span>
-            <span className="text-xs text-muted-foreground">remaining = 0</span>
+            <span className="text-helper">remaining = 0</span>
           </span>
         </div>
       </CardContent>
@@ -166,10 +166,10 @@ export default function MonthlyOccupancyPage() {
     <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6 pb-10">
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <h1 className="text-section text-2xl">
           Monthly Occupancy
         </h1>
-        <p className="text-sm text-muted-foreground">อัตราการเข้าพักรายเดือนตามประเภทห้อง</p>
+        <p className="text-helper">อัตราการเข้าพักรายเดือนตามประเภทห้อง</p>
       </div>
 
       <Separator />

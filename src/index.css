@@ -12,6 +12,113 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Design Tokens — reusable styling primitives
+   ═══════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* ── 1. Typography ─────────────────────────────────────────────── */
+  .text-metric {
+    @apply text-3xl font-semibold tabular-nums leading-none;
+  }
+  .text-section {
+    @apply text-lg font-semibold text-foreground;
+  }
+  .text-room-number {
+    @apply text-xl font-semibold tabular-nums leading-none;
+  }
+  .text-body {
+    @apply text-sm;
+  }
+  .text-helper {
+    @apply text-xs text-muted-foreground;
+  }
+
+  /* ── 2. Spacing (applied as composite classes) ─────────────────── */
+  .space-section {
+    @apply pt-5;
+  }
+  .space-card {
+    @apply px-4 py-3;
+  }
+  .space-list {
+    @apply space-y-1;
+  }
+  .space-inline {
+    @apply gap-1.5;
+  }
+
+  /* ── 3. Card primitives ────────────────────────────────────────── */
+  .radius-card {
+    @apply rounded-xl;
+  }
+  .radius-button {
+    @apply rounded-lg;
+  }
+  .radius-badge {
+    @apply rounded-full;
+  }
+
+  /* ── 4. Shadows ────────────────────────────────────────────────── */
+  .shadow-card {
+    @apply shadow-sm;
+  }
+  .shadow-popover {
+    @apply shadow-md;
+  }
+
+  /* ── 5. Status styles (border-left + semantic color) ───────────── */
+  .status-available {
+    @apply border-l-[3px] border-l-success;
+  }
+  .status-booked {
+    @apply border-l-[3px] border-l-warning;
+  }
+  .status-occupied {
+    @apply border-l-[3px] border-l-primary;
+  }
+  .status-checkout {
+    @apply border-l-[3px] border-l-warning;
+  }
+  .status-turnover {
+    @apply border-l-[3px] border-l-destructive;
+  }
+  .status-maintenance {
+    @apply border-l-[3px] border-l-muted-foreground/40 opacity-50;
+  }
+
+  /* ── 6. Room status cards ──────────────────────────────────────── */
+  .room-available {
+    @apply rounded-lg border border-border bg-card status-available;
+  }
+  .room-booked {
+    @apply rounded-lg border border-border bg-card status-booked;
+  }
+  .room-occupied {
+    @apply rounded-lg border border-border bg-card status-occupied;
+  }
+  .room-checkout {
+    @apply rounded-lg border border-border bg-card status-checkout;
+  }
+  .room-turnover {
+    @apply rounded-lg border border-border bg-card status-turnover;
+  }
+  .room-maintenance {
+    @apply rounded-lg border border-border bg-card status-maintenance;
+  }
+
+  /* ── 7. Date picker states ─────────────────────────────────────── */
+  .date-selected {
+    @apply bg-primary text-primary-foreground;
+  }
+  .date-hover {
+    @apply bg-muted text-foreground;
+  }
+  .date-disabled {
+    @apply text-muted-foreground/40 cursor-not-allowed;
+  }
+}
+
 @layer base {
   :root {
     /* ── Surfaces (Whiter & Airier) ───────────────── */

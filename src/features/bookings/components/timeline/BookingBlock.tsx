@@ -90,7 +90,7 @@ const BookingBlock = React.memo(function BookingBlock({
                   isHighlighted === false && 'opacity-20',
                 ]
               : [
-                  'border-current/15 shadow-sm',
+                  'border-current/15 shadow-card',
                   colorClass,
                   isHighlighted === null  && 'opacity-95 hover:opacity-100 hover:shadow-md',
                   isHighlighted === true  && 'opacity-100 shadow-md ring-2 ring-inset ring-current/30',
@@ -170,16 +170,16 @@ const BookingBlock = React.memo(function BookingBlock({
 
         <Separator className="my-1.5" />
 
-        <p className="text-xs text-muted-foreground">ห้อง {roomNumber}</p>
+        <p className="text-helper">ห้อง {roomNumber}</p>
 
         {isMultiRoom && (
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <p className="text-helper flex items-center gap-1">
             <Users className="w-3 h-3" />
             {roomCount} ห้อง (จองกลุ่ม)
           </p>
         )}
 
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-helper mt-0.5">
           {fmtDate(booking.check_in)} → {fmtDate(booking.check_out)}
         </p>
 

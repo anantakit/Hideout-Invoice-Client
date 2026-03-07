@@ -39,7 +39,7 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
         <select
           value={limit}
           onChange={(e) => { onLimitChange(Number(e.target.value)); onPageChange(1) }}
-          className="h-8 rounded-lg border border-input bg-card px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+          className="h-8 radius-button border border-input bg-card px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
         >
           {LIMITS.map((l) => (
             <option key={l} value={l}>{l} ต่อหน้า</option>

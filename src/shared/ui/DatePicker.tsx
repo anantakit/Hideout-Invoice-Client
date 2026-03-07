@@ -87,7 +87,7 @@ export function DatePicker({
       type="button"
       onClick={() => setOpen((v) => !v)}
       className={cn(
-        'flex h-11 w-full items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm',
+        'flex h-11 w-full items-center gap-2 radius-button border border-input bg-background px-3 text-sm',
         'text-left transition-colors hover:border-ring/50',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         open && 'ring-2 ring-ring ring-offset-2',
@@ -111,7 +111,7 @@ export function DatePicker({
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent
             side="bottom"
-            className="rounded-t-2xl px-0 pb-0 flex flex-col max-h-[85vh]"
+            className="rounded-t-xl px-0 pb-0 flex flex-col max-h-[85vh]"
           >
             <SheetHeader className="px-5 pt-5 pb-3 pr-14 border-b border-border shrink-0">
               <SheetTitle className="text-base font-semibold tracking-tight text-left">
@@ -140,7 +140,7 @@ export function DatePicker({
     <div ref={containerRef} className="relative">
       {triggerEl}
       {open && (
-        <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-card border border-border rounded-2xl shadow-lg p-4">
+        <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-card border border-border radius-card shadow-popover p-4">
           <Calendar
             pendingStart={selectedDate}
             pendingEnd={null}

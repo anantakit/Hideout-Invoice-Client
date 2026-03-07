@@ -256,7 +256,7 @@ export default function BookingDetailPage() {
             <h1 className="text-2xl font-semibold tracking-tight">
               #{booking.id.slice(0, 8).toUpperCase()}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-helper">
               สร้างเมื่อ {formatThaiDate(booking.created_at)}
             </p>
           </div>
@@ -277,8 +277,8 @@ export default function BookingDetailPage() {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold">สถานะกำหนดห้อง</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-body font-semibold">สถานะกำหนดห้อง</p>
+                <p className="text-helper mt-0.5">
                   {bd.assignedCount} / {bd.totalActive} ห้องกำหนดแล้ว
                 </p>
               </div>
@@ -320,16 +320,16 @@ export default function BookingDetailPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-sm">ห้องว่าง</CardTitle>
-              <div className="flex rounded-lg border border-border overflow-hidden">
+              <CardTitle className="text-body">ห้องว่าง</CardTitle>
+              <div className="flex radius-button border border-border overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setAvailMode('today')}
                   className={cn(
-                    'px-2.5 py-1 text-[11px] font-medium transition-colors',
+                    'px-2.5 py-1 text-xs font-medium transition-colors',
                     availMode === 'today'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-card text-muted-foreground hover:bg-muted',
+                      ? 'date-selected'
+                      : 'bg-card text-muted-foreground date-hover',
                   )}
                 >
                   วันนี้
@@ -338,17 +338,17 @@ export default function BookingDetailPage() {
                   type="button"
                   onClick={() => setAvailMode('range')}
                   className={cn(
-                    'px-2.5 py-1 text-[11px] font-medium transition-colors',
+                    'px-2.5 py-1 text-xs font-medium transition-colors',
                     availMode === 'range'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-card text-muted-foreground hover:bg-muted',
+                      ? 'date-selected'
+                      : 'bg-card text-muted-foreground date-hover',
                   )}
                 >
                   ช่วงเข้าพัก
                 </button>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper">
               {availMode === 'today'
                 ? 'ห้องว่างสำหรับวันนี้'
                 : `ว่างตลอดช่วง ${fmtShortISO(effCI)} → ${fmtShortISO(effCO)}`}
@@ -395,16 +395,16 @@ export default function BookingDetailPage() {
                     <div key={rt.room_type_id}>
                       {/* Room type header */}
                       <div className="flex items-center justify-between py-1.5">
-                        <span className="text-sm font-medium">{rt.room_type_name}</span>
+                        <span className="text-body font-medium">{rt.room_type_name}</span>
                         <div className="flex items-center gap-1.5">
                           {isFull && (
-                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">เต็ม</Badge>
+                            <Badge variant="destructive" className="text-helper px-1.5 py-0">เต็ม</Badge>
                           )}
                           {nearFull && !isFull && (
-                            <Badge variant="amber" className="text-[10px] px-1.5 py-0">ใกล้เต็ม</Badge>
+                            <Badge variant="amber" className="text-helper px-1.5 py-0">ใกล้เต็ม</Badge>
                           )}
                           <span className={cn(
-                            'text-sm font-semibold tabular-nums',
+                            'text-body font-semibold tabular-nums',
                             isFull ? 'text-destructive' : 'text-foreground',
                           )}>
                             {availableCount} ว่าง
@@ -420,7 +420,7 @@ export default function BookingDetailPage() {
                               key={room.room_id}
                               className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
                             >
-                              <span className="text-sm">ห้อง {room.room_number}</span>
+                              <span className="text-body">ห้อง {room.room_number}</span>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -449,9 +449,9 @@ export default function BookingDetailPage() {
 
       {/* ── 5. Room Stays ──────────────────────────────────────────────── */}
       <div className="space-y-4">
-        <h2 className="text-base font-semibold">
+        <h2 className="text-section">
           รายการห้องพัก
-          <span className="ml-2 text-sm font-normal text-muted-foreground">
+          <span className="ml-2 text-body font-normal text-muted-foreground">
             {booking.room_stays.length} ห้อง
           </span>
         </h2>
@@ -472,16 +472,16 @@ function GuestInfoCard({ guestName, guestPhone }: { guestName: string; guestPhon
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold text-muted-foreground">ข้อมูลผู้เข้าพัก</CardTitle>
+        <CardTitle className="text-helper font-semibold">ข้อมูลผู้เข้าพัก</CardTitle>
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
         <div className="flex items-center gap-3">
           <User className="w-4 h-4 shrink-0 text-muted-foreground" />
-          <span className="text-sm font-medium">{guestName}</span>
+          <span className="text-body font-medium">{guestName}</span>
         </div>
         <div className="flex items-center gap-3">
           <Phone className="w-4 h-4 shrink-0 text-muted-foreground" />
-          <span className="text-sm">{guestPhone}</span>
+          <span className="text-body">{guestPhone}</span>
         </div>
       </CardContent>
     </Card>
@@ -528,7 +528,7 @@ function StayCardOperational({
           <div>
             <p className="font-medium">{stay.room_type_name}</p>
             {stay.room_number && (
-              <p className="text-sm text-muted-foreground">ห้อง {stay.room_number}</p>
+              <p className="text-helper">ห้อง {stay.room_number}</p>
             )}
           </div>
 

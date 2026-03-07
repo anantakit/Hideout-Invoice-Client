@@ -159,9 +159,9 @@ const AvailabilityCard = React.memo(function AvailabilityCard({
 
         {/* Large availability number */}
         {isFull ? (
-          <span className="text-3xl font-semibold text-destructive leading-none">เต็ม</span>
+          <span className="text-metric text-destructive">เต็ม</span>
         ) : (
-          <span className="text-3xl font-semibold text-success leading-none tabular-nums">
+          <span className="text-metric text-success">
             {available}
           </span>
         )}
