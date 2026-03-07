@@ -212,15 +212,30 @@ export function useExtendStay(bookingId: string) {
  * Re-fetches when the window changes. Stale time is short (30 s) because
  * room status can change frequently during operations hours.
  *
+ * Dev mode: append `?mock_timeline=true` to the URL to use mock data
+ * that exercises all layout edge cases (overlaps, clipping, statuses, etc.)
+ *
  * @param from YYYY-MM-DD inclusive
  * @param to   YYYY-MM-DD exclusive
  */
 export function useTimeline(from: string, to: string) {
+  const useMock =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('mock_timeline') === 'true'
+
   return useQuery({
-    queryKey: ['timeline', from, to] as const,
-    queryFn: () => bookingsApi.getTimeline(from, to),
+    queryKey: ['timeline', from, to, useMock ? 'mock' : 'live'] as const,
+    queryFn: async () => {
+      if (useMock) {
+        const { generateMockTimeline } = await import(
+          '../components/timeline/__fixtures__/mockTimelineData'
+        )
+        return generateMockTimeline(from, to)
+      }
+      return bookingsApi.getTimeline(from, to)
+    },
     enabled: Boolean(from && to),
-    staleTime: 30 * 1000,
+    staleTime: useMock ? Infinity : 30 * 1000,
     placeholderData: (prev) => prev,
   })
 }

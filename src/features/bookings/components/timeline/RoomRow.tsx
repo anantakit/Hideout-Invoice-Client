@@ -1,9 +1,10 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { addDays, differenceInDays, format, isToday, isSaturday, isSunday, parseISO, max, min, startOfDay } from 'date-fns'
 import { cn } from '@/shared/utils'
 import type { TimelineRoom, TimelineBooking } from '../../types'
 import BookingBlock from './BookingBlock'
 import { TIMELINE_WINDOW_DAYS } from './tokens'
+import { computeRoomLayout } from './bookingLayout'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,14 +14,13 @@ interface RoomRowProps {
   roomTypeName?: string
   windowStart: Date
   windowEnd: Date
+  /** Pre-computed row height (px) — set by the virtualizer based on layer count. */
+  rowHeight: number
   onSelectBooking: (booking: TimelineBooking, roomNumbers?: string[]) => void
   onEmptyCellClick?: (roomId: string, date: Date) => void
   isEven?: boolean
   bookingColorMap: Record<string, string>
   bookingRoomCountMap: Record<string, number>
-  hoveredBookingId: string | null
-  onBookingHoverStart: (bookingId: string) => void
-  onBookingHoverEnd: () => void
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -115,24 +115,34 @@ const RoomRow = React.memo(function RoomRow({
   roomTypeName,
   windowStart,
   windowEnd,
+  rowHeight,
   onSelectBooking,
   onEmptyCellClick,
   isEven = false,
   bookingColorMap,
   bookingRoomCountMap,
-  hoveredBookingId,
-  onBookingHoverStart,
-  onBookingHoverEnd,
 }: RoomRowProps) {
   const displayStatus = deriveDisplayStatus(room)
   const isEmpty = room.bookings.length === 0
   const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd')
 
+  const windowStartStr = format(windowStart, 'yyyy-MM-dd')
+  const windowEndStr   = format(windowEnd, 'yyyy-MM-dd')
+
+  // Compute booking layer assignments for overlap handling
+  const layout = useMemo(
+    () => computeRoomLayout(room.bookings, windowStartStr, windowEndStr),
+    [room.bookings, windowStartStr, windowEndStr],
+  )
+
   return (
-    <div className={cn(
-      'flex h-timeline-row border-b border-border/60',
-      isEmpty && 'hover:bg-muted/30 transition-colors',
-    )}>
+    <div
+      className={cn(
+        'flex border-b border-border/60',
+        isEmpty && 'hover:bg-muted/30 transition-colors',
+      )}
+      style={{ height: `${rowHeight}px` }}
+    >
 
       {/* ── Sticky room-label column ─────────────────────────────────────── */}
       <div
@@ -174,7 +184,7 @@ const RoomRow = React.memo(function RoomRow({
       {/* ── Booking area ─────────────────────────────────────────────────── */}
       <div
         className="relative flex-1 min-w-timeline-7"
-        style={{ height: 'var(--timeline-row-height)' }}
+        style={{ height: `${rowHeight}px` }}
       >
         {/* Column grid lines + today highlight + weekend highlight + alternating row stripe */}
         <div className="absolute inset-0 flex pointer-events-none" aria-hidden>
@@ -223,7 +233,7 @@ const RoomRow = React.memo(function RoomRow({
           </div>
         )}
 
-        {/* Booking blocks */}
+        {/* Booking blocks — positioned per layer assignment */}
         {room.bookings.map((booking) => {
           const checkIn      = parseISO(booking.check_in)
           const checkOut     = parseISO(booking.check_out)
@@ -237,12 +247,9 @@ const RoomRow = React.memo(function RoomRow({
 
           const colorClass = bookingColorMap[booking.booking_id]   ?? 'bg-secondary text-secondary-foreground'
           const roomCount  = bookingRoomCountMap[booking.booking_id] ?? 1
-          const isHighlighted: boolean | null =
-            hoveredBookingId === null
-              ? null
-              : hoveredBookingId === booking.booking_id
           const isUpcoming = booking.check_in > todayStr
           const showCheckoutEdge = checkOut > windowStart && checkOut <= windowEnd
+          const layerInfo = layout.layers.get(booking.booking_id)
 
           return (
             <BookingBlock
@@ -253,11 +260,10 @@ const RoomRow = React.memo(function RoomRow({
               offsetDays={offsetDays}
               spanDays={spanDays}
               colorClass={colorClass}
-              isHighlighted={isHighlighted}
               isUpcoming={isUpcoming}
               showCheckoutEdge={showCheckoutEdge}
-              onHoverStart={() => onBookingHoverStart(booking.booking_id)}
-              onHoverEnd={onBookingHoverEnd}
+              layerIndex={layerInfo?.layerIndex ?? 0}
+              totalLayers={layout.totalLayers}
               onTap={onSelectBooking}
             />
           )

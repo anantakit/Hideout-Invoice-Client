@@ -1,11 +1,17 @@
-import React, { type CSSProperties, useCallback } from 'react'
+import React, { type CSSProperties, useCallback, useMemo } from 'react'
 import { format, parseISO } from 'date-fns'
 import { Users, Clock } from 'lucide-react'
+import {
+  TIMELINE_BLOCK_HEIGHT_PX,
+  TIMELINE_BLOCK_GAP_PX,
+  TIMELINE_BLOCK_PADDING_PX,
+} from './tokens'
 import { cn } from '@/shared/utils'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/shared/ui/tooltip'
 import { Badge } from '@/shared/ui/badge'
 import { Separator } from '@/shared/ui/separator'
 import type { TimelineBooking } from '../../types'
+import { useHoveredBookingId, useBookingHoverHandlers } from './HoverContext'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -35,13 +41,14 @@ export interface BookingBlockProps {
   offsetDays: number
   spanDays: number
   colorClass: string
-  isHighlighted: boolean | null
   /** True when check_in is in the future (not yet occupied). */
   isUpcoming?: boolean
   /** True when the checkout date falls within the visible timeline window. */
   showCheckoutEdge?: boolean
-  onHoverStart: () => void
-  onHoverEnd: () => void
+  /** Zero-based vertical layer index (for overlap stacking). */
+  layerIndex?: number
+  /** Total number of layers in this room row. */
+  totalLayers?: number
   onTap: (booking: TimelineBooking) => void
 }
 
@@ -52,17 +59,39 @@ const BookingBlock = React.memo(function BookingBlock({
   offsetDays,
   spanDays,
   colorClass,
-  isHighlighted,
   isUpcoming = false,
   showCheckoutEdge = false,
-  onHoverStart,
-  onHoverEnd,
+  layerIndex = 0,
+  totalLayers = 1,
   onTap,
 }: BookingBlockProps) {
-  const positionVars = {
-    '--tl-offset': offsetDays,
-    '--tl-span':   spanDays,
-  } as CSSProperties
+  // Read hover state from external store — only this component re-renders on hover change
+  const hoveredBookingId = useHoveredBookingId()
+  const { onHoverStart, onHoverEnd } = useBookingHoverHandlers()
+
+  const isHighlighted: boolean | null =
+    hoveredBookingId === null
+      ? null
+      : hoveredBookingId === booking.booking_id
+  const isMultiLayer = totalLayers > 1
+
+  const positionStyle = useMemo<CSSProperties>(() => {
+    const base = {
+      '--tl-offset': offsetDays,
+      '--tl-span':   spanDays,
+    } as CSSProperties
+
+    if (!isMultiLayer) {
+      // Single layer: fill row with 4px top/bottom padding (original behavior)
+      return { ...base, top: '4px', bottom: '4px' }
+    }
+
+    // Multi-layer: stack vertically with fixed block height
+    const top =
+      TIMELINE_BLOCK_PADDING_PX +
+      layerIndex * (TIMELINE_BLOCK_HEIGHT_PX + TIMELINE_BLOCK_GAP_PX)
+    return { ...base, top: `${top}px`, height: `${TIMELINE_BLOCK_HEIGHT_PX}px` }
+  }, [offsetDays, spanDays, isMultiLayer, layerIndex])
 
   const isMultiRoom = roomCount > 1
 
@@ -81,7 +110,7 @@ const BookingBlock = React.memo(function BookingBlock({
           tabIndex={0}
           className={cn(
             'tl-booking-block',
-            'absolute inset-y-[4px]',
+            'absolute',
             'min-h-[40px]',
             // Card shape
             'rounded-lg border overflow-hidden',
@@ -108,10 +137,10 @@ const BookingBlock = React.memo(function BookingBlock({
                   isHighlighted === false && 'opacity-25',
                 ],
           )}
-          style={positionVars}
-          onMouseEnter={onHoverStart}
+          style={positionStyle}
+          onMouseEnter={() => onHoverStart(booking.booking_id)}
           onMouseLeave={onHoverEnd}
-          onFocus={onHoverStart}
+          onFocus={() => onHoverStart(booking.booking_id)}
           onBlur={onHoverEnd}
           onClick={() => onTap(booking)}
           onKeyDown={handleKeyDown}

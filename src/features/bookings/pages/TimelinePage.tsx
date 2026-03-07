@@ -21,7 +21,9 @@ import {
   TIMELINE_ROW_HEIGHT_PX,
   TIMELINE_WINDOW_DAYS,
   TIMELINE_OVERSCAN_ROWS,
+  computeRowHeight,
 } from '../components/timeline/tokens'
+import { computeRoomLayout } from '../components/timeline/bookingLayout'
 
 // ─── Booking color utilities ──────────────────────────────────────────────────
 
@@ -74,9 +76,6 @@ export default function TimelinePage() {
 
   // ── Bottom-sheet state ────────────────────────────────────────────────────
   const [selectedBooking, setSelectedBooking] = useState<SelectedBookingContext | null>(null)
-
-  // ── Hover-highlight state ─────────────────────────────────────────────────
-  const [hoveredBookingId, setHoveredBookingId] = useState<string | null>(null)
 
   // ── Mobile single-day offset (0–6 within window) ──────────────────────────
   const [mobileDayOffset, setMobileDayOffset] = useState(3) // start on "today"
@@ -161,6 +160,22 @@ export default function TimelinePage() {
     return colors
   }, [allRooms])
 
+  // Precompute per-room layer count for dynamic row heights
+  const roomLayerCountMap = useMemo<Record<string, number>>(() => {
+    const map: Record<string, number> = {}
+    const wsStr = format(windowStart, 'yyyy-MM-dd')
+    const weStr = format(addDays(windowStart, TIMELINE_WINDOW_DAYS), 'yyyy-MM-dd')
+    for (const room of allRooms) {
+      if (room.bookings.length <= 1) {
+        map[room.id] = room.bookings.length
+      } else {
+        const layout = computeRoomLayout(room.bookings, wsStr, weStr)
+        map[room.id] = layout.totalLayers
+      }
+    }
+    return map
+  }, [allRooms, windowStart])
+
   const days = useMemo(
     () => Array.from({ length: TIMELINE_WINDOW_DAYS }, (_, i) => addDays(windowStart, i)),
     [windowStart],
@@ -196,8 +211,6 @@ export default function TimelinePage() {
     setSelectedBooking({ booking: b, roomNumbers: rooms })
   }, [allRooms])
   const handleCloseSheet         = useCallback(() => setSelectedBooking(null as SelectedBookingContext | null), [])
-  const handleBookingHoverStart  = useCallback((id: string) => setHoveredBookingId(id), [])
-  const handleBookingHoverEnd    = useCallback(() => setHoveredBookingId(null), [])
   const handleEmptyCellClick     = useCallback((roomId: string, date: Date) => {
     const checkIn = format(date, 'yyyy-MM-dd')
     const roomTypeId = roomTypeIdByRoomId[roomId] ?? ''
@@ -209,10 +222,20 @@ export default function TimelinePage() {
   // ── Virtualisation ──────────────────────────────────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  const getRowHeight = useCallback(
+    (index: number) => {
+      const room = filteredRooms[index]
+      if (!room) return TIMELINE_ROW_HEIGHT_PX
+      const layers = roomLayerCountMap[room.id] ?? 1
+      return computeRowHeight(layers)
+    },
+    [filteredRooms, roomLayerCountMap],
+  )
+
   const rowVirtualizer = useVirtualizer({
     count:            filteredRooms.length,
     getScrollElement: () => scrollContainerRef.current,
-    estimateSize:     () => TIMELINE_ROW_HEIGHT_PX,
+    estimateSize:     getRowHeight,
     overscan:         TIMELINE_OVERSCAN_ROWS,
   })
 
@@ -451,14 +474,12 @@ export default function TimelinePage() {
                                 roomTypeName={roomTypeNameByRoomId[room.id]}
                                 windowStart={windowStart}
                                 windowEnd={windowEnd}
+                                rowHeight={virtualRow.size}
                                 onSelectBooking={handleSelectBooking}
                                 onEmptyCellClick={handleEmptyCellClick}
                                 isEven={virtualRow.index % 2 === 0}
                                 bookingColorMap={bookingColorMap}
                                 bookingRoomCountMap={bookingRoomCountMap}
-                                hoveredBookingId={hoveredBookingId}
-                                onBookingHoverStart={handleBookingHoverStart}
-                                onBookingHoverEnd={handleBookingHoverEnd}
                               />
                             </div>
                           )

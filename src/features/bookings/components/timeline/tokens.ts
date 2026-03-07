@@ -24,3 +24,25 @@ export const TIMELINE_WINDOW_DAYS = 7
 
 /** Rows rendered outside the visible viewport to reduce blank flicker. */
 export const TIMELINE_OVERSCAN_ROWS = 5
+
+/** Height of a single booking block when stacked (px). */
+export const TIMELINE_BLOCK_HEIGHT_PX = 40
+
+/** Vertical gap between stacked booking blocks (px). */
+export const TIMELINE_BLOCK_GAP_PX = 4
+
+/** Top/bottom padding inside the booking area (px). */
+export const TIMELINE_BLOCK_PADDING_PX = 4
+
+/**
+ * Compute the row height for a room with the given number of booking layers.
+ * Single-layer rooms use the standard row height; multi-layer rooms expand.
+ */
+export function computeRowHeight(layerCount: number): number {
+  if (layerCount <= 1) return TIMELINE_ROW_HEIGHT_PX
+  return (
+    TIMELINE_BLOCK_PADDING_PX * 2 +
+    layerCount * TIMELINE_BLOCK_HEIGHT_PX +
+    (layerCount - 1) * TIMELINE_BLOCK_GAP_PX
+  )
+}
