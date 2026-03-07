@@ -41,9 +41,11 @@ export default function CreateBookingPage() {
   const [searchParams] = useSearchParams()
   const createBooking = useCreateBooking()
 
-  // Allow pre-filling dates from URL: /bookings/new?check_in=2026-03-06&check_out=2026-03-08
-  const urlCheckIn  = searchParams.get('check_in')  || todayStr()
-  const urlCheckOut = searchParams.get('check_out') || tomorrowStr()
+  // Allow pre-filling from URL: /bookings/new?check_in=...&check_out=...&room_type_id=...&room_id=...
+  const urlCheckIn    = searchParams.get('check_in')     || todayStr()
+  const urlCheckOut   = searchParams.get('check_out')    || tomorrowStr()
+  const urlRoomTypeId = searchParams.get('room_type_id') || ''
+  const urlRoomId     = searchParams.get('room_id')      || ''
 
   const form = useForm<CreateBookingFormValues>({
     resolver: zodResolver(createBookingSchema),
@@ -55,11 +57,11 @@ export default function CreateBookingPage() {
       same_dates: false,
       items: [
         {
-          room_type_id: '',
+          room_type_id: urlRoomTypeId,
           quantity: 1,
           check_in: urlCheckIn,
           check_out: urlCheckOut,
-          assigned_room_ids: [],
+          assigned_room_ids: urlRoomId ? [urlRoomId] : [],
         },
       ],
       payment_mode: 'reserve',

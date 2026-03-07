@@ -1,7 +1,9 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import { addDays, subDays, format, startOfDay } from 'date-fns'
+import { useNavigate } from 'react-router-dom'
+import { ROUTES } from '@/app/routes'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CalendarPlus } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { TooltipProvider } from '@/shared/ui/tooltip'
 import { useTimeline, useAvailabilityGrouped } from '../hooks'
@@ -13,6 +15,7 @@ import BookingBottomSheet from '../components/timeline/BookingBottomSheet'
 import { AvailabilitySummary } from '../components/timeline/AvailabilitySummary'
 import type { RoomAvailability } from '../components/timeline/AvailabilitySummary'
 import { PendingAssignmentsPanel } from '../components/timeline/PendingAssignmentsPanel'
+import { DesktopOperationsPanel } from '../components/timeline/DesktopOperationsPanel'
 import { MobileTimelineList } from '../components/timeline/MobileTimelineList'
 import {
   TIMELINE_ROW_HEIGHT_PX,
@@ -43,9 +46,24 @@ function getBookingColorClass(bookingId: string): string {
   return BOOKING_COLOR_PALETTE[hashBookingId(bookingId) % BOOKING_COLOR_PALETTE.length]
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+]
+
+function fmtThaiRange(start: Date, end: Date): string {
+  const s = `${start.getDate()} ${THAI_MONTHS_SHORT[start.getMonth()]}`
+  const e = `${end.getDate()} ${THAI_MONTHS_SHORT[end.getMonth()]} ${(end.getFullYear() + 543).toString()}`
+  return `${s} — ${e}`
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TimelinePage() {
+  const navigate = useNavigate()
+
   // ── Window state ─────────────────────────────────────────────────────────
   const [windowStart, setWindowStart] = useState<Date>(() =>
     subDays(startOfDay(new Date()), 3),
@@ -108,7 +126,6 @@ export default function TimelinePage() {
     return map
   }, [availRoomTypes])
 
-  /** roomId → room type name for display in room labels. */
   const roomTypeNameByRoomId = useMemo(() => {
     const map: Record<string, string> = {}
     for (const rt of availRoomTypes) {
@@ -154,6 +171,9 @@ export default function TimelinePage() {
     [windowStart, mobileDayOffset],
   )
 
+  // Desktop operations panel uses today's date by default
+  const todayStr = useMemo(() => format(startOfDay(new Date()), 'yyyy-MM-dd'), [])
+
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handlePrev = useCallback(() => {
     setWindowStart((d) => subDays(d, TIMELINE_WINDOW_DAYS))
@@ -170,7 +190,6 @@ export default function TimelinePage() {
 
   const handleRoomTypeSelect     = useCallback((id: string | null) => setSelectedRoomTypeId(id), [])
   const handleSelectBooking      = useCallback((b: TimelineBooking, roomNumbers?: string[]) => {
-    // Collect all room numbers for this booking from allRooms if not provided
     const rooms = roomNumbers ?? allRooms
       .filter((r) => r.bookings.some((bk) => bk.booking_id === b.booking_id))
       .map((r) => r.room_number)
@@ -179,8 +198,15 @@ export default function TimelinePage() {
   const handleCloseSheet         = useCallback(() => setSelectedBooking(null as SelectedBookingContext | null), [])
   const handleBookingHoverStart  = useCallback((id: string) => setHoveredBookingId(id), [])
   const handleBookingHoverEnd    = useCallback(() => setHoveredBookingId(null), [])
+  const handleEmptyCellClick     = useCallback((roomId: string, date: Date) => {
+    const checkIn = format(date, 'yyyy-MM-dd')
+    const roomTypeId = roomTypeIdByRoomId[roomId] ?? ''
+    const params = new URLSearchParams({ check_in: checkIn, room_id: roomId })
+    if (roomTypeId) params.set('room_type_id', roomTypeId)
+    navigate(`${ROUTES.bookings.new}?${params.toString()}`)
+  }, [navigate, roomTypeIdByRoomId])
 
-  // ── Virtualisation ────────────────────────────────────────────────────────
+  // ── Virtualisation ──────────────────────────────────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
@@ -190,91 +216,122 @@ export default function TimelinePage() {
     overscan:         TIMELINE_OVERSCAN_ROWS,
   })
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────
   return (
     <TooltipProvider>
       <div className="flex flex-col h-full overflow-hidden bg-background">
 
-        {/* ── Section 1: Header ─────────────────────────────────────────── */}
+        {/* ════════════════════════════════════════════════════════════════
+            HEADER — shared between desktop and mobile
+            ════════════════════════════════════════════════════════════════ */}
         <div className="shrink-0 bg-card border-b border-border px-4 py-2.5">
-          <div className="grid grid-cols-3 items-center">
-            <h1 className="text-sm font-semibold text-foreground">Timeline</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-section text-base">Timeline</h1>
 
-            <div className="flex justify-center">
-              <span className="text-xs font-medium text-foreground tabular-nums">
-                {format(windowStart, 'MMM d')}
-                {' — '}
-                {format(subDays(windowEnd, 1), 'MMM d, yyyy')}
+            <div className="flex items-center gap-2">
+              <span className="text-helper font-medium tabular-nums hidden sm:inline">
+                {fmtThaiRange(windowStart, subDays(windowEnd, 1))}
               </span>
-            </div>
 
-            <div className="flex items-center justify-end gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handlePrev}
-                className="h-7 w-7"
-                aria-label="สัปดาห์ก่อนหน้า"
-              >
-                <ChevronLeft size={14} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleNext}
-                className="h-7 w-7"
-                aria-label="สัปดาห์ถัดไป"
-              >
-                <ChevronRight size={14} />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleToday}
-                className="h-6 px-2 text-[11px] ml-1"
-              >
-                วันนี้
-              </Button>
+              <div className="flex items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePrev}
+                  className="h-7 w-7"
+                  aria-label="สัปดาห์ก่อนหน้า"
+                >
+                  <ChevronLeft size={14} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToday}
+                  className="h-6 px-2.5 text-[11px]"
+                >
+                  วันนี้
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleNext}
+                  className="h-7 w-7"
+                  aria-label="สัปดาห์ถัดไป"
+                >
+                  <ChevronRight size={14} />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* ── Section 2: Availability summary (desktop only — mobile has inline KPI) */}
-        <div className="hidden md:block">
-          <AvailabilitySummary
-            date={windowStart}
-            roomTypes={roomAvailability}
-            selectedRoomTypeId={selectedRoomTypeId}
-            onSelect={handleRoomTypeSelect}
-            isLoading={availLoading}
-          />
-        </div>
-
-        {/* ── Loading state ──────────────────────────────────────────────── */}
+        {/* ════════════════════════════════════════════════════════════════
+            LOADING / ERROR
+            ════════════════════════════════════════════════════════════════ */}
         {isLoading && (
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <div className="flex-1 overflow-hidden">
+            {/* Skeleton header */}
+            <div className="flex border-b border-border bg-card">
+              <div
+                className="flex-shrink-0 border-r border-border"
+                style={{ width: 'var(--timeline-room-col-width)' }}
+              />
+              {Array.from({ length: TIMELINE_WINDOW_DAYS }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col items-center justify-center gap-1 flex-shrink-0 border-r border-border/50 py-2"
+                  style={{ width: 'var(--timeline-cell-width)' }}
+                >
+                  <div className="w-6 h-3 bg-muted rounded animate-pulse" />
+                  <div className="w-4 h-4 bg-muted rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+            {/* Skeleton rows */}
+            {Array.from({ length: 8 }).map((_, rowIdx) => (
+              <div key={rowIdx} className="flex border-b border-border/60" style={{ height: 'var(--timeline-row-height)' }}>
+                <div
+                  className="flex-shrink-0 border-r border-border flex items-center gap-2 px-3"
+                  style={{ width: 'var(--timeline-room-col-width)' }}
+                >
+                  <div className="w-2 h-2 rounded-full bg-muted animate-pulse" />
+                  <div className="flex flex-col gap-1">
+                    <div className="w-8 h-3 bg-muted rounded animate-pulse" />
+                    <div className="w-14 h-2 bg-muted rounded animate-pulse" />
+                  </div>
+                </div>
+                <div className="flex-1 flex items-center px-1">
+                  {rowIdx % 3 !== 2 && (
+                    <div
+                      className="h-[40px] bg-muted/60 rounded-lg animate-pulse"
+                      style={{
+                        width: `calc(${(rowIdx % 3) + 2} * var(--timeline-cell-width) - 8px)`,
+                        marginLeft: `calc(${rowIdx % 4} * var(--timeline-cell-width) + 4px)`,
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* ── Error state ────────────────────────────────────────────────── */}
         {isError && !isLoading && (
           <div className="flex-1 flex items-center justify-center px-6">
-            <p className="text-sm text-destructive text-center">
+            <p className="text-body text-destructive text-center">
               โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่
             </p>
           </div>
         )}
 
-        {/* ── Main content ───────────────────────────────────────────────── */}
+        {/* ════════════════════════════════════════════════════════════════
+            MAIN CONTENT
+            ════════════════════════════════════════════════════════════════ */}
         {!isLoading && !isError && (
           <>
-            {/* Pending assignments */}
-            <PendingAssignmentsPanel stays={unassignedStays} />
-
-            {/* ── Mobile day selector + card list (< md) ─────────────────── */}
+            {/* ── Mobile: day selector + MobileTimelineList (< md) ────── */}
             <div className="md:hidden flex flex-col flex-1 overflow-hidden">
-              {/* Day picker */}
+              {/* Day picker tabs */}
               <div className="shrink-0 flex border-b border-border bg-card overflow-x-auto">
                 {days.map((day, i) => {
                   const isActive = i === mobileDayOffset
@@ -285,7 +342,7 @@ export default function TimelinePage() {
                       onClick={() => setMobileDayOffset(i)}
                       className={`flex-1 min-w-[3rem] flex flex-col items-center py-2 gap-0.5 text-center transition-colors ${
                         isActive
-                          ? 'bg-primary text-primary-foreground'
+                          ? 'date-selected'
                           : 'text-muted-foreground hover:bg-muted'
                       }`}
                     >
@@ -311,62 +368,105 @@ export default function TimelinePage() {
               />
             </div>
 
-            {/* ── Desktop timeline grid (>= md) ─────────────────────────── */}
-            <div ref={scrollContainerRef} className="hidden md:block flex-1 overflow-auto">
+            {/* ── Desktop: Operations panel + Timeline grid (>= md) ───── */}
+            <div className="hidden md:flex flex-1 overflow-hidden">
+
+              {/* Left: Operations Panel */}
               <div
-                style={{
-                  minWidth:
-                    'calc(var(--timeline-room-col-width) + 7 * var(--timeline-cell-width))',
-                }}
+                className="shrink-0 border-r border-border bg-card overflow-hidden"
+                style={{ width: 'var(--timeline-ops-panel-width)' }}
               >
-                <TimelineHeader days={days} />
+                <DesktopOperationsPanel
+                  rooms={allRooms}
+                  selectedDateStr={todayStr}
+                  roomTypeNameMap={roomTypeNameByRoomId}
+                  unassignedStays={unassignedStays}
+                />
+              </div>
 
-                {filteredRooms.length === 0 && (
-                  <div className="flex items-center justify-center py-16">
-                    <p className="text-sm text-muted-foreground">
-                      {selectedRoomTypeId ? 'ไม่พบห้องสำหรับประเภทนี้' : 'ไม่พบห้องพัก'}
-                    </p>
-                  </div>
-                )}
+              {/* Right: Timeline grid */}
+              <div className="flex-1 flex flex-col overflow-hidden">
 
-                {filteredRooms.length > 0 && (
+                {/* Availability summary (room type filter) */}
+                <AvailabilitySummary
+                  date={windowStart}
+                  roomTypes={roomAvailability}
+                  selectedRoomTypeId={selectedRoomTypeId}
+                  onSelect={handleRoomTypeSelect}
+                  isLoading={availLoading}
+                />
+
+                {/* Pending assignments (collapsible) */}
+                <PendingAssignmentsPanel stays={unassignedStays} />
+
+                {/* Timeline grid with virtualisation */}
+                <div ref={scrollContainerRef} className="flex-1 overflow-auto">
                   <div
                     style={{
-                      height:   rowVirtualizer.getTotalSize(),
-                      position: 'relative',
+                      minWidth:
+                        'calc(var(--timeline-room-col-width) + 7 * var(--timeline-cell-width))',
                     }}
                   >
-                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                      const room = filteredRooms[virtualRow.index]
-                      return (
-                        <div
-                          key={room.id}
-                          style={{
-                            position: 'absolute',
-                            top:    virtualRow.start,
-                            left:   0,
-                            right:  0,
-                            height: virtualRow.size,
-                          }}
+                    <TimelineHeader days={days} />
+
+                    {filteredRooms.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-16 gap-3">
+                        <p className="text-body text-muted-foreground">
+                          {selectedRoomTypeId ? 'ไม่พบห้องสำหรับประเภทนี้' : 'ไม่มีการจองในช่วงเวลานี้'}
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(ROUTES.bookings.new)}
+                          className="gap-1.5"
                         >
-                          <RoomRow
-                            room={room}
-                            roomTypeName={roomTypeNameByRoomId[room.id]}
-                            windowStart={windowStart}
-                            windowEnd={windowEnd}
-                            onSelectBooking={handleSelectBooking}
-                            isEven={virtualRow.index % 2 === 0}
-                            bookingColorMap={bookingColorMap}
-                            bookingRoomCountMap={bookingRoomCountMap}
-                            hoveredBookingId={hoveredBookingId}
-                            onBookingHoverStart={handleBookingHoverStart}
-                            onBookingHoverEnd={handleBookingHoverEnd}
-                          />
-                        </div>
-                      )
-                    })}
+                          <CalendarPlus size={14} />
+                          สร้างการจอง
+                        </Button>
+                      </div>
+                    )}
+
+                    {filteredRooms.length > 0 && (
+                      <div
+                        style={{
+                          height:   rowVirtualizer.getTotalSize(),
+                          position: 'relative',
+                        }}
+                      >
+                        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                          const room = filteredRooms[virtualRow.index]
+                          return (
+                            <div
+                              key={room.id}
+                              style={{
+                                position: 'absolute',
+                                top:    virtualRow.start,
+                                left:   0,
+                                right:  0,
+                                height: virtualRow.size,
+                              }}
+                            >
+                              <RoomRow
+                                room={room}
+                                roomTypeName={roomTypeNameByRoomId[room.id]}
+                                windowStart={windowStart}
+                                windowEnd={windowEnd}
+                                onSelectBooking={handleSelectBooking}
+                                onEmptyCellClick={handleEmptyCellClick}
+                                isEven={virtualRow.index % 2 === 0}
+                                bookingColorMap={bookingColorMap}
+                                bookingRoomCountMap={bookingRoomCountMap}
+                                hoveredBookingId={hoveredBookingId}
+                                onBookingHoverStart={handleBookingHoverStart}
+                                onBookingHoverEnd={handleBookingHoverEnd}
+                              />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </>

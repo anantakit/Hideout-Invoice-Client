@@ -1,5 +1,5 @@
-import React from 'react'
-import { addDays, differenceInDays, format, isToday, parseISO, max, min, startOfDay } from 'date-fns'
+import React, { useCallback } from 'react'
+import { addDays, differenceInDays, format, isToday, isSaturday, isSunday, parseISO, max, min, startOfDay } from 'date-fns'
 import { cn } from '@/shared/utils'
 import type { TimelineRoom, TimelineBooking } from '../../types'
 import BookingBlock from './BookingBlock'
@@ -14,6 +14,7 @@ interface RoomRowProps {
   windowStart: Date
   windowEnd: Date
   onSelectBooking: (booking: TimelineBooking, roomNumbers?: string[]) => void
+  onEmptyCellClick?: (roomId: string, date: Date) => void
   isEven?: boolean
   bookingColorMap: Record<string, string>
   bookingRoomCountMap: Record<string, number>
@@ -29,7 +30,6 @@ function deriveDisplayStatus(
 ): 'AVAILABLE' | 'OCCUPIED' | 'CLEANING' | 'MAINTENANCE' {
   if (room.status === 'MAINTENANCE') return 'MAINTENANCE'
   if (room.status === 'CLEANING')    return 'CLEANING'
-  // Check if any booking covers today (not just "has bookings in window")
   const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd')
   const isOccupiedToday = room.bookings.some(
     (b) => b.check_in <= todayStr && b.check_out > todayStr,
@@ -45,6 +45,69 @@ const STATUS_DOT_CLASS: Record<string, string> = {
   MAINTENANCE: 'bg-destructive',
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  AVAILABLE:   'ว่าง',
+  OCCUPIED:    'เข้าพัก',
+  CLEANING:    'ทำความสะอาด',
+  MAINTENANCE: 'ปิดซ่อม',
+}
+
+// ─── TimelineCell ─────────────────────────────────────────────────────────────
+
+interface TimelineCellProps {
+  roomId: string
+  roomNumber: string
+  cellDate: Date
+  cellDateStr: string
+  hasCoverage: boolean
+  onEmptyCellClick?: (roomId: string, date: Date) => void
+}
+
+const TimelineCell = React.memo(function TimelineCell({
+  roomId,
+  roomNumber,
+  cellDate,
+  cellDateStr,
+  hasCoverage,
+  onEmptyCellClick,
+}: TimelineCellProps) {
+  const handleClick = useCallback(() => {
+    onEmptyCellClick?.(roomId, cellDate)
+  }, [onEmptyCellClick, roomId, cellDate])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onEmptyCellClick?.(roomId, cellDate)
+    }
+  }, [onEmptyCellClick, roomId, cellDate])
+
+  if (hasCoverage) {
+    return (
+      <div
+        className="flex-shrink-0 pointer-events-none"
+        style={{ width: 'var(--timeline-cell-width)' }}
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      tabIndex={0}
+      className={cn(
+        'flex-shrink-0 cursor-pointer transition-colors',
+        'hover:bg-primary/8',
+        'focus-visible:outline-none focus-visible:bg-primary/10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary/30',
+      )}
+      style={{ width: 'var(--timeline-cell-width)' }}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      aria-label={`จองห้อง ${roomNumber} วันที่ ${cellDateStr}`}
+    />
+  )
+})
+
 // ─── RoomRow ──────────────────────────────────────────────────────────────────
 
 const RoomRow = React.memo(function RoomRow({
@@ -53,6 +116,7 @@ const RoomRow = React.memo(function RoomRow({
   windowStart,
   windowEnd,
   onSelectBooking,
+  onEmptyCellClick,
   isEven = false,
   bookingColorMap,
   bookingRoomCountMap,
@@ -75,7 +139,7 @@ const RoomRow = React.memo(function RoomRow({
         className={cn(
           'sticky left-0 z-10',
           'w-timeline-room-col min-w-timeline-room-col max-w-timeline-room-col',
-          'flex items-center gap-1.5 px-2',
+          'flex items-center gap-2 px-3',
           'bg-card border-r border-border',
           'flex-shrink-0',
         )}
@@ -88,16 +152,22 @@ const RoomRow = React.memo(function RoomRow({
           )}
           aria-label={displayStatus}
         />
-        {/* Room number + type */}
+        {/* Room number + type + status */}
         <div className="min-w-0 flex flex-col">
-          <span className="text-xs font-semibold text-foreground leading-none">
+          <span className="text-sm font-semibold text-foreground leading-none tabular-nums">
             {room.room_number}
           </span>
           {roomTypeName && (
-            <span className="text-[9px] text-muted-foreground leading-tight truncate mt-0.5">
+            <span className="text-[10px] text-muted-foreground leading-tight truncate mt-0.5">
               {roomTypeName}
             </span>
           )}
+          <span className={cn(
+            'text-[9px] leading-tight mt-0.5',
+            displayStatus === 'AVAILABLE' ? 'text-success/70' : 'text-muted-foreground/60',
+          )}>
+            {STATUS_LABEL[displayStatus]}
+          </span>
         </div>
       </div>
 
@@ -106,23 +176,52 @@ const RoomRow = React.memo(function RoomRow({
         className="relative flex-1 min-w-timeline-7"
         style={{ height: 'var(--timeline-row-height)' }}
       >
-        {/* Column grid lines + today highlight + alternating row stripe */}
+        {/* Column grid lines + today highlight + weekend highlight + alternating row stripe */}
         <div className="absolute inset-0 flex pointer-events-none" aria-hidden>
           {Array.from({ length: TIMELINE_WINDOW_DAYS }).map((_, i) => {
             const cellDate  = addDays(windowStart, i)
             const todayCell = isToday(cellDate)
+            const isWeekend = isSaturday(cellDate) || isSunday(cellDate)
             return (
               <div
                 key={i}
                 className={cn(
                   'border-r border-border/40 flex-shrink-0',
-                  todayCell ? 'bg-accent/50' : isEven && 'bg-muted/15',
+                  todayCell
+                    ? 'bg-accent/60'
+                    : isWeekend
+                      ? 'bg-muted/30'
+                      : isEven && 'bg-muted/15',
                 )}
                 style={{ width: 'var(--timeline-cell-width)' }}
               />
             )
           })}
         </div>
+
+        {/* Clickable empty cells — interactive layer */}
+        {onEmptyCellClick && (
+          <div className="absolute inset-0 flex">
+            {Array.from({ length: TIMELINE_WINDOW_DAYS }).map((_, i) => {
+              const cellDate = addDays(windowStart, i)
+              const cellDateStr = format(cellDate, 'yyyy-MM-dd')
+              const hasCoverage = room.bookings.some(
+                (b) => b.check_in <= cellDateStr && b.check_out > cellDateStr,
+              )
+              return (
+                <TimelineCell
+                  key={i}
+                  roomId={room.id}
+                  roomNumber={room.room_number}
+                  cellDate={cellDate}
+                  cellDateStr={cellDateStr}
+                  hasCoverage={hasCoverage}
+                  onEmptyCellClick={onEmptyCellClick}
+                />
+              )
+            })}
+          </div>
+        )}
 
         {/* Booking blocks */}
         {room.bookings.map((booking) => {
@@ -143,7 +242,6 @@ const RoomRow = React.memo(function RoomRow({
               ? null
               : hoveredBookingId === booking.booking_id
           const isUpcoming = booking.check_in > todayStr
-          // Show checkout edge when checkout falls within the visible window
           const showCheckoutEdge = checkOut > windowStart && checkOut <= windowEnd
 
           return (

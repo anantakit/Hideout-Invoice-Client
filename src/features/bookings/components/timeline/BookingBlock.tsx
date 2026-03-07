@@ -1,4 +1,4 @@
-import React, { type CSSProperties } from 'react'
+import React, { type CSSProperties, useCallback } from 'react'
 import { format, parseISO } from 'date-fns'
 import { Users, Clock } from 'lucide-react'
 import { cn } from '@/shared/utils'
@@ -66,33 +66,44 @@ const BookingBlock = React.memo(function BookingBlock({
 
   const isMultiRoom = roomCount > 1
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onTap(booking)
+    }
+  }, [onTap, booking])
+
   return (
-    <Tooltip delayDuration={400}>
+    <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
         <button
           type="button"
+          tabIndex={0}
           className={cn(
             'tl-booking-block',
-            'absolute inset-y-[3px]',
+            'absolute inset-y-[4px]',
+            'min-h-[40px]',
             // Card shape
-            'rounded-md border overflow-hidden',
+            'rounded-lg border overflow-hidden',
             // Layout
-            'flex items-center px-2 gap-1.5',
+            'flex items-center px-2.5 gap-1.5',
             'cursor-pointer select-none',
             // Hover & highlight transitions
-            'transition-[opacity,box-shadow,filter] duration-150',
+            'transition-[opacity,box-shadow,filter,transform] duration-150',
+            // Focus-visible for keyboard navigation
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
             // ── Upcoming vs active styling ──
             isUpcoming
               ? [
                   'border-dashed border-border bg-muted/40 text-muted-foreground',
-                  isHighlighted === null  && 'opacity-70 hover:opacity-90 hover:shadow-md',
+                  isHighlighted === null  && 'opacity-70 hover:opacity-90 hover:shadow-md hover:brightness-105',
                   isHighlighted === true  && 'opacity-90 shadow-md ring-2 ring-inset ring-primary/30',
                   isHighlighted === false && 'opacity-20',
                 ]
               : [
                   'border-current/15 shadow-card',
                   colorClass,
-                  isHighlighted === null  && 'opacity-95 hover:opacity-100 hover:shadow-md',
+                  isHighlighted === null  && 'opacity-95 hover:opacity-100 hover:shadow-md hover:brightness-[1.03]',
                   isHighlighted === true  && 'opacity-100 shadow-md ring-2 ring-inset ring-current/30',
                   isHighlighted === false && 'opacity-25',
                 ],
@@ -100,7 +111,10 @@ const BookingBlock = React.memo(function BookingBlock({
           style={positionVars}
           onMouseEnter={onHoverStart}
           onMouseLeave={onHoverEnd}
+          onFocus={onHoverStart}
+          onBlur={onHoverEnd}
           onClick={() => onTap(booking)}
+          onKeyDown={handleKeyDown}
           aria-label={`${booking.guest_name} — ห้อง ${roomNumber}`}
         >
           {/* Left accent bar for multi-room bookings */}

@@ -171,9 +171,10 @@
 
     /* ── Timeline View ─────────────────────────────────────────────── */
     /* JS constants in timeline/tokens.ts must mirror these values.    */
-    --timeline-cell-width: 6rem;
-    --timeline-row-height: 3rem;
-    --timeline-room-col-width: 4.5rem;
+    --timeline-cell-width: 7.5rem;
+    --timeline-row-height: 3.5rem;
+    --timeline-room-col-width: 8.75rem;
+    --timeline-ops-panel-width: 22rem;
   }
 
   * {
