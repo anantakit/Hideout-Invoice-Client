@@ -60,7 +60,7 @@ export const AvailabilitySummary = React.memo(function AvailabilitySummary({
   const showSkeletons = isLoading && roomTypes.length === 0
 
   return (
-    <div className="shrink-0 border-b border-border bg-muted/30">
+    <div className="shrink-0 border-b border-border-soft bg-card/50">
       {/* Section header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">

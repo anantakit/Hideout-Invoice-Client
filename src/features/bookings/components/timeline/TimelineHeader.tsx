@@ -11,10 +11,10 @@ interface TimelineHeaderProps {
 
 const TimelineHeader = React.memo(function TimelineHeader({ days }: TimelineHeaderProps) {
   return (
-    <div className="flex sticky top-0 z-30 bg-card border-b border-border shadow-card">
+    <div className="flex sticky top-0 z-30 bg-sidebar border-b border-border-soft shadow-card">
       {/* Room-label column spacer — matches RoomRow's sticky column width */}
       <div
-        className="sticky left-0 z-40 bg-card border-r border-border flex-shrink-0"
+        className="sticky left-0 z-40 bg-sidebar border-r border-border-soft flex-shrink-0"
         style={{
           width: 'var(--timeline-room-col-width)',
           minWidth: 'var(--timeline-room-col-width)',
@@ -30,8 +30,8 @@ const TimelineHeader = React.memo(function TimelineHeader({ days }: TimelineHead
           <div
             key={day.toISOString()}
             className={cn(
-              'flex flex-col items-center justify-center gap-0.5 flex-shrink-0 border-r border-border/50',
-              today ? 'bg-accent border-b-2 border-b-primary/40' : isWeekend && 'bg-muted/40',
+              'flex flex-col items-center justify-center gap-0.5 flex-shrink-0 border-r border-timeline-grid/40',
+              today ? 'bg-primary/10 border-b-2 border-b-timeline-today/50' : isWeekend && 'bg-muted/30',
             )}
             style={{
               width: 'var(--timeline-cell-width)',

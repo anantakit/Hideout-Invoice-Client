@@ -1,6 +1,6 @@
 import React, { type CSSProperties, useCallback, useMemo } from 'react'
-import { format, parseISO, startOfDay } from 'date-fns'
-import { Users, Clock, LogIn, LogOut } from 'lucide-react'
+import { differenceInDays, format, parseISO, startOfDay } from 'date-fns'
+import { Users, Clock, LogIn, LogOut, Footprints, Headset, Globe } from 'lucide-react'
 import {
   TIMELINE_BLOCK_HEIGHT_PX,
   TIMELINE_BLOCK_GAP_PX,
@@ -31,6 +31,18 @@ function statusBadgeVariant(
     case 'CANCELLED':             return 'red'
     default:                      return 'default'
   }
+}
+
+const SOURCE_LABEL: Record<string, string> = {
+  walk_in: 'Walk-in',
+  staff:   'Staff',
+  online:  'Online',
+}
+
+const SOURCE_ICON: Record<string, React.ElementType> = {
+  walk_in: Footprints,
+  staff:   Headset,
+  online:  Globe,
 }
 
 /** Statuses that can be dragged/resized. */
@@ -76,6 +88,10 @@ export interface BookingBlockProps {
   onQuickCheckIn?: (booking: TimelineBooking, roomId: string) => void
   /** Quick action: check-out. */
   onQuickCheckOut?: (booking: TimelineBooking) => void
+  /** Keyboard: move booking by 1 day or 1 room. */
+  onKeyboardMove?: (booking: TimelineBooking, roomId: string, direction: 'left' | 'right' | 'up' | 'down') => void
+  /** Keyboard: extend/shrink stay by 1 night. */
+  onKeyboardResize?: (booking: TimelineBooking, roomId: string, edge: 'extend' | 'shrink') => void
 }
 
 const BookingBlock = React.memo(function BookingBlock({
@@ -96,6 +112,8 @@ const BookingBlock = React.memo(function BookingBlock({
   onContextMenu,
   onQuickCheckIn,
   onQuickCheckOut,
+  onKeyboardMove,
+  onKeyboardResize,
 }: BookingBlockProps) {
   // Read hover state from external store — only this component re-renders on hover change
   const hoveredBookingId = useHoveredBookingId()
@@ -147,7 +165,17 @@ const BookingBlock = React.memo(function BookingBlock({
       const rect = (e.target as HTMLElement).getBoundingClientRect()
       onContextMenu(booking, roomId, roomNumber, rect.left + rect.width / 2, rect.top + rect.height / 2)
     }
-  }, [onTap, booking, onContextMenu, roomId, roomNumber])
+    // Arrow keys: move booking (Shift+Arrow = extend/shrink stay)
+    if (isDraggable && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault()
+      if (e.shiftKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+        onKeyboardResize?.(booking, roomId, e.key === 'ArrowRight' ? 'extend' : 'shrink')
+      } else {
+        const dir = e.key === 'ArrowLeft' ? 'left' : e.key === 'ArrowRight' ? 'right' : e.key === 'ArrowUp' ? 'up' : 'down'
+        onKeyboardMove?.(booking, roomId, dir)
+      }
+    }
+  }, [onTap, booking, onContextMenu, roomId, roomNumber, isDraggable, onKeyboardMove, onKeyboardResize])
 
   // ── Drag handlers ──────────────────────────────────────────────────────
 
@@ -219,23 +247,44 @@ const BookingBlock = React.memo(function BookingBlock({
             isBeingDragged && 'opacity-30 pointer-events-none',
             // Group for resize handle hover
             'group/block',
-            // ── Upcoming vs active styling ──
+            // ── Status-based visual styling ──
             !isBeingDragged && (
-              isUpcoming
+              status === 'CANCELLED'
                 ? [
-                    'border-dashed border-border bg-muted/40 text-muted-foreground',
-                    isHighlighted === null  && 'opacity-70 hover:opacity-90 hover:shadow-md hover:brightness-105',
-                    isHighlighted === true  && 'opacity-90 shadow-md ring-2 ring-inset ring-primary/30',
-                    isHighlighted === false && 'opacity-20',
+                    // Cancelled: transparent bg, dashed border, faded
+                    'border-dashed border-bk-cancelled/40 bg-transparent text-bk-cancelled-foreground opacity-50',
+                    isHighlighted === true  && 'opacity-70 ring-1 ring-inset ring-bk-cancelled/30',
+                    isHighlighted === false && 'opacity-15',
                   ]
-                : [
-                    'border-current/15 shadow-card',
-                    colorClass,
-                    isHighlighted === null  && 'opacity-95 hover:opacity-100 hover:shadow-md hover:brightness-[1.03]',
-                    isHighlighted === true  && 'opacity-100 shadow-md ring-2 ring-inset ring-current/30',
-                    isHighlighted === false && 'opacity-25',
-                  ]
+                : status === 'CHECKED_OUT'
+                  ? [
+                      // Checked-out: same color but reduced opacity
+                      'border-transparent shadow-card',
+                      colorClass,
+                      'opacity-45',
+                      isHighlighted === true  && '!opacity-65 ring-1 ring-inset ring-foreground/20',
+                      isHighlighted === false && '!opacity-15',
+                    ]
+                  : isUpcoming
+                    ? [
+                        // Upcoming / reserved: dashed border, muted
+                        'border-dashed border-bk-reserved/40 bg-bk-reserved/15 text-bk-reserved-foreground/80',
+                        isHighlighted === null  && 'opacity-80 hover:opacity-95 hover:shadow-md hover:brightness-105',
+                        isHighlighted === true  && 'opacity-95 shadow-md ring-2 ring-inset ring-primary/30',
+                        isHighlighted === false && 'opacity-20',
+                      ]
+                    : [
+                        // Active bookings (checked-in, confirmed, etc)
+                        'border-transparent shadow-card',
+                        colorClass,
+                        isHighlighted === null  && 'hover:shadow-md hover:brightness-105',
+                        isHighlighted === true  && 'shadow-md ring-2 ring-inset ring-foreground/30',
+                        isHighlighted === false && 'opacity-25',
+                      ]
             ),
+            // Past bookings fade
+            !isBeingDragged && !isUpcoming && status !== 'CANCELLED' && status !== 'CHECKED_OUT' &&
+              booking.check_out <= format(startOfDay(new Date()), 'yyyy-MM-dd') && 'opacity-60',
           )}
           style={positionStyle}
           onMouseEnter={() => onHoverStart(booking.booking_id)}
@@ -248,28 +297,28 @@ const BookingBlock = React.memo(function BookingBlock({
           onContextMenu={handleContextMenu}
           aria-label={`${booking.guest_name} — ห้อง ${roomNumber}`}
         >
-          {/* Resize handle — left edge */}
+          {/* Resize handle — left edge (stays inside block to avoid blocking adjacent cells) */}
           {isDraggable && !isBeingDragged && (
             <div
-              className="absolute -left-1 inset-y-0 w-4 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
+              className="absolute left-0 inset-y-0 w-3 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
               onPointerDown={handleResizeLeftDown}
             >
               <div className="flex gap-px">
-                <div className="w-[2px] h-5 rounded-full bg-current/50" />
-                <div className="w-[2px] h-5 rounded-full bg-current/50" />
+                <div className="w-[2px] h-5 rounded-full bg-foreground/40" />
+                <div className="w-[2px] h-5 rounded-full bg-foreground/40" />
               </div>
             </div>
           )}
 
-          {/* Resize handle — right edge */}
+          {/* Resize handle — right edge (stays inside block to avoid blocking adjacent cells) */}
           {isDraggable && !isBeingDragged && (
             <div
-              className="absolute -right-1 inset-y-0 w-4 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
+              className="absolute right-0 inset-y-0 w-3 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
               onPointerDown={handleResizeRightDown}
             >
               <div className="flex gap-px">
-                <div className="w-[2px] h-5 rounded-full bg-current/50" />
-                <div className="w-[2px] h-5 rounded-full bg-current/50" />
+                <div className="w-[2px] h-5 rounded-full bg-foreground/40" />
+                <div className="w-[2px] h-5 rounded-full bg-foreground/40" />
               </div>
             </div>
           )}
@@ -282,7 +331,7 @@ const BookingBlock = React.memo(function BookingBlock({
               onClick={(e) => { e.stopPropagation(); onQuickCheckIn(booking, roomId) }}
             >
               <div
-                className="flex items-center justify-center w-5 h-5 rounded bg-success/90 text-white shadow-sm hover:bg-success transition-colors"
+                className="flex items-center justify-center w-5 h-5 rounded bg-success/90 text-success-foreground shadow-sm hover:bg-success transition-colors"
                 title="เช็คอิน"
               >
                 <LogIn className="w-3 h-3" />
@@ -297,7 +346,7 @@ const BookingBlock = React.memo(function BookingBlock({
               onClick={(e) => { e.stopPropagation(); onQuickCheckOut(booking) }}
             >
               <div
-                className="flex items-center justify-center w-5 h-5 rounded bg-info/90 text-white shadow-sm hover:bg-info transition-colors"
+                className="flex items-center justify-center w-5 h-5 rounded bg-info/90 text-info-foreground shadow-sm hover:bg-info transition-colors"
                 title="เช็คเอาท์"
               >
                 <LogOut className="w-3 h-3" />
@@ -309,13 +358,13 @@ const BookingBlock = React.memo(function BookingBlock({
           {isMultiRoom && (
             <div className={cn(
               'absolute left-0 inset-y-0 w-[3px]',
-              isUpcoming ? 'bg-primary/30' : 'bg-current/30',
+              isUpcoming ? 'bg-primary/30' : 'bg-foreground/20',
             )} />
           )}
 
           {/* Right edge checkout indicator */}
           {showCheckoutEdge && !isUpcoming && (
-            <div className="absolute right-0 inset-y-0 w-[3px] bg-destructive/40 rounded-r-sm" />
+            <div className="absolute right-0 inset-y-0 w-[3px] bg-foreground/30 rounded-r-sm" />
           )}
 
           {/* Clock icon for upcoming */}
@@ -323,21 +372,27 @@ const BookingBlock = React.memo(function BookingBlock({
             <Clock className="w-3 h-3 shrink-0 text-muted-foreground/60" />
           )}
 
-          {/* Payment indicator — small dot at top-right corner */}
+          {/* Top-right indicators: payment dot + source icon */}
           {!isUpcoming && (
-            <span
-              className={cn(
-                'absolute top-1 right-1 w-1.5 h-1.5 rounded-full',
-                Number(booking.balance_amount) > 0
-                  ? 'bg-destructive/80'
-                  : 'bg-success/60',
-              )}
-            />
+            <div className="absolute top-0.5 right-1 flex items-center gap-1">
+              {(() => {
+                const SourceIcon = SOURCE_ICON[booking.source]
+                return SourceIcon ? <SourceIcon className="w-2.5 h-2.5 opacity-60" /> : null
+              })()}
+              <span
+                className={cn(
+                  'w-1.5 h-1.5 rounded-full',
+                  Number(booking.balance_amount) > 0
+                    ? 'bg-foreground/80 ring-1 ring-destructive'
+                    : 'bg-foreground/30',
+                )}
+              />
+            </div>
           )}
 
           {/* Content */}
           <div className={cn('flex flex-col min-w-0 flex-1', isMultiRoom && !isUpcoming && 'pl-1')}>
-            <span className="truncate text-[11px] font-semibold leading-tight">
+            <span className="truncate text-[11px] font-bold leading-tight drop-shadow-sm">
               {booking.guest_name}
             </span>
             {spanDays >= 2 && (
@@ -346,13 +401,13 @@ const BookingBlock = React.memo(function BookingBlock({
                   Check-in {fmtDate(booking.check_in)}
                 </span>
               ) : isMultiRoom ? (
-                <span className="flex items-center gap-0.5 text-[10px] leading-tight opacity-70">
+                <span className="flex items-center gap-0.5 text-[10px] leading-tight opacity-80">
                   <Users className="w-2.5 h-2.5 shrink-0" />
                   {roomCount} ห้อง
                 </span>
               ) : (
-                <span className="truncate text-[10px] leading-tight opacity-60">
-                  {fmtDate(booking.check_in)} - {fmtDate(booking.check_out)}
+                <span className="truncate text-[10px] leading-tight opacity-75">
+                  {fmtDate(booking.check_in)} – {fmtDate(booking.check_out)}
                 </span>
               )
             )}
@@ -383,7 +438,16 @@ const BookingBlock = React.memo(function BookingBlock({
 
         <p className="text-helper mt-0.5">
           {fmtDate(booking.check_in)} → {fmtDate(booking.check_out)}
+          <span className="ml-1 opacity-70">
+            ({differenceInDays(parseISO(booking.check_out), parseISO(booking.check_in))} คืน)
+          </span>
         </p>
+
+        {booking.source && (
+          <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+            ช่องทาง: {SOURCE_LABEL[booking.source] ?? booking.source}
+          </p>
+        )}
 
         {isUpcoming && (
           <p className="text-xs text-primary/70 flex items-center gap-1 mt-0.5">

@@ -3,7 +3,7 @@ import { addDays, subDays, format, startOfDay } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { ChevronLeft, ChevronRight, CalendarPlus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CalendarPlus, Footprints, Headset, Globe } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { TooltipProvider } from '@/shared/ui/tooltip'
 import toast from 'react-hot-toast'
@@ -27,6 +27,7 @@ import {
 } from '../components/timeline/tokens'
 import { computeRoomLayout } from '../components/timeline/bookingLayout'
 import { useTimelineDrag } from '../components/timeline/useTimelineDrag'
+import { useTimelineDraw } from '../components/timeline/useTimelineDraw'
 import { useTimelineActions } from '../components/timeline/useTimelineActions'
 import BookingContextMenu, { type ContextMenuState } from '../components/timeline/BookingContextMenu'
 import {
@@ -40,27 +41,30 @@ import {
   AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
 
-// ─── Booking color utilities ──────────────────────────────────────────────────
+// ─── Status-based booking colors ──────────────────────────────────────────────
 
-const BOOKING_COLOR_PALETTE: readonly string[] = [
-  'bg-primary/20 text-primary',
-  'bg-info-muted text-info-muted-foreground',
-  'bg-success-muted text-success-muted-foreground',
-  'bg-warning-muted text-warning-muted-foreground',
-  'bg-secondary text-secondary-foreground',
-  'bg-accent text-accent-foreground',
-]
-
-function hashBookingId(id: string): number {
-  let h = 0
-  for (let i = 0; i < id.length; i++) {
-    h = (h * 31 + id.charCodeAt(i)) & 0x7fff_ffff
-  }
-  return h
+/**
+ * Status-based booking palette — each booking block gets its color from its
+ * stay status, not a random hash. This provides instant visual semantics:
+ * blue = reserved, green = checked-in, gray = checked-out, etc.
+ *
+ * Uses design-system tokens (--bk-*) defined in index.css / tailwind.config.js.
+ */
+const STATUS_COLOR_MAP: Record<string, string> = {
+  CONFIRMED:             'bg-bk-reserved text-bk-reserved-foreground',
+  RESERVED:              'bg-bk-reserved text-bk-reserved-foreground',
+  ASSIGNED:              'bg-bk-reserved text-bk-reserved-foreground',
+  PARTIALLY_CHECKED_IN:  'bg-bk-reserved text-bk-reserved-foreground',
+  CHECKED_IN:            'bg-bk-checked-in text-bk-checked-in-foreground',
+  CHECKED_OUT:           'bg-bk-checked-out text-bk-checked-out-foreground',
+  NO_SHOW:               'bg-bk-no-show text-bk-no-show-foreground',
+  CANCELLED:             'bg-bk-cancelled/30 text-bk-cancelled-foreground',
 }
 
-function getBookingColorClass(bookingId: string): string {
-  return BOOKING_COLOR_PALETTE[hashBookingId(bookingId) % BOOKING_COLOR_PALETTE.length]
+const FALLBACK_STATUS_COLOR = 'bg-secondary text-secondary-foreground'
+
+function getStatusColorClass(status: string): string {
+  return STATUS_COLOR_MAP[status] ?? FALLBACK_STATUS_COLOR
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -82,8 +86,9 @@ export default function TimelinePage() {
   const navigate = useNavigate()
 
   // ── Window state ─────────────────────────────────────────────────────────
+  const [zoomDays, setZoomDays] = useState(TIMELINE_WINDOW_DAYS)
   const [windowStart, setWindowStart] = useState<Date>(() =>
-    subDays(startOfDay(new Date()), 3),
+    subDays(startOfDay(new Date()), Math.floor(TIMELINE_WINDOW_DAYS / 2)),
   )
 
   // ── Filter state ──────────────────────────────────────────────────────────
@@ -101,8 +106,8 @@ export default function TimelinePage() {
 
   // ── Derived date strings ──────────────────────────────────────────────────
   const windowEnd = useMemo(
-    () => addDays(windowStart, TIMELINE_WINDOW_DAYS),
-    [windowStart],
+    () => addDays(windowStart, zoomDays),
+    [windowStart, zoomDays],
   )
 
   const fromStr = useMemo(() => format(windowStart, 'yyyy-MM-dd'), [windowStart])
@@ -177,9 +182,7 @@ export default function TimelinePage() {
     const colors: Record<string, string> = {}
     for (const room of allRooms) {
       for (const b of room.bookings) {
-        if (!colors[b.booking_id]) {
-          colors[b.booking_id] = getBookingColorClass(b.booking_id)
-        }
+        colors[b.room_stay_id] = getStatusColorClass(b.status)
       }
     }
     return colors
@@ -189,7 +192,7 @@ export default function TimelinePage() {
   const roomLayerCountMap = useMemo<Record<string, number>>(() => {
     const map: Record<string, number> = {}
     const wsStr = format(windowStart, 'yyyy-MM-dd')
-    const weStr = format(addDays(windowStart, TIMELINE_WINDOW_DAYS), 'yyyy-MM-dd')
+    const weStr = format(addDays(windowStart, zoomDays), 'yyyy-MM-dd')
     for (const room of allRooms) {
       if (room.bookings.length <= 1) {
         map[room.id] = room.bookings.length
@@ -199,11 +202,11 @@ export default function TimelinePage() {
       }
     }
     return map
-  }, [allRooms, windowStart])
+  }, [allRooms, windowStart, zoomDays])
 
   const days = useMemo(
-    () => Array.from({ length: TIMELINE_WINDOW_DAYS }, (_, i) => addDays(windowStart, i)),
-    [windowStart],
+    () => Array.from({ length: zoomDays }, (_, i) => addDays(windowStart, i)),
+    [windowStart, zoomDays],
   )
 
   const mobileSelectedDateStr = useMemo(
@@ -216,17 +219,17 @@ export default function TimelinePage() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handlePrev = useCallback(() => {
-    setWindowStart((d) => subDays(d, TIMELINE_WINDOW_DAYS))
-    setMobileDayOffset(3)
-  }, [])
+    setWindowStart((d) => subDays(d, zoomDays))
+    setMobileDayOffset(Math.floor(zoomDays / 2))
+  }, [zoomDays])
   const handleNext = useCallback(() => {
-    setWindowStart((d) => addDays(d, TIMELINE_WINDOW_DAYS))
-    setMobileDayOffset(3)
-  }, [])
+    setWindowStart((d) => addDays(d, zoomDays))
+    setMobileDayOffset(Math.floor(zoomDays / 2))
+  }, [zoomDays])
   const handleToday = useCallback(() => {
-    setWindowStart(subDays(startOfDay(new Date()), 3))
-    setMobileDayOffset(3)
-  }, [])
+    setWindowStart(subDays(startOfDay(new Date()), Math.floor(zoomDays / 2)))
+    setMobileDayOffset(Math.floor(zoomDays / 2))
+  }, [zoomDays])
 
   const handleRoomTypeSelect     = useCallback((id: string | null) => setSelectedRoomTypeId(id), [])
   const handleSelectBooking      = useCallback((b: TimelineBooking, roomNumbers?: string[]) => {
@@ -402,15 +405,39 @@ export default function TimelinePage() {
     previewPos,
     isDragging,
     handleDragStart,
+    handleKeyboardMove,
+    handleKeyboardResize,
   } = useTimelineDrag({
     rooms: filteredRooms,
     windowStart,
-    windowDays: TIMELINE_WINDOW_DAYS,
+    windowDays: zoomDays,
     scrollContainerRef,
     gridContainerRef,
     onMoveStay: handleMoveStay,
     getRoomTop,
     getRoomHeight,
+  })
+
+  // ── Draw to create ──────────────────────────────────────────────────────
+  const handleDrawComplete = useCallback(
+    (roomId: string, checkIn: string, checkOut: string) => {
+      const roomTypeId = roomTypeIdByRoomId[roomId] ?? ''
+      const params = new URLSearchParams({ check_in: checkIn, check_out: checkOut, room_id: roomId })
+      if (roomTypeId) params.set('room_type_id', roomTypeId)
+      navigate(`${ROUTES.bookings.new}?${params.toString()}`)
+    },
+    [navigate, roomTypeIdByRoomId],
+  )
+
+  const { drawPreview, handleDrawStart } = useTimelineDraw({
+    rooms: filteredRooms,
+    windowStart,
+    windowDays: zoomDays,
+    scrollContainerRef,
+    onDrawComplete: handleDrawComplete,
+    getRoomTop,
+    getRoomHeight,
+    isDragging,
   })
 
   // ── Render ──────────────────────────────────────────────────────────────
@@ -421,7 +448,7 @@ export default function TimelinePage() {
         {/* ════════════════════════════════════════════════════════════════
             HEADER — shared between desktop and mobile
             ════════════════════════════════════════════════════════════════ */}
-        <div className="shrink-0 bg-card border-b border-border px-4 py-2.5">
+        <div className="shrink-0 bg-sidebar border-b border-border-soft px-4 py-2.5">
           <div className="flex items-center justify-between">
             <h1 className="text-section text-base">Timeline</h1>
 
@@ -458,6 +485,24 @@ export default function TimelinePage() {
                   <ChevronRight size={14} />
                 </Button>
               </div>
+
+              {/* Zoom levels */}
+              <div className="hidden md:flex items-center gap-0.5 ml-2 border-l border-border pl-2">
+                {([3, 7, 14] as const).map((d) => (
+                  <Button
+                    key={d}
+                    variant={zoomDays === d ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => {
+                      setZoomDays(d)
+                      setWindowStart(subDays(startOfDay(new Date()), Math.floor(d / 2)))
+                    }}
+                    className="h-6 px-2 text-[11px]"
+                  >
+                    {d}D
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -468,15 +513,15 @@ export default function TimelinePage() {
         {isLoading && (
           <div className="flex-1 overflow-hidden">
             {/* Skeleton header */}
-            <div className="flex border-b border-border bg-card">
+            <div className="flex border-b border-border-soft bg-sidebar">
               <div
-                className="flex-shrink-0 border-r border-border"
+                className="flex-shrink-0 border-r border-border-soft"
                 style={{ width: 'var(--timeline-room-col-width)' }}
               />
-              {Array.from({ length: TIMELINE_WINDOW_DAYS }).map((_, i) => (
+              {Array.from({ length: zoomDays }).map((_, i) => (
                 <div
                   key={i}
-                  className="flex flex-col items-center justify-center gap-1 flex-shrink-0 border-r border-border/50 py-2"
+                  className="flex flex-col items-center justify-center gap-1 flex-shrink-0 border-r border-border-soft py-2"
                   style={{ width: 'var(--timeline-cell-width)' }}
                 >
                   <div className="w-6 h-3 bg-muted rounded animate-pulse" />
@@ -486,9 +531,9 @@ export default function TimelinePage() {
             </div>
             {/* Skeleton rows */}
             {Array.from({ length: 8 }).map((_, rowIdx) => (
-              <div key={rowIdx} className="flex border-b border-border/60" style={{ height: 'var(--timeline-row-height)' }}>
+              <div key={rowIdx} className="flex border-b border-border-soft" style={{ height: 'var(--timeline-row-height)' }}>
                 <div
-                  className="flex-shrink-0 border-r border-border flex items-center gap-2 px-3"
+                  className="flex-shrink-0 border-r border-border-soft flex items-center gap-2 px-3"
                   style={{ width: 'var(--timeline-room-col-width)' }}
                 >
                   <div className="w-2 h-2 rounded-full bg-muted animate-pulse" />
@@ -529,7 +574,7 @@ export default function TimelinePage() {
             {/* ── Mobile: day selector + MobileTimelineList (< md) ────── */}
             <div className="md:hidden flex flex-col flex-1 overflow-hidden">
               {/* Day picker tabs */}
-              <div className="shrink-0 flex border-b border-border bg-card overflow-x-auto">
+              <div className="shrink-0 flex border-b border-border-soft bg-sidebar overflow-x-auto">
                 {days.map((day, i) => {
                   const isActive = i === mobileDayOffset
                   return (
@@ -570,7 +615,7 @@ export default function TimelinePage() {
 
               {/* Left: Operations Panel */}
               <div
-                className="shrink-0 border-r border-border bg-card overflow-hidden"
+                className="shrink-0 border-r border-border-soft bg-card overflow-hidden"
                 style={{ width: 'var(--timeline-ops-panel-width)' }}
               >
                 <DesktopOperationsPanel
@@ -593,6 +638,39 @@ export default function TimelinePage() {
                   isLoading={availLoading}
                 />
 
+                {/* Status color legend + source icons */}
+                <div className="shrink-0 flex items-center gap-5 px-4 py-1.5 border-b border-border-soft bg-sidebar">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-2 rounded-sm bg-bk-reserved" />
+                    <span className="text-[10px] text-muted-foreground">จอง</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-2 rounded-sm bg-bk-checked-in" />
+                    <span className="text-[10px] text-muted-foreground">เข้าพัก</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-2 rounded-sm bg-bk-checked-out opacity-45" />
+                    <span className="text-[10px] text-muted-foreground">เช็คเอาท์</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-2 rounded-sm border border-dashed border-bk-cancelled/50 opacity-50" />
+                    <span className="text-[10px] text-muted-foreground">ยกเลิก</span>
+                  </div>
+                  <span className="w-px h-3 bg-border-soft" />
+                  <div className="flex items-center gap-1.5">
+                    <Footprints className="w-3 h-3 text-muted-foreground/60" />
+                    <span className="text-[10px] text-muted-foreground/60">Walk-in</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Headset className="w-3 h-3 text-muted-foreground/60" />
+                    <span className="text-[10px] text-muted-foreground/60">Staff</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Globe className="w-3 h-3 text-muted-foreground/60" />
+                    <span className="text-[10px] text-muted-foreground/60">Online</span>
+                  </div>
+                </div>
+
                 {/* Pending assignments (collapsible) */}
                 <PendingAssignmentsPanel stays={unassignedStays} />
 
@@ -601,7 +679,7 @@ export default function TimelinePage() {
                   <div
                     style={{
                       minWidth:
-                        'calc(var(--timeline-room-col-width) + 7 * var(--timeline-cell-width))',
+                        `calc(var(--timeline-room-col-width) + ${zoomDays} * var(--timeline-cell-width))`,
                     }}
                   >
                     <TimelineHeader days={days} />
@@ -658,8 +736,12 @@ export default function TimelinePage() {
                                 onDragStart={handleDragStart}
                                 dragState={dragState}
                                 onContextMenu={handleOpenContextMenu}
+                                windowDays={zoomDays}
+                                onKeyboardMove={handleKeyboardMove}
+                                onKeyboardResize={handleKeyboardResize}
                                 onQuickCheckIn={handleQuickCheckIn}
                                 onQuickCheckOut={handleQuickCheckOut}
+                                onDrawStart={handleDrawStart}
                               />
                             </div>
                           )
@@ -670,6 +752,19 @@ export default function TimelinePage() {
                           <DragPreview
                             dragState={dragState}
                             position={previewPos}
+                          />
+                        )}
+
+                        {/* Draw-to-create preview */}
+                        {drawPreview && (
+                          <div
+                            className="absolute pointer-events-none z-30 rounded-lg border-2 border-dashed border-primary/50 bg-primary/10 transition-[left,width] duration-75 ease-out"
+                            style={{
+                              left: `${drawPreview.left}px`,
+                              top: `${drawPreview.top}px`,
+                              width: `${drawPreview.width}px`,
+                              height: `${drawPreview.height}px`,
+                            }}
                           />
                         )}
                       </div>

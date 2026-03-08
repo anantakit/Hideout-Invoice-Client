@@ -3,7 +3,7 @@ import { addDays, differenceInDays, format, isToday, isSaturday, isSunday, parse
 import { cn } from '@/shared/utils'
 import type { TimelineRoom, TimelineBooking } from '../../types'
 import BookingBlock from './BookingBlock'
-import { TIMELINE_WINDOW_DAYS } from './tokens'
+import { TIMELINE_CELL_WIDTH_PX, TIMELINE_WINDOW_DAYS } from './tokens'
 import { computeRoomLayout } from './bookingLayout'
 import type { DragMode, DragState } from './useTimelineDrag'
 
@@ -43,6 +43,14 @@ interface RoomRowProps {
   onQuickCheckIn?: (booking: TimelineBooking, roomId: string) => void
   /** Quick action: check-out. */
   onQuickCheckOut?: (booking: TimelineBooking) => void
+  /** Keyboard: move booking. */
+  onKeyboardMove?: (booking: TimelineBooking, roomId: string, direction: 'left' | 'right' | 'up' | 'down') => void
+  /** Keyboard: resize booking. */
+  onKeyboardResize?: (booking: TimelineBooking, roomId: string, edge: 'extend' | 'shrink') => void
+  /** Number of days visible in the timeline window. */
+  windowDays?: number
+  /** Called on pointer down on empty cell — used for draw-to-create. */
+  onDrawStart?: (e: React.PointerEvent, roomId: string) => void
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -61,10 +69,10 @@ function deriveDisplayStatus(
 }
 
 const STATUS_DOT_CLASS: Record<string, string> = {
-  AVAILABLE:   'bg-success/60',
-  OCCUPIED:    'bg-info',
-  CLEANING:    'bg-warning',
-  MAINTENANCE: 'bg-destructive',
+  AVAILABLE:   'bg-room-clean',
+  OCCUPIED:    'bg-bk-checked-in',
+  CLEANING:    'bg-room-dirty',
+  MAINTENANCE: 'bg-room-ooo',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -73,62 +81,6 @@ const STATUS_LABEL: Record<string, string> = {
   CLEANING:    'ทำความสะอาด',
   MAINTENANCE: 'ปิดซ่อม',
 }
-
-// ─── TimelineCell ─────────────────────────────────────────────────────────────
-
-interface TimelineCellProps {
-  roomId: string
-  roomNumber: string
-  cellDate: Date
-  cellDateStr: string
-  hasCoverage: boolean
-  onEmptyCellClick?: (roomId: string, date: Date) => void
-}
-
-const TimelineCell = React.memo(function TimelineCell({
-  roomId,
-  roomNumber,
-  cellDate,
-  cellDateStr,
-  hasCoverage,
-  onEmptyCellClick,
-}: TimelineCellProps) {
-  const handleClick = useCallback(() => {
-    onEmptyCellClick?.(roomId, cellDate)
-  }, [onEmptyCellClick, roomId, cellDate])
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onEmptyCellClick?.(roomId, cellDate)
-    }
-  }, [onEmptyCellClick, roomId, cellDate])
-
-  if (hasCoverage) {
-    return (
-      <div
-        className="flex-shrink-0 pointer-events-none"
-        style={{ width: 'var(--timeline-cell-width)' }}
-      />
-    )
-  }
-
-  return (
-    <button
-      type="button"
-      tabIndex={0}
-      className={cn(
-        'flex-shrink-0 cursor-pointer transition-colors',
-        'hover:bg-primary/8',
-        'focus-visible:outline-none focus-visible:bg-primary/10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary/30',
-      )}
-      style={{ width: 'var(--timeline-cell-width)' }}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      aria-label={`จองห้อง ${roomNumber} วันที่ ${cellDateStr}`}
-    />
-  )
-})
 
 // ─── RoomRow ──────────────────────────────────────────────────────────────────
 
@@ -148,10 +100,22 @@ const RoomRow = React.memo(function RoomRow({
   onContextMenu,
   onQuickCheckIn,
   onQuickCheckOut,
+  onKeyboardMove,
+  onKeyboardResize,
+  windowDays: windowDaysProp,
+  onDrawStart,
 }: RoomRowProps) {
+  const windowDays = windowDaysProp ?? TIMELINE_WINDOW_DAYS
   const displayStatus = deriveDisplayStatus(room)
   const isEmpty = room.bookings.length === 0
-  const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd')
+  const today = startOfDay(new Date())
+  const todayStr = format(today, 'yyyy-MM-dd')
+
+  // Today indicator offset (column index within window, -1 if not visible)
+  const todayOffset = useMemo(() => {
+    const diff = differenceInDays(today, windowStart)
+    return diff >= 0 && diff < windowDays ? diff : -1
+  }, [today, windowStart, windowDays])
 
   const windowStartStr = format(windowStart, 'yyyy-MM-dd')
   const windowEndStr   = format(windowEnd, 'yyyy-MM-dd')
@@ -162,11 +126,44 @@ const RoomRow = React.memo(function RoomRow({
     [room.bookings, windowStartStr, windowEndStr],
   )
 
+  // Drag-target row highlight — shows green/red tint when a booking is being dragged onto this row
+  const isDragTarget = dragState?.newRoomId === room.id
+  const dragTargetClass = isDragTarget
+    ? dragState?.hasConflict || dragState?.isMaintenanceRoom
+      ? 'bg-destructive/8'
+      : 'bg-success/8'
+    : ''
+
+  // ── Single click handler for the entire booking area ──────────────────
+  // Converts pixel coordinates → dayIndex → date.
+  // Booking blocks handle their own clicks; this only fires for empty areas.
+  const handleAreaClick = useCallback((e: React.MouseEvent) => {
+    // Ignore if the click was on a booking block (they handle their own clicks)
+    if ((e.target as HTMLElement).closest('.tl-booking-block')) return
+    if (!onEmptyCellClick) return
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x    = e.clientX - rect.left
+    const dayIndex = Math.floor(x / TIMELINE_CELL_WIDTH_PX)
+    if (dayIndex < 0 || dayIndex >= windowDays) return
+
+    const clickedDate = addDays(windowStart, dayIndex)
+    onEmptyCellClick(room.id, clickedDate)
+  }, [onEmptyCellClick, room.id, windowStart, windowDays])
+
+  // ── Draw-to-create: pointer down on empty area ────────────────────────
+  const handleAreaPointerDown = useCallback((e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('.tl-booking-block')) return
+    if (!onDrawStart) return
+    onDrawStart(e, room.id)
+  }, [onDrawStart, room.id])
+
   return (
     <div
       className={cn(
-        'flex border-b border-border/60',
+        'flex border-b border-border-soft group/row',
         isEmpty && 'hover:bg-muted/30 transition-colors',
+        dragTargetClass,
       )}
       style={{ height: `${rowHeight}px` }}
     >
@@ -177,7 +174,7 @@ const RoomRow = React.memo(function RoomRow({
           'sticky left-0 z-10',
           'w-timeline-room-col min-w-timeline-room-col max-w-timeline-room-col',
           'flex items-center gap-2 px-3',
-          'bg-card border-r border-border',
+          'bg-sidebar border-r border-border-soft',
           'flex-shrink-0',
         )}
       >
@@ -201,21 +198,23 @@ const RoomRow = React.memo(function RoomRow({
           )}
           <span className={cn(
             'text-[9px] leading-tight mt-0.5',
-            displayStatus === 'AVAILABLE' ? 'text-success/70' : 'text-muted-foreground/60',
+            displayStatus === 'AVAILABLE' ? 'text-room-clean/80' : 'text-muted-foreground/60',
           )}>
             {STATUS_LABEL[displayStatus]}
           </span>
         </div>
       </div>
 
-      {/* ── Booking area ─────────────────────────────────────────────────── */}
+      {/* ── Booking area — single click handler, no per-cell elements ──── */}
       <div
-        className="relative flex-1 min-w-timeline-7"
-        style={{ height: `${rowHeight}px` }}
+        className="relative flex-1 bg-timeline-bg cursor-pointer"
+        style={{ height: `${rowHeight}px`, minWidth: `calc(${windowDays} * var(--timeline-cell-width))` }}
+        onClick={handleAreaClick}
+        onPointerDown={handleAreaPointerDown}
       >
-        {/* Column grid lines + today highlight + weekend highlight + alternating row stripe */}
+        {/* Grid lines (visual only) */}
         <div className="absolute inset-0 flex pointer-events-none" aria-hidden>
-          {Array.from({ length: TIMELINE_WINDOW_DAYS }).map((_, i) => {
+          {Array.from({ length: windowDays }).map((_, i) => {
             const cellDate  = addDays(windowStart, i)
             const todayCell = isToday(cellDate)
             const isWeekend = isSaturday(cellDate) || isSunday(cellDate)
@@ -223,12 +222,12 @@ const RoomRow = React.memo(function RoomRow({
               <div
                 key={i}
                 className={cn(
-                  'border-r border-border/40 flex-shrink-0',
+                  'border-r border-timeline-grid/50 flex-shrink-0',
                   todayCell
-                    ? 'bg-accent/60'
+                    ? 'bg-primary/8'
                     : isWeekend
-                      ? 'bg-muted/30'
-                      : isEven && 'bg-muted/15',
+                      ? 'bg-muted/20'
+                      : isEven && 'bg-accent/[0.04]',
                 )}
                 style={{ width: 'var(--timeline-cell-width)' }}
               />
@@ -236,31 +235,15 @@ const RoomRow = React.memo(function RoomRow({
           })}
         </div>
 
-        {/* Clickable empty cells — interactive layer */}
-        {onEmptyCellClick && (
-          <div className="absolute inset-0 flex">
-            {Array.from({ length: TIMELINE_WINDOW_DAYS }).map((_, i) => {
-              const cellDate = addDays(windowStart, i)
-              const cellDateStr = format(cellDate, 'yyyy-MM-dd')
-              const hasCoverage = room.bookings.some(
-                (b) => b.check_in <= cellDateStr && b.check_out > cellDateStr,
-              )
-              return (
-                <TimelineCell
-                  key={i}
-                  roomId={room.id}
-                  roomNumber={room.room_number}
-                  cellDate={cellDate}
-                  cellDateStr={cellDateStr}
-                  hasCoverage={hasCoverage}
-                  onEmptyCellClick={onEmptyCellClick}
-                />
-              )
-            })}
-          </div>
+        {/* Today vertical indicator line */}
+        {todayOffset >= 0 && (
+          <div
+            className="absolute top-0 bottom-0 w-[2px] bg-timeline-today/60 z-20 pointer-events-none"
+            style={{ left: `calc(${todayOffset} * var(--timeline-cell-width))` }}
+          />
         )}
 
-        {/* Booking blocks — positioned per layer assignment */}
+        {/* Booking blocks — absolutely positioned, handle their own pointer events */}
         {room.bookings.map((booking) => {
           const checkIn      = parseISO(booking.check_in)
           const checkOut     = parseISO(booking.check_out)
@@ -272,7 +255,7 @@ const RoomRow = React.memo(function RoomRow({
 
           if (spanDays <= 0) return null
 
-          const colorClass = bookingColorMap[booking.booking_id]   ?? 'bg-secondary text-secondary-foreground'
+          const colorClass = bookingColorMap[booking.room_stay_id]  ?? 'bg-secondary text-secondary-foreground'
           const roomCount  = bookingRoomCountMap[booking.booking_id] ?? 1
           const isUpcoming = booking.check_in > todayStr
           const showCheckoutEdge = checkOut > windowStart && checkOut <= windowEnd
@@ -298,6 +281,8 @@ const RoomRow = React.memo(function RoomRow({
               onContextMenu={onContextMenu}
               onQuickCheckIn={onQuickCheckIn}
               onQuickCheckOut={onQuickCheckOut}
+              onKeyboardMove={onKeyboardMove}
+              onKeyboardResize={onKeyboardResize}
             />
           )
         })}

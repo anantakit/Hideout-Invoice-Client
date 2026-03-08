@@ -22,7 +22,7 @@ export default function Layout() {
 
       {/* ── Desktop sidebar ── */}
       <aside className={cn(
-        'hidden md:flex flex-col fixed top-0 left-0 h-full z-40 bg-card border-r border-border',
+        'hidden md:flex flex-col fixed top-0 left-0 h-full z-40 bg-sidebar border-r border-border-soft',
         'md:w-16 lg:w-64',
       )}>
         <SidebarContent />
@@ -35,7 +35,7 @@ export default function Layout() {
       )}>
 
         {/* Mobile top navbar */}
-        <header className="md:hidden flex items-center justify-between px-4 py-3 bg-card border-b border-border shrink-0">
+        <header className="md:hidden flex items-center justify-between px-4 py-3 bg-sidebar border-b border-border-soft shrink-0">
           <Button
             variant="ghost"
             size="icon"

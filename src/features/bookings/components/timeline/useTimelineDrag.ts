@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { addDays, differenceInDays, format, parseISO, startOfDay } from 'date-fns'
+import toast from 'react-hot-toast'
 import type { TimelineRoom, TimelineBooking } from '../../types'
 import { TIMELINE_CELL_WIDTH_PX, TIMELINE_ROOM_COL_PX } from './tokens'
 
@@ -10,6 +11,15 @@ function toDate(s: string): Date {
 
 /** Minimum pointer movement (px) before a drag activates. */
 const DRAG_THRESHOLD_PX = 5
+
+/** Touch hold delay (ms) before drag activates on touch devices. */
+const TOUCH_HOLD_MS = 150
+
+/** Auto-scroll edge zone (px from container edge). */
+const AUTO_SCROLL_EDGE_PX = 60
+
+/** Max auto-scroll speed (px per 16ms frame). */
+const AUTO_SCROLL_MAX_SPEED = 12
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -104,12 +114,24 @@ export function useTimelineDrag({
     originalSpanDays: number
     /** How many days from the booking's left edge the pointer grabbed. */
     grabDayOffset: number
+    /** Whether this is a touch interaction. */
+    isTouch: boolean
+    /** Touch hold timer ID. */
+    touchHoldTimer: ReturnType<typeof setTimeout> | null
+    /** Whether touch hold threshold was met. */
+    touchHoldMet: boolean
+    /** Last clientX/clientY for auto-scroll re-snap. */
+    lastClientX: number
+    lastClientY: number
   } | null>(null)
 
   // Track the last snapped position to skip redundant state updates
   const lastSnapRef = useRef<string>('')
 
   const roomIndexMap = useRef<Map<string, number>>(new Map())
+
+  // Auto-scroll animation frame ID
+  const autoScrollRaf = useRef<number>(0)
 
   // Keep room index map fresh
   useEffect(() => {
@@ -121,13 +143,14 @@ export function useTimelineDrag({
   // ── Conflict detection ──────────────────────────────────────────────────
 
   const checkConflict = useCallback(
-    (targetRoomId: string, checkIn: string, checkOut: string, excludeBookingId: string): boolean => {
+    (targetRoomId: string, checkIn: string, checkOut: string, excludeStayId: string): boolean => {
       const room = rooms.find((r) => r.id === targetRoomId)
       if (!room) return true
       return room.bookings.some(
         (b) =>
-          b.booking_id !== excludeBookingId &&
+          b.room_stay_id !== excludeStayId &&
           b.status !== 'CANCELLED' &&
+          b.status !== 'CHECKED_OUT' &&
           b.check_in < checkOut &&
           b.check_out > checkIn,
       )
@@ -166,8 +189,6 @@ export function useTimelineDrag({
       const relX = clientX - containerRect.left - TIMELINE_ROOM_COL_PX + el.scrollLeft
 
       // Vertical: convert clientY to virtualizer-relative coordinate
-      // gridRect.top already accounts for scroll, so this gives absolute
-      // position within the virtualizer container
       const relY = clientY - gridRect.top
 
       // Snap day index — floor so the booking lands in the column the pointer is in
@@ -211,7 +232,7 @@ export function useTimelineDrag({
       const checkInStr = format(newCheckIn, 'yyyy-MM-dd')
       const checkOutStr = format(newCheckOut, 'yyyy-MM-dd')
 
-      const hasConflict = checkConflict(targetRoomId, checkInStr, checkOutStr, booking.booking_id)
+      const hasConflict = checkConflict(targetRoomId, checkInStr, checkOutStr, booking.room_stay_id)
       const maintenance = isMaintenanceRoom(targetRoomId)
 
       return {
@@ -252,6 +273,95 @@ export function useTimelineDrag({
     [windowStart, getRoomTop, getRoomHeight],
   )
 
+  // ── Auto-scroll during drag ───────────────────────────────────────────
+
+  const runAutoScroll = useCallback(() => {
+    const ref = dragRef.current
+    const el = scrollContainerRef.current
+    if (!ref || ref.phase !== 'active' || !el) {
+      autoScrollRaf.current = 0
+      return
+    }
+
+    const rect = el.getBoundingClientRect()
+    const cx = ref.lastClientX
+    const cy = ref.lastClientY
+
+    let dx = 0
+    let dy = 0
+
+    // Horizontal auto-scroll
+    const leftDist = cx - rect.left - TIMELINE_ROOM_COL_PX
+    const rightDist = rect.right - cx
+    if (leftDist < AUTO_SCROLL_EDGE_PX && leftDist > 0) {
+      dx = -AUTO_SCROLL_MAX_SPEED * (1 - leftDist / AUTO_SCROLL_EDGE_PX)
+    } else if (rightDist < AUTO_SCROLL_EDGE_PX && rightDist > 0) {
+      dx = AUTO_SCROLL_MAX_SPEED * (1 - rightDist / AUTO_SCROLL_EDGE_PX)
+    }
+
+    // Vertical auto-scroll
+    const topDist = cy - rect.top
+    const bottomDist = rect.bottom - cy
+    if (topDist < AUTO_SCROLL_EDGE_PX && topDist > 0) {
+      dy = -AUTO_SCROLL_MAX_SPEED * (1 - topDist / AUTO_SCROLL_EDGE_PX)
+    } else if (bottomDist < AUTO_SCROLL_EDGE_PX && bottomDist > 0) {
+      dy = AUTO_SCROLL_MAX_SPEED * (1 - bottomDist / AUTO_SCROLL_EDGE_PX)
+    }
+
+    if (dx !== 0 || dy !== 0) {
+      el.scrollLeft += dx
+      el.scrollTop += dy
+
+      // Re-snap after scroll so drag coordinates remain correct
+      const snapped = snapToGrid(
+        ref.lastClientX,
+        ref.lastClientY,
+        ref.mode,
+        ref.originalSpanDays,
+        ref.grabDayOffset,
+        ref.sourceRoomId,
+        ref.booking,
+      )
+      if (snapped) {
+        const snapKey = `${snapped.newCheckIn}|${snapped.newCheckOut}|${snapped.newRoomId}`
+        if (snapKey !== lastSnapRef.current) {
+          lastSnapRef.current = snapKey
+          setDragState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  newCheckIn: snapped.newCheckIn,
+                  newCheckOut: snapped.newCheckOut,
+                  newRoomId: snapped.newRoomId,
+                  hasConflict: snapped.hasConflict,
+                  isMaintenanceRoom: snapped.isMaintenanceRoom,
+                }
+              : null,
+          )
+          updatePreviewPos(snapped.newCheckIn, snapped.newCheckOut, snapped.newRoomId)
+        }
+      }
+    }
+
+    autoScrollRaf.current = requestAnimationFrame(runAutoScroll)
+  }, [scrollContainerRef, snapToGrid, updatePreviewPos])
+
+  // ── Cancel drag (ESC or programmatic) ─────────────────────────────────
+
+  const cancelDrag = useCallback(() => {
+    const ref = dragRef.current
+    if (!ref) return
+    if (ref.touchHoldTimer) clearTimeout(ref.touchHoldTimer)
+    try { ref.target.releasePointerCapture(ref.pointerId) } catch {}
+    dragRef.current = null
+    if (autoScrollRaf.current) {
+      cancelAnimationFrame(autoScrollRaf.current)
+      autoScrollRaf.current = 0
+    }
+    setDragState(null)
+    setPreviewPos(null)
+  }, [])
+
   // ── Pointer handlers ────────────────────────────────────────────────────
 
   const handleDragStart = useCallback(
@@ -261,7 +371,7 @@ export function useTimelineDrag({
       roomId: string,
       mode: DragMode,
     ) => {
-      // Only left mouse button
+      // Only left mouse button / touch
       if (e.button !== 0) return
 
       const el = scrollContainerRef.current
@@ -278,6 +388,8 @@ export function useTimelineDrag({
       const pointerDayIndex = Math.floor(pointerRelX / TIMELINE_CELL_WIDTH_PX)
       const grabDayOffset = Math.max(0, pointerDayIndex - offsetDays)
 
+      const isTouch = e.pointerType === 'touch'
+
       dragRef.current = {
         startX: e.clientX,
         startY: e.clientY,
@@ -290,6 +402,20 @@ export function useTimelineDrag({
         originalOffsetDays: offsetDays,
         originalSpanDays: spanDays,
         grabDayOffset,
+        isTouch,
+        touchHoldTimer: null,
+        touchHoldMet: !isTouch, // Mouse doesn't need hold delay
+        lastClientX: e.clientX,
+        lastClientY: e.clientY,
+      }
+
+      // Touch: require hold before activating drag
+      if (isTouch) {
+        dragRef.current.touchHoldTimer = setTimeout(() => {
+          if (dragRef.current) {
+            dragRef.current.touchHoldMet = true
+          }
+        }, TOUCH_HOLD_MS)
       }
 
       lastSnapRef.current = ''
@@ -305,8 +431,24 @@ export function useTimelineDrag({
       const ref = dragRef.current
       if (!ref) return
 
+      ref.lastClientX = e.clientX
+      ref.lastClientY = e.clientY
+
       // ── Pending phase: check if threshold exceeded ──────────────────
       if (ref.phase === 'pending') {
+        // Touch: must hold first
+        if (ref.isTouch && !ref.touchHoldMet) {
+          // If moved too much during hold period, cancel the touch drag
+          const dx = e.clientX - ref.startX
+          const dy = e.clientY - ref.startY
+          if (dx * dx + dy * dy > DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX * 4) {
+            if (ref.touchHoldTimer) clearTimeout(ref.touchHoldTimer)
+            dragRef.current = null
+            return
+          }
+          return
+        }
+
         const dx = e.clientX - ref.startX
         const dy = e.clientY - ref.startY
         if (dx * dx + dy * dy < DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX) {
@@ -333,6 +475,11 @@ export function useTimelineDrag({
         })
 
         updatePreviewPos(ref.booking.check_in, ref.booking.check_out, ref.sourceRoomId)
+
+        // Start auto-scroll loop
+        if (!autoScrollRaf.current) {
+          autoScrollRaf.current = requestAnimationFrame(runAutoScroll)
+        }
       }
 
       // ── Active phase: snap to grid and update ──────────────────────
@@ -367,7 +514,7 @@ export function useTimelineDrag({
 
       updatePreviewPos(snapped.newCheckIn, snapped.newCheckOut, snapped.newRoomId)
     },
-    [snapToGrid, updatePreviewPos],
+    [snapToGrid, updatePreviewPos, runAutoScroll],
   )
 
   const handlePointerUp = useCallback(
@@ -375,7 +522,16 @@ export function useTimelineDrag({
       const ref = dragRef.current
       dragRef.current = null
 
+      // Stop auto-scroll
+      if (autoScrollRaf.current) {
+        cancelAnimationFrame(autoScrollRaf.current)
+        autoScrollRaf.current = 0
+      }
+
       if (!ref) return
+
+      // Clear touch hold timer
+      if (ref.touchHoldTimer) clearTimeout(ref.touchHoldTimer)
 
       // If still pending (threshold never exceeded), just clean up.
       // The click event will fire normally for tap behavior.
@@ -397,14 +553,20 @@ export function useTimelineDrag({
           state.newCheckOut !== origCheckOut ||
           state.newRoomId !== ref.sourceRoomId
 
-        if (moved && !state.hasConflict && !state.isMaintenanceRoom) {
-          onMoveStay({
-            bookingId: ref.booking.booking_id,
-            stayId: ref.booking.room_stay_id,
-            newRoomId: state.newRoomId,
-            newCheckIn: state.newCheckIn,
-            newCheckOut: state.newCheckOut,
-          })
+        if (moved) {
+          if (state.hasConflict) {
+            toast.error('ห้องไม่ว่างในช่วงเวลาที่เลือก')
+          } else if (state.isMaintenanceRoom) {
+            toast.error('ไม่สามารถย้ายไปห้องที่ปิดซ่อมได้')
+          } else {
+            onMoveStay({
+              bookingId: ref.booking.booking_id,
+              stayId: ref.booking.room_stay_id,
+              newRoomId: state.newRoomId,
+              newCheckIn: state.newCheckIn,
+              newCheckOut: state.newCheckOut,
+            })
+          }
         }
       }
 
@@ -421,8 +583,6 @@ export function useTimelineDrag({
   // ── Global pointer event listeners ──────────────────────────────────────
 
   useEffect(() => {
-    // Listen globally as soon as a pending drag starts (dragRef is set)
-    // We use a capturing listener so we get events even during pointer capture
     const onMove = (e: PointerEvent) => handlePointerMove(e)
     const onUp = (e: PointerEvent) => handlePointerUp(e)
 
@@ -434,7 +594,28 @@ export function useTimelineDrag({
     }
   }, [handlePointerMove, handlePointerUp])
 
-  // ── Keyboard move ───────────────────────────────────────────────────────
+  // ── ESC to cancel drag ────────────────────────────────────────────────
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && dragRef.current?.phase === 'active') {
+        e.preventDefault()
+        cancelDrag()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [cancelDrag])
+
+  // ── Cleanup auto-scroll on unmount ────────────────────────────────────
+
+  useEffect(() => {
+    return () => {
+      if (autoScrollRaf.current) cancelAnimationFrame(autoScrollRaf.current)
+    }
+  }, [])
+
+  // ── Keyboard move / resize ────────────────────────────────────────────
 
   const handleKeyboardMove = useCallback(
     (booking: TimelineBooking, roomId: string, direction: 'left' | 'right' | 'up' | 'down') => {
@@ -463,20 +644,61 @@ export function useTimelineDrag({
       const ciStr = format(newCheckIn, 'yyyy-MM-dd')
       const coStr = format(newCheckOut, 'yyyy-MM-dd')
 
-      const hasConflict = checkConflict(newRoomId, ciStr, coStr, booking.booking_id)
+      const hasConflict = checkConflict(newRoomId, ciStr, coStr, booking.room_stay_id)
       const maintenance = isMaintenanceRoom(newRoomId)
 
-      if (!hasConflict && !maintenance) {
-        onMoveStay({
-          bookingId: booking.booking_id,
-          stayId: booking.room_stay_id,
-          newRoomId,
-          newCheckIn: ciStr,
-          newCheckOut: coStr,
-        })
+      if (hasConflict) {
+        toast.error('ห้องไม่ว่างในช่วงเวลาที่เลือก')
+        return
       }
+      if (maintenance) {
+        toast.error('ไม่สามารถย้ายไปห้องที่ปิดซ่อมได้')
+        return
+      }
+
+      onMoveStay({
+        bookingId: booking.booking_id,
+        stayId: booking.room_stay_id,
+        newRoomId,
+        newCheckIn: ciStr,
+        newCheckOut: coStr,
+      })
     },
     [rooms, checkConflict, isMaintenanceRoom, onMoveStay],
+  )
+
+  const handleKeyboardResize = useCallback(
+    (booking: TimelineBooking, roomId: string, edge: 'extend' | 'shrink') => {
+      const checkIn = toDate(booking.check_in)
+      const checkOut = toDate(booking.check_out)
+      const span = differenceInDays(checkOut, checkIn)
+
+      let newCheckOut: Date
+      if (edge === 'extend') {
+        newCheckOut = addDays(checkOut, 1)
+      } else {
+        if (span <= 1) return // Minimum 1 night
+        newCheckOut = addDays(checkOut, -1)
+      }
+
+      const ciStr = format(checkIn, 'yyyy-MM-dd')
+      const coStr = format(newCheckOut, 'yyyy-MM-dd')
+
+      const hasConflict = checkConflict(roomId, ciStr, coStr, booking.room_stay_id)
+      if (hasConflict) {
+        toast.error('ห้องไม่ว่างในช่วงเวลาที่เลือก')
+        return
+      }
+
+      onMoveStay({
+        bookingId: booking.booking_id,
+        stayId: booking.room_stay_id,
+        newRoomId: roomId,
+        newCheckIn: ciStr,
+        newCheckOut: coStr,
+      })
+    },
+    [checkConflict, onMoveStay],
   )
 
   return {
@@ -485,5 +707,7 @@ export function useTimelineDrag({
     isDragging: dragState !== null,
     handleDragStart,
     handleKeyboardMove,
+    handleKeyboardResize,
+    cancelDrag,
   }
 }

@@ -127,8 +127,8 @@ function NavItem({
           'flex items-center gap-3 radius-button text-sm font-medium transition-colors',
           'px-3 py-2.5 md:px-2.5 md:justify-center lg:px-3 lg:justify-start',
           isActive
-            ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            ? 'bg-primary/15 text-primary border-l-2 border-l-primary'
+            : 'text-muted-foreground hover:bg-accent hover:text-foreground',
         )
       }
     >
@@ -153,7 +153,7 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
     <div className="flex flex-col h-full">
 
       {/* ── Wordmark ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-border overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-border-soft overflow-hidden">
         <Logo />
         <div className="flex-1 min-w-0 md:hidden lg:block">
           <p className="text-sm font-bold text-foreground whitespace-nowrap">Hideout Resort</p>
@@ -200,7 +200,7 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
       </nav>
 
       {/* ── User + logout ─────────────────────────────────────────────────── */}
-      <div className="p-3 border-t border-border">
+      <div className="p-3 border-t border-border-soft">
         <div className="flex items-center gap-2 md:justify-center lg:justify-start">
           <div className="w-8 h-8 radius-badge bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 select-none">
             {user?.full_name?.charAt(0).toUpperCase() ?? '?'}

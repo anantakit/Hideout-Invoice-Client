@@ -50,6 +50,7 @@ function booking(
     booking_id: uid(),
     status: 'CHECKED_IN',
     balance_amount: 0,
+    source: 'staff',
     ...overrides,
   }
 }
@@ -425,6 +426,7 @@ export function generateMockTimeline(from: string, _to: string): TimelineRespons
           check_out: d(5, base),
           status: 'CHECKED_IN',
           balance_amount: 0,
+          source: 'online',
         },
       ],
     },
@@ -443,6 +445,7 @@ export function generateMockTimeline(from: string, _to: string): TimelineRespons
           check_out: d(5, base),
           status: 'CHECKED_IN',
           balance_amount: 0,
+          source: 'online',
         },
       ],
     },
@@ -461,6 +464,7 @@ export function generateMockTimeline(from: string, _to: string): TimelineRespons
           check_out: d(5, base),
           status: 'CHECKED_IN',
           balance_amount: 0,
+          source: 'online',
         },
       ],
     },

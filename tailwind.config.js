@@ -11,6 +11,10 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+        },
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
@@ -55,9 +59,26 @@ export default {
             foreground: 'hsl(var(--info-muted-foreground))',
           },
         },
-        border: 'hsl(var(--border))',
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+          soft: 'hsl(var(--border-soft))',
+        },
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        // Booking status colors
+        'bk-reserved':    { DEFAULT: 'hsl(var(--bk-reserved))',    foreground: 'hsl(var(--bk-reserved-fg))' },
+        'bk-checked-in':  { DEFAULT: 'hsl(var(--bk-checked-in))',  foreground: 'hsl(var(--bk-checked-in-fg))' },
+        'bk-checked-out': { DEFAULT: 'hsl(var(--bk-checked-out))', foreground: 'hsl(var(--bk-checked-out-fg))' },
+        'bk-no-show':     { DEFAULT: 'hsl(var(--bk-no-show))',     foreground: 'hsl(var(--bk-no-show-fg))' },
+        'bk-cancelled':   { DEFAULT: 'hsl(var(--bk-cancelled))',   foreground: 'hsl(var(--bk-cancelled-fg))' },
+        // Room status indicator colors
+        'room-clean': 'hsl(var(--room-clean))',
+        'room-dirty': 'hsl(var(--room-dirty))',
+        'room-ooo':   'hsl(var(--room-ooo))',
+        // Timeline-specific
+        'timeline-bg':   'hsl(var(--timeline-bg))',
+        'timeline-grid': 'hsl(var(--timeline-grid))',
+        'timeline-today': 'hsl(var(--timeline-today))',
       },
       width: {
         'timeline-cell': 'var(--timeline-cell-width)',

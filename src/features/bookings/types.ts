@@ -165,6 +165,8 @@ export interface TimelineBooking {
   check_out: string
   status: string
   balance_amount: number
+  /** Booking source: walk_in | staff | online */
+  source: string
 }
 
 /**

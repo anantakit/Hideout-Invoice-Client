@@ -22,12 +22,12 @@ const DragPreview = React.memo(function DragPreview({
     <div
       className={cn(
         'absolute pointer-events-none z-30',
-        'rounded-lg border-2 border-dashed',
+        'rounded-[10px] border-2 border-dashed',
         'flex items-center justify-center',
         'transition-[left,top,width] duration-75 ease-out',
         isInvalid
-          ? 'border-destructive/60 bg-destructive/10'
-          : 'border-primary/50 bg-primary/10',
+          ? 'border-destructive/60 bg-destructive/10 opacity-70'
+          : 'border-primary/50 bg-primary/8 opacity-50',
       )}
       style={{
         left: `${position.left}px`,
@@ -40,8 +40,8 @@ const DragPreview = React.memo(function DragPreview({
         className={cn(
           'text-[10px] font-medium px-2 py-0.5 rounded',
           isInvalid
-            ? 'text-destructive bg-destructive/10'
-            : 'text-primary bg-primary/10',
+            ? 'text-destructive'
+            : 'text-foreground/80',
         )}
       >
         {isInvalid ? (
