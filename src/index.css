@@ -281,4 +281,30 @@
     0%   { background-position: 100% 0; }
     100% { background-position: -100% 0; }
   }
+
+  /* ── Error / Empty State System ────────────────────── */
+
+  .error-card-enter {
+    animation: error-enter 280ms ease-out both;
+  }
+
+  @keyframes error-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .error-icon-pulse {
+    animation: error-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes error-pulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50%      { opacity: 1;   transform: scale(1.08); }
+  }
 }
