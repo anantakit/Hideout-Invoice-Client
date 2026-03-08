@@ -122,92 +122,104 @@
 @layer base {
   :root {
     /* ══════════════════════════════════════════════════════════════════
-       Dark Professional Theme — Charcoal / Graphite
-       Inspired by Linear, Vercel, Stripe Dashboard
+       Professional PMS Theme — Soft Graphite
+       Designed for 8–12 hour front-desk readability.
+       Layered surfaces, muted accents, calm status palette.
        ══════════════════════════════════════════════════════════════════ */
 
-    /* ── Surfaces ──────────────────────────────────────── */
-    --background: 225 14% 7%;        /* #0F1115 — app bg */
-    --foreground: 218 14% 91%;       /* #E5E7EB — primary text */
+    /* ── Surface Layers ────────────────────────────────── */
+    --background: 224 16% 10%;       /* #151821 — app bg */
+    --foreground: 218 16% 92%;       /* #E6EAF2 — primary text */
 
-    --card: 224 17% 14%;             /* #1B1F2A — card / panel bg */
-    --card-foreground: 218 14% 91%;  /* #E5E7EB */
+    --card: 224 18% 14%;             /* #1C212B — card / panel bg */
+    --card-foreground: 218 16% 92%;
 
-    /* ── Sidebar ───────────────────────────────────────── */
-    --sidebar: 224 18% 11%;          /* #151821 */
-    --sidebar-foreground: 218 14% 91%;
+    --sidebar: 224 20% 12%;          /* #181C25 */
+    --sidebar-foreground: 218 16% 90%;
 
-    /* ── Primary Accent ────────────────────────────────── */
-    --primary: 228 92% 67%;          /* #5B7CFA — soft blue */
+    /* ── Primary Accent — Muted SaaS Blue ────────────── */
+    --primary: 222 85% 64%;          /* #5B8CFF */
     --primary-foreground: 0 0% 100%;
 
     /* ── Secondary / Muted ─────────────────────────────── */
-    --secondary: 222 16% 15%;        /* slightly lighter than card */
+    --secondary: 224 16% 17%;        /* #232833 */
     --secondary-foreground: 218 14% 75%;
 
-    --muted: 222 14% 18%;
-    --muted-foreground: 218 8% 55%;  /* #9CA3AF-ish */
+    --muted: 224 14% 20%;
+    --muted-foreground: 218 10% 60%;
 
     /* ── Accent (hover / subtle highlight) ─────────────── */
-    --accent: 222 14% 18%;
-    --accent-foreground: 218 14% 91%;
+    --accent: 224 14% 20%;
+    --accent-foreground: 218 16% 92%;
 
     /* ── Borders / Inputs / Ring ────────────────────────── */
-    --border: 222 14% 20%;           /* #2F3542 */
-    --border-soft: 222 14% 16%;      /* #242933 — softer dividers */
-    --input: 225 14% 8%;             /* #12141A — input bg */
-    --ring: 228 92% 67%;             /* matches primary for focus */
+    --border: 224 12% 26%;
+    --border-soft: 224 10% 22%;
+    --input: 224 14% 14%;
+    --ring: 222 85% 64%;
 
-    /* ── Status Colors (muted for dark theme) ──────────── */
-    --success: 155 44% 42%;          /* #3FA37A */
+    /* ── Status Colors (muted for dark UI) ────────────── */
+    --success: 150 45% 44%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 155 30% 14%;
-    --success-muted-foreground: 155 44% 60%;
+    --success-muted: 150 30% 18%;
+    --success-muted-foreground: 150 45% 60%;
 
-    --warning: 38 58% 53%;           /* #D19A3A */
+    --warning: 38 60% 50%;
     --warning-foreground: 0 0% 100%;
-    --warning-muted: 38 30% 14%;
-    --warning-muted-foreground: 38 58% 65%;
+    --warning-muted: 38 30% 18%;
+    --warning-muted-foreground: 38 60% 65%;
 
-    --info: 188 75% 55%;             /* #22D3EE — cyan accent */
+    --info: 200 65% 58%;
     --info-foreground: 0 0% 100%;
-    --info-muted: 188 30% 14%;
-    --info-muted-foreground: 188 60% 60%;
+    --info-muted: 200 30% 18%;
+    --info-muted-foreground: 200 60% 65%;
 
-    --destructive: 0 55% 55%;        /* #C95C5C */
+    --destructive: 0 50% 55%;
     --destructive-foreground: 0 0% 100%;
 
     --radius: 0.85rem;
 
     /* ── Booking Status Colors ─────────────────────────── */
-    /* Status-based: each booking bar gets its color from status,    */
-    /* not a random hash. Calm, muted tones for dark backgrounds.   */
-    --bk-reserved: 228 92% 67%;      /* #5B7CFA — blue */
+    /* Calm tones for reservation bars on dark surfaces.   */
+    --bk-reserved: 222 85% 64%;      /* blue */
     --bk-reserved-fg: 0 0% 100%;
-    --bk-checked-in: 155 44% 42%;    /* #3FA37A — green */
+    --bk-checked-in: 150 45% 44%;    /* green */
     --bk-checked-in-fg: 0 0% 100%;
-    --bk-checked-out: 218 8% 52%;    /* #6B7280 — gray */
+    --bk-checked-out: 218 10% 55%;   /* gray */
     --bk-checked-out-fg: 0 0% 100%;
-    --bk-no-show: 38 58% 53%;        /* #D19A3A — amber */
+    --bk-no-show: 38 60% 50%;        /* amber */
     --bk-no-show-fg: 0 0% 100%;
-    --bk-cancelled: 218 8% 55%;      /* #8B9099 — muted gray */
-    --bk-cancelled-fg: 218 14% 91%;
+    --bk-cancelled: 218 10% 50%;     /* muted gray */
+    --bk-cancelled-fg: 218 16% 92%;
 
     /* ── Room Status Indicator Colors ──────────────────── */
-    --room-clean: 155 50% 53%;       /* #4FBF8C — green dot */
-    --room-dirty: 30 55% 54%;        /* #D8903C — orange dot */
-    --room-ooo: 0 47% 57%;           /* #C95C5C — red */
-    --room-ooo-tint: 0 47% 57%;      /* used at low alpha for row bg */
+    --room-clean: 150 50% 52%;       /* green dot */
+    --room-dirty: 32 60% 52%;        /* orange dot */
+    --room-ooo: 0 48% 56%;           /* red */
+    --room-ooo-tint: 0 48% 56%;
 
     /* ── Timeline View ─────────────────────────────────── */
-    --timeline-bg: 225 16% 8%;       /* #12141A */
-    --timeline-grid: 222 14% 20%;    /* #2A2F3A */
-    --timeline-today: 188 75% 55%;   /* #22D3EE — cyan vertical line */
-    --timeline-row-hover: 0 0% 100%; /* used at 4% alpha */
+    --timeline-bg: 224 16% 12%;      /* lighter than app bg */
+    --timeline-grid: 224 12% 28%;    /* subtle but visible grid */
+    --timeline-today: 200 80% 60%;   /* softer cyan indicator */
+    --timeline-row-hover: 0 0% 100%; /* used at low alpha */
 
     --timeline-cell-width: 7.5rem;
     --timeline-row-height: 3.5rem;
     --timeline-room-col-width: 8.75rem;
+
+    /* ── Timeline Toolbar (PMS Header) ──────────────── */
+    --tl-header-bg: 224 18% 13%;    /* blends with sidebar */
+    --tl-border: 224 14% 26%;       /* matches --border */
+    --tl-text: 218 16% 92%;         /* matches --foreground */
+    --tl-text-dim: 218 10% 65%;     /* readable secondary */
+    --tl-accent: 222 85% 64%;       /* matches --primary */
+
+    /* ── KPI Colors (muted analytics) ──────────────── */
+    --kpi-occ: 150 50% 46%;         /* muted green */
+    --kpi-arr: 200 70% 55%;         /* muted sky */
+    --kpi-dep: 38 70% 52%;          /* muted amber */
+    --kpi-avl: 263 60% 70%;         /* muted purple */
   }
 
   * {

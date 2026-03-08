@@ -79,6 +79,17 @@ export default {
         'timeline-bg':   'hsl(var(--timeline-bg))',
         'timeline-grid': 'hsl(var(--timeline-grid))',
         'timeline-today': 'hsl(var(--timeline-today))',
+        // Timeline toolbar
+        'tl-header':  'hsl(var(--tl-header-bg))',
+        'tl-border':  'hsl(var(--tl-border))',
+        'tl-text':    'hsl(var(--tl-text))',
+        'tl-text-dim':'hsl(var(--tl-text-dim))',
+        'tl-accent':  'hsl(var(--tl-accent))',
+        // KPI colors
+        'kpi-occ': 'hsl(var(--kpi-occ))',
+        'kpi-arr': 'hsl(var(--kpi-arr))',
+        'kpi-dep': 'hsl(var(--kpi-dep))',
+        'kpi-avl': 'hsl(var(--kpi-avl))',
       },
       width: {
         'timeline-cell': 'var(--timeline-cell-width)',

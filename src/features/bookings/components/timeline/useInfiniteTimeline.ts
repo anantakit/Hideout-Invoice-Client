@@ -52,15 +52,20 @@ export function useInfiniteTimeline({
   const pendingCorrection = useRef(0)
   const needsInitialScroll = useRef(true)
 
-  // Apply scroll corrections after DOM commits
+  // Apply scroll corrections after DOM commits.
+  // `ready` signals that timeline content (not just the skeleton) is in the DOM,
+  // so scrollLeft won't be clamped to 0 by the browser.
   useLayoutEffect(() => {
     const el = scrollContainerRef.current
     if (!el) return
 
     const cellW = getCellWidthPx()
 
-    // First time the element is available → set initial scroll position
+    // Wait until content is ready before initial scroll — the skeleton
+    // doesn't have enough scroll width, so setting scrollLeft during
+    // loading would be clamped to 0 by the browser.
     if (needsInitialScroll.current) {
+      if (!ready) return            // content not mounted yet, wait
       needsInitialScroll.current = false
       el.scrollLeft = BUFFER_DAYS * cellW
       return
