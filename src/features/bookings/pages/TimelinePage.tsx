@@ -9,6 +9,7 @@ import { TooltipProvider } from '@/shared/ui/tooltip'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import ErrorPanel from '@/shared/components/ErrorPanel'
+import TimelineSkeleton from '../components/timeline/TimelineSkeleton'
 import { useTimeline, useAvailabilityGrouped, useMoveStay } from '../hooks'
 import type { TimelineBooking } from '../types'
 import TimelineHeader from '../components/timeline/TimelineHeader'
@@ -24,6 +25,7 @@ import {
   TIMELINE_ROW_HEIGHT_PX,
   TIMELINE_OVERSCAN_ROWS,
   computeRowHeight,
+  getCellWidthPx,
 } from '../components/timeline/tokens'
 import { computeRoomLayout } from '../components/timeline/bookingLayout'
 import { useInfiniteTimeline } from '../components/timeline/useInfiniteTimeline'
@@ -89,6 +91,9 @@ const THAI_MONTHS_SHORT = [
 
 export default function TimelinePage() {
   const navigate = useNavigate()
+
+  // ── Dev: force skeleton with ?skeleton in URL ──────────────────────────
+  const forceSkeleton = import.meta.env.DEV && new URLSearchParams(window.location.search).has('skeleton')
 
   // ── Virtualisation ──────────────────────────────────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -159,6 +164,14 @@ export default function TimelinePage() {
       setContentReady(true)
     }
   }, [contentReady, isLoading, isError, timelineData])
+
+  // Pre-scroll skeleton to "today" position so the transition to real content
+  // has no visible jump. BUFFER_DAYS = 14 matches useInfiniteTimeline.
+  useEffect(() => {
+    if (isLoading && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = 14 * getCellWidthPx()
+    }
+  }, [isLoading])
 
   // ── Move stay mutation ──────────────────────────────────────────────────
   const moveStayMutation = useMoveStay()
@@ -578,7 +591,7 @@ export default function TimelinePage() {
         />
 
         {/* ── Mobile: scrollable date strip + MobileTimelineList (< md) ── */}
-        {!isLoading && !isError && (
+        {!isLoading && !isError && !forceSkeleton && (
           <div className="md:hidden flex flex-col flex-1 overflow-hidden">
             <div
               ref={mobileStripRef}
@@ -670,54 +683,7 @@ export default function TimelinePage() {
             <div ref={scrollContainerRef} className="flex-1 overflow-auto">
 
               {/* Loading skeleton */}
-              {isLoading && (
-                <div>
-                  <div className="h-10 flex items-center px-3 border-b border-border-soft bg-card/50">
-                    <div className="w-48 h-4 bg-muted rounded animate-pulse" />
-                  </div>
-                  <div className="flex border-b border-border-soft bg-sidebar">
-                    <div
-                      className="flex-shrink-0 border-r border-border-soft"
-                      style={{ width: 'var(--timeline-room-col-width)' }}
-                    />
-                    {Array.from({ length: 10 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="flex flex-col items-center justify-center gap-1 flex-shrink-0 border-r border-border-soft py-2"
-                        style={{ width: 'var(--timeline-cell-width)' }}
-                      >
-                        <div className="w-6 h-3 bg-muted rounded animate-pulse" />
-                        <div className="w-4 h-4 bg-muted rounded animate-pulse" />
-                      </div>
-                    ))}
-                  </div>
-                  {Array.from({ length: 8 }).map((_, rowIdx) => (
-                    <div key={rowIdx} className="flex border-b border-border-soft" style={{ height: 'var(--timeline-row-height)' }}>
-                      <div
-                        className="flex-shrink-0 border-r border-border-soft flex items-center gap-2 px-3"
-                        style={{ width: 'var(--timeline-room-col-width)' }}
-                      >
-                        <div className="w-2 h-2 rounded-full bg-muted animate-pulse" />
-                        <div className="flex flex-col gap-1">
-                          <div className="w-8 h-3 bg-muted rounded animate-pulse" />
-                          <div className="w-14 h-2 bg-muted rounded animate-pulse" />
-                        </div>
-                      </div>
-                      <div className="flex-1 flex items-center px-1">
-                        {rowIdx % 3 !== 2 && (
-                          <div
-                            className="h-[40px] bg-muted/60 rounded-lg animate-pulse"
-                            style={{
-                              width: `calc(${(rowIdx % 3) + 2} * var(--timeline-cell-width) - 8px)`,
-                              marginLeft: `calc(${rowIdx % 4} * var(--timeline-cell-width) + 4px)`,
-                            }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {(isLoading || forceSkeleton) && <TimelineSkeleton />}
 
               {/* Error state */}
               {isError && !isLoading && (
@@ -730,7 +696,7 @@ export default function TimelinePage() {
               )}
 
               {/* Timeline content */}
-              {!isLoading && !isError && (
+              {!isLoading && !isError && !forceSkeleton && (
                 <div
                   style={{
                     minWidth:
