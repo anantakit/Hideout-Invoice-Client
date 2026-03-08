@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { differenceInDays, isToday, isBefore, startOfDay, parseISO, format, addDays } from 'date-fns'
-import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock, Calendar } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
@@ -23,7 +23,7 @@ import { formatThaiDate } from '../../../shared/utils'
 import { ROUTES } from '@/app/routes'
 import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useCheckoutRooms, useAvailabilityGrouped } from '../hooks'
 import { PaymentPanel } from '../components/PaymentPanel'
-import type { RoomStayResponse } from '../types'
+import { type RoomStayResponse, getStatusLabel } from '../types'
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
 
@@ -40,16 +40,6 @@ function bookingStatusVariant(status: string): BadgeVariant {
   }
 }
 
-function bookingStatusLabel(status: string): string {
-  switch (status) {
-    case 'CONFIRMED':            return 'ยืนยันแล้ว'
-    case 'PARTIALLY_CHECKED_IN': return 'เช็คอินบางส่วน'
-    case 'CHECKED_IN':           return 'เช็คอินแล้ว'
-    case 'CHECKED_OUT':          return 'เช็คเอาท์แล้ว'
-    case 'CANCELLED':            return 'ยกเลิกแล้ว'
-    default:                     return status
-  }
-}
 
 function stayStatusVariant(status: string): BadgeVariant {
   switch (status) {
@@ -61,16 +51,6 @@ function stayStatusVariant(status: string): BadgeVariant {
   }
 }
 
-function stayStatusLabel(status: string): string {
-  switch (status) {
-    case 'RESERVED':    return 'รอกำหนดห้อง'
-    case 'ASSIGNED':    return 'กำหนดห้องแล้ว'
-    case 'CHECKED_IN':  return 'เช็คอินแล้ว'
-    case 'CHECKED_OUT': return 'เช็คเอาท์แล้ว'
-    case 'CANCELLED':   return 'ยกเลิกแล้ว'
-    default:            return status
-  }
-}
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -261,7 +241,7 @@ export default function BookingDetailPage() {
             </p>
           </div>
           <Badge variant={bookingStatusVariant(booking.status)}>
-            {bookingStatusLabel(booking.status)}
+            {getStatusLabel(booking.status)}
           </Badge>
         </div>
       </div>
@@ -366,18 +346,10 @@ export default function BookingDetailPage() {
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             ) : noRoomsAvailable ? (
-              <div className="py-4 text-center space-y-3">
+              <div className="py-4 text-center">
                 <p className="text-sm text-muted-foreground">
                   ไม่มีห้องว่างสำหรับช่วงเวลาที่เลือก
                 </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate(ROUTES.occupancy.month)}
-                >
-                  <Calendar className="w-4 h-4 mr-1.5" />
-                  ดูปฏิทินห้องว่าง
-                </Button>
               </div>
             ) : availability ? (
               <div className="space-y-3">
@@ -536,7 +508,7 @@ function StayCardOperational({
             {showOverdueBadge && <Badge variant="red">เกินกำหนด</Badge>}
             {showTodayBadge && !showOverdueBadge && <Badge variant="amber">เช็คอินวันนี้</Badge>}
             <Badge variant={stayStatusVariant(stay.status)}>
-              {stayStatusLabel(stay.status)}
+              {getStatusLabel(stay.status)}
             </Badge>
           </div>
         </div>

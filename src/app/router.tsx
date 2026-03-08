@@ -19,7 +19,6 @@ const BookingDetail     = lazy(() => import('../features/bookings/pages/BookingD
 const GroupCheckIn      = lazy(() => import('../features/bookings/pages/GroupCheckInPage'))
 const Timeline          = lazy(() => import('../features/bookings/pages/TimelinePage'))
 const TodayBoard        = lazy(() => import('../features/operations/pages/TodayBoardPage'))
-const MonthlyOccupancy  = lazy(() => import('../features/operations/pages/MonthlyOccupancyPage'))
 
 function PageLoader() {
   return (
@@ -66,7 +65,6 @@ export default function App() {
               <Route path="/bookings/:id/checkin" element={<GroupCheckIn />} />
               <Route path="/bookings/:id" element={<BookingDetail />} />
               <Route path="/operations/today" element={<TodayBoard />} />
-              <Route path="/occupancy/month" element={<MonthlyOccupancy />} />
               <Route
                 path="/admin/users"
                 element={

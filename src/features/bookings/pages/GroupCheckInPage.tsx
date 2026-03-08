@@ -18,19 +18,21 @@ import {
 import { Separator } from '@/shared/ui/separator'
 import { ROUTES } from '@/app/routes'
 import { useBooking, useCheckInRooms, useAvailabilityGrouped } from '../hooks'
-import type { RoomStayResponse } from '../types'
+import { type RoomStayResponse, getStatusLabel } from '../types'
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
-function StayStatusBadge({ status }: { status: string }) {
+function stayStatusVariant(status: string): 'gray' | 'amber' | 'green' | 'red' {
   switch (status) {
-    case 'RESERVED':    return <Badge variant="gray">RESERVED</Badge>
-    case 'ASSIGNED':    return <Badge variant="amber">ASSIGNED</Badge>
-    case 'CHECKED_IN':  return <Badge variant="green">CHECKED_IN</Badge>
-    case 'CHECKED_OUT': return <Badge variant="gray">CHECKED_OUT</Badge>
-    case 'CANCELLED':   return <Badge variant="red">CANCELLED</Badge>
-    default:            return <Badge variant="gray">{status}</Badge>
+    case 'ASSIGNED':    return 'amber'
+    case 'CHECKED_IN':  return 'green'
+    case 'CANCELLED':   return 'red'
+    default:            return 'gray'
   }
+}
+
+function StayStatusBadge({ status }: { status: string }) {
+  return <Badge variant={stayStatusVariant(status)}>{getStatusLabel(status)}</Badge>
 }
 
 // ─── Room select for one stay ─────────────────────────────────────────────────

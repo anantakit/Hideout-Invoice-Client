@@ -3,7 +3,6 @@ import {
   BarChart3,
   BedDouble,
   Building2,
-  Calendar,
   CalendarRange,
   FileText,
   LogOut,
@@ -61,7 +60,6 @@ const NAV_SECTIONS: NavSectionConfig[] = [
     items: [
       { to: '/bookings/timeline', label: 'ไทม์ไลน์', icon: CalendarRange, end: true },
       { to: '/bookings',          label: 'การจอง',    icon: BedDouble,     end: true },
-      { to: '/occupancy/month',   label: 'ปฏิทิน',   icon: Calendar,      end: true },
     ],
   },
   {

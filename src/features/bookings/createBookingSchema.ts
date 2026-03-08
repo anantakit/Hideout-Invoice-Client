@@ -27,7 +27,7 @@ export const roomTypeBookingItemSchema = z
 
 export const createBookingSchema = z
   .object({
-    source: z.enum(['walk_in', 'staff', 'online']),
+    source: z.enum(['walk_in', 'advance']),
     guest_name: z
       .string()
       .min(1, 'กรุณาระบุชื่อผู้เข้าพัก')

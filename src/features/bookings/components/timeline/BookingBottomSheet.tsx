@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
-import type { TimelineBooking } from '../../types'
+import { type TimelineBooking, getStatusLabel } from '../../types'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -93,7 +93,7 @@ const BookingBottomSheet = React.memo(function BookingBottomSheet({
               {booking.guest_name}
             </SheetTitle>
             <Badge variant={statusVariant(booking.status)}>
-              {booking.status}
+              {getStatusLabel(booking.status)}
             </Badge>
           </div>
           <SheetDescription className="text-body text-muted-foreground">

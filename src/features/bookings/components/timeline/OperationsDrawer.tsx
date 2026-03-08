@@ -16,7 +16,7 @@ import { cn } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
-import type { TimelineBooking, TimelineRoom, UnassignedStay } from '../../types'
+import { type TimelineBooking, type TimelineRoom, type UnassignedStay, getStatusLabel } from '../../types'
 import { DesktopOperationsPanel } from './DesktopOperationsPanel'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -125,7 +125,7 @@ function BookingDetailContent({
             {booking.guest_name}
           </span>
           <Badge variant={statusVariant(booking.status)} className="shrink-0">
-            {booking.status}
+            {getStatusLabel(booking.status)}
           </Badge>
         </div>
         <Button
@@ -200,7 +200,7 @@ function BookingDetailContent({
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">ช่องทาง</span>
               <span className="text-sm font-medium text-foreground capitalize">
-                {booking.source === 'walk_in' ? 'Walk-in' : booking.source === 'staff' ? 'Staff' : booking.source}
+                {booking.source === 'walk_in' ? 'Walk-in' : 'จองล่วงหน้า'}
               </span>
             </div>
           </>

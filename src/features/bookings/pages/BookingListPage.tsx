@@ -25,21 +25,14 @@ import {
 } from '../../../shared/ui/table'
 import Pagination from '../../../shared/ui/Pagination'
 import { DateRangePicker } from '../components/DateRangePicker'
-import type { BookingResponse } from '../types'
+import { type BookingResponse, getStatusLabel } from '../types'
 
 // ─── Status display maps ───────────────────────────────────────────────────────
 
 type BadgeVariant = 'blue' | 'green' | 'gray' | 'red' | 'amber'
 
-const STATUS_LABELS: Record<string, string> = {
-  RESERVED:             'รอดำเนินการ',
-  PARTIALLY_CHECKED_IN: 'เช็คอินบางส่วน',
-  CHECKED_IN:           'เช็คอินแล้ว',
-  CHECKED_OUT:          'เช็คเอาท์แล้ว',
-  CANCELLED:            'ยกเลิก',
-}
-
 const STATUS_VARIANTS: Record<string, BadgeVariant> = {
+  CONFIRMED:            'blue',
   RESERVED:             'gray',
   PARTIALLY_CHECKED_IN: 'amber',
   CHECKED_IN:           'green',
@@ -50,7 +43,7 @@ const STATUS_VARIANTS: Record<string, BadgeVariant> = {
 function StatusBadge({ status }: { status: string }) {
   return (
     <Badge variant={STATUS_VARIANTS[status] ?? 'gray'}>
-      {STATUS_LABELS[status] ?? status}
+      {getStatusLabel(status)}
     </Badge>
   )
 }

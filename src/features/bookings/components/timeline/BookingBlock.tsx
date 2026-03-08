@@ -1,6 +1,6 @@
 import React, { type CSSProperties, useCallback, useMemo, useRef } from 'react'
 import { differenceInDays, format, parseISO, startOfDay } from 'date-fns'
-import { Users, Clock, LogIn, LogOut, Footprints, Headset, Globe } from 'lucide-react'
+import { Users, Clock, LogIn, LogOut, Footprints, CalendarCheck } from 'lucide-react'
 import {
   TIMELINE_BLOCK_HEIGHT_PX,
   TIMELINE_BLOCK_GAP_PX,
@@ -10,7 +10,7 @@ import { cn } from '@/shared/utils'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/shared/ui/tooltip'
 import { Badge } from '@/shared/ui/badge'
 import { Separator } from '@/shared/ui/separator'
-import type { TimelineBooking } from '../../types'
+import { type TimelineBooking, getStatusLabel } from '../../types'
 import { useHoveredBookingId, useBookingHoverHandlers } from './HoverContext'
 import type { DragMode, DragState } from './useTimelineDrag'
 
@@ -35,14 +35,12 @@ function statusBadgeVariant(
 
 const SOURCE_LABEL: Record<string, string> = {
   walk_in: 'Walk-in',
-  staff:   'Staff',
-  online:  'Online',
+  advance: 'จองล่วงหน้า',
 }
 
 const SOURCE_ICON: Record<string, React.ElementType> = {
-  walk_in: Footprints,
-  staff:   Headset,
-  online:  Globe,
+  walk_in:  Footprints,
+  advance:  CalendarCheck,
 }
 
 /** Statuses that can be dragged/resized. */
@@ -503,7 +501,7 @@ const BookingBlock = React.memo(function BookingBlock({
             variant={statusBadgeVariant(booking.status)}
             className="text-[10px] px-1.5 py-0"
           >
-            {booking.status}
+            {getStatusLabel(booking.status)}
           </Badge>
         </div>
 

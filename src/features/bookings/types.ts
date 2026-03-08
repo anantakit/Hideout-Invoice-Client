@@ -129,7 +129,7 @@ export interface RoomStayPayload {
 }
 
 export interface CreateBookingPayload {
-  source: 'walk_in' | 'staff' | 'online'
+  source: 'walk_in' | 'advance'
   guest_name: string
   guest_phone: string
   stays: RoomStayPayload[]
@@ -165,7 +165,7 @@ export interface TimelineBooking {
   check_out: string
   status: string
   balance_amount: number
-  /** Booking source: walk_in | staff | online */
+  /** Booking source: walk_in | advance */
   source: string
 }
 
@@ -244,4 +244,22 @@ export interface AvailabilityGroupedResponse {
   check_in: string
   check_out: string
   room_types: AvailabilityGroupedRoomType[]
+}
+
+// ─── Status display labels (Thai) ───────────────────────────────────────────
+
+/** User-friendly Thai labels for booking / room-stay statuses. */
+export const STATUS_LABEL_TH: Record<string, string> = {
+  CONFIRMED:            'จองแล้ว',
+  RESERVED:             'รอเข้าพัก',
+  ASSIGNED:             'มอบหมายห้อง',
+  PARTIALLY_CHECKED_IN: 'เช็คอินบางส่วน',
+  CHECKED_IN:           'เข้าพัก',
+  CHECKED_OUT:          'เช็คเอาท์',
+  CANCELLED:            'ยกเลิก',
+}
+
+/** Returns Thai label for a status, falling back to the raw value. */
+export function getStatusLabel(status: string): string {
+  return STATUS_LABEL_TH[status] ?? status
 }

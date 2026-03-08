@@ -51,7 +51,7 @@ export default function CreateBookingPage() {
     resolver: zodResolver(createBookingSchema),
     mode: 'onBlur',
     defaultValues: {
-      source: 'staff',
+      source: 'advance',
       guest_name: '',
       guest_phone: '',
       same_dates: false,
@@ -155,7 +155,7 @@ export default function CreateBookingPage() {
                       <div className="grid grid-cols-2 gap-2">
                         {(
                           [
-                            { value: 'staff',   label: 'จองล่วงหน้า', desc: 'รับจองผ่านพนักงาน' },
+                            { value: 'advance', label: 'จองล่วงหน้า', desc: 'จองห้องพักล่วงหน้า' },
                             { value: 'walk_in', label: 'Walk-in',      desc: 'เช็คอินทันที' },
                           ] as const
                         ).map((opt) => (

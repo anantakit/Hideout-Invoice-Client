@@ -20,10 +20,6 @@ export const ROUTES = {
     today: '/operations/today',
   },
 
-  occupancy: {
-    month: '/occupancy/month',
-  },
-
   admin: {
     users: '/admin/users',
   },
