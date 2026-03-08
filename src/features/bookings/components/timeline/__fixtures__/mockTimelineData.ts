@@ -58,13 +58,18 @@ function booking(
 // ─── Generator ────────────────────────────────────────────────────────────────
 
 /**
- * Generate mock timeline data relative to the given window.
- * The window is [from, to) — 7 days as used by the real timeline.
+ * Generate mock timeline data anchored to TODAY.
+ *
+ * The [from, to) parameters define the 42-day buffer window for filtering,
+ * but bookings are always positioned relative to today so they stay in place
+ * when the infinite-scroll buffer shifts. IDs are deterministic per room
+ * (not per call) so React keys remain stable across re-renders.
  */
-export function generateMockTimeline(from: string, _to: string): TimelineResponse {
+export function generateMockTimeline(_from: string, _to: string): TimelineResponse {
   _idCounter = 0
 
-  const base = startOfDay(new Date(from))
+  // Anchor to today — bookings stay put regardless of buffer shifts
+  const base = startOfDay(new Date())
 
   // Shared booking ID for multi-room test (case 19)
   const multiRoomBookingId = 'multi-room-0001-0000-0000-000000000000'

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useLayoutEffect, useEffect, useMemo } from 'react'
 import { addDays, subDays, startOfDay, format } from 'date-fns'
-import { TIMELINE_CELL_WIDTH_PX, TIMELINE_ROOM_COL_PX } from './tokens'
+import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from './tokens'
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -57,10 +57,12 @@ export function useInfiniteTimeline({
     const el = scrollContainerRef.current
     if (!el) return
 
+    const cellW = getCellWidthPx()
+
     // First time the element is available → set initial scroll position
     if (needsInitialScroll.current) {
       needsInitialScroll.current = false
-      el.scrollLeft = BUFFER_DAYS * TIMELINE_CELL_WIDTH_PX
+      el.scrollLeft = BUFFER_DAYS * cellW
       return
     }
 
@@ -88,32 +90,33 @@ export function useInfiniteTimeline({
     const el = scrollContainerRef.current
     if (!el) return
 
+    const cellW = getCellWidthPx()
     const scrollLeft = el.scrollLeft
     const viewportWidth = el.clientWidth
-    const totalWidth = TOTAL_DAYS * TIMELINE_CELL_WIDTH_PX
+    const totalWidth = TOTAL_DAYS * cellW
 
     // Update visible range for toolbar display (throttled by day change)
-    const dayOffset = Math.round(scrollLeft / TIMELINE_CELL_WIDTH_PX)
+    const dayOffset = Math.round(scrollLeft / cellW)
     if (dayOffset !== lastVisibleDayOffset.current) {
       lastVisibleDayOffset.current = dayOffset
       setVisibleStartDate(addDays(bufferStartRef.current, dayOffset))
-      const vpDays = Math.ceil((viewportWidth - TIMELINE_ROOM_COL_PX) / TIMELINE_CELL_WIDTH_PX)
+      const vpDays = Math.ceil((viewportWidth - TIMELINE_ROOM_COL_PX) / cellW)
       setVisibleDays(vpDays)
     }
 
     // Check if we need to extend the buffer
     const rightRemaining = totalWidth - scrollLeft - viewportWidth + TIMELINE_ROOM_COL_PX
     const leftRemaining = scrollLeft
-    const thresholdPx = THRESHOLD_DAYS * TIMELINE_CELL_WIDTH_PX
+    const thresholdPx = THRESHOLD_DAYS * cellW
 
     if (rightRemaining < thresholdPx) {
       isShiftingRef.current = true
-      pendingCorrection.current = -(SHIFT_DAYS * TIMELINE_CELL_WIDTH_PX)
+      pendingCorrection.current = -(SHIFT_DAYS * cellW)
       setBufferStart(prev => addDays(prev, SHIFT_DAYS))
       requestAnimationFrame(() => { isShiftingRef.current = false })
     } else if (leftRemaining < thresholdPx) {
       isShiftingRef.current = true
-      pendingCorrection.current = SHIFT_DAYS * TIMELINE_CELL_WIDTH_PX
+      pendingCorrection.current = SHIFT_DAYS * cellW
       setBufferStart(prev => subDays(prev, SHIFT_DAYS))
       requestAnimationFrame(() => { isShiftingRef.current = false })
     }
@@ -134,8 +137,9 @@ export function useInfiniteTimeline({
   // ── Navigation ──────────────────────────────────────────────────────────
 
   const jumpToDate = useCallback((date: Date) => {
+    const cellW = getCellWidthPx()
     const targetStart = subDays(startOfDay(date), BUFFER_DAYS)
-    jumpScrollTarget.current = BUFFER_DAYS * TIMELINE_CELL_WIDTH_PX
+    jumpScrollTarget.current = BUFFER_DAYS * cellW
     setBufferStart(targetStart)
   }, [])
 
@@ -144,7 +148,8 @@ export function useInfiniteTimeline({
   const shiftBy = useCallback((numDays: number) => {
     const el = scrollContainerRef.current
     if (!el) return
-    el.scrollBy({ left: numDays * TIMELINE_CELL_WIDTH_PX, behavior: 'smooth' })
+    const cellW = getCellWidthPx()
+    el.scrollBy({ left: numDays * cellW, behavior: 'smooth' })
   }, [])
 
   const visibleCenterDate = useMemo(

@@ -35,6 +35,22 @@ export const TIMELINE_BLOCK_GAP_PX = 4
 export const TIMELINE_BLOCK_PADDING_PX = 4
 
 /**
+ * Read the current timeline cell width from CSS custom property.
+ * Supports zoom — when --timeline-cell-width is changed dynamically,
+ * this returns the live value instead of the static default.
+ */
+export function getCellWidthPx(): number {
+  if (typeof document === 'undefined') return TIMELINE_CELL_WIDTH_PX
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--timeline-cell-width')
+    .trim()
+  if (!raw) return TIMELINE_CELL_WIDTH_PX
+  if (raw.endsWith('rem')) return parseFloat(raw) * BASE_FONT_PX
+  if (raw.endsWith('px')) return parseFloat(raw)
+  return TIMELINE_CELL_WIDTH_PX
+}
+
+/**
  * Compute the row height for a room with the given number of booking layers.
  * Single-layer rooms use the standard row height; multi-layer rooms expand.
  */

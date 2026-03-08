@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { addDays, differenceInDays, format, parseISO, startOfDay } from 'date-fns'
 import toast from 'react-hot-toast'
 import type { TimelineRoom, TimelineBooking } from '../../types'
-import { TIMELINE_CELL_WIDTH_PX, TIMELINE_ROOM_COL_PX } from './tokens'
+import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from './tokens'
 
 /** Parse a date string that may be YYYY-MM-DD or a full ISO timestamp. */
 function toDate(s: string): Date {
@@ -192,7 +192,7 @@ export function useTimelineDrag({
       const relY = clientY - gridRect.top
 
       // Snap day index — floor so the booking lands in the column the pointer is in
-      const dayIndex = Math.floor(relX / TIMELINE_CELL_WIDTH_PX)
+      const dayIndex = Math.floor(relX / getCellWidthPx())
 
       // Find target room by Y coordinate
       let targetRoomId = sourceRoomId
@@ -264,9 +264,9 @@ export function useTimelineDrag({
       if (roomTop === undefined) return
 
       setPreviewPos({
-        left: TIMELINE_ROOM_COL_PX + offsetDays * TIMELINE_CELL_WIDTH_PX,
+        left: TIMELINE_ROOM_COL_PX + offsetDays * getCellWidthPx(),
         top: roomTop,
-        width: spanDays * TIMELINE_CELL_WIDTH_PX,
+        width: spanDays * getCellWidthPx(),
         height: roomHeight,
       })
     },
@@ -385,7 +385,7 @@ export function useTimelineDrag({
       // Calculate where on the booking the user grabbed (in days from left edge)
       const containerRect = el.getBoundingClientRect()
       const pointerRelX = e.clientX - containerRect.left - TIMELINE_ROOM_COL_PX + el.scrollLeft
-      const pointerDayIndex = Math.floor(pointerRelX / TIMELINE_CELL_WIDTH_PX)
+      const pointerDayIndex = Math.floor(pointerRelX / getCellWidthPx())
       const grabDayOffset = Math.max(0, pointerDayIndex - offsetDays)
 
       const isTouch = e.pointerType === 'touch'

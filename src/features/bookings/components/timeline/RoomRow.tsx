@@ -3,7 +3,7 @@ import { addDays, differenceInDays, format, isToday, isSaturday, isSunday, parse
 import { cn } from '@/shared/utils'
 import type { TimelineRoom, TimelineBooking } from '../../types'
 import BookingBlock from './BookingBlock'
-import { TIMELINE_CELL_WIDTH_PX, TIMELINE_WINDOW_DAYS } from './tokens'
+import { getCellWidthPx, TIMELINE_WINDOW_DAYS } from './tokens'
 import { computeRoomLayout } from './bookingLayout'
 import type { DragMode, DragState } from './useTimelineDrag'
 
@@ -147,7 +147,7 @@ const RoomRow = React.memo(function RoomRow({
 
     const rect = e.currentTarget.getBoundingClientRect()
     const x    = e.clientX - rect.left
-    const dayIndex = Math.floor(x / TIMELINE_CELL_WIDTH_PX)
+    const dayIndex = Math.floor(x / getCellWidthPx())
     if (dayIndex < 0 || dayIndex >= windowDays) return
 
     const clickedDate = addDays(windowStart, dayIndex)

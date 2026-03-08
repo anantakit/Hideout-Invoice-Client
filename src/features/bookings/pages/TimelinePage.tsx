@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useSyncExternalStore } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect, useSyncExternalStore } from 'react'
 import { addDays, subDays, format, startOfDay } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
@@ -9,9 +9,11 @@ import {
   CalendarPlus,
   CalendarIcon,
   PanelRight,
+  LogIn,
+  LogOut,
 } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
-import { TooltipProvider } from '@/shared/ui/tooltip'
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/shared/ui/tooltip'
 import {
   Select,
   SelectContent,
@@ -20,7 +22,9 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { Calendar } from '@/shared/ui/calendar'
+import { Separator } from '@/shared/ui/separator'
 import toast from 'react-hot-toast'
+import { cn } from '@/shared/utils'
 import { useTimeline, useAvailabilityGrouped, useMoveStay } from '../hooks'
 import type { TimelineBooking } from '../types'
 import TimelineHeader from '../components/timeline/TimelineHeader'
@@ -28,7 +32,6 @@ import RoomRow from '../components/timeline/RoomRow'
 import BookingBottomSheet from '../components/timeline/BookingBottomSheet'
 import type { SelectedBookingContext } from '../components/timeline/BookingBottomSheet'
 import DragPreview from '../components/timeline/DragPreview'
-import { KPIBar } from '../components/timeline/KPIBar'
 import type { RoomAvailability } from '../components/timeline/AvailabilitySummary'
 import { OperationsDrawer, type DrawerMode } from '../components/timeline/OperationsDrawer'
 import { MobileTimelineList } from '../components/timeline/MobileTimelineList'
@@ -103,10 +106,24 @@ const THAI_MONTHS_FULL = [
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
 ]
 
+function fmtThaiDate(d: Date): string {
+  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`
+}
+
 function fmtThaiRange(start: Date, end: Date): string {
   const s = `${start.getDate()} ${THAI_MONTHS_SHORT[start.getMonth()]}`
   const e = `${end.getDate()} ${THAI_MONTHS_SHORT[end.getMonth()]}`
   return `${s} — ${e}`
+}
+
+// ─── Zoom presets ─────────────────────────────────────────────────────────────
+
+type ZoomLevel = '3d' | '7d' | '14d'
+
+const ZOOM_CONFIG: Record<ZoomLevel, { label: string; cssWidth: string; pxWidth: number }> = {
+  '3d':  { label: '3 วัน',  cssWidth: '16.25rem', pxWidth: 260 },  // 260px
+  '7d':  { label: '7 วัน',  cssWidth: '7.5rem',   pxWidth: 120 },  // 120px (default)
+  '14d': { label: '14 วัน', cssWidth: '4.375rem',  pxWidth: 70 },   // 70px
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -135,11 +152,27 @@ export default function TimelinePage() {
   // ── Filter state ──────────────────────────────────────────────────────────
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string | null>(null)
 
+  // ── Zoom level ─────────────────────────────────────────────────────────
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('7d')
+
   // ── Operations drawer state ─────────────────────────────────────────────
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(null)
 
   // ── Date picker state ───────────────────────────────────────────────────
   const [datePickerOpen, setDatePickerOpen] = useState(false)
+  const datePickerRef = useRef<HTMLDivElement>(null)
+
+  // Close date picker on click-outside
+  useEffect(() => {
+    if (!datePickerOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
+        setDatePickerOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [datePickerOpen])
 
   // ── Bottom-sheet state ────────────────────────────────────────────────────
   const [selectedBooking, setSelectedBooking] = useState<SelectedBookingContext | null>(null)
@@ -157,8 +190,13 @@ export default function TimelinePage() {
   const windowEnd   = bufferEnd
   const zoomDays    = totalDays
 
-  const availFrom = useMemo(() => format(startOfDay(new Date()), 'yyyy-MM-dd'), [])
-  const availTo   = useMemo(() => format(addDays(startOfDay(new Date()), 1), 'yyyy-MM-dd'), [])
+  // ── KPIs are reactive to the visible center date ─────────────────────────
+  const visibleCenterDate = useMemo(
+    () => addDays(visibleStartDate, Math.floor(visibleDays / 2)),
+    [visibleStartDate, visibleDays],
+  )
+  const availFrom = useMemo(() => format(startOfDay(visibleCenterDate), 'yyyy-MM-dd'), [visibleCenterDate])
+  const availTo   = useMemo(() => format(addDays(startOfDay(visibleCenterDate), 1), 'yyyy-MM-dd'), [visibleCenterDate])
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const { data: timelineData, isLoading, isError } = useTimeline(fromStr, toStr)
@@ -259,6 +297,29 @@ export default function TimelinePage() {
 
   const todayStr = useMemo(() => format(startOfDay(new Date()), 'yyyy-MM-dd'), [])
 
+  // ── KPI totals (memoized) ──────────────────────────────────────────────
+  const kpiTotals = useMemo(() => {
+    const total     = roomAvailability.reduce((s, r) => s + r.total_rooms, 0)
+    const occupied  = roomAvailability.reduce((s, r) => s + r.occupied_rooms, 0)
+    const available = roomAvailability.reduce((s, r) => s + r.available_rooms, 0)
+    const occupancyPct = total > 0 ? Math.round((occupied / total) * 100) : 0
+    return { total, occupied, available, occupancyPct }
+  }, [roomAvailability])
+
+  // ── KPI: Arrivals / Departures for visible center date ────────────────────
+  const centerDateStr = availFrom
+  const arrivalsDepartures = useMemo(() => {
+    let arrivals = 0
+    let departures = 0
+    for (const room of allRooms) {
+      for (const b of room.bookings) {
+        if (b.check_in === centerDateStr) arrivals++
+        if (b.check_out === centerDateStr) departures++
+      }
+    }
+    return { arrivals, departures }
+  }, [allRooms, centerDateStr])
+
   // ── Month jump options ────────────────────────────────────────────────────
   const monthOptions = useMemo(() => {
     const now = new Date()
@@ -290,6 +351,12 @@ export default function TimelinePage() {
     const [y, m] = isoDate.split('-').map(Number)
     jumpToDate(new Date(y, m - 1, 1))
   }, [jumpToDate])
+
+  const handleZoomChange = useCallback((level: ZoomLevel) => {
+    setZoomLevel(level)
+    const cfg = ZOOM_CONFIG[level]
+    document.documentElement.style.setProperty('--timeline-cell-width', cfg.cssWidth)
+  }, [])
 
   const handleRoomTypeSelect     = useCallback((id: string | null) => setSelectedRoomTypeId(id), [])
   const handleSelectBooking      = useCallback((b: TimelineBooking, roomNumbers?: string[]) => {
@@ -334,13 +401,7 @@ export default function TimelinePage() {
   const handleDoubleClickBooking = useCallback((b: TimelineBooking) => {
     navigate(ROUTES.bookings.detail(b.booking_id))
   }, [navigate])
-  const handleEmptyCellClick     = useCallback((roomId: string, date: Date) => {
-    const checkIn = format(date, 'yyyy-MM-dd')
-    const roomTypeId = roomTypeIdByRoomId[roomId] ?? ''
-    const params = new URLSearchParams({ check_in: checkIn, room_id: roomId })
-    if (roomTypeId) params.set('room_type_id', roomTypeId)
-    navigate(`${ROUTES.bookings.new}?${params.toString()}`)
-  }, [navigate, roomTypeIdByRoomId])
+  // Empty cell click removed — draw-to-create replaces it (avoids accidental taps)
 
   // ── Context menu + quick actions ────────────────────────────────────────
   const handleOpenContextMenu = useCallback(
@@ -537,49 +598,75 @@ export default function TimelinePage() {
       <div className="flex flex-col h-full overflow-hidden bg-background">
 
         {/* ════════════════════════════════════════════════════════════════
-            TOOLBAR — compact 48px bar with all navigation controls
+            UNIFIED HEADER — 48px professional PMS control bar
+            LEFT: Today + Date Nav | CENTER: Zoom + Month | RIGHT: KPIs + Actions
             ════════════════════════════════════════════════════════════════ */}
-        <div className="h-12 shrink-0 flex items-center gap-1.5 px-3 border-b border-border-soft bg-sidebar">
+        <div className="h-12 shrink-0 flex items-center gap-1 px-2 border-b border-border-soft bg-sidebar">
 
-          {/* Today button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleToday}
-            className="h-7 px-2.5 text-[11px]"
-          >
-            วันนี้
-          </Button>
+          {/* ── LEFT ZONE: Today + Date Navigation ──────────────────── */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToday}
+                className="h-7 px-2 text-[11px] shrink-0"
+              >
+                วันนี้
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">กลับไปวันนี้</TooltipContent>
+          </Tooltip>
 
-          {/* Prev / date range / next */}
           <div className="flex items-center gap-0">
             <Button variant="ghost" size="icon" onClick={handlePrev} className="h-7 w-7">
               <ChevronLeft size={14} />
             </Button>
 
-            {/* Clickable date range → opens date picker */}
-            <div className="relative">
+            {/* Clickable center date → calendar popover */}
+            <div className="relative" ref={datePickerRef}>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setDatePickerOpen((v) => !v)}
-                className="h-7 px-2 text-[11px] font-medium tabular-nums gap-1"
+                className={cn(
+                  'h-7 px-2 text-[11px] font-semibold tabular-nums gap-1.5',
+                  datePickerOpen && 'bg-muted',
+                )}
               >
                 <CalendarIcon size={12} className="text-muted-foreground" />
-                {fmtThaiRange(visibleStartDate, addDays(visibleStartDate, visibleDays - 1))}
+                <span className="hidden sm:inline">{fmtThaiDate(visibleCenterDate)}</span>
+                <span className="sm:hidden">{fmtThaiRange(visibleStartDate, addDays(visibleStartDate, visibleDays - 1))}</span>
               </Button>
 
-              {/* Inline date picker dropdown */}
               {datePickerOpen && (
-                <div className="absolute left-0 top-full mt-1 z-50 w-72 bg-card border border-border rounded-lg shadow-popover p-3">
-                  <Calendar
-                    pendingStart={windowStart}
-                    pendingEnd={null}
-                    hoveredDate={null}
-                    onDayClick={handleJumpToDate}
-                    onDayHover={() => {}}
-                    initialViewDate={visibleStartDate}
-                  />
+                <div className="absolute left-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-popover">
+                  <div className="p-3 w-72">
+                    <Calendar
+                      pendingStart={visibleCenterDate}
+                      pendingEnd={null}
+                      hoveredDate={null}
+                      onDayClick={handleJumpToDate}
+                      onDayHover={() => {}}
+                      initialViewDate={visibleCenterDate}
+                    />
+                  </div>
+                  {/* Quick month jump grid */}
+                  <div className="border-t border-border px-3 pb-2 pt-1.5">
+                    <p className="text-[10px] text-muted-foreground mb-1">ข้ามไปเดือน</p>
+                    <div className="grid grid-cols-3 gap-1">
+                      {monthOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => { handleMonthJump(opt.value); setDatePickerOpen(false) }}
+                          className="text-[10px] px-1.5 py-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors text-center truncate"
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -589,56 +676,115 @@ export default function TimelinePage() {
             </Button>
           </div>
 
-          {/* Month jump dropdown */}
-          <div className="hidden md:block">
+          <Separator orientation="vertical" className="h-5 hidden md:block mx-0.5" />
+
+          {/* ── CENTER ZONE: Zoom Control ───────────────────────────── */}
+          <div className="hidden md:flex items-center bg-muted/50 rounded-md p-0.5">
+            {(['3d', '7d', '14d'] as const).map((level) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => handleZoomChange(level)}
+                className={cn(
+                  'px-2 py-0.5 text-[11px] font-medium rounded transition-colors',
+                  zoomLevel === level
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {ZOOM_CONFIG[level].label}
+              </button>
+            ))}
+          </div>
+
+          {/* Room type filter */}
+          <div className="hidden md:block ml-0.5">
             <Select
-              value=""
-              onValueChange={handleMonthJump}
+              value={selectedRoomTypeId ?? '__all__'}
+              onValueChange={(v) => handleRoomTypeSelect(v === '__all__' ? null : v)}
             >
-              <SelectTrigger className="h-7 w-[130px] text-[11px] border-border-soft">
-                <SelectValue placeholder="ข้ามไปเดือน..." />
+              <SelectTrigger className="h-7 w-[110px] text-[11px] border-border-soft">
+                <SelectValue placeholder="ทุกประเภท" />
               </SelectTrigger>
               <SelectContent>
-                {monthOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                    {opt.label}
+                <SelectItem value="__all__">ทุกประเภท</SelectItem>
+                {roomAvailability.map((rt) => (
+                  <SelectItem key={rt.room_type_id} value={rt.room_type_id}>
+                    {rt.room_type_name} ({rt.available_rooms})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Separator */}
-          <span className="hidden md:block w-px h-5 bg-border-soft mx-1" />
-
-          {/* Quick jump presets */}
-          <div className="hidden md:flex items-center gap-0.5">
-            {([
-              { label: '-7d', days: -7 },
-              { label: '+7d', days: 7 },
-              { label: '+14d', days: 14 },
-            ] as const).map((preset) => (
-              <Button
-                key={preset.label}
-                variant="ghost"
-                size="sm"
-                onClick={() => shiftBy(preset.days)}
-                className="h-6 px-1.5 text-[11px]"
-              >
-                {preset.label}
-              </Button>
-            ))}
-          </div>
-
-          {/* Spacer */}
+          {/* ── Spacer ─────────────────────────────────────────────── */}
           <div className="flex-1" />
 
-          {/* Right actions */}
+          {/* ── RIGHT ZONE: Live KPIs (reactive to visible center date) ── */}
+          <div className="hidden lg:flex items-center gap-3 text-[11px] tabular-nums mr-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 cursor-default">
+                  <span className={cn(
+                    'w-1.5 h-1.5 rounded-full shrink-0',
+                    kpiTotals.occupancyPct >= 90 ? 'bg-destructive' : 'bg-info',
+                  )} />
+                  <span className="text-muted-foreground">OCC</span>
+                  <span className="font-semibold text-foreground">
+                    {kpiTotals.total > 0 ? `${kpiTotals.occupancyPct}%` : '—'}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">Occupancy ({fmtThaiDate(visibleCenterDate)})</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 cursor-default">
+                  <LogIn size={11} className="text-success shrink-0" />
+                  <span className="text-muted-foreground">ARR</span>
+                  <span className="font-semibold text-foreground">{arrivalsDepartures.arrivals}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">เช็คอินวันที่ {fmtThaiDate(visibleCenterDate)}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 cursor-default">
+                  <LogOut size={11} className="text-warning shrink-0" />
+                  <span className="text-muted-foreground">DEP</span>
+                  <span className="font-semibold text-foreground">{arrivalsDepartures.departures}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">เช็คเอาท์วันที่ {fmtThaiDate(visibleCenterDate)}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 cursor-default">
+                  <span className={cn(
+                    'w-1.5 h-1.5 rounded-full shrink-0',
+                    kpiTotals.available === 0 ? 'bg-destructive' : 'bg-success',
+                  )} />
+                  <span className="text-muted-foreground">AVL</span>
+                  <span className="font-semibold text-foreground">
+                    {availLoading ? '…' : kpiTotals.available}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">ห้องว่าง ({fmtThaiDate(visibleCenterDate)})</TooltipContent>
+            </Tooltip>
+          </div>
+
+          <Separator orientation="vertical" className="h-5 hidden sm:block" />
+
+          {/* ── Actions ─────────────────────────────────────────────── */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate(ROUTES.bookings.new)}
-            className="h-7 px-2.5 text-[11px] gap-1 hidden sm:flex"
+            className="h-7 px-2 text-[11px] gap-1 hidden sm:flex"
           >
             <CalendarPlus size={12} />
             จอง
@@ -703,14 +849,6 @@ export default function TimelinePage() {
 
           {/* Timeline area — flex-1 shrinks when drawer opens */}
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-
-            {/* KPI Bar — compact 40px */}
-            <KPIBar
-              roomTypes={roomAvailability}
-              selectedRoomTypeId={selectedRoomTypeId}
-              onSelectRoomType={handleRoomTypeSelect}
-              isLoading={availLoading}
-            />
 
             {/* Timeline grid — ALWAYS mounted for infinite scroll hook */}
             <div ref={scrollContainerRef} className="flex-1 overflow-auto">
@@ -829,7 +967,7 @@ export default function TimelinePage() {
                               windowEnd={windowEnd}
                               rowHeight={virtualRow.size}
                               onSelectBooking={handleSelectBooking}
-                              onEmptyCellClick={handleEmptyCellClick}
+
                               isEven={virtualRow.index % 2 === 0}
                               bookingColorMap={bookingColorMap}
                               bookingRoomCountMap={bookingRoomCountMap}

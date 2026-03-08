@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { addDays, format } from 'date-fns'
 import type { TimelineRoom } from '../../types'
-import { TIMELINE_CELL_WIDTH_PX, TIMELINE_ROOM_COL_PX } from './tokens'
+import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from './tokens'
 
 /** Minimum pointer movement (px) before a draw activates. */
 const DRAW_THRESHOLD_PX = 8
@@ -64,7 +64,7 @@ export function useTimelineDraw({
       if (!el) return 0
       const rect = el.getBoundingClientRect()
       const relX = clientX - rect.left - TIMELINE_ROOM_COL_PX + el.scrollLeft
-      return Math.max(0, Math.min(Math.floor(relX / TIMELINE_CELL_WIDTH_PX), windowDays - 1))
+      return Math.max(0, Math.min(Math.floor(relX / getCellWidthPx()), windowDays - 1))
     },
     [scrollContainerRef, windowDays],
   )
@@ -136,9 +136,9 @@ export function useTimelineDraw({
       const roomHeight = getRoomHeight(ref.roomId)
       if (roomTop !== undefined) {
         setDrawPreview({
-          left: TIMELINE_ROOM_COL_PX + minDay * TIMELINE_CELL_WIDTH_PX,
+          left: TIMELINE_ROOM_COL_PX + minDay * getCellWidthPx(),
           top: roomTop,
-          width: (maxDay - minDay + 1) * TIMELINE_CELL_WIDTH_PX,
+          width: (maxDay - minDay + 1) * getCellWidthPx(),
           height: roomHeight,
         })
       }

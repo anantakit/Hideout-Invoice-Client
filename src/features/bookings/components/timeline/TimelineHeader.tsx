@@ -1,74 +1,118 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { isToday, isSaturday, isSunday } from 'date-fns'
 import { cn } from '@/shared/utils'
 
 const THAI_DAYS_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
+const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+]
+
+interface MonthSpan {
+  key: string
+  label: string
+  colSpan: number
+}
 
 interface TimelineHeaderProps {
-  /** Memoized array of 7 Date objects for the current window. */
+  /** Memoized array of Date objects for the current buffer. */
   days: Date[]
 }
 
 const TimelineHeader = React.memo(function TimelineHeader({ days }: TimelineHeaderProps) {
-  return (
-    <div className="flex sticky top-0 z-30 bg-sidebar border-b border-border-soft shadow-card">
-      {/* Room-label column spacer — matches RoomRow's sticky column width */}
-      <div
-        className="sticky left-0 z-40 bg-sidebar border-r border-border-soft flex-shrink-0"
-        style={{
-          width: 'var(--timeline-room-col-width)',
-          minWidth: 'var(--timeline-room-col-width)',
-          height: 'var(--timeline-row-height)',
-        }}
-      />
+  // Group consecutive days by month for the top row
+  const monthSpans = useMemo<MonthSpan[]>(() => {
+    const spans: MonthSpan[] = []
+    for (const day of days) {
+      const key = `${day.getFullYear()}-${day.getMonth()}`
+      const label = `${THAI_MONTHS_SHORT[day.getMonth()]} ${day.getFullYear() + 543}`
+      const last = spans[spans.length - 1]
+      if (last?.key === key) {
+        last.colSpan++
+      } else {
+        spans.push({ key, label, colSpan: 1 })
+      }
+    }
+    return spans
+  }, [days])
 
-      {/* Date columns */}
-      {days.map((day) => {
-        const today = isToday(day)
-        const isWeekend = isSaturday(day) || isSunday(day)
-        return (
+  return (
+    <div className="sticky top-0 z-30 bg-sidebar border-b border-border-soft shadow-card">
+      {/* ── Month grouping row (compact 20px) ─────────────────────────── */}
+      <div className="flex" style={{ height: '20px' }}>
+        {/* Room-label spacer */}
+        <div
+          className="sticky left-0 z-40 bg-sidebar border-r border-border-soft flex-shrink-0"
+          style={{
+            width: 'var(--timeline-room-col-width)',
+            minWidth: 'var(--timeline-room-col-width)',
+          }}
+        />
+        {monthSpans.map((span) => (
           <div
-            key={day.toISOString()}
-            className={cn(
-              'flex flex-col items-center justify-center gap-0.5 flex-shrink-0 border-r border-timeline-grid/40',
-              today ? 'bg-primary/10 border-b-2 border-b-timeline-today/50' : isWeekend && 'bg-muted/30',
-            )}
-            style={{
-              width: 'var(--timeline-cell-width)',
-              height: 'var(--timeline-row-height)',
-            }}
+            key={span.key}
+            className="flex items-center px-2 border-r border-timeline-grid/30 flex-shrink-0 overflow-hidden"
+            style={{ width: `calc(${span.colSpan} * var(--timeline-cell-width))` }}
           >
-            {/* Day of week */}
-            <span
-              className={cn(
-                'text-xs font-medium leading-none',
-                today
-                  ? 'text-accent-foreground'
-                  : isWeekend
-                    ? 'text-muted-foreground/80'
-                    : 'text-muted-foreground',
-              )}
-            >
-              {THAI_DAYS_SHORT[day.getDay()]}
+            <span className="text-[10px] font-medium text-muted-foreground/70 truncate leading-none">
+              {span.label}
             </span>
-            {/* Day number */}
-            <span
-              className={cn(
-                'text-sm font-semibold leading-none',
-                today ? 'text-foreground' : 'text-foreground/70',
-              )}
-            >
-              {day.getDate()}
-            </span>
-            {/* "วันนี้" indicator */}
-            {today && (
-              <span className="text-[8px] font-medium text-accent-foreground/70 leading-none">
-                วันนี้
-              </span>
-            )}
           </div>
-        )
-      })}
+        ))}
+      </div>
+
+      {/* ── Day columns row (36px) ────────────────────────────────────── */}
+      <div className="flex" style={{ height: '36px' }}>
+        {/* Room-label column spacer */}
+        <div
+          className="sticky left-0 z-40 bg-sidebar border-r border-border-soft flex-shrink-0"
+          style={{
+            width: 'var(--timeline-room-col-width)',
+            minWidth: 'var(--timeline-room-col-width)',
+          }}
+        />
+
+        {/* Date columns */}
+        {days.map((day) => {
+          const today = isToday(day)
+          const isWeekend = isSaturday(day) || isSunday(day)
+          return (
+            <div
+              key={day.toISOString()}
+              className={cn(
+                'flex flex-col items-center justify-center gap-0 flex-shrink-0 border-r border-timeline-grid/40',
+                today
+                  ? 'bg-primary/10 border-b-2 border-b-timeline-today/50'
+                  : isWeekend && 'bg-muted/30',
+              )}
+              style={{ width: 'var(--timeline-cell-width)' }}
+            >
+              {/* Day of week */}
+              <span
+                className={cn(
+                  'text-[10px] font-medium leading-none',
+                  today
+                    ? 'text-accent-foreground'
+                    : isWeekend
+                      ? 'text-muted-foreground/80'
+                      : 'text-muted-foreground',
+                )}
+              >
+                {THAI_DAYS_SHORT[day.getDay()]}
+              </span>
+              {/* Day number */}
+              <span
+                className={cn(
+                  'text-sm font-semibold leading-tight',
+                  today ? 'text-foreground' : 'text-foreground/70',
+                )}
+              >
+                {day.getDate()}
+              </span>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 })
