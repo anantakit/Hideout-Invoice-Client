@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './providers/AuthProvider'
 import ProtectedRoute from '../shared/components/ProtectedRoute'
 import Layout from '../shared/components/Layout'
+import ErrorPage from '../shared/components/ErrorPage'
 import Login from '../features/auth/pages/LoginPage'
 import ChangePassword from '../features/auth/pages/ChangePasswordPage'
 
@@ -74,6 +75,9 @@ export default function App() {
                 }
               />
             </Route>
+
+            {/* 404 catch-all */}
+            <Route path="*" element={<ErrorPage variant="not-found" />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

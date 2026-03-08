@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { ChevronLeft, Download, Trash2, Loader2 } from 'lucide-react'
 import { receiptsApi } from '../api'
+import ErrorPage from '@/shared/components/ErrorPage'
 import { formatTHB, formatThaiDate } from '../../../shared/utils'
 import { Card, CardContent, CardHeader } from '../../../shared/ui/card'
 import { BottomBar } from '../../../shared/ui/BottomBar'
@@ -72,12 +73,11 @@ export default function ReceiptDetail() {
 
   if (error || !receipt) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-muted-foreground mb-4">ไม่พบใบเสร็จ</p>
-        <Button variant="outline" asChild>
-          <Link to="/receipts">กลับไปรายการใบเสร็จ</Link>
-        </Button>
-      </div>
+      <ErrorPage
+        variant="error"
+        title="ไม่พบใบเสร็จ"
+        description="ใบเสร็จนี้อาจถูกลบไปแล้ว หรือเกิดข้อผิดพลาดในการโหลดข้อมูล"
+      />
     )
   }
 

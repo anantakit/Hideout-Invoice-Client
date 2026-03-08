@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ChevronRight, AlertCircle, CalendarX, X } from 'lucide-react'
+import { Plus, Search, ChevronRight, CalendarX, X } from 'lucide-react'
 import { formatThaiDate } from '../../../shared/utils'
+import ErrorPanel from '../../../shared/components/ErrorPanel'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import { useBookings } from '../hooks'
 import { Badge } from '../../../shared/ui/badge'
@@ -350,16 +351,10 @@ function LoadingState() {
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-24 gap-4 text-center px-4">
-      <AlertCircle className="w-10 h-10 text-destructive/60" />
-      <div>
-        <p className="font-medium">โหลดข้อมูลไม่สำเร็จ</p>
-        <p className="text-helper mt-1">กรุณาตรวจสอบการเชื่อมต่อและลองใหม่</p>
-      </div>
-      <Button variant="outline" onClick={onRetry}>
-        ลองอีกครั้ง
-      </Button>
-    </div>
+    <ErrorPanel
+      message="โหลดข้อมูลการจองไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ"
+      onRetry={onRetry}
+    />
   )
 }
 

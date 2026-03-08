@@ -5,6 +5,7 @@ import { Badge, type BadgeProps } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import { useTodayOperations } from '../hooks/useTodayOperations'
+import ErrorPanel from '@/shared/components/ErrorPanel'
 import { ROUTES } from '@/app/routes'
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
@@ -64,14 +65,7 @@ export default function TodayBoardPage() {
     return (
       <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-4">
         <PageHeader />
-        <Card>
-          <CardContent className="py-12 flex flex-col items-center gap-4 text-center">
-            <p className="text-sm text-destructive">{error}</p>
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
-              ลองใหม่
-            </Button>
-          </CardContent>
-        </Card>
+        <ErrorPanel message={error} onRetry={() => refetch()} />
       </div>
     )
   }

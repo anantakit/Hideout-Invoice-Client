@@ -8,6 +8,7 @@ import { Button } from '@/shared/ui/button'
 import { TooltipProvider } from '@/shared/ui/tooltip'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
+import ErrorPanel from '@/shared/components/ErrorPanel'
 import { useTimeline, useAvailabilityGrouped, useMoveStay } from '../hooks'
 import type { TimelineBooking } from '../types'
 import TimelineHeader from '../components/timeline/TimelineHeader'
@@ -721,9 +722,10 @@ export default function TimelinePage() {
               {/* Error state */}
               {isError && !isLoading && (
                 <div className="flex items-center justify-center py-20 px-6">
-                  <p className="text-body text-destructive text-center">
-                    โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่
-                  </p>
+                  <ErrorPanel
+                    message="โหลดข้อมูลไทม์ไลน์ไม่สำเร็จ"
+                    onRetry={() => window.location.reload()}
+                  />
                 </div>
               )}
 

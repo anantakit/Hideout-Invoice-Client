@@ -21,6 +21,7 @@ import {
 } from '../../../shared/ui/alert-dialog'
 import { formatThaiDate } from '../../../shared/utils'
 import { ROUTES } from '@/app/routes'
+import ErrorPage from '@/shared/components/ErrorPage'
 import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useCheckoutRooms, useAvailabilityGrouped } from '../hooks'
 import { PaymentPanel } from '../components/PaymentPanel'
 import { type RoomStayResponse, getStatusLabel } from '../types'
@@ -198,17 +199,11 @@ export default function BookingDetailPage() {
 
   if (isError || !booking || !bd) {
     return (
-      <div className="max-w-2xl mx-auto px-4 pt-6 space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/bookings')}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          กลับ
-        </Button>
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            ไม่พบข้อมูลการจอง
-          </CardContent>
-        </Card>
-      </div>
+      <ErrorPage
+        variant="error"
+        title="ไม่พบข้อมูลการจอง"
+        description="รายการจองนี้อาจถูกลบไปแล้ว หรือเกิดข้อผิดพลาดในการโหลดข้อมูล"
+      />
     )
   }
 

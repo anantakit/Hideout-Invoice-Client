@@ -17,6 +17,7 @@ import {
 } from '@/shared/ui/select'
 import { Separator } from '@/shared/ui/separator'
 import { ROUTES } from '@/app/routes'
+import ErrorPage from '@/shared/components/ErrorPage'
 import { useBooking, useCheckInRooms, useAvailabilityGrouped } from '../hooks'
 import { type RoomStayResponse, getStatusLabel } from '../types'
 
@@ -257,12 +258,11 @@ export default function GroupCheckInPage() {
   // ── Error ────────────────────────────────────────────────────────────────────
   if (isError || !booking) {
     return (
-      <div className="space-y-4 p-6">
-        <p className="text-sm text-destructive">ไม่พบข้อมูลการจอง</p>
-        <Button variant="outline" size="sm" asChild>
-          <Link to={ROUTES.bookings.list}>กลับรายการจอง</Link>
-        </Button>
-      </div>
+      <ErrorPage
+        variant="error"
+        title="ไม่พบข้อมูลการจอง"
+        description="ไม่สามารถโหลดข้อมูลการจองได้ กรุณาลองใหม่"
+      />
     )
   }
 
