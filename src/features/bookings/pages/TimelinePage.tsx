@@ -1,23 +1,36 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useRef, useSyncExternalStore } from 'react'
 import { addDays, subDays, format, startOfDay } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { ChevronLeft, ChevronRight, CalendarPlus, Footprints, Headset, Globe } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  CalendarPlus,
+  CalendarIcon,
+  PanelRight,
+} from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { TooltipProvider } from '@/shared/ui/tooltip'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
+import { Calendar } from '@/shared/ui/calendar'
 import toast from 'react-hot-toast'
 import { useTimeline, useAvailabilityGrouped, useMoveStay } from '../hooks'
 import type { TimelineBooking } from '../types'
-import type { SelectedBookingContext } from '../components/timeline/BookingBottomSheet'
 import TimelineHeader from '../components/timeline/TimelineHeader'
 import RoomRow from '../components/timeline/RoomRow'
 import BookingBottomSheet from '../components/timeline/BookingBottomSheet'
+import type { SelectedBookingContext } from '../components/timeline/BookingBottomSheet'
 import DragPreview from '../components/timeline/DragPreview'
-import { AvailabilitySummary } from '../components/timeline/AvailabilitySummary'
+import { KPIBar } from '../components/timeline/KPIBar'
 import type { RoomAvailability } from '../components/timeline/AvailabilitySummary'
-import { PendingAssignmentsPanel } from '../components/timeline/PendingAssignmentsPanel'
-import { DesktopOperationsPanel } from '../components/timeline/DesktopOperationsPanel'
+import { OperationsDrawer, type DrawerMode } from '../components/timeline/OperationsDrawer'
 import { MobileTimelineList } from '../components/timeline/MobileTimelineList'
 import {
   TIMELINE_ROW_HEIGHT_PX,
@@ -26,6 +39,7 @@ import {
   computeRowHeight,
 } from '../components/timeline/tokens'
 import { computeRoomLayout } from '../components/timeline/bookingLayout'
+import { useInfiniteTimeline } from '../components/timeline/useInfiniteTimeline'
 import { useTimelineDrag } from '../components/timeline/useTimelineDrag'
 import { useTimelineDraw } from '../components/timeline/useTimelineDraw'
 import { useTimelineActions } from '../components/timeline/useTimelineActions'
@@ -41,15 +55,25 @@ import {
   AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
 
+// ─── MobileOnly — renders children only below md (768px) ─────────────────────
+
+const mdQuery = '(min-width: 768px)'
+const subscribe = (cb: () => void) => {
+  const mql = window.matchMedia(mdQuery)
+  mql.addEventListener('change', cb)
+  return () => mql.removeEventListener('change', cb)
+}
+const getSnapshot = () => !window.matchMedia(mdQuery).matches
+const getServerSnapshot = () => true
+
+function MobileOnly({ children }: { children: React.ReactNode }) {
+  const isMobile = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  if (!isMobile) return null
+  return <>{children}</>
+}
+
 // ─── Status-based booking colors ──────────────────────────────────────────────
 
-/**
- * Status-based booking palette — each booking block gets its color from its
- * stay status, not a random hash. This provides instant visual semantics:
- * blue = reserved, green = checked-in, gray = checked-out, etc.
- *
- * Uses design-system tokens (--bk-*) defined in index.css / tailwind.config.js.
- */
 const STATUS_COLOR_MAP: Record<string, string> = {
   CONFIRMED:             'bg-bk-reserved text-bk-reserved-foreground',
   RESERVED:              'bg-bk-reserved text-bk-reserved-foreground',
@@ -74,9 +98,14 @@ const THAI_MONTHS_SHORT = [
   'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
 ]
 
+const THAI_MONTHS_FULL = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+]
+
 function fmtThaiRange(start: Date, end: Date): string {
   const s = `${start.getDate()} ${THAI_MONTHS_SHORT[start.getMonth()]}`
-  const e = `${end.getDate()} ${THAI_MONTHS_SHORT[end.getMonth()]} ${(end.getFullYear() + 543).toString()}`
+  const e = `${end.getDate()} ${THAI_MONTHS_SHORT[end.getMonth()]}`
   return `${s} — ${e}`
 }
 
@@ -85,14 +114,32 @@ function fmtThaiRange(start: Date, end: Date): string {
 export default function TimelinePage() {
   const navigate = useNavigate()
 
-  // ── Window state ─────────────────────────────────────────────────────────
-  const [zoomDays, setZoomDays] = useState(TIMELINE_WINDOW_DAYS)
-  const [windowStart, setWindowStart] = useState<Date>(() =>
-    subDays(startOfDay(new Date()), Math.floor(TIMELINE_WINDOW_DAYS / 2)),
-  )
+  // ── Virtualisation ──────────────────────────────────────────────────────
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // ── Infinite timeline (replaces fixed window) ──────────────────────────
+  const {
+    bufferStart,
+    bufferEnd,
+    totalDays,
+    days,
+    fromStr,
+    toStr,
+    visibleStartDate,
+    visibleDays,
+    jumpToDate,
+    jumpToToday,
+    shiftBy,
+  } = useInfiniteTimeline({ scrollContainerRef })
 
   // ── Filter state ──────────────────────────────────────────────────────────
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string | null>(null)
+
+  // ── Operations drawer state ─────────────────────────────────────────────
+  const [drawerMode, setDrawerMode] = useState<DrawerMode>(null)
+
+  // ── Date picker state ───────────────────────────────────────────────────
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
 
   // ── Bottom-sheet state ────────────────────────────────────────────────────
   const [selectedBooking, setSelectedBooking] = useState<SelectedBookingContext | null>(null)
@@ -102,27 +149,22 @@ export default function TimelinePage() {
   const [cancelTarget, setCancelTarget] = useState<TimelineBooking | null>(null)
 
   // ── Mobile single-day offset (0–6 within window) ──────────────────────────
-  const [mobileDayOffset, setMobileDayOffset] = useState(3) // start on "today"
+  const [mobileDayOffset, setMobileDayOffset] = useState(3)
 
   // ── Derived date strings ──────────────────────────────────────────────────
-  const windowEnd = useMemo(
-    () => addDays(windowStart, zoomDays),
-    [windowStart, zoomDays],
-  )
+  // These alias the infinite timeline's buffer for backwards compat
+  const windowStart = bufferStart
+  const windowEnd   = bufferEnd
+  const zoomDays    = totalDays
 
-  const fromStr = useMemo(() => format(windowStart, 'yyyy-MM-dd'), [windowStart])
-  const toStr   = useMemo(() => format(windowEnd,   'yyyy-MM-dd'), [windowEnd])
-
-  const availTo = useMemo(
-    () => format(addDays(windowStart, 1), 'yyyy-MM-dd'),
-    [windowStart],
-  )
+  const availFrom = useMemo(() => format(startOfDay(new Date()), 'yyyy-MM-dd'), [])
+  const availTo   = useMemo(() => format(addDays(startOfDay(new Date()), 1), 'yyyy-MM-dd'), [])
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const { data: timelineData, isLoading, isError } = useTimeline(fromStr, toStr)
 
   const { data: availData, isLoading: availLoading } =
-    useAvailabilityGrouped(fromStr, availTo)
+    useAvailabilityGrouped(availFrom, availTo)
 
   // ── Move stay mutation ──────────────────────────────────────────────────
   const moveStayMutation = useMoveStay()
@@ -188,48 +230,66 @@ export default function TimelinePage() {
     return colors
   }, [allRooms])
 
-  // Precompute per-room layer count for dynamic row heights
   const roomLayerCountMap = useMemo<Record<string, number>>(() => {
     const map: Record<string, number> = {}
-    const wsStr = format(windowStart, 'yyyy-MM-dd')
-    const weStr = format(addDays(windowStart, zoomDays), 'yyyy-MM-dd')
     for (const room of allRooms) {
       if (room.bookings.length <= 1) {
         map[room.id] = room.bookings.length
       } else {
-        const layout = computeRoomLayout(room.bookings, wsStr, weStr)
+        const layout = computeRoomLayout(room.bookings, fromStr, toStr)
         map[room.id] = layout.totalLayers
       }
     }
     return map
-  }, [allRooms, windowStart, zoomDays])
+  }, [allRooms, fromStr, toStr])
 
-  const days = useMemo(
-    () => Array.from({ length: zoomDays }, (_, i) => addDays(windowStart, i)),
-    [windowStart, zoomDays],
+  // Mobile uses a fixed 7-day window anchored at today
+  const mobileWindowStart = useMemo(
+    () => subDays(startOfDay(new Date()), Math.floor(TIMELINE_WINDOW_DAYS / 2)),
+    [],
   )
-
+  const mobileDays = useMemo(
+    () => Array.from({ length: TIMELINE_WINDOW_DAYS }, (_, i) => addDays(mobileWindowStart, i)),
+    [mobileWindowStart],
+  )
   const mobileSelectedDateStr = useMemo(
-    () => format(addDays(windowStart, mobileDayOffset), 'yyyy-MM-dd'),
-    [windowStart, mobileDayOffset],
+    () => format(addDays(mobileWindowStart, mobileDayOffset), 'yyyy-MM-dd'),
+    [mobileWindowStart, mobileDayOffset],
   )
 
-  // Desktop operations panel uses today's date by default
   const todayStr = useMemo(() => format(startOfDay(new Date()), 'yyyy-MM-dd'), [])
 
+  // ── Month jump options ────────────────────────────────────────────────────
+  const monthOptions = useMemo(() => {
+    const now = new Date()
+    const result: { value: string; label: string }[] = []
+    for (let i = -2; i <= 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
+      result.push({
+        value: format(d, 'yyyy-MM-dd'),
+        label: `${THAI_MONTHS_FULL[d.getMonth()]} ${d.getFullYear() + 543}`,
+      })
+    }
+    return result
+  }, [])
+
   // ── Handlers ──────────────────────────────────────────────────────────────
-  const handlePrev = useCallback(() => {
-    setWindowStart((d) => subDays(d, zoomDays))
-    setMobileDayOffset(Math.floor(zoomDays / 2))
-  }, [zoomDays])
-  const handleNext = useCallback(() => {
-    setWindowStart((d) => addDays(d, zoomDays))
-    setMobileDayOffset(Math.floor(zoomDays / 2))
-  }, [zoomDays])
+  const handlePrev  = useCallback(() => shiftBy(-7), [shiftBy])
+  const handleNext  = useCallback(() => shiftBy(7), [shiftBy])
   const handleToday = useCallback(() => {
-    setWindowStart(subDays(startOfDay(new Date()), Math.floor(zoomDays / 2)))
-    setMobileDayOffset(Math.floor(zoomDays / 2))
-  }, [zoomDays])
+    jumpToToday()
+    setMobileDayOffset(Math.floor(TIMELINE_WINDOW_DAYS / 2))
+  }, [jumpToToday])
+
+  const handleJumpToDate = useCallback((date: Date) => {
+    jumpToDate(date)
+    setDatePickerOpen(false)
+  }, [jumpToDate])
+
+  const handleMonthJump = useCallback((isoDate: string) => {
+    const [y, m] = isoDate.split('-').map(Number)
+    jumpToDate(new Date(y, m - 1, 1))
+  }, [jumpToDate])
 
   const handleRoomTypeSelect     = useCallback((id: string | null) => setSelectedRoomTypeId(id), [])
   const handleSelectBooking      = useCallback((b: TimelineBooking, roomNumbers?: string[]) => {
@@ -237,8 +297,43 @@ export default function TimelinePage() {
       .filter((r) => r.bookings.some((bk) => bk.booking_id === b.booking_id))
       .map((r) => r.room_number)
     setSelectedBooking({ booking: b, roomNumbers: rooms })
+    // On desktop, open the push drawer in booking-detail mode
+    setDrawerMode('booking-detail')
   }, [allRooms])
-  const handleCloseSheet         = useCallback(() => setSelectedBooking(null as SelectedBookingContext | null), [])
+  const handleCloseSheet         = useCallback(() => {
+    setSelectedBooking(null as SelectedBookingContext | null)
+    // Close drawer if showing booking detail
+    setDrawerMode((prev) => prev === 'booking-detail' ? null : prev)
+  }, [])
+  const handleCloseDrawer        = useCallback(() => {
+    setDrawerMode(null)
+    // Clear selected booking when drawer closes
+    setSelectedBooking(null)
+  }, [])
+  const handleToggleOpsDrawer    = useCallback(() => {
+    setDrawerMode((prev) => prev === 'ops' ? null : 'ops')
+  }, [])
+  // Drawer quick actions — find roomId from booking data
+  const handleDrawerCheckIn = useCallback((b: TimelineBooking) => {
+    const room = allRooms.find((r) => r.bookings.some((bk) => bk.room_stay_id === b.room_stay_id))
+    if (!room) return
+    timelineActions.checkIn({
+      bookingId: b.booking_id,
+      roomStayId: b.room_stay_id,
+      roomId: room.id,
+    })
+    handleCloseDrawer()
+  }, [allRooms, timelineActions, handleCloseDrawer])
+  const handleDrawerCheckOut = useCallback((b: TimelineBooking) => {
+    timelineActions.checkOut({
+      bookingId: b.booking_id,
+      roomStayId: b.room_stay_id,
+    })
+    handleCloseDrawer()
+  }, [timelineActions, handleCloseDrawer])
+  const handleDoubleClickBooking = useCallback((b: TimelineBooking) => {
+    navigate(ROUTES.bookings.detail(b.booking_id))
+  }, [navigate])
   const handleEmptyCellClick     = useCallback((roomId: string, date: Date) => {
     const checkIn = format(date, 'yyyy-MM-dd')
     const roomTypeId = roomTypeIdByRoomId[roomId] ?? ''
@@ -301,8 +396,6 @@ export default function TimelinePage() {
   }, [cancelTarget, timelineActions])
 
   // ── Virtualisation ──────────────────────────────────────────────────────
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-
   const getRowHeight = useCallback(
     (index: number) => {
       const room = filteredRooms[index]
@@ -327,8 +420,6 @@ export default function TimelinePage() {
     (roomId: string): number | undefined => {
       const idx = filteredRooms.findIndex((r) => r.id === roomId)
       if (idx === -1) return undefined
-      // Compute cumulative height so this works for ALL rooms,
-      // not just ones currently visible in the virtualizer
       let top = 0
       for (let i = 0; i < idx; i++) top += getRowHeight(i)
       return top
@@ -446,338 +537,361 @@ export default function TimelinePage() {
       <div className="flex flex-col h-full overflow-hidden bg-background">
 
         {/* ════════════════════════════════════════════════════════════════
-            HEADER — shared between desktop and mobile
+            TOOLBAR — compact 48px bar with all navigation controls
             ════════════════════════════════════════════════════════════════ */}
-        <div className="shrink-0 bg-sidebar border-b border-border-soft px-4 py-2.5">
-          <div className="flex items-center justify-between">
-            <h1 className="text-section text-base">Timeline</h1>
+        <div className="h-12 shrink-0 flex items-center gap-1.5 px-3 border-b border-border-soft bg-sidebar">
 
-            <div className="flex items-center gap-2">
-              <span className="text-helper font-medium tabular-nums hidden sm:inline">
-                {fmtThaiRange(windowStart, subDays(windowEnd, 1))}
-              </span>
+          {/* Today button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleToday}
+            className="h-7 px-2.5 text-[11px]"
+          >
+            วันนี้
+          </Button>
 
-              <div className="flex items-center gap-0.5">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handlePrev}
-                  className="h-7 w-7"
-                  aria-label="สัปดาห์ก่อนหน้า"
-                >
-                  <ChevronLeft size={14} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToday}
-                  className="h-6 px-2.5 text-[11px]"
-                >
-                  วันนี้
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleNext}
-                  className="h-7 w-7"
-                  aria-label="สัปดาห์ถัดไป"
-                >
-                  <ChevronRight size={14} />
-                </Button>
-              </div>
+          {/* Prev / date range / next */}
+          <div className="flex items-center gap-0">
+            <Button variant="ghost" size="icon" onClick={handlePrev} className="h-7 w-7">
+              <ChevronLeft size={14} />
+            </Button>
 
-              {/* Zoom levels */}
-              <div className="hidden md:flex items-center gap-0.5 ml-2 border-l border-border pl-2">
-                {([3, 7, 14] as const).map((d) => (
-                  <Button
-                    key={d}
-                    variant={zoomDays === d ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => {
-                      setZoomDays(d)
-                      setWindowStart(subDays(startOfDay(new Date()), Math.floor(d / 2)))
-                    }}
-                    className="h-6 px-2 text-[11px]"
-                  >
-                    {d}D
-                  </Button>
-                ))}
-              </div>
+            {/* Clickable date range → opens date picker */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDatePickerOpen((v) => !v)}
+                className="h-7 px-2 text-[11px] font-medium tabular-nums gap-1"
+              >
+                <CalendarIcon size={12} className="text-muted-foreground" />
+                {fmtThaiRange(visibleStartDate, addDays(visibleStartDate, visibleDays - 1))}
+              </Button>
+
+              {/* Inline date picker dropdown */}
+              {datePickerOpen && (
+                <div className="absolute left-0 top-full mt-1 z-50 w-72 bg-card border border-border rounded-lg shadow-popover p-3">
+                  <Calendar
+                    pendingStart={windowStart}
+                    pendingEnd={null}
+                    hoveredDate={null}
+                    onDayClick={handleJumpToDate}
+                    onDayHover={() => {}}
+                    initialViewDate={visibleStartDate}
+                  />
+                </div>
+              )}
             </div>
+
+            <Button variant="ghost" size="icon" onClick={handleNext} className="h-7 w-7">
+              <ChevronRight size={14} />
+            </Button>
           </div>
-        </div>
 
-        {/* ════════════════════════════════════════════════════════════════
-            LOADING / ERROR
-            ════════════════════════════════════════════════════════════════ */}
-        {isLoading && (
-          <div className="flex-1 overflow-hidden">
-            {/* Skeleton header */}
-            <div className="flex border-b border-border-soft bg-sidebar">
-              <div
-                className="flex-shrink-0 border-r border-border-soft"
-                style={{ width: 'var(--timeline-room-col-width)' }}
-              />
-              {Array.from({ length: zoomDays }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex flex-col items-center justify-center gap-1 flex-shrink-0 border-r border-border-soft py-2"
-                  style={{ width: 'var(--timeline-cell-width)' }}
-                >
-                  <div className="w-6 h-3 bg-muted rounded animate-pulse" />
-                  <div className="w-4 h-4 bg-muted rounded animate-pulse" />
-                </div>
-              ))}
-            </div>
-            {/* Skeleton rows */}
-            {Array.from({ length: 8 }).map((_, rowIdx) => (
-              <div key={rowIdx} className="flex border-b border-border-soft" style={{ height: 'var(--timeline-row-height)' }}>
-                <div
-                  className="flex-shrink-0 border-r border-border-soft flex items-center gap-2 px-3"
-                  style={{ width: 'var(--timeline-room-col-width)' }}
-                >
-                  <div className="w-2 h-2 rounded-full bg-muted animate-pulse" />
-                  <div className="flex flex-col gap-1">
-                    <div className="w-8 h-3 bg-muted rounded animate-pulse" />
-                    <div className="w-14 h-2 bg-muted rounded animate-pulse" />
-                  </div>
-                </div>
-                <div className="flex-1 flex items-center px-1">
-                  {rowIdx % 3 !== 2 && (
-                    <div
-                      className="h-[40px] bg-muted/60 rounded-lg animate-pulse"
-                      style={{
-                        width: `calc(${(rowIdx % 3) + 2} * var(--timeline-cell-width) - 8px)`,
-                        marginLeft: `calc(${rowIdx % 4} * var(--timeline-cell-width) + 4px)`,
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
+          {/* Month jump dropdown */}
+          <div className="hidden md:block">
+            <Select
+              value=""
+              onValueChange={handleMonthJump}
+            >
+              <SelectTrigger className="h-7 w-[130px] text-[11px] border-border-soft">
+                <SelectValue placeholder="ข้ามไปเดือน..." />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Separator */}
+          <span className="hidden md:block w-px h-5 bg-border-soft mx-1" />
+
+          {/* Quick jump presets */}
+          <div className="hidden md:flex items-center gap-0.5">
+            {([
+              { label: '-7d', days: -7 },
+              { label: '+7d', days: 7 },
+              { label: '+14d', days: 14 },
+            ] as const).map((preset) => (
+              <Button
+                key={preset.label}
+                variant="ghost"
+                size="sm"
+                onClick={() => shiftBy(preset.days)}
+                className="h-6 px-1.5 text-[11px]"
+              >
+                {preset.label}
+              </Button>
             ))}
           </div>
-        )}
 
-        {isError && !isLoading && (
-          <div className="flex-1 flex items-center justify-center px-6">
-            <p className="text-body text-destructive text-center">
-              โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่
-            </p>
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Right actions */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(ROUTES.bookings.new)}
+            className="h-7 px-2.5 text-[11px] gap-1 hidden sm:flex"
+          >
+            <CalendarPlus size={12} />
+            จอง
+          </Button>
+
+          <Button
+            variant={drawerMode === 'ops' ? 'default' : 'ghost'}
+            size="icon"
+            onClick={handleToggleOpsDrawer}
+            className="h-7 w-7"
+            aria-label="เปิดแผงปฏิบัติการ"
+          >
+            <PanelRight size={14} />
+          </Button>
+        </div>
+
+        {/* ── Mobile: day selector + MobileTimelineList (< md) ────── */}
+        {!isLoading && !isError && (
+          <div className="md:hidden flex flex-col flex-1 overflow-hidden">
+            <div className="shrink-0 flex border-b border-border-soft bg-sidebar overflow-x-auto">
+              {mobileDays.map((day, i) => {
+                const isActive = i === mobileDayOffset
+                return (
+                  <button
+                    key={day.toISOString()}
+                    type="button"
+                    onClick={() => setMobileDayOffset(i)}
+                    className={`flex-1 min-w-[3rem] flex flex-col items-center py-2 gap-0.5 text-center transition-colors ${
+                      isActive
+                        ? 'date-selected'
+                        : 'text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <span className="text-[10px] font-medium leading-none">
+                      {['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'][day.getDay()]}
+                    </span>
+                    <span className="text-sm font-semibold leading-none">
+                      {format(day, 'd')}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <MobileTimelineList
+              rooms={filteredRooms}
+              selectedDateStr={mobileSelectedDateStr}
+              bookingColorMap={bookingColorMap}
+              roomTypeNameMap={roomTypeNameByRoomId}
+              unassignedStays={unassignedStays}
+              onSelectBooking={handleSelectBooking}
+            />
           </div>
         )}
 
         {/* ════════════════════════════════════════════════════════════════
-            MAIN CONTENT
+            DESKTOP: Timeline + Push Drawer (>= md)
+            The scroll container ALWAYS renders so useInfiniteTimeline
+            can attach its scroll listener on mount.
             ════════════════════════════════════════════════════════════════ */}
-        {!isLoading && !isError && (
-          <>
-            {/* ── Mobile: day selector + MobileTimelineList (< md) ────── */}
-            <div className="md:hidden flex flex-col flex-1 overflow-hidden">
-              {/* Day picker tabs */}
-              <div className="shrink-0 flex border-b border-border-soft bg-sidebar overflow-x-auto">
-                {days.map((day, i) => {
-                  const isActive = i === mobileDayOffset
-                  return (
-                    <button
-                      key={day.toISOString()}
-                      type="button"
-                      onClick={() => setMobileDayOffset(i)}
-                      className={`flex-1 min-w-[3rem] flex flex-col items-center py-2 gap-0.5 text-center transition-colors ${
-                        isActive
-                          ? 'date-selected'
-                          : 'text-muted-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <span className="text-[10px] font-medium leading-none">
-                        {['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'][day.getDay()]}
-                      </span>
-                      <span className="text-sm font-semibold leading-none">
-                        {format(day, 'd')}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
+        <div className="hidden md:flex flex-1 overflow-hidden">
 
-              {/* Mobile card list */}
-              <MobileTimelineList
-                rooms={filteredRooms}
-                selectedDateStr={mobileSelectedDateStr}
-                bookingColorMap={bookingColorMap}
-                roomTypeNameMap={roomTypeNameByRoomId}
-                unassignedStays={unassignedStays}
-                onSelectBooking={handleSelectBooking}
-              />
-            </div>
+          {/* Timeline area — flex-1 shrinks when drawer opens */}
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-            {/* ── Desktop: Operations panel + Timeline grid (>= md) ───── */}
-            <div className="hidden md:flex flex-1 overflow-hidden">
+            {/* KPI Bar — compact 40px */}
+            <KPIBar
+              roomTypes={roomAvailability}
+              selectedRoomTypeId={selectedRoomTypeId}
+              onSelectRoomType={handleRoomTypeSelect}
+              isLoading={availLoading}
+            />
 
-              {/* Left: Operations Panel */}
-              <div
-                className="shrink-0 border-r border-border-soft bg-card overflow-hidden"
-                style={{ width: 'var(--timeline-ops-panel-width)' }}
-              >
-                <DesktopOperationsPanel
-                  rooms={allRooms}
-                  selectedDateStr={todayStr}
-                  roomTypeNameMap={roomTypeNameByRoomId}
-                  unassignedStays={unassignedStays}
-                />
-              </div>
+            {/* Timeline grid — ALWAYS mounted for infinite scroll hook */}
+            <div ref={scrollContainerRef} className="flex-1 overflow-auto">
 
-              {/* Right: Timeline grid */}
-              <div className="flex-1 flex flex-col overflow-hidden">
-
-                {/* Availability summary (room type filter) */}
-                <AvailabilitySummary
-                  date={windowStart}
-                  roomTypes={roomAvailability}
-                  selectedRoomTypeId={selectedRoomTypeId}
-                  onSelect={handleRoomTypeSelect}
-                  isLoading={availLoading}
-                />
-
-                {/* Status color legend + source icons */}
-                <div className="shrink-0 flex items-center gap-5 px-4 py-1.5 border-b border-border-soft bg-sidebar">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-2 rounded-sm bg-bk-reserved" />
-                    <span className="text-[10px] text-muted-foreground">จอง</span>
+              {/* Loading skeleton */}
+              {isLoading && (
+                <div>
+                  <div className="h-10 flex items-center px-3 border-b border-border-soft bg-card/50">
+                    <div className="w-48 h-4 bg-muted rounded animate-pulse" />
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-2 rounded-sm bg-bk-checked-in" />
-                    <span className="text-[10px] text-muted-foreground">เข้าพัก</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-2 rounded-sm bg-bk-checked-out opacity-45" />
-                    <span className="text-[10px] text-muted-foreground">เช็คเอาท์</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-2 rounded-sm border border-dashed border-bk-cancelled/50 opacity-50" />
-                    <span className="text-[10px] text-muted-foreground">ยกเลิก</span>
-                  </div>
-                  <span className="w-px h-3 bg-border-soft" />
-                  <div className="flex items-center gap-1.5">
-                    <Footprints className="w-3 h-3 text-muted-foreground/60" />
-                    <span className="text-[10px] text-muted-foreground/60">Walk-in</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Headset className="w-3 h-3 text-muted-foreground/60" />
-                    <span className="text-[10px] text-muted-foreground/60">Staff</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Globe className="w-3 h-3 text-muted-foreground/60" />
-                    <span className="text-[10px] text-muted-foreground/60">Online</span>
-                  </div>
-                </div>
-
-                {/* Pending assignments (collapsible) */}
-                <PendingAssignmentsPanel stays={unassignedStays} />
-
-                {/* Timeline grid with virtualisation */}
-                <div ref={scrollContainerRef} className="flex-1 overflow-auto">
-                  <div
-                    style={{
-                      minWidth:
-                        `calc(var(--timeline-room-col-width) + ${zoomDays} * var(--timeline-cell-width))`,
-                    }}
-                  >
-                    <TimelineHeader days={days} />
-
-                    {filteredRooms.length === 0 && (
-                      <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <p className="text-body text-muted-foreground">
-                          {selectedRoomTypeId ? 'ไม่พบห้องสำหรับประเภทนี้' : 'ไม่มีการจองในช่วงเวลานี้'}
-                        </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(ROUTES.bookings.new)}
-                          className="gap-1.5"
-                        >
-                          <CalendarPlus size={14} />
-                          สร้างการจอง
-                        </Button>
-                      </div>
-                    )}
-
-                    {filteredRooms.length > 0 && (
+                  <div className="flex border-b border-border-soft bg-sidebar">
+                    <div
+                      className="flex-shrink-0 border-r border-border-soft"
+                      style={{ width: 'var(--timeline-room-col-width)' }}
+                    />
+                    {Array.from({ length: 10 }).map((_, i) => (
                       <div
-                        ref={gridContainerRef}
-                        style={{
-                          height:   rowVirtualizer.getTotalSize(),
-                          position: 'relative',
-                        }}
+                        key={i}
+                        className="flex flex-col items-center justify-center gap-1 flex-shrink-0 border-r border-border-soft py-2"
+                        style={{ width: 'var(--timeline-cell-width)' }}
                       >
-                        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                          const room = filteredRooms[virtualRow.index]
-                          return (
-                            <div
-                              key={room.id}
-                              style={{
-                                position: 'absolute',
-                                top:    virtualRow.start,
-                                left:   0,
-                                right:  0,
-                                height: virtualRow.size,
-                              }}
-                            >
-                              <RoomRow
-                                room={room}
-                                roomTypeName={roomTypeNameByRoomId[room.id]}
-                                windowStart={windowStart}
-                                windowEnd={windowEnd}
-                                rowHeight={virtualRow.size}
-                                onSelectBooking={handleSelectBooking}
-                                onEmptyCellClick={handleEmptyCellClick}
-                                isEven={virtualRow.index % 2 === 0}
-                                bookingColorMap={bookingColorMap}
-                                bookingRoomCountMap={bookingRoomCountMap}
-                                onDragStart={handleDragStart}
-                                dragState={dragState}
-                                onContextMenu={handleOpenContextMenu}
-                                windowDays={zoomDays}
-                                onKeyboardMove={handleKeyboardMove}
-                                onKeyboardResize={handleKeyboardResize}
-                                onQuickCheckIn={handleQuickCheckIn}
-                                onQuickCheckOut={handleQuickCheckOut}
-                                onDrawStart={handleDrawStart}
-                              />
-                            </div>
-                          )
-                        })}
-
-                        {/* Drag preview overlay */}
-                        {isDragging && dragState && previewPos && (
-                          <DragPreview
-                            dragState={dragState}
-                            position={previewPos}
-                          />
-                        )}
-
-                        {/* Draw-to-create preview */}
-                        {drawPreview && (
+                        <div className="w-6 h-3 bg-muted rounded animate-pulse" />
+                        <div className="w-4 h-4 bg-muted rounded animate-pulse" />
+                      </div>
+                    ))}
+                  </div>
+                  {Array.from({ length: 8 }).map((_, rowIdx) => (
+                    <div key={rowIdx} className="flex border-b border-border-soft" style={{ height: 'var(--timeline-row-height)' }}>
+                      <div
+                        className="flex-shrink-0 border-r border-border-soft flex items-center gap-2 px-3"
+                        style={{ width: 'var(--timeline-room-col-width)' }}
+                      >
+                        <div className="w-2 h-2 rounded-full bg-muted animate-pulse" />
+                        <div className="flex flex-col gap-1">
+                          <div className="w-8 h-3 bg-muted rounded animate-pulse" />
+                          <div className="w-14 h-2 bg-muted rounded animate-pulse" />
+                        </div>
+                      </div>
+                      <div className="flex-1 flex items-center px-1">
+                        {rowIdx % 3 !== 2 && (
                           <div
-                            className="absolute pointer-events-none z-30 rounded-lg border-2 border-dashed border-primary/50 bg-primary/10 transition-[left,width] duration-75 ease-out"
+                            className="h-[40px] bg-muted/60 rounded-lg animate-pulse"
                             style={{
-                              left: `${drawPreview.left}px`,
-                              top: `${drawPreview.top}px`,
-                              width: `${drawPreview.width}px`,
-                              height: `${drawPreview.height}px`,
+                              width: `calc(${(rowIdx % 3) + 2} * var(--timeline-cell-width) - 8px)`,
+                              marginLeft: `calc(${rowIdx % 4} * var(--timeline-cell-width) + 4px)`,
                             }}
                           />
                         )}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </div>
-          </>
-        )}
+              )}
 
-        {/* Booking detail bottom sheet */}
-        <BookingBottomSheet selected={selectedBooking} onClose={handleCloseSheet} />
+              {/* Error state */}
+              {isError && !isLoading && (
+                <div className="flex items-center justify-center py-20 px-6">
+                  <p className="text-body text-destructive text-center">
+                    โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่
+                  </p>
+                </div>
+              )}
+
+              {/* Timeline content */}
+              {!isLoading && !isError && (
+                <div
+                  style={{
+                    minWidth:
+                      `calc(var(--timeline-room-col-width) + ${zoomDays} * var(--timeline-cell-width))`,
+                  }}
+                >
+                  <TimelineHeader days={days} />
+
+                  {filteredRooms.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 gap-3">
+                      <p className="text-body text-muted-foreground">
+                        {selectedRoomTypeId ? 'ไม่พบห้องสำหรับประเภทนี้' : 'ไม่มีการจองในช่วงเวลานี้'}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(ROUTES.bookings.new)}
+                        className="gap-1.5"
+                      >
+                        <CalendarPlus size={14} />
+                        สร้างการจอง
+                      </Button>
+                    </div>
+                  )}
+
+                  {filteredRooms.length > 0 && (
+                    <div
+                      ref={gridContainerRef}
+                      style={{
+                        height:   rowVirtualizer.getTotalSize(),
+                        position: 'relative',
+                      }}
+                    >
+                      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                        const room = filteredRooms[virtualRow.index]
+                        return (
+                          <div
+                            key={room.id}
+                            style={{
+                              position: 'absolute',
+                              top:    virtualRow.start,
+                              left:   0,
+                              right:  0,
+                              height: virtualRow.size,
+                            }}
+                          >
+                            <RoomRow
+                              room={room}
+                              roomTypeName={roomTypeNameByRoomId[room.id]}
+                              windowStart={windowStart}
+                              windowEnd={windowEnd}
+                              rowHeight={virtualRow.size}
+                              onSelectBooking={handleSelectBooking}
+                              onEmptyCellClick={handleEmptyCellClick}
+                              isEven={virtualRow.index % 2 === 0}
+                              bookingColorMap={bookingColorMap}
+                              bookingRoomCountMap={bookingRoomCountMap}
+                              onDragStart={handleDragStart}
+                              dragState={dragState}
+                              onContextMenu={handleOpenContextMenu}
+                              windowDays={zoomDays}
+                              onKeyboardMove={handleKeyboardMove}
+                              onKeyboardResize={handleKeyboardResize}
+                              onDoubleClickBooking={handleDoubleClickBooking}
+                              onQuickCheckIn={handleQuickCheckIn}
+                              onQuickCheckOut={handleQuickCheckOut}
+                              onDrawStart={handleDrawStart}
+                            />
+                          </div>
+                        )
+                      })}
+
+                      {isDragging && dragState && previewPos && (
+                        <DragPreview
+                          dragState={dragState}
+                          position={previewPos}
+                        />
+                      )}
+
+                      {drawPreview && (
+                        <div
+                          className="absolute pointer-events-none z-30 rounded-lg border-2 border-dashed border-primary/50 bg-primary/10 transition-[left,width] duration-75 ease-out"
+                          style={{
+                            left: `${drawPreview.left}px`,
+                            top: `${drawPreview.top}px`,
+                            width: `${drawPreview.width}px`,
+                            height: `${drawPreview.height}px`,
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Right Push Drawer ─────────────────────────────────── */}
+          <OperationsDrawer
+            mode={drawerMode}
+            onClose={handleCloseDrawer}
+            selectedBooking={selectedBooking}
+            onQuickCheckIn={handleDrawerCheckIn}
+            onQuickCheckOut={handleDrawerCheckOut}
+            onOpenDetail={handleDoubleClickBooking}
+            rooms={allRooms}
+            todayStr={todayStr}
+            roomTypeNameMap={roomTypeNameByRoomId}
+            unassignedStays={unassignedStays}
+          />
+        </div>
+
+        {/* Booking detail bottom sheet — mobile only (Sheet portals ignore CSS hiding) */}
+        <MobileOnly>
+          <BookingBottomSheet selected={selectedBooking} onClose={handleCloseSheet} />
+        </MobileOnly>
 
         {/* Context menu (portal-rendered) */}
         {contextMenu && (

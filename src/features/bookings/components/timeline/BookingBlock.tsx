@@ -1,4 +1,4 @@
-import React, { type CSSProperties, useCallback, useMemo } from 'react'
+import React, { type CSSProperties, useCallback, useMemo, useRef } from 'react'
 import { differenceInDays, format, parseISO, startOfDay } from 'date-fns'
 import { Users, Clock, LogIn, LogOut, Footprints, Headset, Globe } from 'lucide-react'
 import {
@@ -67,6 +67,8 @@ export interface BookingBlockProps {
   /** Total number of layers in this room row. */
   totalLayers?: number
   onTap: (booking: TimelineBooking) => void
+  /** Called on double-click — opens full booking detail page. */
+  onDoubleTap?: (booking: TimelineBooking) => void
   /** Called when user starts a drag or resize. */
   onDragStart?: (
     e: React.PointerEvent,
@@ -107,6 +109,7 @@ const BookingBlock = React.memo(function BookingBlock({
   layerIndex = 0,
   totalLayers = 1,
   onTap,
+  onDoubleTap,
   onDragStart,
   dragState,
   onContextMenu,
@@ -153,6 +156,33 @@ const BookingBlock = React.memo(function BookingBlock({
   const canCheckIn = (status === 'RESERVED' || status === 'ASSIGNED') &&
     startOfDay(parseISO(booking.check_in)) <= startOfDay(new Date())
   const canCheckOut = status === 'CHECKED_IN'
+
+  // ── Click vs double-click discrimination ──────────────────────────────
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleClick = useCallback(() => {
+    if (isBeingDragged) return
+    if (onDoubleTap) {
+      // If there's a double-click handler, delay single click to distinguish
+      if (clickTimerRef.current) return // second click pending — ignore
+      clickTimerRef.current = setTimeout(() => {
+        clickTimerRef.current = null
+        onTap(booking)
+      }, 250)
+    } else {
+      onTap(booking)
+    }
+  }, [isBeingDragged, onTap, onDoubleTap, booking])
+
+  const handleDoubleClick = useCallback(() => {
+    if (isBeingDragged) return
+    // Cancel pending single-click
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current)
+      clickTimerRef.current = null
+    }
+    onDoubleTap?.(booking)
+  }, [isBeingDragged, onDoubleTap, booking])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -291,7 +321,8 @@ const BookingBlock = React.memo(function BookingBlock({
           onMouseLeave={onHoverEnd}
           onFocus={() => onHoverStart(booking.booking_id)}
           onBlur={onHoverEnd}
-          onClick={() => !isBeingDragged && onTap(booking)}
+          onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
           onKeyDown={handleKeyDown}
           onPointerDown={handlePointerDown}
           onContextMenu={handleContextMenu}

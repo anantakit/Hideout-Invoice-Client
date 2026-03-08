@@ -47,6 +47,8 @@ interface RoomRowProps {
   onKeyboardMove?: (booking: TimelineBooking, roomId: string, direction: 'left' | 'right' | 'up' | 'down') => void
   /** Keyboard: resize booking. */
   onKeyboardResize?: (booking: TimelineBooking, roomId: string, edge: 'extend' | 'shrink') => void
+  /** Double-click on booking block — opens full detail page. */
+  onDoubleClickBooking?: (booking: TimelineBooking) => void
   /** Number of days visible in the timeline window. */
   windowDays?: number
   /** Called on pointer down on empty cell — used for draw-to-create. */
@@ -102,6 +104,7 @@ const RoomRow = React.memo(function RoomRow({
   onQuickCheckOut,
   onKeyboardMove,
   onKeyboardResize,
+  onDoubleClickBooking,
   windowDays: windowDaysProp,
   onDrawStart,
 }: RoomRowProps) {
@@ -276,6 +279,7 @@ const RoomRow = React.memo(function RoomRow({
               layerIndex={layerInfo?.layerIndex ?? 0}
               totalLayers={layout.totalLayers}
               onTap={onSelectBooking}
+              onDoubleTap={onDoubleClickBooking}
               onDragStart={onDragStart}
               dragState={dragState}
               onContextMenu={onContextMenu}

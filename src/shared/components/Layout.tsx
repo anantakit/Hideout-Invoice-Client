@@ -20,10 +20,10 @@ export default function Layout() {
         </SheetContent>
       </Sheet>
 
-      {/* ── Desktop sidebar ── */}
+      {/* ── Desktop sidebar — icon-only by default, expanded on xl+ ── */}
       <aside className={cn(
         'hidden md:flex flex-col fixed top-0 left-0 h-full z-40 bg-sidebar border-r border-border-soft',
-        'md:w-16 lg:w-64',
+        'md:w-16 xl:w-52',
       )}>
         <SidebarContent />
       </aside>
@@ -31,7 +31,7 @@ export default function Layout() {
       {/* ── Main area ── */}
       <div className={cn(
         'flex flex-col flex-1 min-w-0 overflow-hidden',
-        'md:ml-16 lg:ml-64',
+        'md:ml-16 xl:ml-52',
       )}>
 
         {/* Mobile top navbar */}

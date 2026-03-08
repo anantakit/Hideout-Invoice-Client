@@ -100,7 +100,7 @@ export function Logo() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 pt-3 pb-1 text-xs font-semibold tracking-widest uppercase text-muted-foreground md:hidden lg:block">
+    <p className="px-3 pt-3 pb-1 text-xs font-semibold tracking-widest uppercase text-muted-foreground md:hidden xl:block">
       {children}
     </p>
   )
@@ -125,7 +125,7 @@ function NavItem({
       className={({ isActive }) =>
         cn(
           'flex items-center gap-3 radius-button text-sm font-medium transition-colors',
-          'px-3 py-2.5 md:px-2.5 md:justify-center lg:px-3 lg:justify-start',
+          'px-3 py-2.5 md:px-2.5 md:justify-center xl:px-3 xl:justify-start',
           isActive
             ? 'bg-primary/15 text-primary border-l-2 border-l-primary'
             : 'text-muted-foreground hover:bg-accent hover:text-foreground',
@@ -133,7 +133,7 @@ function NavItem({
       }
     >
       <Icon className="w-5 h-5 shrink-0" aria-hidden />
-      <span className="md:hidden lg:inline">{label}</span>
+      <span className="md:hidden xl:inline">{label}</span>
     </NavLink>
   )
 }
@@ -155,7 +155,7 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
       {/* ── Wordmark ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-border-soft overflow-hidden">
         <Logo />
-        <div className="flex-1 min-w-0 md:hidden lg:block">
+        <div className="flex-1 min-w-0 md:hidden xl:block">
           <p className="text-sm font-bold text-foreground whitespace-nowrap">Hideout Resort</p>
           <p className="text-helper whitespace-nowrap">Hotel Operations</p>
         </div>
@@ -164,7 +164,7 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="ml-auto shrink-0 lg:hidden"
+            className="ml-auto shrink-0 xl:hidden"
             aria-label="ปิดเมนู"
           >
             <X className="w-5 h-5" />
@@ -184,7 +184,7 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
           return (
             <div key={section.id}>
               {index > 0 && (
-                <div className="py-2 md:hidden lg:block">
+                <div className="py-2 md:hidden xl:block">
                   <Separator />
                 </div>
               )}
@@ -201,11 +201,11 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
 
       {/* ── User + logout ─────────────────────────────────────────────────── */}
       <div className="p-3 border-t border-border-soft">
-        <div className="flex items-center gap-2 md:justify-center lg:justify-start">
+        <div className="flex items-center gap-2 md:justify-center xl:justify-start">
           <div className="w-8 h-8 radius-badge bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 select-none">
             {user?.full_name?.charAt(0).toUpperCase() ?? '?'}
           </div>
-          <div className="flex-1 min-w-0 md:hidden lg:block">
+          <div className="flex-1 min-w-0 md:hidden xl:block">
             <p className="text-xs font-medium text-foreground truncate">{user?.full_name}</p>
             <p className="text-helper truncate">@{user?.username}</p>
           </div>
