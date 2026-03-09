@@ -1,6 +1,6 @@
 import React, { type CSSProperties, useCallback, useMemo, useRef } from 'react'
 import { differenceInDays, format, parseISO, startOfDay } from 'date-fns'
-import { Users, Clock, LogIn, LogOut, Footprints, CalendarCheck } from 'lucide-react'
+import { Users, Clock, Footprints, CalendarCheck } from 'lucide-react'
 import {
   TIMELINE_BLOCK_HEIGHT_PX,
   TIMELINE_BLOCK_GAP_PX,
@@ -84,10 +84,6 @@ export interface BookingBlockProps {
     x: number,
     y: number,
   ) => void
-  /** Quick action: check-in. */
-  onQuickCheckIn?: (booking: TimelineBooking, roomId: string) => void
-  /** Quick action: check-out. */
-  onQuickCheckOut?: (booking: TimelineBooking) => void
   /** Keyboard: move booking by 1 day or 1 room. */
   onKeyboardMove?: (booking: TimelineBooking, roomId: string, direction: 'left' | 'right' | 'up' | 'down') => void
   /** Keyboard: extend/shrink stay by 1 night. */
@@ -111,8 +107,6 @@ const BookingBlock = React.memo(function BookingBlock({
   onDragStart,
   dragState,
   onContextMenu,
-  onQuickCheckIn,
-  onQuickCheckOut,
   onKeyboardMove,
   onKeyboardResize,
 }: BookingBlockProps) {
@@ -151,9 +145,6 @@ const BookingBlock = React.memo(function BookingBlock({
 
   const isMultiRoom = roomCount > 1
   const status = booking.status
-  const canCheckIn = (status === 'RESERVED' || status === 'ASSIGNED') &&
-    startOfDay(parseISO(booking.check_in)) <= startOfDay(new Date())
-  const canCheckOut = status === 'CHECKED_IN'
 
   // ── Click vs double-click discrimination ──────────────────────────────
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -352,36 +343,7 @@ const BookingBlock = React.memo(function BookingBlock({
             </div>
           )}
 
-          {/* ── Quick action button (hover overlay) ──────────────────────── */}
-          {!isBeingDragged && canCheckIn && onQuickCheckIn && (
-            <div
-              className="absolute top-0.5 right-4 z-10 opacity-0 group-hover/block:opacity-100 transition-opacity"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); onQuickCheckIn(booking, roomId) }}
-            >
-              <div
-                className="flex items-center justify-center w-5 h-5 rounded bg-success/90 text-success-foreground shadow-sm hover:bg-success transition-colors"
-                title="เช็คอิน"
-              >
-                <LogIn className="w-3 h-3" />
-              </div>
-            </div>
-          )}
 
-          {!isBeingDragged && canCheckOut && onQuickCheckOut && (
-            <div
-              className="absolute top-0.5 right-4 z-10 opacity-0 group-hover/block:opacity-100 transition-opacity"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); onQuickCheckOut(booking) }}
-            >
-              <div
-                className="flex items-center justify-center w-5 h-5 rounded bg-info/90 text-info-foreground shadow-sm hover:bg-info transition-colors"
-                title="เช็คเอาท์"
-              >
-                <LogOut className="w-3 h-3" />
-              </div>
-            </div>
-          )}
 
           {/* Left accent bar for multi-room bookings */}
           {isMultiRoom && (

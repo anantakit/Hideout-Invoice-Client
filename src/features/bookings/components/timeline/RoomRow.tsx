@@ -39,10 +39,6 @@ interface RoomRowProps {
     x: number,
     y: number,
   ) => void
-  /** Quick action: check-in. */
-  onQuickCheckIn?: (booking: TimelineBooking, roomId: string) => void
-  /** Quick action: check-out. */
-  onQuickCheckOut?: (booking: TimelineBooking) => void
   /** Keyboard: move booking. */
   onKeyboardMove?: (booking: TimelineBooking, roomId: string, direction: 'left' | 'right' | 'up' | 'down') => void
   /** Keyboard: resize booking. */
@@ -100,8 +96,6 @@ const RoomRow = React.memo(function RoomRow({
   onDragStart,
   dragState,
   onContextMenu,
-  onQuickCheckIn,
-  onQuickCheckOut,
   onKeyboardMove,
   onKeyboardResize,
   onDoubleClickBooking,
@@ -283,8 +277,6 @@ const RoomRow = React.memo(function RoomRow({
               onDragStart={onDragStart}
               dragState={dragState}
               onContextMenu={onContextMenu}
-              onQuickCheckIn={onQuickCheckIn}
-              onQuickCheckOut={onQuickCheckOut}
               onKeyboardMove={onKeyboardMove}
               onKeyboardResize={onKeyboardResize}
             />

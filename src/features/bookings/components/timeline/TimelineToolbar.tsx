@@ -65,6 +65,8 @@ interface TimelineToolbarProps {
   onNext: () => void
   onToday: () => void
   onJumpToDate: (date: Date) => void
+  /** Mobile: currently selected date (overrides visibleStartDate for display on mobile) */
+  mobileSelectedDate?: Date
 
   /** Room type filter */
   selectedRoomTypeId: string | null
@@ -98,6 +100,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
   onNext,
   onToday,
   onJumpToDate,
+  mobileSelectedDate,
   selectedRoomTypeId,
   onRoomTypeSelect,
   roomAvailability,
@@ -155,10 +158,20 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
     [onJumpToDate],
   )
 
+  // On mobile (< md breakpoint), show the selected date; on desktop, show the visible start date
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  const displayDate = (isMobile && mobileSelectedDate) ? mobileSelectedDate : visibleStartDate
+
   // ── Check if start date is today ─────────────────────────────────────────
   const isToday = useMemo(
-    () => format(visibleStartDate, 'yyyy-MM-dd') === format(startOfDay(new Date()), 'yyyy-MM-dd'),
-    [visibleStartDate],
+    () => format(displayDate, 'yyyy-MM-dd') === format(startOfDay(new Date()), 'yyyy-MM-dd'),
+    [displayDate],
   )
 
   return (
@@ -213,7 +226,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
             >
               <CalendarIcon size={14} className="text-tl-text-dim shrink-0" />
               <span className="text-[18px] font-semibold text-tl-text tabular-nums whitespace-nowrap">
-                {fmtHeaderDate(visibleStartDate)}
+                {fmtHeaderDate(displayDate)}
               </span>
             </button>
 
@@ -221,12 +234,12 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
               <div className="absolute left-0 top-full mt-2 z-50 bg-tl-header border border-tl-border rounded-xl shadow-popover overflow-hidden">
                 <div className="p-3 w-72">
                   <Calendar
-                    pendingStart={visibleStartDate}
+                    pendingStart={displayDate}
                     pendingEnd={null}
                     hoveredDate={null}
                     onDayClick={handleJumpToDate}
                     onDayHover={() => {}}
-                    initialViewDate={visibleStartDate}
+                    initialViewDate={displayDate}
                   />
                 </div>
                 {/* Quick month jump */}

@@ -261,9 +261,13 @@ export default function TimelinePage() {
     () => Array.from({ length: MOBILE_STRIP_DAYS }, (_, i) => addDays(mobileStripStart, i)),
     [mobileStripStart],
   )
-  const mobileSelectedDateStr = useMemo(
-    () => format(addDays(mobileStripStart, mobileDayOffset), 'yyyy-MM-dd'),
+  const mobileSelectedDate = useMemo(
+    () => addDays(mobileStripStart, mobileDayOffset),
     [mobileStripStart, mobileDayOffset],
+  )
+  const mobileSelectedDateStr = useMemo(
+    () => format(mobileSelectedDate, 'yyyy-MM-dd'),
+    [mobileSelectedDate],
   )
   const mobileStripRef = useRef<HTMLDivElement>(null)
 
@@ -333,7 +337,8 @@ export default function TimelinePage() {
     const rooms = roomNumbers ?? allRooms
       .filter((r) => r.bookings.some((bk) => bk.booking_id === b.booking_id))
       .map((r) => r.room_number)
-    setSelectedBooking({ booking: b, roomNumbers: rooms })
+    // Force a fresh object reference so React.memo always sees the change
+    setSelectedBooking({ booking: { ...b }, roomNumbers: rooms })
     // On desktop, open the push drawer in booking-detail mode
     setDrawerMode('booking-detail')
   }, [allRooms])
@@ -579,6 +584,7 @@ export default function TimelinePage() {
           onNext={handleNext}
           onToday={handleToday}
           onJumpToDate={handleJumpToDate}
+          mobileSelectedDate={mobileSelectedDate}
           selectedRoomTypeId={selectedRoomTypeId}
           onRoomTypeSelect={handleRoomTypeSelect}
           roomAvailability={roomAvailability}
@@ -761,8 +767,6 @@ export default function TimelinePage() {
                               onKeyboardMove={handleKeyboardMove}
                               onKeyboardResize={handleKeyboardResize}
                               onDoubleClickBooking={handleDoubleClickBooking}
-                              onQuickCheckIn={handleQuickCheckIn}
-                              onQuickCheckOut={handleQuickCheckOut}
                               onDrawStart={handleDrawStart}
                             />
                           </div>

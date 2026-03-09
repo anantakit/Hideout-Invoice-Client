@@ -345,6 +345,7 @@ export const OperationsDrawer = React.memo(function OperationsDrawer({
       >
         {mode === 'booking-detail' && selectedBooking && (
           <BookingDetailContent
+            key={selectedBooking.booking.booking_id + selectedBooking.booking.room_stay_id}
             selected={selectedBooking}
             onClose={onClose}
             onQuickCheckIn={onQuickCheckIn}
