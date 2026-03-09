@@ -84,7 +84,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
   const viewingToday = isToday(selectedDate)
 
   const totalActiveRooms = useMemo(
-    () => rooms.filter((r) => r.status === 'ACTIVE').length,
+    () => rooms.filter((r) => r.status !== 'MAINTENANCE').length,
     [rooms],
   )
 
@@ -99,7 +99,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
     const byType = new Map<string, { total: number; available: number }>()
 
     for (const room of rooms) {
-      if (room.status !== 'ACTIVE') continue
+      if (room.status === 'MAINTENANCE') continue
       const typeName = roomTypeNameMap[room.id] ?? ''
       const t = byType.get(typeName) ?? { total: 0, available: 0 }
       t.total++
@@ -113,8 +113,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
       })
 
       // Classify
-      if (room.status !== 'ACTIVE') { /* skip */ }
-      else if (coStay && ciStay && coStay.booking_id !== ciStay.booking_id) { /* turnover */ }
+      if (coStay && ciStay && coStay.booking_id !== ciStay.booking_id) { /* turnover */ }
       else if (coStay) { /* checkout */ }
       else if (overlapping) { /* occupied/reserved */ }
       else { available++; t.available++ }
@@ -167,7 +166,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
     const checkoutMap = new Map<string, CheckoutBooking>()
 
     for (const room of rooms) {
-      if (room.status !== 'ACTIVE') continue
+      if (room.status === 'MAINTENANCE') continue
       for (const b of room.bookings) {
         const ci = toDateStr(b.check_in)
         const co = toDateStr(b.check_out)

@@ -14,6 +14,7 @@ const ReceiptHistory = lazy(() => import('../features/receipts/pages/ReceiptHist
 const ReceiptDetail  = lazy(() => import('../features/receipts/pages/ReceiptDetailPage'))
 const Customers      = lazy(() => import('../features/customers/pages/CustomersPage'))
 const AdminUsers     = lazy(() => import('../features/users/pages/AdminUsersPage'))
+const AdminRooms     = lazy(() => import('../features/rooms/pages/AdminRoomsPage'))
 const CreateBooking     = lazy(() => import('../features/bookings/pages/CreateBookingPage'))
 const BookingList       = lazy(() => import('../features/bookings/pages/BookingListPage'))
 const BookingDetail     = lazy(() => import('../features/bookings/pages/BookingDetailPage'))
@@ -71,6 +72,14 @@ export default function App() {
                 element={
                   <ProtectedRoute requiredRole="admin">
                     <AdminUsers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/rooms"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminRooms />
                   </ProtectedRoute>
                 }
               />

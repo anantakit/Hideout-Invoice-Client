@@ -22,5 +22,6 @@ export const ROUTES = {
 
   admin: {
     users: '/admin/users',
+    rooms: '/admin/rooms',
   },
 } as const

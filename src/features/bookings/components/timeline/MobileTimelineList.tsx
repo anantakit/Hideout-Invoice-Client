@@ -116,8 +116,8 @@ function classifyRooms(
   for (const room of rooms) {
     const typeName = roomTypeNameMap[room.id] ?? ''
 
-    // ── P1: MAINTENANCE ──────────────────────────────────────────────
-    if (room.status !== 'ACTIVE') {
+    // ── P1: MAINTENANCE (only truly out-of-service rooms) ─────────────
+    if (room.status === 'MAINTENANCE') {
       c.maintenance++
       result.push({ room, typeName, status: 'maintenance' })
       continue
@@ -255,7 +255,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   // ══════════════════════════════════════════════════════════════════════════
 
   const totalActiveRooms = useMemo(
-    () => rooms.filter((r) => r.status === 'ACTIVE').length,
+    () => rooms.filter((r) => r.status !== 'MAINTENANCE').length,
     [rooms],
   )
 
@@ -267,7 +267,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     // Availability by room type
     const byType = new Map<string, { total: number; available: number }>()
     for (const e of classification.entries) {
-      if (e.room.status !== 'ACTIVE') continue
+      if (e.room.status === 'MAINTENANCE') continue
       const t = byType.get(e.typeName) ?? { total: 0, available: 0 }
       t.total++
       if (e.status === 'available') t.available++
@@ -281,7 +281,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     let checkoutDone = 0
 
     for (const room of rooms) {
-      if (room.status !== 'ACTIVE') continue
+      if (room.status === 'MAINTENANCE') continue
       for (const b of room.bookings) {
         if (toDateStr(b.check_in) === selectedDateStr) {
           checkinTotal++
@@ -340,7 +340,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     const checkoutMap = new Map<string, CheckoutBooking>()
 
     for (const room of rooms) {
-      if (room.status !== 'ACTIVE') continue
+      if (room.status === 'MAINTENANCE') continue
 
       for (const b of room.bookings) {
         const ci = toDateStr(b.check_in)
@@ -441,7 +441,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     const result: RoomEntry[] = []
     const c = { range_available: 0, range_occupied: 0, maintenance: 0 }
     for (const e of entries) {
-      if (e.room.status !== 'ACTIVE') {
+      if (e.room.status === 'MAINTENANCE') {
         c.maintenance++
         result.push({ ...e, status: 'maintenance' })
       } else if (e.room.bookings.some((b) => overlapsRange(b, stayRange.checkIn, stayRange.checkOut))) {

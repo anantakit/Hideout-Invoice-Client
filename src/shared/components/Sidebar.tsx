@@ -4,6 +4,7 @@ import {
   BedDouble,
   Building2,
   CalendarRange,
+  DoorOpen,
   FileText,
   LogOut,
   UserCog,
@@ -66,8 +67,9 @@ const NAV_SECTIONS: NavSectionConfig[] = [
     id: 'management',
     label: 'Management',
     items: [
-      { to: '/customers',   label: 'ลูกค้า', icon: Users,   end: true },
-      { to: '/admin/users', label: 'ผู้ใช้', icon: UserCog, end: true, requireAdmin: true },
+      { to: '/customers',    label: 'ลูกค้า', icon: Users,    end: true },
+      { to: '/admin/rooms', label: 'ห้องพัก', icon: DoorOpen, end: true, requireAdmin: true },
+      { to: '/admin/users', label: 'ผู้ใช้',  icon: UserCog,  end: true, requireAdmin: true },
     ],
   },
   {
