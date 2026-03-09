@@ -13,7 +13,7 @@ function toDate(s: string): Date {
 const DRAG_THRESHOLD_PX = 5
 
 /** Touch hold delay (ms) before drag activates on touch devices. */
-const TOUCH_HOLD_MS = 150
+const TOUCH_HOLD_MS = 400
 
 /** Auto-scroll edge zone (px from container edge). */
 const AUTO_SCROLL_EDGE_PX = 60
@@ -352,6 +352,7 @@ export function useTimelineDrag({
     const ref = dragRef.current
     if (!ref) return
     if (ref.touchHoldTimer) clearTimeout(ref.touchHoldTimer)
+    ref.target.closest('.tl-booking-block')?.classList.remove('tl-touch-drag-active')
     try { ref.target.releasePointerCapture(ref.pointerId) } catch {}
     dragRef.current = null
     if (autoScrollRaf.current) {
@@ -414,6 +415,10 @@ export function useTimelineDrag({
         dragRef.current.touchHoldTimer = setTimeout(() => {
           if (dragRef.current) {
             dragRef.current.touchHoldMet = true
+            // Haptic feedback when drag activates
+            if (navigator.vibrate) navigator.vibrate(30)
+            // Visual feedback — add scale class to source element
+            dragRef.current.target.closest('.tl-booking-block')?.classList.add('tl-touch-drag-active')
           }
         }, TOUCH_HOLD_MS)
       }
@@ -530,8 +535,9 @@ export function useTimelineDrag({
 
       if (!ref) return
 
-      // Clear touch hold timer
+      // Clear touch hold timer & visual feedback
       if (ref.touchHoldTimer) clearTimeout(ref.touchHoldTimer)
+      ref.target.closest('.tl-booking-block')?.classList.remove('tl-touch-drag-active')
 
       // If still pending (threshold never exceeded), just clean up.
       // The click event will fire normally for tap behavior.
@@ -586,11 +592,21 @@ export function useTimelineDrag({
     const onMove = (e: PointerEvent) => handlePointerMove(e)
     const onUp = (e: PointerEvent) => handlePointerUp(e)
 
+    // Prevent browser scroll while touch-dragging (must be non-passive)
+    const onTouchMove = (e: TouchEvent) => {
+      const ref = dragRef.current
+      if (ref && (ref.touchHoldMet || ref.phase === 'active')) {
+        e.preventDefault()
+      }
+    }
+
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
     return () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('touchmove', onTouchMove)
     }
   }, [handlePointerMove, handlePointerUp])
 

@@ -299,6 +299,14 @@
     }
   }
 
+  /* Touch drag: visual feedback when hold threshold is met */
+  .tl-touch-drag-active {
+    transform: scale(1.04);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 50;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+
   .error-icon-pulse {
     animation: error-pulse 3s ease-in-out infinite;
   }

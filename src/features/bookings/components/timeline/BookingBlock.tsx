@@ -269,7 +269,7 @@ const BookingBlock = React.memo(function BookingBlock({
             'transition-[opacity,box-shadow,filter,transform] duration-150',
             // Focus-visible for keyboard navigation
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-            // Cursor
+            // Cursor & touch
             isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
             // Dragging state — dim the source block
             isBeingDragged && 'opacity-30 pointer-events-none',

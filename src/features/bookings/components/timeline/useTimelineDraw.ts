@@ -6,6 +6,9 @@ import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from './tokens'
 /** Minimum pointer movement (px) before a draw activates. */
 const DRAW_THRESHOLD_PX = 8
 
+/** Touch hold delay (ms) before draw activates on touch devices. */
+const TOUCH_HOLD_MS = 400
+
 export interface DrawState {
   roomId: string
   /** YYYY-MM-DD */
@@ -54,6 +57,9 @@ export function useTimelineDraw({
     startY: number
     pointerId: number
     phase: 'pending' | 'active'
+    isTouch: boolean
+    touchHoldTimer: ReturnType<typeof setTimeout> | null
+    touchHoldMet: boolean
   } | null>(null)
 
   // ── Snap helper ─────────────────────────────────────────────────────────
@@ -92,6 +98,7 @@ export function useTimelineDraw({
       if (e.button !== 0 || isDragging) return
 
       const dayIndex = getDayIndex(e.clientX)
+      const isTouch = e.pointerType === 'touch'
 
       drawRef.current = {
         roomId,
@@ -100,6 +107,18 @@ export function useTimelineDraw({
         startY: e.clientY,
         pointerId: e.pointerId,
         phase: 'pending',
+        isTouch,
+        touchHoldTimer: null,
+        touchHoldMet: !isTouch,
+      }
+
+      if (isTouch) {
+        drawRef.current.touchHoldTimer = setTimeout(() => {
+          if (drawRef.current) {
+            drawRef.current.touchHoldMet = true
+            if (navigator.vibrate) navigator.vibrate(30)
+          }
+        }, TOUCH_HOLD_MS)
       }
     },
     [isDragging, getDayIndex],
@@ -111,6 +130,18 @@ export function useTimelineDraw({
       if (!ref) return
 
       if (ref.phase === 'pending') {
+        // Touch: must hold first
+        if (ref.isTouch && !ref.touchHoldMet) {
+          const dx = e.clientX - ref.startX
+          const dy = e.clientY - ref.startY
+          if (dx * dx + dy * dy > DRAW_THRESHOLD_PX * DRAW_THRESHOLD_PX * 4) {
+            if (ref.touchHoldTimer) clearTimeout(ref.touchHoldTimer)
+            drawRef.current = null
+            return
+          }
+          return
+        }
+
         const dx = e.clientX - ref.startX
         const dy = e.clientY - ref.startY
         if (dx * dx + dy * dy < DRAW_THRESHOLD_PX * DRAW_THRESHOLD_PX) return
@@ -151,6 +182,8 @@ export function useTimelineDraw({
       const ref = drawRef.current
       drawRef.current = null
 
+      if (ref?.touchHoldTimer) clearTimeout(ref.touchHoldTimer)
+
       if (!ref || ref.phase === 'pending') {
         setDrawState(null)
         setDrawPreview(null)
@@ -171,11 +204,21 @@ export function useTimelineDraw({
   // ── Global listeners ────────────────────────────────────────────────────
 
   useEffect(() => {
+    // Prevent browser scroll while touch-drawing (must be non-passive)
+    const onTouchMove = (e: TouchEvent) => {
+      const ref = drawRef.current
+      if (ref && (ref.touchHoldMet || ref.phase === 'active')) {
+        e.preventDefault()
+      }
+    }
+
     window.addEventListener('pointermove', handlePointerMove)
     window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
     return () => {
       window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('touchmove', onTouchMove)
     }
   }, [handlePointerMove, handlePointerUp])
 
