@@ -231,6 +231,8 @@ export interface AvailabilityGroupedRoom {
   room_id: string
   room_number: string
   available: boolean
+  coord_x: number
+  coord_y: number
 }
 
 export interface AvailabilityGroupedRoomType {

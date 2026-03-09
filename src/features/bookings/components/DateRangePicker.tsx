@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { isValid, isBefore, isSameDay, differenceInDays } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { Calendar } from '../../../shared/ui/calendar'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../../shared/ui/sheet'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../../../shared/ui/sheet'
 import { cn } from '@/shared/utils'
 
 // ─── Thai display helpers ─────────────────────────────────────────────────────
@@ -199,6 +199,9 @@ export function DateRangePicker({
               <SheetTitle className="text-base font-semibold tracking-tight text-left">
                 {phase === 'selecting-end' ? 'เลือกวันเช็คเอาท์' : 'เลือกวันเช็คอิน'}
               </SheetTitle>
+              <SheetDescription className="sr-only">
+                เลือกช่วงวันเข้าพักจากปฏิทิน
+              </SheetDescription>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto px-4 pt-4 pb-8">
               {calendarEl}

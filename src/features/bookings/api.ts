@@ -141,8 +141,9 @@ export const bookingsApi = {
     return data.data
   },
 
-  autoAssignRooms: async (): Promise<AutoAssignResponse> => {
-    const { data } = await apiClient.post<ApiResponse<AutoAssignResponse>>('/bookings/auto-assign')
+  autoAssignRooms: async (date?: string): Promise<AutoAssignResponse> => {
+    const params = date ? `?date=${date}` : ''
+    const { data } = await apiClient.post<ApiResponse<AutoAssignResponse>>(`/bookings/auto-assign${params}`)
     return data.data
   },
 

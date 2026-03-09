@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/ui/sheet'
 import { Calendar } from '@/shared/ui/calendar'
 import { cn } from '@/shared/utils'
 import type { RoomAvailability } from './AvailabilitySummary'
@@ -111,12 +112,23 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
   onToggleOpsDrawer,
   drawerMode,
 }: TimelineToolbarProps) {
+  // ── Mobile detection ───────────────────────────────────────────────────
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  const displayDate = (isMobile && mobileSelectedDate) ? mobileSelectedDate : visibleStartDate
+
   // ── Date picker ──────────────────────────────────────────────────────────
   const [datePickerOpen, setDatePickerOpen] = useState(false)
   const datePickerRef = useRef<HTMLDivElement>(null)
 
+  // Close desktop dropdown on outside click (mobile uses Sheet which handles its own close)
   useEffect(() => {
-    if (!datePickerOpen) return
+    if (!datePickerOpen || isMobile) return
     const handler = (e: MouseEvent) => {
       if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
         setDatePickerOpen(false)
@@ -124,7 +136,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [datePickerOpen])
+  }, [datePickerOpen, isMobile])
 
   const handleJumpToDate = useCallback(
     (date: Date) => {
@@ -157,16 +169,6 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
     },
     [onJumpToDate],
   )
-
-  // On mobile (< md breakpoint), show the selected date; on desktop, show the visible start date
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)')
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-  const displayDate = (isMobile && mobileSelectedDate) ? mobileSelectedDate : visibleStartDate
 
   // ── Check if start date is today ─────────────────────────────────────────
   const isToday = useMemo(
@@ -230,7 +232,8 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
               </span>
             </button>
 
-            {datePickerOpen && (
+            {/* Desktop: absolute dropdown */}
+            {datePickerOpen && !isMobile && (
               <div className="absolute left-0 top-full mt-2 z-50 bg-tl-header border border-tl-border rounded-xl shadow-popover overflow-hidden">
                 <div className="p-3 w-72">
                   <Calendar
@@ -261,6 +264,50 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Mobile: bottom Sheet */}
+            {isMobile && (
+              <Sheet open={datePickerOpen} onOpenChange={(v) => { if (!v) setDatePickerOpen(false) }}>
+                <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-0 flex flex-col max-h-[85vh]">
+                  <SheetHeader className="px-5 pt-5 pb-3 border-b border-border shrink-0">
+                    <SheetTitle className="text-base font-semibold tracking-tight text-left">
+                      เลือกวันที่
+                    </SheetTitle>
+                    <SheetDescription className="sr-only">
+                      เลือกวันที่จากปฏิทินเพื่อข้ามไปยังวันนั้น
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6">
+                    <Calendar
+                      pendingStart={displayDate}
+                      pendingEnd={null}
+                      hoveredDate={null}
+                      onDayClick={handleJumpToDate}
+                      onDayHover={() => {}}
+                      initialViewDate={displayDate}
+                    />
+                    {/* Quick month jump */}
+                    <div className="mt-4 pt-3 border-t border-border">
+                      <p className="text-[11px] text-muted-foreground mb-2 uppercase tracking-wider font-medium">
+                        ข้ามไปเดือน
+                      </p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {monthOptions.map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => handleMonthJump(opt.value)}
+                            className="text-[11px] px-2 py-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors text-center truncate"
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
             )}
           </div>
 

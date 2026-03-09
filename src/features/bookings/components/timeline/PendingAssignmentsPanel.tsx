@@ -32,6 +32,8 @@ function fmtThaiShort(iso: string): string {
 
 interface PendingAssignmentsPanelProps {
   stays: UnassignedStay[]
+  /** Date string (YYYY-MM-DD) to scope auto-assign to check-ins on this date only. */
+  selectedDate?: string
 }
 
 /**
@@ -44,13 +46,14 @@ interface PendingAssignmentsPanelProps {
  */
 export const PendingAssignmentsPanel = React.memo(function PendingAssignmentsPanel({
   stays,
+  selectedDate,
 }: PendingAssignmentsPanelProps) {
   const navigate    = useNavigate()
   const qc          = useQueryClient()
   const [isExpanded, setIsExpanded] = useState(false)
 
   const autoAssign = useMutation({
-    mutationFn: () => bookingsApi.autoAssignRooms(),
+    mutationFn: () => bookingsApi.autoAssignRooms(selectedDate),
     onSuccess: (resp) => {
       qc.invalidateQueries({ queryKey: ['timeline'] })
       qc.invalidateQueries({ queryKey: ['bookings'] })
