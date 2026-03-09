@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#151821"/>
+  <rect x="24" y="24" width="464" height="464" rx="80" fill="none" stroke="#2F3542" stroke-width="2"/>
+  <!-- Building icon -->
+  <g transform="translate(256,256)" fill="none" stroke="#5B8CFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Main building -->
+    <rect x="-100" y="-120" width="200" height="240" rx="8" fill="#1C212B"/>
+    <line x1="-100" y1="120" x2="100" y2="120"/>
+    <!-- Roof -->
+    <line x1="-120" y1="-120" x2="120" y2="-120"/>
+    <!-- Windows row 1 -->
+    <rect x="-70" y="-90" width="40" height="30" rx="4" fill="#5B8CFF" opacity="0.2"/>
+    <rect x="30" y="-90" width="40" height="30" rx="4" fill="#5B8CFF" opacity="0.2"/>
+    <!-- Windows row 2 -->
+    <rect x="-70" y="-40" width="40" height="30" rx="4" fill="#5B8CFF" opacity="0.15"/>
+    <rect x="30" y="-40" width="40" height="30" rx="4" fill="#5B8CFF" opacity="0.15"/>
+    <!-- Door -->
+    <rect x="-25" y="40" width="50" height="80" rx="6" fill="#5B8CFF" opacity="0.25"/>
+    <circle cx="15" cy="80" r="4" fill="#5B8CFF" opacity="0.5"/>
+  </g>
+</svg>
