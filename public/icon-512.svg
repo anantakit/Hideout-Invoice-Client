@@ -1,14 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#151821"/>
-  <g transform="translate(256,256)" fill="none" stroke="#5B8CFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="-100" y="-120" width="200" height="240" rx="8" fill="#1C212B"/>
-    <line x1="-100" y1="120" x2="100" y2="120"/>
-    <line x1="-120" y1="-120" x2="120" y2="-120"/>
-    <rect x="-70" y="-90" width="40" height="30" rx="4" fill="#5B8CFF" opacity="0.2"/>
-    <rect x="30" y="-90" width="40" height="30" rx="4" fill="#5B8CFF" opacity="0.2"/>
-    <rect x="-70" y="-40" width="40" height="30" rx="4" fill="#5B8CFF" opacity="0.15"/>
-    <rect x="30" y="-40" width="40" height="30" rx="4" fill="#5B8CFF" opacity="0.15"/>
-    <rect x="-25" y="40" width="50" height="80" rx="6" fill="#5B8CFF" opacity="0.25"/>
-    <circle cx="15" cy="80" r="4" fill="#5B8CFF" opacity="0.5"/>
+  <rect width="512" height="512" rx="108" fill="#151821"/>
+  <rect x="1" y="1" width="510" height="510" rx="107" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2"/>
+
+  <g fill="none" stroke="#5B8CFF" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="160" y1="120" x2="160" y2="320" stroke-width="32"/>
+    <line x1="352" y1="120" x2="352" y2="320" stroke-width="32"/>
+    <line x1="160" y1="220" x2="352" y2="220" stroke-width="32"/>
   </g>
+
+  <text x="256" y="400" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="36" letter-spacing="0.28em" fill="rgba(255,255,255,0.45)">HIDEOUT</text>
+  <text x="256" y="436" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="400" font-size="22" letter-spacing="0.45em" fill="rgba(255,255,255,0.25)">RESORT</text>
 </svg>
