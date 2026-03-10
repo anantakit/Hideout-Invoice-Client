@@ -1,17 +1,18 @@
-import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useCallback, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Plus, X, Check, Loader2 } from 'lucide-react'
+import { Plus, X, Check, Loader2, AlertTriangle } from 'lucide-react'
 import { receiptsApi } from '../api'
 import { customersApi } from '../../customers/api'
 import { formatTHB, todayISO } from '../../../shared/utils'
 import CustomerModal from '../../customers/components/CustomerModal'
 import SearchableComboBox from '../../../shared/ui/SearchableComboBox'
 import type { Customer } from '../../customers/types'
+import { useInvoicePrefill, useInvoiceCoverage } from '../../bookings/hooks'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import { BottomBar } from '../../../shared/ui/BottomBar'
 import { DatePicker } from '../../../shared/ui/DatePicker'
@@ -46,8 +47,21 @@ type ReceiptFormValues = z.infer<typeof receiptSchema>
 export default function CreateReceipt() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [searchParams] = useSearchParams()
+  const bookingId = searchParams.get('booking_id') || undefined
+  const prefillMode = (searchParams.get('mode') as 'booking' | 'stay' | 'night') || undefined
+  const prefillStayIds = searchParams.get('stay_ids')?.split(',').filter(Boolean) || undefined
+  const prefillDate = searchParams.get('date') || undefined
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [prefilled, setPrefilled] = useState(false)
+
+  const { data: prefill } = useInvoicePrefill(bookingId, {
+    mode: prefillMode,
+    stayIds: prefillStayIds,
+    date: prefillDate,
+  })
+  const { data: coverage } = useInvoiceCoverage(bookingId)
 
   const form = useForm<ReceiptFormValues>({
     resolver: zodResolver(receiptSchema),
@@ -72,6 +86,34 @@ export default function CreateReceipt() {
     0,
   )
 
+  // Prefill form from booking data
+  useEffect(() => {
+    if (!prefill || prefilled) return
+    setPrefilled(true)
+
+    if (prefill.check_in_date) {
+      form.setValue('check_in_date', prefill.check_in_date.slice(0, 10))
+    }
+    if (prefill.payment_method) {
+      const methodMap: Record<string, string> = { CASH: 'เงินสด', TRANSFER: 'โอนเงิน' }
+      form.setValue('payment_method', methodMap[prefill.payment_method] ?? prefill.payment_method)
+    }
+    if (prefill.items.length > 0) {
+      form.setValue(
+        'items',
+        prefill.items.map((item) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+        })),
+      )
+    }
+    const noteParts: string[] = []
+    if (prefill.guest_name) noteParts.push(`ผู้เข้าพัก: ${prefill.guest_name}`)
+    if (prefill.guest_phone) noteParts.push(`โทร: ${prefill.guest_phone}`)
+    if (noteParts.length > 0) form.setValue('notes', noteParts.join('\n'))
+  }, [prefill, prefilled, form])
+
   const createMutation = useMutation({
     mutationFn: receiptsApi.create,
     onSuccess: (receipt) => {
@@ -85,6 +127,7 @@ export default function CreateReceipt() {
   const onSubmit = (values: ReceiptFormValues) => {
     createMutation.mutate({
       customer_id: values.customer_id,
+      booking_id: bookingId,
       issue_date: new Date(values.issue_date).toISOString(),
       notes: values.notes,
       items: values.items.map((item) => ({
@@ -94,6 +137,7 @@ export default function CreateReceipt() {
       })),
       check_in_date: values.check_in_date ? new Date(values.check_in_date).toISOString() : undefined,
       payment_method: values.payment_method || undefined,
+      covered_stays: prefill?.covered_stays,
     })
   }
 
@@ -114,6 +158,30 @@ export default function CreateReceipt() {
         <div className="mb-6">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">สร้างใบเสร็จใหม่</h1>
           <p className="text-muted-foreground text-sm mt-1">กรอกรายละเอียดด้านล่างเพื่อออกใบเสร็จรับเงิน</p>
+          {bookingId && (
+            <div className="mt-3 space-y-2">
+              <div className="rounded-lg border border-info/30 bg-info-muted px-3 py-2 text-sm text-info-muted-foreground">
+                ออกใบเสร็จจากการจอง #{bookingId.slice(0, 8).toUpperCase()}
+                {prefill && ` · ${prefill.guest_name}`}
+              </div>
+              {coverage && (() => {
+                const invoicedNights = coverage.stays.flatMap((s) =>
+                  s.nights.filter((n) => n.invoiced),
+                )
+                if (invoicedNights.length === 0) return null
+                const totalNights = coverage.stays.reduce((sum, s) => sum + s.nights.length, 0)
+                return (
+                  <div className="rounded-lg border border-warning/30 bg-warning-muted px-3 py-2 text-sm text-warning-muted-foreground flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>
+                      การจองนี้มีใบเสร็จแล้ว {invoicedNights.length}/{totalNights} คืน
+                      — ตรวจสอบให้แน่ใจว่าไม่ออกซ้ำ
+                    </span>
+                  </div>
+                )
+              })()}
+            </div>
+          )}
         </div>
 
         <Form {...form}>

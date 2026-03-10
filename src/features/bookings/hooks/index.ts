@@ -56,6 +56,27 @@ export function useBooking(id: string) {
   })
 }
 
+/** Fetch invoice prefill data for a booking with optional mode/filters. */
+export function useInvoicePrefill(
+  bookingId: string | undefined,
+  opts?: { mode?: 'booking' | 'stay' | 'night'; stayIds?: string[]; date?: string },
+) {
+  return useQuery({
+    queryKey: ['invoice-prefill', bookingId, opts?.mode, opts?.stayIds, opts?.date] as const,
+    queryFn: () => bookingsApi.getInvoicePrefill(bookingId!, opts),
+    enabled: Boolean(bookingId),
+  })
+}
+
+/** Fetch invoice coverage map for a booking. */
+export function useInvoiceCoverage(bookingId: string | undefined) {
+  return useQuery({
+    queryKey: ['invoice-coverage', bookingId] as const,
+    queryFn: () => bookingsApi.getInvoiceCoverage(bookingId!),
+    enabled: Boolean(bookingId),
+  })
+}
+
 /** Fetch rooms, optionally filtered by room type. */
 export function useRooms(roomTypeId?: string, enabled = true) {
   return useQuery({

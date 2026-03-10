@@ -13,6 +13,7 @@ export interface ReceiptItem {
 export interface Receipt {
   id: string
   invoice_number: string
+  booking_id?: string
   customer: Customer
   issue_date: string
   total: number
@@ -39,8 +40,15 @@ export interface CreateReceiptItemPayload {
   unit_price: number
 }
 
+export interface CoveredStayPayload {
+  stay_id: string
+  date_from: string
+  date_to: string
+}
+
 export interface CreateReceiptPayload {
   customer_id: string
+  booking_id?: string
   issue_date: string
   notes: string
   items: CreateReceiptItemPayload[]
@@ -50,4 +58,5 @@ export interface CreateReceiptPayload {
   nights?: number
   room_number?: string
   payment_method?: string
+  covered_stays?: CoveredStayPayload[]
 }

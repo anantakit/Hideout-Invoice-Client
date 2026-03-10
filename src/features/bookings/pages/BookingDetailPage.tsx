@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { differenceInDays, isToday, isBefore, startOfDay, parseISO, format, addDays } from 'date-fns'
-import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock, Receipt, FileText, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
@@ -9,6 +9,9 @@ import { Button } from '../../../shared/ui/button'
 import { Badge } from '../../../shared/ui/badge'
 import { Separator } from '../../../shared/ui/separator'
 import { Input } from '../../../shared/ui/input'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../../shared/ui/select'
+import { RadioCardGroup, RadioCardItem } from '../../../shared/ui/radio-card-group'
+import { CheckboxCard } from '../../../shared/ui/checkbox-card'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -19,12 +22,12 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from '../../../shared/ui/alert-dialog'
-import { formatThaiDate } from '../../../shared/utils'
+import { formatThaiDate, formatTHB } from '../../../shared/utils'
 import { ROUTES } from '@/app/routes'
 import ErrorPage from '@/shared/components/ErrorPage'
 import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useCheckoutRooms, useAvailabilityGrouped } from '../hooks'
 import { PaymentPanel } from '../components/PaymentPanel'
-import { type RoomStayResponse, getStatusLabel } from '../types'
+import { type RoomStayResponse, type BookingEventResponse, type BookingResponse, type InvoiceResponseShort, getStatusLabel } from '../types'
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
 
@@ -429,6 +432,14 @@ export default function BookingDetailPage() {
 
       {/* ── 6. Payment ─────────────────────────────────────────────────── */}
       <PaymentPanel booking={booking} />
+
+      {/* ── 7. Receipts ────────────────────────────────────────────────── */}
+      <ReceiptSection bookingId={id} booking={booking} navigate={navigate} stays={bd.active} />
+
+      {/* ── 8. Event Timeline ──────────────────────────────────────────── */}
+      {booking.events && booking.events.length > 0 && (
+        <EventTimeline events={booking.events} />
+      )}
     </div>
   )
 }
@@ -671,6 +682,265 @@ function StayCardOperational({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </Card>
+  )
+}
+
+// ─── ReceiptSection ──────────────────────────────────────────────────────────
+
+type BillingMode = 'booking' | 'stay' | 'night'
+
+function ReceiptSection({
+  bookingId,
+  booking,
+  navigate,
+  stays,
+}: {
+  bookingId: string
+  booking: BookingResponse
+  navigate: (path: string) => void
+  stays: RoomStayResponse[]
+}) {
+  const [showModeSelect, setShowModeSelect] = useState(false)
+  const [billingMode, setBillingMode] = useState<BillingMode>('booking')
+  const [selectedStayIds, setSelectedStayIds] = useState<string[]>([])
+  const [selectedStayId, setSelectedStayId] = useState('')
+  const [selectedDate, setSelectedDate] = useState('')
+
+  function handleConfirm() {
+    const params = new URLSearchParams({ booking_id: bookingId })
+    if (billingMode !== 'booking') params.set('mode', billingMode)
+    if (billingMode === 'stay' && selectedStayIds.length > 0) {
+      params.set('stay_ids', selectedStayIds.join(','))
+    }
+    if (billingMode === 'night' && selectedStayId) {
+      params.set('stay_ids', selectedStayId)
+      if (selectedDate) params.set('date', selectedDate)
+    }
+    setShowModeSelect(false)
+    navigate(`/receipts/new?${params.toString()}`)
+  }
+
+  function toggleStayId(id: string) {
+    setSelectedStayIds((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
+    )
+  }
+
+  const canConfirm =
+    billingMode === 'booking' ||
+    (billingMode === 'stay' && selectedStayIds.length > 0) ||
+    (billingMode === 'night' && selectedStayId && selectedDate)
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-helper font-semibold flex items-center gap-2">
+            <Receipt className="w-4 h-4" />
+            ใบเสร็จ
+          </CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-3 text-xs"
+            onClick={() => setShowModeSelect(true)}
+          >
+            <FileText className="w-3.5 h-3.5 mr-1" />
+            ออกใบเสร็จ
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {booking.invoices && booking.invoices.length > 0 ? (
+          <div className="space-y-2">
+            {booking.invoices.map((inv: InvoiceResponseShort) => (
+              <Link
+                key={inv.id}
+                to={`/receipts/${inv.id}`}
+                className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5 hover:bg-accent/60 transition-colors"
+              >
+                <div>
+                  <p className="text-body font-medium text-primary">{inv.invoice_number}</p>
+                  <p className="text-helper">{formatThaiDate(inv.issue_date)}</p>
+                </div>
+                <span className="text-body font-semibold">{formatTHB(inv.total)}</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-helper text-center py-3">ยังไม่มีใบเสร็จ</p>
+        )}
+      </CardContent>
+
+      {/* Billing mode dialog */}
+      <AlertDialog open={showModeSelect} onOpenChange={setShowModeSelect}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>เลือกรูปแบบใบเสร็จ</AlertDialogTitle>
+            <AlertDialogDescription>
+              เลือกวิธีออกใบเสร็จสำหรับการจองนี้
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 py-2">
+            {/* Mode selection cards */}
+            <RadioCardGroup
+              value={billingMode}
+              onValueChange={(val) => {
+                setBillingMode(val as 'booking' | 'stay' | 'night')
+                setSelectedStayIds([])
+                setSelectedStayId('')
+                setSelectedDate('')
+              }}
+            >
+              {([
+                ['booking', 'ทั้งการจอง', 'รวมทุกห้องในใบเสร็จเดียว'],
+                ['stay', 'แยกตามห้อง', 'เลือกห้องที่ต้องการออกใบเสร็จ'],
+                ['night', 'รายวัน', 'ออกใบเสร็จสำหรับคืนที่เลือก'],
+              ] as const).map(([value, label, desc]) => (
+                <RadioCardItem key={value} value={value}>
+                  <p className="text-body font-medium">{label}</p>
+                  <p className="text-helper text-xs">{desc}</p>
+                </RadioCardItem>
+              ))}
+            </RadioCardGroup>
+
+            {/* Stay selection for mode=stay */}
+            {billingMode === 'stay' && (
+              <div className="pl-2 space-y-1.5 pt-1">
+                <p className="text-helper text-xs font-medium mb-1">เลือกห้อง:</p>
+                {stays.map((stay) => (
+                  <CheckboxCard
+                    key={stay.id}
+                    checked={selectedStayIds.includes(stay.id)}
+                    onCheckedChange={() => toggleStayId(stay.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-body text-sm">
+                        {stay.room_number ? `ห้อง ${stay.room_number}` : stay.room_type_name}
+                      </span>
+                      <span className="text-helper text-xs">
+                        {stay.nights} คืน
+                      </span>
+                    </div>
+                  </CheckboxCard>
+                ))}
+              </div>
+            )}
+
+            {/* Stay + date selection for mode=night */}
+            {billingMode === 'night' && (
+              <div className="pl-2 space-y-2 pt-1">
+                <div>
+                  <p className="text-helper text-xs font-medium mb-1">เลือกห้อง:</p>
+                  <Select
+                    value={selectedStayId || undefined}
+                    onValueChange={(val) => {
+                      setSelectedStayId(val)
+                      setSelectedDate('')
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="เลือก..." />
+                    </SelectTrigger>
+                    <SelectContent sheetTitle="เลือกห้อง">
+                      {stays.map((stay) => (
+                        <SelectItem key={stay.id} value={stay.id}>
+                          {stay.room_number ? `ห้อง ${stay.room_number}` : stay.room_type_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {selectedStayId && (() => {
+                  const stay = stays.find((s) => s.id === selectedStayId)
+                  if (!stay) return null
+                  return (
+                    <div>
+                      <p className="text-helper text-xs font-medium mb-1">เลือกวันที่:</p>
+                      <Input
+                        type="date"
+                        value={selectedDate}
+                        min={stay.check_in.slice(0, 10)}
+                        max={(() => {
+                          // max = check_out - 1 day (last night)
+                          const co = parseISO(stay.check_out)
+                          return format(addDays(co, -1), 'yyyy-MM-dd')
+                        })()}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                      />
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction disabled={!canConfirm} onClick={handleConfirm}>
+              ต่อไป
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  )
+}
+
+// ─── Event action labels (Thai) ──────────────────────────────────────────────
+
+const EVENT_LABEL_TH: Record<string, string> = {
+  BOOKING_CREATED:  'สร้างการจอง',
+  PAYMENT_RECEIVED: 'รับชำระเงิน',
+  PAYMENT_REFUNDED: 'คืนเงิน',
+  ROOM_ASSIGNED:    'มอบหมายห้อง',
+  AUTO_ASSIGNED:    'มอบหมายอัตโนมัติ',
+  CHECKED_IN:       'เช็คอิน',
+  CHECKED_OUT:      'เช็คเอาท์',
+  STAY_CANCELLED:   'ยกเลิกห้อง',
+  STAY_EXTENDED:    'ขยายเวลา',
+  STAY_MOVED:       'ย้ายห้อง',
+  ROOM_TRANSFERRED: 'ย้ายห้อง',
+  INVOICE_ISSUED:   'ออกใบเสร็จ',
+}
+
+// ─── EventTimeline ───────────────────────────────────────────────────────────
+
+function EventTimeline({ events }: { events: BookingEventResponse[] }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-helper font-semibold flex items-center gap-2">
+          <Clock className="w-4 h-4" />
+          ประวัติกิจกรรม
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-0">
+          {events.map((ev, i) => (
+            <div key={ev.id} className="flex gap-3">
+              {/* Timeline line + dot */}
+              <div className="flex flex-col items-center">
+                <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
+                {i < events.length - 1 && <div className="w-px flex-1 bg-border" />}
+              </div>
+              {/* Content */}
+              <div className="pb-4 min-w-0">
+                <p className="text-body font-medium">
+                  {EVENT_LABEL_TH[ev.action] ?? ev.action}
+                </p>
+                <p className="text-helper text-sm">{ev.detail}</p>
+                <p className="text-helper text-xs mt-0.5">
+                  {formatThaiDate(ev.created_at)}
+                  {ev.actor && ` · ${ev.actor}`}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
     </Card>
   )
 }

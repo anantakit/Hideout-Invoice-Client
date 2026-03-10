@@ -45,6 +45,24 @@ export interface PaymentResponse {
   created_by: string
 }
 
+export interface InvoiceResponseShort {
+  id: string
+  invoice_number: string
+  booking_id?: string
+  total: number
+  issue_date: string
+  created_at: string
+}
+
+export interface BookingEventResponse {
+  id: string
+  action: string
+  actor: string
+  detail: string
+  metadata?: string
+  created_at: string
+}
+
 export interface BookingResponse {
   id: string
   guest_name: string
@@ -57,7 +75,65 @@ export interface BookingResponse {
   balance_amount: number
   room_stays: RoomStayResponse[]
   payments: PaymentResponse[]
+  invoices: InvoiceResponseShort[]
+  events: BookingEventResponse[]
   created_at: string
+}
+
+// ─── Invoice Prefill ──────────────────────────────────────────────────────────
+
+export interface InvoicePrefillItem {
+  description: string
+  quantity: number
+  unit_price: number
+  amount: number
+  source_type?: string
+  source_id?: string
+}
+
+export type PrefillMode = 'booking' | 'stay' | 'night'
+
+export interface CoveredStay {
+  stay_id: string
+  date_from: string
+  date_to: string
+}
+
+export interface CoverageNight {
+  date: string
+  rate: number
+  invoiced: boolean
+  invoice_number?: string
+  invoice_id?: string
+}
+
+export interface CoverageStay {
+  stay_id: string
+  room_number: string
+  room_type: string
+  nights: CoverageNight[]
+}
+
+export interface InvoiceCoverageResponse {
+  booking_id: string
+  stays: CoverageStay[]
+}
+
+export interface InvoicePrefillResponse {
+  booking_id: string
+  mode: PrefillMode
+  guest_name: string
+  guest_phone: string
+  check_in_date: string
+  check_out_date: string
+  nights: number
+  room_numbers: string
+  payment_method: string
+  total_amount: number
+  paid_amount: number
+  balance_amount: number
+  items: InvoicePrefillItem[]
+  covered_stays?: CoveredStay[]
 }
 
 export interface AvailabilityResponse {

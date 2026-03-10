@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { ChevronLeft, Download, Trash2, Loader2 } from 'lucide-react'
+import { ChevronLeft, Download, Trash2, Loader2, ExternalLink } from 'lucide-react'
 import { receiptsApi } from '../api'
 import ErrorPage from '@/shared/components/ErrorPage'
 import { formatTHB, formatThaiDate } from '../../../shared/utils'
@@ -277,6 +277,22 @@ export default function ReceiptDetail() {
             <CardContent className="p-5 md:p-8 space-y-2">
               <p className="text-helper uppercase tracking-wide">หมายเหตุ</p>
               <p className="text-helper whitespace-pre-wrap">{receipt.notes}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Booking link */}
+        {receipt.booking_id && (
+          <Card className="transition-shadow duration-200 md:hover:shadow-md">
+            <CardContent className="p-5 md:p-8">
+              <p className="text-helper uppercase tracking-wide mb-2">การจองที่เกี่ยวข้อง</p>
+              <Link
+                to={`/bookings/${receipt.booking_id}`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                ดูการจอง #{receipt.booking_id.slice(0, 8).toUpperCase()}
+              </Link>
             </CardContent>
           </Card>
         )}

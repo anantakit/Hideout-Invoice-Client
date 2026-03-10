@@ -16,6 +16,10 @@ import type {
   TimelineResponse,
   AvailabilityGroupedResponse,
   AutoAssignResponse,
+  InvoicePrefillResponse,
+  BookingEventResponse,
+  PrefillMode,
+  InvoiceCoverageResponse,
 } from './types'
 
 export const bookingsApi = {
@@ -173,6 +177,35 @@ export const bookingsApi = {
     const { data } = await apiClient.get<ApiResponse<AvailabilityGroupedResponse>>(
       '/rooms/availability-grouped',
       { params },
+    )
+    return data.data
+  },
+
+  getInvoicePrefill: async (
+    bookingId: string,
+    opts?: { mode?: PrefillMode; stayIds?: string[]; date?: string },
+  ): Promise<InvoicePrefillResponse> => {
+    const params: Record<string, string> = {}
+    if (opts?.mode && opts.mode !== 'booking') params.mode = opts.mode
+    if (opts?.stayIds?.length) params.stay_ids = opts.stayIds.join(',')
+    if (opts?.date) params.date = opts.date
+    const { data } = await apiClient.get<ApiResponse<InvoicePrefillResponse>>(
+      `/bookings/${bookingId}/invoice-prefill`,
+      { params },
+    )
+    return data.data
+  },
+
+  getBookingEvents: async (bookingId: string): Promise<BookingEventResponse[]> => {
+    const { data } = await apiClient.get<ApiResponse<BookingEventResponse[]>>(
+      `/bookings/${bookingId}/events`,
+    )
+    return data.data
+  },
+
+  getInvoiceCoverage: async (bookingId: string): Promise<InvoiceCoverageResponse> => {
+    const { data } = await apiClient.get<ApiResponse<InvoiceCoverageResponse>>(
+      `/bookings/${bookingId}/invoice-coverage`,
     )
     return data.data
   },

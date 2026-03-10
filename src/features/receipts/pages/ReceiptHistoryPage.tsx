@@ -169,6 +169,7 @@ export default function ReceiptHistory() {
                     <TableHead>เลขที่ใบเสร็จ</TableHead>
                     <TableHead>ลูกค้า</TableHead>
                     <TableHead className="hidden md:table-cell">วันที่ออกเอกสาร</TableHead>
+                    <TableHead className="hidden lg:table-cell">การจอง</TableHead>
                     <TableHead className="text-right">ยอดรวม</TableHead>
                     <TableHead className="text-center">จัดการ</TableHead>
                   </TableRow>
@@ -184,6 +185,18 @@ export default function ReceiptHistory() {
                       <TableCell className="text-foreground/80">{receipt.customer?.name ?? '—'}</TableCell>
                       <TableCell className="text-muted-foreground hidden md:table-cell">
                         {formatThaiDate(receipt.issue_date)}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {receipt.booking_id ? (
+                          <Link
+                            to={`/bookings/${receipt.booking_id}`}
+                            className="text-xs font-medium text-primary hover:text-primary/80"
+                          >
+                            #{receipt.booking_id.slice(0, 8).toUpperCase()}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right font-semibold text-foreground">
                         {formatTHB(receipt.total)}
