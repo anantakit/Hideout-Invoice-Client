@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { isValid, isBefore, isSameDay, differenceInDays } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { Calendar } from '../../../shared/ui/calendar'
@@ -30,7 +31,7 @@ function toISO(d: Date): string {
 function formatThai(iso: string): string {
   const d = parseISO(iso)
   if (!d) return ''
-  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`
+  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]} ${(d.getFullYear() + 543) % 100}`
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ export function DateRangePicker({
   value,
   onChange,
   disabled = false,
-  placeholder = 'เลือกวันเช็คอิน → เช็คเอาท์',
+  placeholder = 'วันเช็คอิน → เช็คเอาท์',
   className,
   onOpenCalendar,
 }: DateRangePickerProps) {
@@ -69,6 +70,9 @@ export function DateRangePicker({
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const [panelPos, setPanelPos] = useState({ top: 0, left: 0, openUp: false })
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -78,11 +82,31 @@ export function DateRangePicker({
     return () => mq.removeEventListener('change', check)
   }, [])
 
+  // Position the desktop calendar panel via portal
+  const PANEL_H = 420 // approximate calendar panel height
+  useLayoutEffect(() => {
+    if (!open || isMobile || !triggerRef.current) return
+    const rect = triggerRef.current.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom - 8
+    const openUp = spaceBelow < PANEL_H && rect.top > spaceBelow
+    setPanelPos({
+      top: openUp ? rect.top - 8 : rect.bottom + 8,
+      left: rect.left,
+      openUp,
+    })
+  }, [open, isMobile, phase])
+
   // Close desktop panel on outside click.
   useEffect(() => {
     if (!open || isMobile) return
     const handler = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) handleClose()
+      const target = e.target as Node
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        panelRef.current && !panelRef.current.contains(target)
+      ) {
+        handleClose()
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -150,6 +174,7 @@ export function DateRangePicker({
 
   const triggerEl = (
     <button
+      ref={triggerRef}
       type="button"
       disabled={disabled}
       onClick={() => (open ? handleClose() : handleOpen())}
@@ -212,19 +237,30 @@ export function DateRangePicker({
     )
   }
 
-  // ── Desktop: absolute dropdown ───────────────────────────────────────────────
+  // ── Desktop: portal dropdown ─────────────────────────────────────────────────
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef}>
       {triggerEl}
-      {open && (
-        <div className="absolute left-0 top-full mt-2 z-50 w-80 bg-card border border-border rounded-2xl shadow-popover p-4">
-          <p className="text-xs font-medium text-muted-foreground mb-3">
-            {phase === 'selecting-end' ? 'คลิกเลือกวันเช็คเอาท์' : 'คลิกเลือกวันเช็คอิน'}
-          </p>
-          {calendarEl}
-        </div>
-      )}
+      {open &&
+        createPortal(
+          <div
+            ref={panelRef}
+            className="fixed z-[9999] w-80 bg-card border border-border rounded-2xl shadow-popover p-4"
+            style={{
+              left: panelPos.left,
+              ...(panelPos.openUp
+                ? { bottom: window.innerHeight - panelPos.top }
+                : { top: panelPos.top }),
+            }}
+          >
+            <p className="text-xs font-medium text-muted-foreground mb-3">
+              {phase === 'selecting-end' ? 'เลือกวันเช็คเอาท์' : 'เลือกวันเช็คอิน'}
+            </p>
+            {calendarEl}
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

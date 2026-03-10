@@ -443,9 +443,9 @@ function ModalFooter({
   const isMidSelect = Boolean(selectionStart)
 
   let hint: string
-  if (isMidSelect)        hint = 'คลิกเพื่อเลือกวันเช็คเอาท์'
+  if (isMidSelect)        hint = 'เลือกวันเช็คเอาท์'
   else if (hasRange)      hint = `${formatShort(selectedRange.checkIn)} → ${formatShort(selectedRange.checkOut)}`
-  else                    hint = 'คลิกเพื่อเลือกวันเช็คอิน'
+  else                    hint = 'เลือกวันเช็คอิน'
 
   return (
     <div className="flex items-center gap-3 px-4 py-4 border-t border-border shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">

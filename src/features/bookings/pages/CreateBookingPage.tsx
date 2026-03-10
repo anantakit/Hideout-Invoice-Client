@@ -207,7 +207,13 @@ export default function CreateBookingPage() {
                     <FormItem>
                       <FormLabel>เบอร์โทรศัพท์</FormLabel>
                       <FormControl>
-                        <Input {...field} type="tel" placeholder="เช่น 081-234-5678" />
+                        <Input
+                          {...field}
+                          inputMode="numeric"
+                          maxLength={10}
+                          placeholder="0812345678"
+                          onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                        />
                       </FormControl>
                       <FormMessage className="text-xs" />
                     </FormItem>

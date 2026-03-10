@@ -407,8 +407,9 @@ function RoomTypeBookingItemCard({
       </CardHeader>
 
       <CardContent className="pt-0 space-y-4">
-        {/* ── Row 1: room type + quantity stepper ─────────────────────── */}
-        <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+        {/* ── Row 1: room type + quantity ─────────────────────────────── */}
+        {/* Mobile: stacked. Desktop: side by side */}
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 sm:items-end">
           {/* Room type select */}
           <FormField
             control={form.control}
@@ -428,7 +429,7 @@ function RoomTypeBookingItemCard({
                       <SelectValue placeholder="เลือกประเภทห้อง" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent sheetTitle="เลือกประเภทห้อง">
                     {roomTypes.map((rt) => (
                       <SelectItem key={rt.id} value={rt.id}>
                         {rt.name}
@@ -450,14 +451,17 @@ function RoomTypeBookingItemCard({
             name={`items.${index}.quantity`}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>จำนวน</FormLabel>
+                <div className="flex items-center justify-between sm:hidden">
+                  <FormLabel>จำนวนห้อง</FormLabel>
+                </div>
+                <FormLabel className="hidden sm:block">จำนวน</FormLabel>
                 <FormControl>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-9 w-9 shrink-0"
+                      className="h-10 w-10 shrink-0 sm:h-9 sm:w-9"
                       disabled={!roomTypeId || field.value <= 1}
                       onClick={() => {
                         const next = Math.max(1, field.value - 1)
@@ -465,13 +469,13 @@ function RoomTypeBookingItemCard({
                         trimAssignedIfNeeded(next)
                       }}
                     >
-                      <Minus className="w-3.5 h-3.5" />
+                      <Minus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                     </Button>
                     <Input
                       type="number"
                       min={1}
                       max={maxQuantity === Infinity ? undefined : maxQuantity}
-                      className="h-9 w-16 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      className="h-10 w-full sm:w-16 sm:h-9 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       value={field.value}
                       disabled={!roomTypeId}
                       onChange={(e) => {
@@ -484,14 +488,14 @@ function RoomTypeBookingItemCard({
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-9 w-9 shrink-0"
+                      className="h-10 w-10 shrink-0 sm:h-9 sm:w-9"
                       disabled={!roomTypeId || field.value >= maxQuantity}
                       onClick={() => {
                         const next = Math.min(maxQuantity, field.value + 1)
                         field.onChange(next)
                       }}
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                     </Button>
                   </div>
                 </FormControl>

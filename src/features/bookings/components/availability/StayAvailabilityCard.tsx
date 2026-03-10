@@ -48,7 +48,7 @@ export function StayAvailabilityCard({ range, onRangeChange }: StayAvailabilityC
         <DateRangePicker
           value={currentRange}
           onChange={handleChange}
-          placeholder="เลือกวันเช็คอิน → เช็คเอาท์"
+          placeholder="วันเช็คอิน → เช็คเอาท์"
         />
 
         {/* Loading indicator */}

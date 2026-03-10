@@ -137,33 +137,58 @@ export function Calendar({
             const dayToday = isToday(day)
             const selected = isStart || isEnd
 
+            // Range band: continuous highlight strip behind cells
+            const showBand = hasRange && inMonth && (isStart || isEnd || inRange)
+
             return (
-              <button
+              <div
                 key={di}
-                type="button"
-                disabled={!inMonth}
-                onClick={() => onDayClick(day)}
-                onMouseEnter={() => onDayHover(day)}
-                onMouseLeave={() => onDayHover(null)}
                 className={cn(
-                  // Base
-                  'min-h-[40px] w-full radius-card flex items-center justify-center text-sm transition-colors',
-                  // Out-of-month
-                  !inMonth && 'opacity-40 pointer-events-none text-foreground',
-                  // In-month defaults
-                  inMonth && !selected && 'text-foreground',
-                  // Today ring (only when not selected)
-                  inMonth && !selected && dayToday && 'ring-2 ring-ring',
-                  // In-range fill (no ring override needed — start/end supersede)
-                  inRange && !selected && 'bg-muted',
-                  // Hover (not selected, not in-range)
-                  inMonth && !selected && !inRange && 'hover:bg-muted',
-                  // Selected
-                  selected && 'date-selected',
+                  'relative flex items-center justify-center',
+                  // Range band background — stretches full cell width
+                  showBand && !selected && 'bg-primary/10',
+                  // Start: only right half has band
+                  showBand && isStart && !isEnd && 'bg-transparent',
+                  // End: only left half has band
+                  showBand && isEnd && !isStart && 'bg-transparent',
+                  // Both start+end on same day: no band
+                  isStart && isEnd && 'bg-transparent',
                 )}
               >
-                {format(day, 'd')}
-              </button>
+                {/* Half-fill pseudo band for start/end */}
+                {showBand && isStart && !isEnd && (
+                  <div className="absolute inset-y-0 right-0 w-1/2 bg-primary/10" />
+                )}
+                {showBand && isEnd && !isStart && (
+                  <div className="absolute inset-y-0 left-0 w-1/2 bg-primary/10" />
+                )}
+
+                <button
+                  type="button"
+                  disabled={!inMonth}
+                  onClick={() => onDayClick(day)}
+                  onMouseEnter={() => onDayHover(day)}
+                  onMouseLeave={() => onDayHover(null)}
+                  className={cn(
+                    // Base
+                    'relative z-10 min-h-[40px] w-full flex items-center justify-center text-sm transition-colors rounded-full',
+                    // Out-of-month
+                    !inMonth && 'opacity-40 pointer-events-none text-foreground',
+                    // In-month defaults
+                    inMonth && !selected && 'text-foreground',
+                    // Today ring (only when not selected)
+                    inMonth && !selected && dayToday && 'ring-2 ring-ring',
+                    // In-range text
+                    inRange && !selected && 'text-foreground',
+                    // Hover (not selected, not in-range)
+                    inMonth && !selected && !inRange && 'hover:bg-muted',
+                    // Selected circle
+                    selected && 'date-selected',
+                  )}
+                >
+                  {format(day, 'd')}
+                </button>
+              </div>
             )
           })}
         </div>

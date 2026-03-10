@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -16,7 +16,6 @@ import {
 } from '../../../shared/ui/dialog'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
-import { Textarea } from '../../../shared/ui/textarea'
 import {
   Form,
   FormControl,
@@ -25,12 +24,17 @@ import {
   FormLabel,
   FormMessage,
 } from '../../../shared/ui/form'
+import ThaiAddressPicker, { type ThaiAddress } from '../../../shared/ui/ThaiAddressPicker'
 
 const schema = z.object({
   name: z.string().min(1, 'กรุณาระบุชื่อ'),
   tax_id: z.string().max(50).optional().default(''),
   address: z.string().max(500).optional().default(''),
-  phone: z.string().max(50).optional().default(''),
+  phone: z.string()
+    .regex(/^\d*$/, 'กรุณากรอกเฉพาะตัวเลข')
+    .refine((v) => v === '' || v.length === 10, 'เบอร์โทรศัพท์ต้องมี 10 หลัก')
+    .optional()
+    .default(''),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -42,6 +46,30 @@ interface Props {
   customer?: Customer
 }
 
+const emptyAddr: ThaiAddress = { province: '', amphoe: '', district: '', zipcode: '' }
+
+function parseAddressToThaiAddr(address: string): { detail: string; thai: ThaiAddress } {
+  // Try to parse "detail ต.X อ.Y จ.Z NNNNN" or "detail แขวงX เขตY กรุงเทพมหานคร NNNNN"
+  const m = address.match(/^(.*?)\s*(?:ต\.|ตำบล|แขวง)(\S+)\s+(?:อ\.|อำเภอ|เขต)(\S+)\s+(?:จ\.|จังหวัด)?(\S+)\s+(\d{5})\s*$/)
+  if (m) {
+    return {
+      detail: m[1].trim(),
+      thai: { district: m[2], amphoe: m[3], province: m[4], zipcode: m[5] },
+    }
+  }
+  return { detail: address, thai: emptyAddr }
+}
+
+function buildAddressString(detail: string, thai: ThaiAddress): string {
+  if (!thai.district && !thai.amphoe && !thai.province) return detail.trim()
+  const parts = [detail.trim()]
+  if (thai.district) parts.push(`ต.${thai.district}`)
+  if (thai.amphoe) parts.push(`อ.${thai.amphoe}`)
+  if (thai.province) parts.push(`จ.${thai.province}`)
+  if (thai.zipcode) parts.push(thai.zipcode)
+  return parts.filter(Boolean).join(' ')
+}
+
 export default function CustomerModal({ open, onClose, onCreated, customer }: Props) {
   const isEditing = !!customer
 
@@ -50,13 +78,42 @@ export default function CustomerModal({ open, onClose, onCreated, customer }: Pr
     defaultValues: { name: '', tax_id: '', address: '', phone: '' },
   })
 
+  const [thaiAddr, setThaiAddr] = useState<ThaiAddress>(emptyAddr)
+  const [addrDetail, setAddrDetail] = useState('')
+
+  // Sync picker → form.address
+  const syncAddress = useCallback(
+    (detail: string, thai: ThaiAddress) => {
+      form.setValue('address', buildAddressString(detail, thai))
+    },
+    [form]
+  )
+
+  const handleThaiAddrChange = useCallback(
+    (addr: ThaiAddress) => {
+      setThaiAddr(addr)
+      syncAddress(addrDetail, addr)
+    },
+    [addrDetail, syncAddress]
+  )
+
+  const handleDetailChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setAddrDetail(e.target.value)
+      syncAddress(e.target.value, thaiAddr)
+    },
+    [thaiAddr, syncAddress]
+  )
+
   useEffect(() => {
     if (open) {
-      form.reset(
-        customer
-          ? { name: customer.name, tax_id: customer.tax_id ?? '', address: customer.address ?? '', phone: customer.phone ?? '' }
-          : { name: '', tax_id: '', address: '', phone: '' }
-      )
+      const vals = customer
+        ? { name: customer.name, tax_id: customer.tax_id ?? '', address: customer.address ?? '', phone: customer.phone ?? '' }
+        : { name: '', tax_id: '', address: '', phone: '' }
+      form.reset(vals)
+      const parsed = parseAddressToThaiAddr(vals.address)
+      setThaiAddr(parsed.thai)
+      setAddrDetail(parsed.detail)
     }
   }, [open, customer, form])
 
@@ -81,7 +138,7 @@ export default function CustomerModal({ open, onClose, onCreated, customer }: Pr
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'แก้ไขข้อมูลลูกค้า' : 'เพิ่มลูกค้าใหม่'}</DialogTitle>
         </DialogHeader>
@@ -109,7 +166,16 @@ export default function CustomerModal({ open, onClose, onCreated, customer }: Pr
                   <FormItem>
                     <FormLabel>เบอร์โทรศัพท์</FormLabel>
                     <FormControl>
-                      <Input placeholder="081-234-5678" {...field} />
+                      <Input
+                        placeholder="0812345678"
+                        inputMode="numeric"
+                        maxLength={10}
+                        {...field}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, '')
+                          field.onChange(digits)
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -128,19 +194,21 @@ export default function CustomerModal({ open, onClose, onCreated, customer }: Pr
                   </FormItem>
                 )}
               />
+              {/* ── Address: detail line + cascading Thai address picker ── */}
               <FormField
                 control={form.control}
                 name="address"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>ที่อยู่</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        rows={3}
-                        placeholder="เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์"
-                        {...field}
+                    <div className="space-y-3">
+                      <Input
+                        placeholder="เลขที่ ซอย ถนน (รายละเอียด)"
+                        value={addrDetail}
+                        onChange={handleDetailChange}
                       />
-                    </FormControl>
+                      <ThaiAddressPicker value={thaiAddr} onChange={handleThaiAddrChange} />
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -149,7 +217,7 @@ export default function CustomerModal({ open, onClose, onCreated, customer }: Pr
 
             <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={onClose}>ยกเลิก</Button>
-              <Button type="submit" disabled={form.formState.isSubmitting || isPending}>
+              <Button type="submit" disabled={form.formState.isSubmitting || isPending || !form.watch('name')?.trim()}>
                 {isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> กำลังบันทึก…</> : isEditing ? 'บันทึก' : 'สร้างลูกค้า'}
               </Button>
             </DialogFooter>
