@@ -136,6 +136,21 @@ function proximityAutoAssignAll(
           score += 30.0 / (1 + minDist)
           // Same-side bonus: +20 per matching anchor
           score += (20.0 * sameSideCount) / anchors.length
+        } else {
+          // No anchor yet: score by average min-distance to available rooms
+          // of OTHER room types so the first pick is central to all types.
+          const otherTypeRooms = availData.room_types
+            .filter((rt) => rt.room_type_id !== item.room_type_id)
+            .flatMap((rt) => rt.rooms.filter((r) => r.available && !globalAssigned.has(r.room_id)))
+          if (otherTypeRooms.length > 0) {
+            let totalDist = 0
+            for (const other of otherTypeRooms) {
+              totalDist += manhattan(room.room_id, other.room_id)
+            }
+            const avgDist = totalDist / otherTypeRooms.length
+            // Lower avg distance → higher score
+            score += 30.0 / (1 + avgDist)
+          }
         }
 
         // Room number tiebreak: prefer lower numbers

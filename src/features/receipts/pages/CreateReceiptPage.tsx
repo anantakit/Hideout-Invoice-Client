@@ -432,7 +432,7 @@ export default function CreateReceipt() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={form.formState.isSubmitting || createMutation.isPending}
+                  disabled={!selectedCustomer || form.formState.isSubmitting || createMutation.isPending}
                   className="min-h-[44px] px-6 rounded-xl font-medium"
                 >
                   {createMutation.isPending ? (
@@ -453,7 +453,7 @@ export default function CreateReceipt() {
         <Button
           type="submit"
           form="create-receipt-form"
-          disabled={form.formState.isSubmitting || createMutation.isPending}
+          disabled={!selectedCustomer || form.formState.isSubmitting || createMutation.isPending}
           className="w-full min-h-[52px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]"
         >
           {createMutation.isPending ? (
