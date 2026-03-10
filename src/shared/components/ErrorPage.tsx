@@ -49,7 +49,7 @@ const PRESETS: Record<ErrorVariant, Preset> = {
     badge: '404',
     title: 'ไม่พบหน้าที่ต้องการ',
     description: 'หน้าที่คุณกำลังมองหาอาจถูกย้าย ลบออก หรือ URL ไม่ถูกต้อง',
-    primary: { label: 'กลับไปไทม์ไลน์', icon: ArrowLeft, route: '/bookings/timeline' },
+    primary: { label: 'กลับไปไทม์ไลน์', icon: ArrowLeft, route: '/timeline' },
     secondary: { label: 'โหลดใหม่', icon: RotateCcw, action: 'reload' },
     tertiary: { label: 'ไปหน้า Dashboard', icon: LayoutDashboard, route: '/dashboard' },
   },
@@ -132,7 +132,7 @@ export default function ErrorPage({
   const handleSecondary = () => {
     if (secondaryAction) return secondaryAction.onClick()
     if (p.secondary?.action === 'reload') return window.location.reload()
-    if (p.secondary) return navigate(p.secondary.route ?? '/bookings/timeline')
+    if (p.secondary) return navigate(p.secondary.route ?? '/timeline')
   }
 
   const handleTertiary = () => {

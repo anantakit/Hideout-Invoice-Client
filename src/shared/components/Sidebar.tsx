@@ -31,7 +31,7 @@ interface NavItemConfig {
   /**
    * Passed to NavLink's `end` prop.
    * Must be true for items whose `to` is a prefix of other routes
-   * (e.g. `/bookings` would otherwise match `/bookings/timeline`).
+   * (e.g. `/bookings` would otherwise match `/bookings/new`).
    */
   end?: boolean
 }
@@ -59,8 +59,8 @@ const NAV_SECTIONS: NavSectionConfig[] = [
     id: 'operations',
     label: 'Operations',
     items: [
-      { to: '/bookings/timeline', label: 'ไทม์ไลน์', icon: CalendarRange, end: true },
-      { to: '/bookings',          label: 'การจอง',    icon: BedDouble,     end: true },
+      { to: '/timeline', label: 'ไทม์ไลน์', icon: CalendarRange, end: true },
+      { to: '/bookings',          label: 'การจอง',    icon: BedDouble },
     ],
   },
   {

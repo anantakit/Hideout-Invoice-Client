@@ -55,7 +55,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/bookings/timeline" replace />} />
+              <Route index element={<Navigate to="/timeline" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/receipts/new" element={<CreateReceipt />} />
               <Route path="/receipts" element={<ReceiptHistory />} />
@@ -63,7 +63,7 @@ export default function App() {
               <Route path="/customers" element={<Customers />} />
               <Route path="/bookings" element={<BookingList />} />
               <Route path="/bookings/new" element={<CreateBooking />} />
-              <Route path="/bookings/timeline" element={<Timeline />} />
+              <Route path="/timeline" element={<Timeline />} />
               <Route path="/bookings/:id/checkin" element={<GroupCheckIn />} />
               <Route path="/bookings/:id" element={<BookingDetail />} />
               <Route path="/operations/today" element={<TodayBoard />} />

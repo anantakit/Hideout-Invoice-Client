@@ -21,7 +21,7 @@ export default function Login() {
   const { login, isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/bookings/timeline'
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/timeline'
 
   if (isAuthenticated) {
     if (user?.must_change_password) {
