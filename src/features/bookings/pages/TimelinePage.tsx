@@ -421,6 +421,13 @@ export default function TimelinePage() {
     [navigate],
   )
 
+  const handleContextTransfer = useCallback(
+    (booking: TimelineBooking, _roomId: string) => {
+      navigate(ROUTES.bookings.detail(booking.booking_id))
+    },
+    [navigate],
+  )
+
   const handleContextCancel = useCallback(
     (booking: TimelineBooking) => {
       setCancelTarget(booking)
@@ -834,6 +841,7 @@ export default function TimelinePage() {
             onCheckOut={handleQuickCheckOut}
             onOpenDetail={handleContextOpenDetail}
             onCancel={handleContextCancel}
+            onTransfer={handleContextTransfer}
           />
         )}
 

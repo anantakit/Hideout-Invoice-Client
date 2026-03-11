@@ -1,6 +1,6 @@
 import React, { type CSSProperties, useCallback, useMemo, useRef } from 'react'
 import { differenceInDays, format, parseISO, startOfDay } from 'date-fns'
-import { Users, Clock, Footprints, CalendarCheck } from 'lucide-react'
+import { Users, Clock, Footprints, CalendarCheck, ArrowRightLeft } from 'lucide-react'
 import {
   TIMELINE_BLOCK_HEIGHT_PX,
   TIMELINE_BLOCK_GAP_PX,
@@ -324,8 +324,8 @@ const BookingBlock = React.memo(function BookingBlock({
               onPointerDown={handleResizeLeftDown}
             >
               <div className="flex gap-px">
-                <div className="w-[2px] h-5 rounded-full bg-foreground/40" />
-                <div className="w-[2px] h-5 rounded-full bg-foreground/40" />
+                <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
+                <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
               </div>
             </div>
           )}
@@ -337,8 +337,8 @@ const BookingBlock = React.memo(function BookingBlock({
               onPointerDown={handleResizeRightDown}
             >
               <div className="flex gap-px">
-                <div className="w-[2px] h-5 rounded-full bg-foreground/40" />
-                <div className="w-[2px] h-5 rounded-full bg-foreground/40" />
+                <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
+                <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
               </div>
             </div>
           )}
@@ -358,6 +358,11 @@ const BookingBlock = React.memo(function BookingBlock({
             <div className="absolute right-0 inset-y-0 w-[3px] bg-foreground/30 rounded-r-sm" />
           )}
 
+          {/* Transfer indicator — this stay was created by a room transfer */}
+          {booking.transfer_from_stay_id && !isUpcoming && (
+            <ArrowRightLeft className="w-2.5 h-2.5 shrink-0 opacity-70" />
+          )}
+
           {/* Clock icon for upcoming */}
           {isUpcoming && (
             <Clock className="w-3 h-3 shrink-0 text-muted-foreground/60" />
@@ -372,7 +377,7 @@ const BookingBlock = React.memo(function BookingBlock({
               })()}
               <span
                 className={cn(
-                  'w-1.5 h-1.5 rounded-full',
+                  'w-1.5 h-1.5 radius-badge',
                   Number(booking.balance_amount) > 0
                     ? 'bg-foreground/80 ring-1 ring-destructive'
                     : 'bg-foreground/30',
@@ -412,7 +417,7 @@ const BookingBlock = React.memo(function BookingBlock({
           {booking.guest_name}
         </p>
 
-        <p className="text-[10px] text-muted-foreground/70 font-mono mt-0.5">
+        <p className="text-micro text-muted-foreground/70 font-mono mt-0.5">
           #{booking.booking_id.slice(0, 8)}
         </p>
 
@@ -435,13 +440,20 @@ const BookingBlock = React.memo(function BookingBlock({
         </p>
 
         {booking.source && (
-          <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+          <p className="text-micro text-muted-foreground/70 mt-0.5">
             ช่องทาง: {SOURCE_LABEL[booking.source] ?? booking.source}
           </p>
         )}
 
+        {booking.transfer_from_stay_id && (
+          <p className="text-micro text-info mt-0.5 flex items-center gap-1">
+            <ArrowRightLeft className="w-3 h-3" />
+            ย้ายมาจากห้องอื่น
+          </p>
+        )}
+
         {isUpcoming && (
-          <p className="text-xs text-primary/70 flex items-center gap-1 mt-0.5">
+          <p className="text-helper text-primary/70 flex items-center gap-1 mt-0.5">
             <Clock className="w-3 h-3" />
             จะมาถึง
           </p>
@@ -449,7 +461,7 @@ const BookingBlock = React.memo(function BookingBlock({
 
         {!isUpcoming && (
           <p className={cn(
-            'text-xs mt-0.5',
+            'text-helper mt-0.5',
             Number(booking.balance_amount) > 0 ? 'text-destructive' : 'text-success',
           )}>
             {Number(booking.balance_amount) > 0
@@ -461,13 +473,13 @@ const BookingBlock = React.memo(function BookingBlock({
         <div className="mt-1.5">
           <Badge
             variant={statusBadgeVariant(booking.status)}
-            className="text-[10px] px-1.5 py-0"
+            className="text-micro px-1.5 py-0"
           >
             {getStatusLabel(booking.status)}
           </Badge>
         </div>
 
-        <p className="text-[9px] text-muted-foreground/50 mt-1.5">
+        <p className="text-micro text-muted-foreground/50 mt-1.5">
           คลิกขวาเพื่อดูเมนู
         </p>
       </TooltipContent>

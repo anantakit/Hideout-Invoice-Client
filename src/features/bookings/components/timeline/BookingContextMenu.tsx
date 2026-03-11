@@ -6,6 +6,7 @@ import {
   ExternalLink,
   XCircle,
   CalendarRange,
+  ArrowRightLeft,
 } from 'lucide-react'
 import { startOfDay, parseISO } from 'date-fns'
 import { cn } from '@/shared/utils'
@@ -28,6 +29,7 @@ interface BookingContextMenuProps {
   onCheckOut: (booking: TimelineBooking) => void
   onOpenDetail: (booking: TimelineBooking) => void
   onCancel: (booking: TimelineBooking) => void
+  onTransfer: (booking: TimelineBooking, roomId: string) => void
 }
 
 // ─── Menu Item ────────────────────────────────────────────────────────────────
@@ -47,8 +49,8 @@ function MenuItem({ icon: Icon, label, onClick, variant = 'default', disabled }:
       role="menuitem"
       disabled={disabled}
       className={cn(
-        'w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm',
-        'transition-colors rounded-md',
+        'w-full flex items-center gap-2.5 px-3 py-2 text-left text-body',
+        'transition-colors radius-button',
         'focus-visible:outline-none',
         disabled && 'opacity-40 cursor-not-allowed',
         !disabled && variant === 'default' && 'text-foreground hover:bg-muted focus-visible:bg-muted',
@@ -74,6 +76,7 @@ const BookingContextMenu = React.memo(function BookingContextMenu({
   onCheckOut,
   onOpenDetail,
   onCancel,
+  onTransfer,
 }: BookingContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const { booking, roomId, roomNumber } = state
@@ -157,6 +160,7 @@ const BookingContextMenu = React.memo(function BookingContextMenu({
   const stayCheckIn = startOfDay(parseISO(booking.check_in))
   const canCheckIn = (status === 'RESERVED' || status === 'ASSIGNED') && stayCheckIn <= today
   const canCheckOut = status === 'CHECKED_IN'
+  const canTransfer = status === 'CHECKED_IN' || status === 'ASSIGNED'
   const canCancel = status === 'RESERVED' || status === 'ASSIGNED' || status === 'CHECKED_IN'
   const isTerminal = status === 'CHECKED_OUT' || status === 'CANCELLED'
 
@@ -178,10 +182,10 @@ const BookingContextMenu = React.memo(function BookingContextMenu({
     >
       {/* Header */}
       <div className="px-3 py-1.5 select-none">
-        <p className="text-xs font-semibold text-foreground truncate">
+        <p className="text-label text-foreground truncate">
           {booking.guest_name}
         </p>
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-micro text-muted-foreground">
           ห้อง {roomNumber} · {booking.check_in} → {booking.check_out}
         </p>
       </div>
@@ -205,7 +209,15 @@ const BookingContextMenu = React.memo(function BookingContextMenu({
         />
       )}
 
-      {(canCheckIn || canCheckOut) && (
+      {canTransfer && (
+        <MenuItem
+          icon={ArrowRightLeft}
+          label="ย้ายห้อง"
+          onClick={() => { onTransfer(booking, roomId); onClose() }}
+        />
+      )}
+
+      {(canCheckIn || canCheckOut || canTransfer) && (
         <div className="h-px bg-border mx-1 my-0.5" />
       )}
 

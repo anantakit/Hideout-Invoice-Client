@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { differenceInDays, isToday, isBefore, startOfDay, parseISO, format, addDays } from 'date-fns'
-import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock, Receipt, FileText, Clock } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock, Receipt, FileText, Clock, ArrowRightLeft, CreditCard, DoorOpen, LogIn, LogOut, Ban, Timer, Wand2, Repeat } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
@@ -22,10 +22,12 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from '../../../shared/ui/alert-dialog'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../../../shared/ui/sheet'
+import { useIsMobile } from '../../../shared/hooks/useIsMobile'
 import { formatThaiDate, formatTHB } from '../../../shared/utils'
 import { ROUTES } from '@/app/routes'
 import ErrorPage from '@/shared/components/ErrorPage'
-import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useCheckoutRooms, useAvailabilityGrouped } from '../hooks'
+import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useCheckoutRooms, useAvailabilityGrouped, useTransferRoom } from '../hooks'
 import { PaymentPanel } from '../components/PaymentPanel'
 import { type RoomStayResponse, type BookingEventResponse, type BookingResponse, type InvoiceResponseShort, getStatusLabel } from '../types'
 
@@ -219,7 +221,7 @@ export default function BookingDetailPage() {
     <div className="max-w-2xl mx-auto px-4 pt-6 pb-10 space-y-6">
 
       {/* ── 1. Header ──────────────────────────────────────────────────── */}
-      <div className="space-y-1">
+      <div className="space-y-3">
         <Button
           variant="ghost"
           size="sm"
@@ -229,74 +231,104 @@ export default function BookingDetailPage() {
           <ArrowLeft className="w-4 h-4 mr-1" />
           รายการจอง
         </Button>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              #{booking.id.slice(0, 8).toUpperCase()}
-            </h1>
-            <p className="text-helper">
-              สร้างเมื่อ {formatThaiDate(booking.created_at)}
-            </p>
-          </div>
-          <Badge variant={bookingStatusVariant(booking.status)}>
-            {getStatusLabel(booking.status)}
-          </Badge>
-        </div>
-      </div>
 
-      <Separator />
-
-      {/* ── 2. Reservation Summary (Guest Info) ────────────────────────── */}
-      <GuestInfoCard guestName={booking.guest_name} guestPhone={booking.guest_phone} customerName={booking.customer_name} />
-
-      {/* ── 3. Room Assignment Status ──────────────────────────────────── */}
-      {bd.totalActive > 0 && (
         <Card>
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-body font-semibold">สถานะกำหนดห้อง</p>
-                <p className="text-helper mt-0.5">
-                  {bd.assignedCount} / {bd.totalActive} ห้องกำหนดแล้ว
+          <CardContent className="px-4 py-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-section">
+                    #{booking.id.slice(0, 8).toUpperCase()}
+                  </h1>
+                  <Badge variant={bookingStatusVariant(booking.status)}>
+                    {getStatusLabel(booking.status)}
+                  </Badge>
+                  <Badge variant="outline" className="text-micro">
+                    {booking.source === 'walk_in' ? 'Walk-in' : booking.source === 'online' ? 'Online' : 'จองล่วงหน้า'}
+                  </Badge>
+                </div>
+                <p className="text-helper mt-1">
+                  สร้างเมื่อ {formatThaiDate(booking.created_at)}
                 </p>
               </div>
-              <Badge variant={bd.allAssigned ? 'green' : 'amber'}>
-                {bd.allAssigned ? 'ครบแล้ว' : `เหลือ ${bd.unassigned.length} ห้อง`}
+            </div>
+
+            <Separator className="my-3" />
+
+            {/* Guest info inline */}
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              <div className="flex items-center gap-2">
+                <User className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                <span className="text-body font-medium">{booking.guest_name}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                <span className="text-body">{booking.guest_phone}</span>
+              </div>
+              {booking.customer_name && (
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                  <span className="text-body text-muted-foreground">ผู้ชำระเงิน: {booking.customer_name}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── 3. Room Assignment Status + Check-in CTA ────────────────── */}
+      {bd.pending.length > 0 && bd.allAssigned && (
+        <Button
+          className="w-full"
+          onClick={() => navigate(ROUTES.bookings.groupCheckIn(id))}
+        >
+          <LogIn className="w-4 h-4 mr-1.5" />
+          เช็คอิน ({bd.pending.length} ห้อง)
+        </Button>
+      )}
+
+      {bd.totalActive > 0 && !bd.allAssigned && (
+        <Card>
+          <CardContent className="px-4 py-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-body font-semibold">กำหนดห้อง</p>
+                <p className="text-helper mt-0.5">
+                  {bd.assignedCount} / {bd.totalActive} ห้อง
+                </p>
+              </div>
+              <Badge variant="amber">
+                เหลือ {bd.unassigned.length} ห้อง
               </Badge>
             </div>
 
             {/* Progress bar */}
-            <div className="h-2 rounded-full bg-secondary overflow-hidden">
+            <div className="h-1.5 radius-badge bg-secondary overflow-hidden">
               <div
-                className={cn(
-                  'h-full rounded-full transition-all',
-                  bd.allAssigned ? 'bg-success' : 'bg-primary',
-                )}
+                className="h-full radius-badge bg-primary transition-all"
                 style={{ width: `${(bd.assignedCount / bd.totalActive) * 100}%` }}
               />
             </div>
 
             {bd.pending.length > 0 && (
               <Button
-                variant={bd.allAssigned ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
                 className="w-full"
                 onClick={() => navigate(ROUTES.bookings.groupCheckIn(id))}
               >
                 <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                {bd.allAssigned
-                  ? `เช็คอิน (${bd.pending.length} ห้อง)`
-                  : `กำหนดห้อง + เช็คอิน (${bd.pending.length} ห้อง)`}
+                กำหนดห้อง + เช็คอิน ({bd.pending.length} ห้อง)
               </Button>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* ── 4. Available Rooms ─────────────────────────────────────────── */}
-      {hasPending && (
+      {/* ── 4. Available Rooms (only when rooms still need assigning) ── */}
+      {hasPending && !bd.allAssigned && (
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="px-4 py-3">
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="text-body">ห้องว่าง</CardTitle>
               <div className="flex radius-button border border-border overflow-hidden">
@@ -304,7 +336,7 @@ export default function BookingDetailPage() {
                   type="button"
                   onClick={() => setAvailMode('today')}
                   className={cn(
-                    'px-2.5 py-1 text-xs font-medium transition-colors',
+                    'px-2.5 py-1 text-caption transition-colors',
                     availMode === 'today'
                       ? 'date-selected'
                       : 'bg-card text-muted-foreground date-hover',
@@ -316,7 +348,7 @@ export default function BookingDetailPage() {
                   type="button"
                   onClick={() => setAvailMode('range')}
                   className={cn(
-                    'px-2.5 py-1 text-xs font-medium transition-colors',
+                    'px-2.5 py-1 text-caption transition-colors',
                     availMode === 'range'
                       ? 'date-selected'
                       : 'bg-card text-muted-foreground date-hover',
@@ -333,19 +365,14 @@ export default function BookingDetailPage() {
             </p>
           </CardHeader>
 
-          <CardContent className="pt-0 space-y-3">
-            {bd.allAssigned ? (
-              <div className="py-4 text-center">
-                <CheckCircle2 className="w-5 h-5 mx-auto text-success mb-1.5" />
-                <p className="text-sm text-muted-foreground">ทุกห้องกำหนดเรียบร้อยแล้ว</p>
-              </div>
-            ) : availLoading ? (
+          <CardContent className="px-4 pt-0 pb-3 space-y-3">
+            {availLoading ? (
               <div className="flex justify-center py-6">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             ) : noRoomsAvailable ? (
               <div className="py-4 text-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-helper">
                   ไม่มีห้องว่างสำหรับช่วงเวลาที่เลือก
                 </p>
               </div>
@@ -388,7 +415,7 @@ export default function BookingDetailPage() {
                           {availableRooms.map((room) => (
                             <div
                               key={room.room_id}
-                              className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
+                              className="flex items-center justify-between radius-button border border-border bg-card px-3 py-2"
                             >
                               <span className="text-body">ห้อง {room.room_number}</span>
                               <Button
@@ -444,33 +471,6 @@ export default function BookingDetailPage() {
   )
 }
 
-// ─── GuestInfoCard ────────────────────────────────────────────────────────────
-
-function GuestInfoCard({ guestName, guestPhone, customerName }: { guestName: string; guestPhone: string; customerName?: string }) {
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-helper font-semibold">ข้อมูลผู้เข้าพัก</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 space-y-3">
-        <div className="flex items-center gap-3">
-          <User className="w-4 h-4 shrink-0 text-muted-foreground" />
-          <span className="text-body font-medium">{guestName}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Phone className="w-4 h-4 shrink-0 text-muted-foreground" />
-          <span className="text-body">{guestPhone}</span>
-        </div>
-        {customerName && (
-          <div className="flex items-center gap-3">
-            <User className="w-4 h-4 shrink-0 text-muted-foreground" />
-            <span className="text-body text-muted-foreground">ผู้ชำระเงิน: {customerName}</span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
 
 // ─── StayCardOperational ──────────────────────────────────────────────────────
 
@@ -481,14 +481,36 @@ function StayCardOperational({
   bookingId: string
   stay: RoomStayResponse
 }) {
-  const [cancelOpen, setCancelOpen]     = useState(false)
-  const [extendOpen, setExtendOpen]     = useState(false)
-  const [checkoutOpen, setCheckoutOpen] = useState(false)
-  const [newCheckOut, setNewCheckOut]   = useState('')
+  const [cancelOpen, setCancelOpen]       = useState(false)
+  const [extendOpen, setExtendOpen]       = useState(false)
+  const [checkoutOpen, setCheckoutOpen]   = useState(false)
+  const [transferOpen, setTransferOpen]   = useState(false)
+  const [newCheckOut, setNewCheckOut]     = useState('')
 
+  const isMobile = useIsMobile()
   const cancel   = useCancelStay(bookingId)
   const extend   = useExtendStay(bookingId)
   const checkout = useCheckoutRooms(bookingId)
+  const transfer = useTransferRoom(bookingId)
+
+  // Fetch available rooms for transfer (all types, same dates)
+  const transferQuery = useAvailabilityGrouped(
+    stay.check_in.slice(0, 10),
+    stay.check_out.slice(0, 10),
+    transferOpen,
+  )
+  const transferRoomGroups = useMemo(() => {
+    if (!transferQuery.data) return []
+    return transferQuery.data.room_types
+      .map((t) => ({
+        typeId: t.room_type_id,
+        typeName: t.room_type_name,
+        pricePerNight: t.price_per_night,
+        isSameType: t.room_type_id === stay.room_type_id,
+        rooms: t.rooms.filter((r) => r.available && r.room_id !== stay.room_id),
+      }))
+      .filter((g) => g.rooms.length > 0)
+  }, [transferQuery.data, stay.room_type_id, stay.room_id])
 
   const nights       = calcNights(stay.check_in, stay.check_out)
   const checkInDate  = formatThaiDate(stay.check_in)
@@ -497,6 +519,7 @@ function StayCardOperational({
   const isActive         = stay.status === 'RESERVED' || stay.status === 'ASSIGNED'
   const isCheckedIn      = stay.status === 'CHECKED_IN'
   const canExtend        = isActive || isCheckedIn
+  const canTransfer      = (isCheckedIn || stay.status === 'ASSIGNED') && Boolean(stay.room_id)
   const showTodayBadge   = isActive && isCheckInToday(stay.check_in)
   const showOverdueBadge = isActive && isCheckInOverdue(stay.check_in)
 
@@ -505,38 +528,45 @@ function StayCardOperational({
 
   return (
     <Card className={cn(showOverdueBadge && 'border-destructive/40')}>
-      <CardContent className="p-5 space-y-4">
+      <CardContent className="px-4 py-3 space-y-3">
 
         {/* ── Header row ──────────────────────────────────────────────────── */}
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="font-medium">{stay.room_type_name}</p>
+          <div className="flex items-center gap-2.5">
             {stay.room_number && (
-              <p className="text-helper">ห้อง {stay.room_number}</p>
+              <span className="text-room-number">{stay.room_number}</span>
             )}
+            <div>
+              <p className="text-body font-medium">{stay.room_type_name}</p>
+              <p className={cn(
+                'text-helper',
+                showOverdueBadge ? 'text-destructive' : '',
+              )}>
+                {fmtShortISO(stay.check_in)} → {fmtShortISO(stay.check_out)} · {nights} คืน
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end shrink-0">
             {showOverdueBadge && <Badge variant="red">เกินกำหนด</Badge>}
-            {showTodayBadge && !showOverdueBadge && <Badge variant="amber">เช็คอินวันนี้</Badge>}
+            {showTodayBadge && !showOverdueBadge && <Badge variant="amber">วันนี้</Badge>}
             <Badge variant={stayStatusVariant(stay.status)}>
               {getStatusLabel(stay.status)}
             </Badge>
           </div>
         </div>
 
-        {/* ── Dates ────────────────────────────────────────────────────────── */}
-        <p className={cn(
-          'text-sm',
-          showOverdueBadge ? 'text-destructive' : 'text-muted-foreground',
-        )}>
-          {checkInDate} → {checkOutDate}
-          <span className="ml-2">({nights} คืน)</span>
-        </p>
+        {/* ── Transfer origin indicator ────────────────────────────────────── */}
+        {stay.transfer_from_stay_id && (
+          <p className="text-micro text-info flex items-center gap-1">
+            <ArrowRightLeft className="w-3 h-3" />
+            ย้ายมาจากห้องอื่น
+          </p>
+        )}
 
         {/* ── Action buttons ──────────────────────────────────────────────── */}
         {(isActive || canExtend) && (
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap gap-2 pt-0.5">
             {isCheckedIn && (
               <Button
                 variant="default"
@@ -545,35 +575,46 @@ function StayCardOperational({
                 onClick={() => setCheckoutOpen(true)}
               >
                 {checkout.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
                 ) : (
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  <LogOut className="w-4 h-4 mr-1.5" />
                 )}
                 เช็คเอาท์
               </Button>
             )}
-            {canExtend && (
+            {canTransfer && (
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setTransferOpen(true)}
+              >
+                <ArrowRightLeft className="w-4 h-4 mr-1.5" />
+                ย้ายห้อง
+              </Button>
+            )}
+            {canExtend && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
                 onClick={() => { setNewCheckOut(''); setExtendOpen(true) }}
               >
-                <CalendarClock className="w-4 h-4 mr-2" />
-                ขยายวันเช็คเอาท์
+                <CalendarClock className="w-4 h-4 mr-1.5" />
+                ขยายเวลา
               </Button>
             )}
             {isActive && (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 disabled={cancel.isPending}
-                className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                className="text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                 onClick={() => setCancelOpen(true)}
               >
                 {cancel.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
                 ) : (
-                  <X className="w-4 h-4 mr-2" />
+                  <X className="w-4 h-4 mr-1.5" />
                 )}
                 ยกเลิก
               </Button>
@@ -615,48 +656,115 @@ function StayCardOperational({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Extend stay dialog ─────────────────────────────────────────────── */}
-      <AlertDialog open={extendOpen} onOpenChange={setExtendOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>ขยายวันเช็คเอาท์</AlertDialogTitle>
-            <AlertDialogDescription>
-              วันเช็คเอาท์ปัจจุบัน: {checkOutDate}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="px-1 py-2">
-            <label className="text-sm font-medium block mb-1.5">วันเช็คเอาท์ใหม่</label>
-            <Input
-              type="date"
-              min={currentCheckOutISO}
-              value={newCheckOut}
-              onChange={(e) => setNewCheckOut(e.target.value)}
-            />
+      {/* ── Extend stay — shared body ────────────────────────────────────── */}
+      {(() => {
+        const canConfirm = Boolean(newCheckOut && newCheckOut > currentCheckOutISO && !extend.isPending)
+        const handleExtendConfirm = () => {
+          if (!canConfirm) return
+          extend.mutate(
+            { stayId: stay.id, payload: { new_check_out: newCheckOut } },
+            {
+              onSuccess: () => { setExtendOpen(false); toast.success('ขยายวันเช็คเอาท์สำเร็จ') },
+              onError: (err) => { toast.error((err as Error).message || 'เกิดข้อผิดพลาด กรุณาลองใหม่') },
+            },
+          )
+        }
+
+        const extendBody = (
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-body text-muted-foreground">
+                เช็คอิน: {formatThaiDate(stay.check_in)} → เช็คเอาท์: {checkOutDate}
+              </p>
+              <p className="text-helper">({nights} คืน)</p>
+            </div>
+            <div>
+              <label className="text-caption block mb-1.5">เพิ่มจำนวนคืน</label>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 5, 7].map((n) => {
+                  const target = format(addDays(parseISO(currentCheckOutISO), n), 'yyyy-MM-dd')
+                  const isSelected = newCheckOut === target
+                  return (
+                    <Button
+                      key={n}
+                      type="button"
+                      variant={isSelected ? 'default' : 'outline'}
+                      size="sm"
+                      className="tabular-nums"
+                      onClick={() => setNewCheckOut(target)}
+                    >
+                      +{n}
+                    </Button>
+                  )
+                })}
+              </div>
+            </div>
+            <div>
+              <label className="text-caption block mb-1.5">หรือเลือกวันที่</label>
+              <Input
+                type="date"
+                min={currentCheckOutISO}
+                value={newCheckOut}
+                onChange={(e) => setNewCheckOut(e.target.value)}
+              />
+            </div>
+            {newCheckOut && newCheckOut > currentCheckOutISO && (() => {
+              const extraNights = differenceInDays(parseISO(newCheckOut), parseISO(currentCheckOutISO))
+              const totalNights = nights + extraNights
+              return (
+                <div className="radius-card border border-border bg-card space-card">
+                  <p className="text-body">
+                    เช็คเอาท์ใหม่: <span className="font-semibold">{formatThaiDate(newCheckOut)}</span>
+                  </p>
+                  <p className="text-helper mt-0.5">
+                    เพิ่ม {extraNights} คืน → รวม {totalNights} คืน
+                  </p>
+                </div>
+              )
+            })()}
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={extend.isPending}>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={!newCheckOut || newCheckOut <= currentCheckOutISO || extend.isPending}
-              onClick={() => {
-                extend.mutate(
-                  { stayId: stay.id, payload: { new_check_out: newCheckOut } },
-                  {
-                    onSuccess: () => {
-                      setExtendOpen(false)
-                      toast.success('ขยายวันเช็คเอาท์สำเร็จ')
-                    },
-                    onError: (err) => {
-                      toast.error((err as Error).message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
-                    },
-                  },
-                )
-              }}
-            >
+        )
+
+        const extendActions = (
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" disabled={extend.isPending} onClick={() => setExtendOpen(false)}>
+              ยกเลิก
+            </Button>
+            <Button className="flex-1" disabled={!canConfirm} onClick={handleExtendConfirm}>
               {extend.isPending ? 'กำลังบันทึก…' : 'ยืนยัน'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </div>
+        )
+
+        return isMobile ? (
+          <Sheet open={extendOpen} onOpenChange={setExtendOpen}>
+            <SheetContent side="bottom" className="rounded-t-2xl px-5 pt-5 pb-6">
+              <SheetHeader className="pb-3 text-left">
+                <SheetTitle>ขยายวันเช็คเอาท์</SheetTitle>
+                <SheetDescription className="sr-only">เลือกวันเช็คเอาท์ใหม่</SheetDescription>
+              </SheetHeader>
+              {extendBody}
+              <div className="pt-4">{extendActions}</div>
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <AlertDialog open={extendOpen} onOpenChange={setExtendOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>ขยายวันเช็คเอาท์</AlertDialogTitle>
+                <AlertDialogDescription className="sr-only">เลือกวันเช็คเอาท์ใหม่</AlertDialogDescription>
+              </AlertDialogHeader>
+              {extendBody}
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={extend.isPending}>ยกเลิก</AlertDialogCancel>
+                <AlertDialogAction disabled={!canConfirm} onClick={handleExtendConfirm}>
+                  {extend.isPending ? 'กำลังบันทึก…' : 'ยืนยัน'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )
+      })()}
 
       {/* ── Checkout confirmation ─────────────────────────────────────────── */}
       <AlertDialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
@@ -688,6 +796,121 @@ function StayCardOperational({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Transfer room ─────────────────────────────────────────────────── */}
+      {(() => {
+        const transferDesc = isCheckedIn
+          ? `ย้ายจากห้อง ${stay.room_number} (${stay.room_type_name}) — ระบบจะเช็คเอาท์ห้องเดิมอัตโนมัติ`
+          : `เปลี่ยนจากห้อง ${stay.room_number} (${stay.room_type_name})`
+
+        const transferBody = (
+          <div className="space-y-4">
+            {transferQuery.isLoading ? (
+              <div className="flex items-center gap-2 py-4 justify-center text-helper">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                กำลังโหลด...
+              </div>
+            ) : transferRoomGroups.length === 0 ? (
+              <p className="text-helper py-4 text-center">ไม่มีห้องว่าง</p>
+            ) : (
+              transferRoomGroups
+                .sort((a, b) => (a.isSameType ? -1 : b.isSameType ? 1 : 0))
+                .map((group) => {
+                  const sameTypePrice = transferRoomGroups.find((g) => g.isSameType)?.pricePerNight ?? 0
+                  const diff = group.pricePerNight - sameTypePrice
+                  return (
+                    <div key={group.typeId}>
+                      <div className="flex items-baseline justify-between mb-1.5">
+                        <p className="text-label text-foreground">
+                          {group.typeName}
+                          {group.isSameType && (
+                            <span className="text-helper font-normal ml-1">(ประเภทเดียวกัน)</span>
+                          )}
+                        </p>
+                        {!group.isSameType && (
+                          <span className={cn(
+                            'text-micro font-medium',
+                            diff > 0 ? 'text-warning' : diff < 0 ? 'text-success' : 'text-muted-foreground',
+                          )}>
+                            {formatTHB(group.pricePerNight)}/คืน
+                            {diff !== 0 && ` (${diff > 0 ? '+' : ''}${formatTHB(diff)})`}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {group.rooms.map((room) => (
+                          <Button
+                            key={room.room_id}
+                            variant={group.isSameType ? 'outline' : 'ghost'}
+                            size="sm"
+                            disabled={transfer.isPending}
+                            className={cn(!group.isSameType && 'border border-border-soft')}
+                            onClick={() => {
+                              transfer.mutate(
+                                { stayId: stay.id, roomId: room.room_id },
+                                {
+                                  onSuccess: () => {
+                                    setTransferOpen(false)
+                                    toast.success(`ย้ายไปห้อง ${room.room_number} สำเร็จ`)
+                                  },
+                                  onError: (err) => {
+                                    toast.error((err as Error).message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+                                  },
+                                },
+                              )
+                            }}
+                          >
+                            {transfer.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              room.room_number
+                            )}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })
+            )}
+
+            {transferRoomGroups.some((g) => !g.isSameType) && (
+              <p className="text-micro text-muted-foreground/70 border-t border-border pt-2">
+                * ราคาต่อคืนจะยังเป็นราคาเดิม สามารถแก้ไขภายหลังได้
+              </p>
+            )}
+          </div>
+        )
+
+        return isMobile ? (
+          <Sheet open={transferOpen} onOpenChange={setTransferOpen}>
+            <SheetContent side="bottom" className="rounded-t-2xl px-5 pt-5 pb-6 max-h-[85vh] flex flex-col">
+              <SheetHeader className="pb-3 text-left shrink-0">
+                <SheetTitle>ย้ายห้อง</SheetTitle>
+                <SheetDescription className="text-body text-muted-foreground">{transferDesc}</SheetDescription>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto">{transferBody}</div>
+              <div className="pt-4 shrink-0">
+                <Button variant="outline" className="w-full" disabled={transfer.isPending} onClick={() => setTransferOpen(false)}>
+                  ยกเลิก
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <AlertDialog open={transferOpen} onOpenChange={setTransferOpen}>
+            <AlertDialogContent className="max-h-[80vh] flex flex-col">
+              <AlertDialogHeader>
+                <AlertDialogTitle>ย้ายห้อง</AlertDialogTitle>
+                <AlertDialogDescription>{transferDesc}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="flex-1 overflow-y-auto">{transferBody}</div>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={transfer.isPending}>ยกเลิก</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )
+      })()}
     </Card>
   )
 }
@@ -740,7 +963,7 @@ function ReceiptSection({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="px-4 py-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-helper font-semibold flex items-center gap-2">
             <Receipt className="w-4 h-4" />
@@ -757,14 +980,14 @@ function ReceiptSection({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="px-4 pt-0 pb-3">
         {booking.invoices && booking.invoices.length > 0 ? (
           <div className="space-y-2">
             {booking.invoices.map((inv: InvoiceResponseShort) => (
               <Link
                 key={inv.id}
                 to={`/receipts/${inv.id}`}
-                className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5 hover:bg-accent/60 transition-colors"
+                className="flex items-center justify-between radius-button border border-border bg-card px-3 py-2.5 hover:bg-accent/60 transition-colors"
               >
                 <div>
                   <p className="text-body font-medium text-primary">{inv.invoice_number}</p>
@@ -807,7 +1030,7 @@ function ReceiptSection({
               ] as const).map(([value, label, desc]) => (
                 <RadioCardItem key={value} value={value}>
                   <p className="text-body font-medium">{label}</p>
-                  <p className="text-helper text-xs">{desc}</p>
+                  <p className="text-helper">{desc}</p>
                 </RadioCardItem>
               ))}
             </RadioCardGroup>
@@ -815,7 +1038,7 @@ function ReceiptSection({
             {/* Stay selection for mode=stay */}
             {billingMode === 'stay' && (
               <div className="pl-2 space-y-1.5 pt-1">
-                <p className="text-helper text-xs font-medium mb-1">เลือกห้อง:</p>
+                <p className="text-helper font-medium mb-1">เลือกห้อง:</p>
                 {stays.map((stay) => (
                   <CheckboxCard
                     key={stay.id}
@@ -823,10 +1046,10 @@ function ReceiptSection({
                     onCheckedChange={() => toggleStayId(stay.id)}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-body text-sm">
+                      <span className="text-body">
                         {stay.room_number ? `ห้อง ${stay.room_number}` : stay.room_type_name}
                       </span>
-                      <span className="text-helper text-xs">
+                      <span className="text-helper">
                         {stay.nights} คืน
                       </span>
                     </div>
@@ -839,7 +1062,7 @@ function ReceiptSection({
             {billingMode === 'night' && (
               <div className="pl-2 space-y-2 pt-1">
                 <div>
-                  <p className="text-helper text-xs font-medium mb-1">เลือกห้อง:</p>
+                  <p className="text-helper font-medium mb-1">เลือกห้อง:</p>
                   <Select
                     value={selectedStayId || undefined}
                     onValueChange={(val) => {
@@ -864,7 +1087,7 @@ function ReceiptSection({
                   if (!stay) return null
                   return (
                     <div>
-                      <p className="text-helper text-xs font-medium mb-1">เลือกวันที่:</p>
+                      <p className="text-helper font-medium mb-1">เลือกวันที่:</p>
                       <Input
                         type="date"
                         value={selectedDate}
@@ -895,21 +1118,32 @@ function ReceiptSection({
   )
 }
 
-// ─── Event action labels (Thai) ──────────────────────────────────────────────
+// ─── Event config (icon + color per action) ─────────────────────────────────
 
-const EVENT_LABEL_TH: Record<string, string> = {
-  BOOKING_CREATED:  'สร้างการจอง',
-  PAYMENT_RECEIVED: 'รับชำระเงิน',
-  PAYMENT_REFUNDED: 'คืนเงิน',
-  ROOM_ASSIGNED:    'มอบหมายห้อง',
-  AUTO_ASSIGNED:    'มอบหมายอัตโนมัติ',
-  CHECKED_IN:       'เช็คอิน',
-  CHECKED_OUT:      'เช็คเอาท์',
-  STAY_CANCELLED:   'ยกเลิกห้อง',
-  STAY_EXTENDED:    'ขยายเวลา',
-  STAY_MOVED:       'ย้ายห้อง',
-  ROOM_TRANSFERRED: 'ย้ายห้อง',
-  INVOICE_ISSUED:   'ออกใบเสร็จ',
+type EventConfig = { label: string; icon: typeof Clock; color: string }
+
+const EVENT_CONFIG: Record<string, EventConfig> = {
+  BOOKING_CREATED:  { label: 'สร้างการจอง',         icon: FileText,       color: 'text-primary' },
+  PAYMENT_RECEIVED: { label: 'รับชำระเงิน',         icon: CreditCard,     color: 'text-success' },
+  PAYMENT_REFUNDED: { label: 'คืนเงิน',             icon: CreditCard,     color: 'text-warning' },
+  ROOM_ASSIGNED:    { label: 'มอบหมายห้อง',         icon: DoorOpen,       color: 'text-primary' },
+  AUTO_ASSIGNED:    { label: 'มอบหมายอัตโนมัติ',   icon: Wand2,          color: 'text-primary' },
+  CHECKED_IN:       { label: 'เช็คอิน',             icon: LogIn,          color: 'text-success' },
+  CHECKED_OUT:      { label: 'เช็คเอาท์',           icon: LogOut,         color: 'text-muted-foreground' },
+  STAY_CANCELLED:   { label: 'ยกเลิกห้อง',         icon: Ban,            color: 'text-destructive' },
+  STAY_EXTENDED:    { label: 'ขยายเวลา',            icon: Timer,          color: 'text-info' },
+  STAY_MOVED:       { label: 'ย้ายห้อง',            icon: Repeat,         color: 'text-info' },
+  ROOM_TRANSFERRED: { label: 'ย้ายห้อง',            icon: ArrowRightLeft, color: 'text-info' },
+  INVOICE_ISSUED:   { label: 'ออกใบเสร็จ',          icon: Receipt,        color: 'text-foreground' },
+}
+
+const DEFAULT_EVENT: EventConfig = { label: '', icon: Clock, color: 'text-muted-foreground' }
+
+/** Replace ISO dates (YYYY-MM-DD) in event detail text with short Thai format */
+function formatEventDetail(detail: string): string {
+  return detail.replace(/\d{4}-\d{2}-\d{2}/g, (match) => {
+    try { return fmtShortISO(match) } catch { return match }
+  })
 }
 
 // ─── EventTimeline ───────────────────────────────────────────────────────────
@@ -917,34 +1151,47 @@ const EVENT_LABEL_TH: Record<string, string> = {
 function EventTimeline({ events }: { events: BookingEventResponse[] }) {
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="px-4 py-3">
         <CardTitle className="text-helper font-semibold flex items-center gap-2">
           <Clock className="w-4 h-4" />
           ประวัติกิจกรรม
+          <span className="text-micro font-normal text-muted-foreground/70 ml-auto">{events.length} รายการ</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="px-4 pt-0 pb-3">
         <div className="space-y-0">
-          {events.map((ev, i) => (
-            <div key={ev.id} className="flex gap-3">
-              {/* Timeline line + dot */}
-              <div className="flex flex-col items-center">
-                <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
-                {i < events.length - 1 && <div className="w-px flex-1 bg-border" />}
+          {events.map((ev, i) => {
+            const cfg = EVENT_CONFIG[ev.action] ?? DEFAULT_EVENT
+            const Icon = cfg.icon
+            return (
+              <div key={ev.id} className="flex gap-3">
+                {/* Timeline line + icon */}
+                <div className="flex flex-col items-center">
+                  <div className={cn('mt-1 shrink-0', cfg.color)}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  {i < events.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}
+                </div>
+                {/* Content */}
+                <div className="pb-4 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-body font-medium">
+                      {cfg.label || ev.action}
+                    </p>
+                    <span className="text-micro text-muted-foreground/70">
+                      {formatThaiDate(ev.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-helper mt-0.5">{formatEventDetail(ev.detail)}</p>
+                  {ev.actor && (
+                    <p className="text-micro text-muted-foreground/50 mt-0.5">
+                      โดย {ev.actor}
+                    </p>
+                  )}
+                </div>
               </div>
-              {/* Content */}
-              <div className="pb-4 min-w-0">
-                <p className="text-body font-medium">
-                  {EVENT_LABEL_TH[ev.action] ?? ev.action}
-                </p>
-                <p className="text-helper text-sm">{ev.detail}</p>
-                <p className="text-helper text-xs mt-0.5">
-                  {formatThaiDate(ev.created_at)}
-                  {ev.actor && ` · ${ev.actor}`}
-                </p>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </CardContent>
     </Card>

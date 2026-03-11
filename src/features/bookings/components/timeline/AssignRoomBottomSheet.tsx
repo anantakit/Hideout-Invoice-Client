@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react'
 import { parseISO, differenceInDays } from 'date-fns'
-import { Loader2, Check, CheckCircle2 } from 'lucide-react'
+import { Loader2, Check, CheckCircle2, ArrowRightLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   Sheet,
@@ -21,7 +21,7 @@ import {
   useTransferRoom,
 } from '../../hooks'
 import type { RoomStayResponse } from '../../types'
-import { todayISO } from '@/shared/utils'
+import { cn, todayISO } from '@/shared/utils'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -146,7 +146,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
             <span className="text-body">กำหนดห้อง {roomNumber} แล้ว</span>
             <button
               type="button"
-              className="text-xs font-semibold text-primary underline shrink-0"
+              className="text-label text-primary underline shrink-0"
               onClick={() => {
                 toast.dismiss(t.id)
                 if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
@@ -228,9 +228,24 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
   const isBusy = assignMutation.isPending || checkInMutation.isPending || unassignMutation.isPending || transferMutation.isPending
   const isLoading = bookingLoading
 
-  const transferRooms = transferringStay
-    ? (roomsByType.get(transferringStay.room_type_id) ?? [])
-    : []
+  // Transfer: grouped by type with price diff
+  const transferRoomGroups = useMemo(() => {
+    if (!transferringStay || !availability) return []
+    return availability.room_types
+      .map((rt) => ({
+        typeId: rt.room_type_id,
+        typeName: rt.room_type_name,
+        pricePerNight: rt.price_per_night,
+        isSameType: rt.room_type_id === transferringStay.room_type_id,
+        rooms: rt.rooms
+          .filter((r) => r.available && !assignedRoomIds.has(r.room_id) && r.room_id !== transferringStay.room_id)
+          .map((r) => ({ room_id: r.room_id, room_number: r.room_number })),
+      }))
+      .filter((g) => g.rooms.length > 0)
+      .sort((a, b) => (a.isSameType ? -1 : b.isSameType ? 1 : 0))
+  }, [transferringStay, availability, assignedRoomIds])
+
+  const currentTypePrice = transferRoomGroups.find((g) => g.isSameType)?.pricePerNight ?? 0
 
   const allAssigned = remainingCount === 0 && totalActive > 0
   const progressPct = totalActive > 0 ? (totalAssigned / totalActive) * 100 : 0
@@ -245,7 +260,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
             {booking?.guest_name ?? '...'}
           </SheetTitle>
           <SheetDescription asChild>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-body text-muted-foreground">
               {ciDate && coDate && (
                 <span>{fmtShortISO(ciDate)} → {fmtShortISO(coDate)} ({nights} คืน)</span>
               )}
@@ -267,17 +282,17 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                 {/* Assigned rooms as compact badges */}
                 {(assignedStays.length > 0 || checkedInStays.length > 0) && (
                   <div className="space-y-1.5">
-                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    <p className="text-label text-muted-foreground">
                       กำหนดห้องแล้ว
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap space-inline">
                       {assignedStays.map((stay) => (
-                        <Badge key={stay.id} variant="green" className="text-xs px-2.5 py-1">
+                        <Badge key={stay.id} variant="green" className="text-helper px-2.5 py-1">
                           ห้อง {stay.room_number}
                         </Badge>
                       ))}
                       {checkedInStays.map((stay) => (
-                        <Badge key={stay.id} variant="blue" className="text-xs px-2.5 py-1">
+                        <Badge key={stay.id} variant="blue" className="text-helper px-2.5 py-1">
                           ห้อง {stay.room_number} · เข้าพัก
                         </Badge>
                       ))}
@@ -287,13 +302,13 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
 
                 {/* Progress bar */}
                 <div className="flex items-center gap-2.5">
-                  <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                  <div className="flex-1 h-2 radius-badge bg-muted overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-success transition-all duration-300"
+                      className="h-full radius-badge bg-success transition-all duration-300"
                       style={{ width: `${progressPct}%` }}
                     />
                   </div>
-                  <span className="text-xs font-semibold tabular-nums text-muted-foreground shrink-0">
+                  <span className="text-label tabular-nums text-muted-foreground shrink-0">
                     {totalAssigned} / {totalActive}
                   </span>
                 </div>
@@ -308,13 +323,14 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                 <>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold">
-                        เปลี่ยนห้องจาก {transferringStay.room_number}
+                      <p className="text-body font-semibold flex items-center space-inline">
+                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                        ย้ายจากห้อง {transferringStay.room_number}
                       </p>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-2 text-xs text-muted-foreground"
+                        className="h-8 px-2 text-helper"
                         onClick={() => setTransferringStay(null)}
                       >
                         ยกเลิก
@@ -325,25 +341,58 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                       <div className="flex justify-center py-4">
                         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                       </div>
-                    ) : transferRooms.length === 0 ? (
-                      <p className="text-xs text-destructive text-center py-3">ไม่มีห้องว่างในประเภทนี้</p>
+                    ) : transferRoomGroups.length === 0 ? (
+                      <p className="text-helper text-destructive text-center py-3">ไม่มีห้องว่าง</p>
                     ) : (
-                      <div className="space-y-1.5">
-                        {transferRooms.map((room) => (
-                          <button
-                            key={room.room_id}
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleTransferPick(room.room_id, room.room_number)}
-                            className="w-full flex items-center justify-between radius-card border border-primary/30 bg-primary/5 px-4 py-3 min-h-[44px] text-left active:bg-primary/10 transition-colors disabled:opacity-50"
-                          >
-                            <div>
-                              <p className="text-sm font-bold tabular-nums">ห้อง {room.room_number}</p>
-                              <p className="text-[11px] text-muted-foreground">{room.room_type_name}</p>
+                      <div className="space-y-4">
+                        {transferRoomGroups.map((group) => {
+                          const diff = group.pricePerNight - currentTypePrice
+                          return (
+                            <div key={group.typeId}>
+                              <div className="flex items-baseline justify-between mb-1.5">
+                                <p className="text-label text-foreground">
+                                  {group.typeName}
+                                  {group.isSameType && (
+                                    <span className="text-helper font-normal ml-1">(ประเภทเดียวกัน)</span>
+                                  )}
+                                </p>
+                                {!group.isSameType && diff !== 0 && (
+                                  <span className={cn(
+                                    'text-micro font-medium',
+                                    diff > 0 ? 'text-warning' : 'text-success',
+                                  )}>
+                                    {diff > 0 ? '+' : ''}{diff.toLocaleString()}/คืน
+                                  </span>
+                                )}
+                              </div>
+                              <div className="space-list">
+                                {group.rooms.map((room) => (
+                                  <button
+                                    key={room.room_id}
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => handleTransferPick(room.room_id, room.room_number)}
+                                    className={cn(
+                                      'w-full flex items-center justify-between radius-card border px-4 py-3 min-h-[44px] text-left transition-colors disabled:opacity-50',
+                                      group.isSameType
+                                        ? 'border-primary/30 bg-primary/5 active:bg-primary/10'
+                                        : 'border-border-soft bg-card active:bg-accent/10',
+                                    )}
+                                  >
+                                    <p className="text-body font-bold tabular-nums">ห้อง {room.room_number}</p>
+                                    <span className="text-caption text-primary shrink-0">เลือก</span>
+                                  </button>
+                                ))}
+                              </div>
                             </div>
-                            <span className="text-xs font-medium text-primary shrink-0">เลือก</span>
-                          </button>
-                        ))}
+                          )
+                        })}
+
+                        {transferRoomGroups.some((g) => !g.isSameType) && (
+                          <p className="text-micro text-muted-foreground/70">
+                            * ราคาต่อคืนจะยังเป็นราคาเดิม
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -357,8 +406,8 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
               {remainingCount > 0 && !transferringStay && (
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-semibold">เลือกห้อง</p>
-                    <p className="text-xs text-warning font-medium mt-0.5">
+                    <p className="text-body font-semibold">เลือกห้อง</p>
+                    <p className="text-helper text-warning font-medium mt-0.5">
                       เหลืออีก {remainingCount} ห้อง
                     </p>
                   </div>
@@ -376,7 +425,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                         return (
                           <div key={typeId} className="space-y-1.5">
                             {roomsByType.size > 1 && (
-                              <p className="text-xs font-medium text-muted-foreground pb-0.5">
+                              <p className="text-caption text-muted-foreground pb-0.5">
                                 {rooms[0]?.room_type_name}
                               </p>
                             )}
@@ -389,10 +438,10 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                                 className="w-full flex items-center justify-between radius-card border border-border bg-card px-4 py-3 min-h-[44px] text-left active:bg-accent/10 transition-colors disabled:opacity-50"
                               >
                                 <div>
-                                  <p className="text-sm font-bold tabular-nums">ห้อง {room.room_number}</p>
-                                  <p className="text-[11px] text-muted-foreground">{room.room_type_name}</p>
+                                  <p className="text-body font-bold tabular-nums">ห้อง {room.room_number}</p>
+                                  <p className="text-micro text-muted-foreground">{room.room_type_name}</p>
                                 </div>
-                                <span className="text-xs font-medium text-primary shrink-0">เลือก</span>
+                                <span className="text-caption text-primary shrink-0">เลือก</span>
                               </button>
                             ))}
                           </div>
@@ -400,7 +449,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                       })}
 
                       {totalAvailableRooms === 0 && (
-                        <p className="text-xs text-destructive text-center py-3">ไม่มีห้องว่างในประเภทนี้</p>
+                        <p className="text-helper text-destructive text-center py-3">ไม่มีห้องว่างในประเภทนี้</p>
                       )}
                     </>
                   )}
@@ -421,15 +470,15 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Check className="w-4 h-4 text-success shrink-0" />
                         <div>
-                          <p className="text-sm font-bold tabular-nums">ห้อง {stay.room_number}</p>
-                          <p className="text-[11px] text-muted-foreground">{stay.room_type_name} · กำหนดแล้ว</p>
+                          <p className="text-body font-bold tabular-nums">ห้อง {stay.room_number}</p>
+                          <p className="text-micro text-muted-foreground">{stay.room_type_name} · กำหนดแล้ว</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                          className="h-9 px-2.5 text-helper hover:text-foreground"
                           disabled={isBusy}
                           onClick={() => handleReassign(stay)}
                         >
@@ -442,7 +491,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                         {isCheckInDay && (
                           <Button
                             size="sm"
-                            className="h-9 px-3 text-xs"
+                            className="h-9 px-3 text-helper"
                             disabled={isBusy}
                             onClick={() => handleCheckInOne(stay)}
                           >
@@ -472,14 +521,14 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                         <div className="flex items-center gap-2.5 min-w-0">
                           <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                           <div>
-                            <p className="text-sm font-bold tabular-nums">ห้อง {stay.room_number}</p>
-                            <p className="text-[11px] text-muted-foreground">{stay.room_type_name} · เข้าพักแล้ว</p>
+                            <p className="text-body font-bold tabular-nums">ห้อง {stay.room_number}</p>
+                            <p className="text-micro text-muted-foreground">{stay.room_type_name} · เข้าพักแล้ว</p>
                           </div>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground shrink-0"
+                          className="h-9 px-2.5 text-helper hover:text-foreground shrink-0"
                           disabled={isBusy}
                           onClick={() => setTransferringStay(isTransferring ? null : stay)}
                         >

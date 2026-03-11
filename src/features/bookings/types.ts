@@ -248,6 +248,8 @@ export interface TimelineBooking {
   balance_amount: number
   /** Booking source: walk_in | advance */
   source: string
+  /** Set when this stay was created by a room transfer (split stay). */
+  transfer_from_stay_id?: string
 }
 
 /**

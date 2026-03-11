@@ -77,10 +77,10 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="px-4 py-3">
         <CardTitle className="text-helper font-semibold">การชำระเงิน</CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 space-y-4">
+      <CardContent className="px-4 pt-0 pb-3 space-y-4">
 
         {/* ── Summary rows ────────────────────────────────────────────────── */}
         <div className="space-y-2">
