@@ -37,6 +37,7 @@ export const createBookingSchema = z
       .min(1, 'กรุณาระบุเบอร์โทรศัพท์')
       .regex(/^\d+$/, 'กรุณากรอกเฉพาะตัวเลข')
       .length(10, 'เบอร์โทรศัพท์ต้องมี 10 หลัก'),
+    customer_id: z.string().optional(),
     /** When true, all items share the dates from item 0. */
     same_dates: z.boolean(),
     items: z

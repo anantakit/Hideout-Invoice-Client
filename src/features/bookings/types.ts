@@ -67,6 +67,8 @@ export interface BookingResponse {
   id: string
   guest_name: string
   guest_phone: string
+  customer_id?: string
+  customer_name?: string
   source: string
   status: string
   total_amount: number
@@ -124,6 +126,7 @@ export interface InvoicePrefillResponse {
   mode: PrefillMode
   guest_name: string
   guest_phone: string
+  customer_id?: string
   check_in_date: string
   check_out_date: string
   nights: number
@@ -208,6 +211,7 @@ export interface CreateBookingPayload {
   source: 'walk_in' | 'advance'
   guest_name: string
   guest_phone: string
+  customer_id?: string
   stays: RoomStayPayload[]
   payment?: CreateBookingPaymentPayload
 }

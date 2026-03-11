@@ -461,7 +461,7 @@ function MobileComboBox({
                         'active:bg-accent/80',
                         isSelected
                           ? 'bg-primary/10 text-primary'
-                          : 'text-foreground hover:bg-accent',
+                          : 'text-foreground',
                       )}
                     >
                       <span

@@ -1,7 +1,9 @@
+import { useState, useCallback } from 'react'
 import { format, addDays } from 'date-fns'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFormContext, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/shared/utils'
@@ -17,6 +19,7 @@ import {
   FormMessage,
 } from '@/shared/ui/form'
 import { Input } from '@/shared/ui/input'
+import SearchableComboBox from '@/shared/ui/SearchableComboBox'
 import { useCreateBooking } from '../hooks'
 import { createBookingSchema } from '../createBookingSchema'
 import type { CreateBookingFormValues } from '../createBookingSchema'
@@ -24,6 +27,9 @@ import { expandGroupedStays } from '../expandGroupedStays'
 import { RoomTypeBookingBuilder } from '../components/RoomTypeBookingBuilder'
 import { BookingSummary, useTotalAmount } from '../components/BookingSummary'
 import { ROUTES } from '@/app/routes'
+import { customersApi } from '../../customers/api'
+import CustomerModal from '../../customers/components/CustomerModal'
+import type { Customer } from '../../customers/types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -39,7 +45,10 @@ function tomorrowStr(): string {
 export default function CreateBookingPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const queryClient = useQueryClient()
   const createBooking = useCreateBooking()
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [customerModalOpen, setCustomerModalOpen] = useState(false)
 
   // Allow pre-filling from URL: /bookings/new?check_in=...&check_out=...&room_type_id=...&room_id=...
   const urlCheckIn    = searchParams.get('check_in')     || todayStr()
@@ -54,6 +63,7 @@ export default function CreateBookingPage() {
       source: 'advance',
       guest_name: '',
       guest_phone: '',
+      customer_id: undefined,
       same_dates: false,
       items: [
         {
@@ -86,6 +96,16 @@ export default function CreateBookingPage() {
   const hasPayment = paymentMode === 'reserve' || (paymentAmount != null && paymentAmount > 0)
   const canSubmit = hasGuest && hasValidItems && hasPayment && !isSubmitting
 
+  const handleCustomerCreated = useCallback(
+    (customer: Customer) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      setSelectedCustomer(customer)
+      form.setValue('customer_id', customer.id)
+      setCustomerModalOpen(false)
+    },
+    [queryClient, form],
+  )
+
   const submitLabel =
     source === 'walk_in'
       ? paymentMode === 'reserve'
@@ -107,6 +127,7 @@ export default function CreateBookingPage() {
         source: values.source,
         guest_name: values.guest_name,
         guest_phone: values.guest_phone,
+        customer_id: values.customer_id || undefined,
         stays,
         payment,
       },
@@ -219,6 +240,40 @@ export default function CreateBookingPage() {
                     </FormItem>
                   )}
                 />
+
+                {/* ── Customer link (optional) ── */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">ผู้ชำระเงิน (ไม่บังคับ)</label>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setCustomerModalOpen(true)}>
+                      + สร้างลูกค้า
+                    </Button>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="customer_id"
+                    render={({ field }) => (
+                      <SearchableComboBox<Customer>
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        onSelectItem={(item) => setSelectedCustomer(item)}
+                        fetchFunction={(params) => customersApi.list(params)}
+                        valueKey="id"
+                        labelKey="name"
+                        displayValue={selectedCustomer?.name}
+                        placeholder="ค้นหาลูกค้า..."
+                        sheetTitle="เลือกผู้ชำระเงิน"
+                      />
+                    )}
+                  />
+                  {selectedCustomer && (
+                    <div className="text-xs text-muted-foreground space-y-0.5 pl-1">
+                      <p className="font-semibold text-foreground">{selectedCustomer.name}</p>
+                      {selectedCustomer.phone && <p>โทร: {selectedCustomer.phone}</p>}
+                      {selectedCustomer.tax_id && <p>เลขผู้เสียภาษี: {selectedCustomer.tax_id}</p>}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -301,6 +356,12 @@ export default function CreateBookingPage() {
           {submitLabel}
         </Button>
       </BottomBar>
+
+      <CustomerModal
+        open={customerModalOpen}
+        onClose={() => setCustomerModalOpen(false)}
+        onCreated={handleCustomerCreated}
+      />
     </>
   )
 }

@@ -112,6 +112,14 @@ export default function CreateReceipt() {
     if (prefill.guest_name) noteParts.push(`ผู้เข้าพัก: ${prefill.guest_name}`)
     if (prefill.guest_phone) noteParts.push(`โทร: ${prefill.guest_phone}`)
     if (noteParts.length > 0) form.setValue('notes', noteParts.join('\n'))
+
+    // Auto-select customer from booking link
+    if (prefill.customer_id && !selectedCustomer) {
+      customersApi.getById(prefill.customer_id).then((customer) => {
+        setSelectedCustomer(customer)
+        form.setValue('customer_id', customer.id, { shouldValidate: true })
+      }).catch(() => {})
+    }
   }, [prefill, prefilled, form])
 
   const createMutation = useMutation({
@@ -231,6 +239,7 @@ export default function CreateReceipt() {
                         displayValue={selectedCustomer?.name}
                         placeholder="ค้นหาลูกค้า…"
                         error={!!form.formState.errors.customer_id}
+                        sheetTitle="เลือกผู้ชำระเงิน"
                       />
                     )}
                   />

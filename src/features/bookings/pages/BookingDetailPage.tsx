@@ -247,7 +247,7 @@ export default function BookingDetailPage() {
       <Separator />
 
       {/* ── 2. Reservation Summary (Guest Info) ────────────────────────── */}
-      <GuestInfoCard guestName={booking.guest_name} guestPhone={booking.guest_phone} />
+      <GuestInfoCard guestName={booking.guest_name} guestPhone={booking.guest_phone} customerName={booking.customer_name} />
 
       {/* ── 3. Room Assignment Status ──────────────────────────────────── */}
       {bd.totalActive > 0 && (
@@ -446,7 +446,7 @@ export default function BookingDetailPage() {
 
 // ─── GuestInfoCard ────────────────────────────────────────────────────────────
 
-function GuestInfoCard({ guestName, guestPhone }: { guestName: string; guestPhone: string }) {
+function GuestInfoCard({ guestName, guestPhone, customerName }: { guestName: string; guestPhone: string; customerName?: string }) {
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -461,6 +461,12 @@ function GuestInfoCard({ guestName, guestPhone }: { guestName: string; guestPhon
           <Phone className="w-4 h-4 shrink-0 text-muted-foreground" />
           <span className="text-body">{guestPhone}</span>
         </div>
+        {customerName && (
+          <div className="flex items-center gap-3">
+            <User className="w-4 h-4 shrink-0 text-muted-foreground" />
+            <span className="text-body text-muted-foreground">ผู้ชำระเงิน: {customerName}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
