@@ -30,6 +30,15 @@
   .text-body {
     @apply text-sm;
   }
+  .text-label {
+    @apply text-xs font-semibold;
+  }
+  .text-caption {
+    @apply text-xs font-medium;
+  }
+  .text-micro {
+    @apply text-[10px] leading-tight;
+  }
   .text-helper {
     @apply text-xs text-muted-foreground;
   }

@@ -60,7 +60,7 @@ function deriveDisplayStatus(
   if (room.status === 'CLEANING')    return 'CLEANING'
   const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd')
   const isOccupiedToday = room.bookings.some(
-    (b) => b.check_in <= todayStr && b.check_out > todayStr,
+    (b) => b.check_in.slice(0, 10) <= todayStr && b.check_out.slice(0, 10) > todayStr,
   )
   if (isOccupiedToday) return 'OCCUPIED'
   return 'AVAILABLE'
@@ -254,7 +254,7 @@ const RoomRow = React.memo(function RoomRow({
 
           const colorClass = bookingColorMap[booking.room_stay_id]  ?? 'bg-secondary text-secondary-foreground'
           const roomCount  = bookingRoomCountMap[booking.booking_id] ?? 1
-          const isUpcoming = booking.check_in > todayStr
+          const isUpcoming = booking.check_in.slice(0, 10) > todayStr
           const showCheckoutEdge = checkOut > windowStart && checkOut <= windowEnd
           const layerInfo = layout.layers.get(booking.booking_id)
 

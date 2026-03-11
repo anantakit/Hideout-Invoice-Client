@@ -45,12 +45,16 @@ export function computeRoomLayout(
 
   // Sort by clamped start, then longer spans first for visual stability.
   const sorted = [...bookings].sort((a, b) => {
-    const aStart = a.check_in < windowStartStr ? windowStartStr : a.check_in
-    const bStart = b.check_in < windowStartStr ? windowStartStr : b.check_in
+    const aCi = a.check_in.slice(0, 10)
+    const bCi = b.check_in.slice(0, 10)
+    const aStart = aCi < windowStartStr ? windowStartStr : aCi
+    const bStart = bCi < windowStartStr ? windowStartStr : bCi
     if (aStart !== bStart) return aStart < bStart ? -1 : 1
     // Longer bookings first — they anchor the top layer.
-    const aEnd = a.check_out > windowEndStr ? windowEndStr : a.check_out
-    const bEnd = b.check_out > windowEndStr ? windowEndStr : b.check_out
+    const aCo = a.check_out.slice(0, 10)
+    const bCo = b.check_out.slice(0, 10)
+    const aEnd = aCo > windowEndStr ? windowEndStr : aCo
+    const bEnd = bCo > windowEndStr ? windowEndStr : bCo
     if (aEnd !== bEnd) return aEnd > bEnd ? -1 : 1
     return 0
   })
@@ -60,11 +64,10 @@ export function computeRoomLayout(
   const result = new Map<string, BookingLayerInfo>()
 
   for (const booking of sorted) {
-    const clampedStart =
-      booking.check_in < windowStartStr ? windowStartStr : booking.check_in
-
-    const clampedEnd =
-      booking.check_out > windowEndStr ? windowEndStr : booking.check_out
+    const ciStr = booking.check_in.slice(0, 10)
+    const coStr = booking.check_out.slice(0, 10)
+    const clampedStart = ciStr < windowStartStr ? windowStartStr : ciStr
+    const clampedEnd   = coStr > windowEndStr   ? windowEndStr   : coStr
 
     // Skip bookings entirely outside the visible window.
     if (clampedStart >= clampedEnd) continue

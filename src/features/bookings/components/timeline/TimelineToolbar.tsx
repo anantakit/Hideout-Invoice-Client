@@ -83,13 +83,14 @@ interface TimelineToolbarProps {
   onNewBooking: () => void
   onToggleOpsDrawer: () => void
   drawerMode: string | null
+
+  /** Number of unassigned stays checking in today — drives the amber badge */
+  todayUnassignedCount?: number
 }
 
 // ─── Shared styles ───────────────────────────────────────────────────────────
 
 const NAV_BTN = 'w-8 h-8 flex items-center justify-center rounded-lg text-tl-text-dim hover:text-tl-text hover:bg-accent transition-colors'
-const KPI_LABEL = 'text-[11px] font-medium uppercase tracking-wider text-tl-text-dim leading-none mb-1'
-const KPI_VALUE = 'text-[16px] font-semibold tabular-nums leading-none'
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -111,6 +112,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
   onNewBooking,
   onToggleOpsDrawer,
   drawerMode,
+  todayUnassignedCount = 0,
 }: TimelineToolbarProps) {
   // ── Mobile detection ───────────────────────────────────────────────────
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
@@ -176,58 +178,48 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
     [displayDate],
   )
 
+  // ── Occupancy bar width ─────────────────────────────────────────────────
+  const occPct = kpiTotals.total > 0 ? kpiTotals.occupancyPct : 0
+
   return (
     <div className="tl-toolbar h-16 shrink-0 flex items-center border-b border-tl-border bg-tl-header">
 
-      {/* ═══════ LEFT: Property + Section ═══════════════════════════════════ */}
-      <div className="hidden xl:flex items-center gap-3 pl-6 pr-5 shrink-0 border-r border-tl-border h-full">
-        <div className="flex flex-col">
-          <span className="text-[13px] font-semibold text-tl-text leading-tight">
-            Hideout
-          </span>
-          <span className="text-[11px] text-tl-text-dim leading-tight">
-            Timeline
-          </span>
-        </div>
-      </div>
+      {/* ═══════ LEFT: Nav ═══════════════════════════════════════════════ */}
+      <div className="flex items-center gap-2 md:gap-4 pl-4 md:pl-6 shrink-0">
 
-      {/* ═══════ CENTER: Nav + Zoom + Filter ═══════════════════════════════ */}
-      <div className="flex items-center gap-2 md:gap-5 px-3 md:px-6 flex-1 min-w-0">
-
-        {/* ── Today button ────────────────────────────────────────────────── */}
+        {/* Today pill */}
         <button
           type="button"
           onClick={onToday}
           className={cn(
-            'shrink-0 h-8 px-3 rounded-full text-[13px] font-medium transition-colors',
+            'shrink-0 h-8 px-3.5 radius-badge text-body font-medium transition-colors',
             'border border-tl-border',
             isToday
               ? 'bg-tl-accent/10 text-tl-accent border-tl-accent/30'
               : 'text-tl-text-dim hover:text-tl-text hover:bg-accent',
           )}
         >
-          Today
+          วันนี้
         </button>
 
-        {/* ── Date navigation ─────────────────────────────────────────────── */}
-        <div className="flex items-center gap-1">
+        {/* Date navigation group */}
+        <div className="flex items-center">
           <button type="button" onClick={onPrev} className={NAV_BTN} aria-label="Previous">
-            <ChevronLeft size={16} />
+            <ChevronLeft size={18} />
           </button>
 
-          {/* Date display + picker */}
           <div className="relative" ref={datePickerRef}>
             <button
               type="button"
               onClick={() => setDatePickerOpen((v) => !v)}
               className={cn(
-                'h-8 px-3 flex items-center gap-2 rounded-lg transition-colors',
+                'h-9 px-3 flex items-center gap-2 radius-button transition-colors',
                 'hover:bg-accent',
                 datePickerOpen && 'bg-accent',
               )}
             >
-              <CalendarIcon size={14} className="text-tl-text-dim shrink-0" />
-              <span className="text-[18px] font-semibold text-tl-text tabular-nums whitespace-nowrap">
+              <CalendarIcon size={16} className="text-tl-text-dim shrink-0" />
+              <span className="text-lg font-semibold text-tl-text tabular-nums whitespace-nowrap">
                 {fmtHeaderDate(displayDate)}
               </span>
             </button>
@@ -245,9 +237,8 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
                     initialViewDate={displayDate}
                   />
                 </div>
-                {/* Quick month jump */}
                 <div className="border-t border-tl-border px-3 pb-2.5 pt-2">
-                  <p className="text-[10px] text-tl-text-dim mb-1.5 uppercase tracking-wider font-medium">
+                  <p className="text-[11px] text-tl-text-dim mb-1.5 uppercase tracking-wider font-medium">
                     ข้ามไปเดือน
                   </p>
                   <div className="grid grid-cols-3 gap-1">
@@ -256,7 +247,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
                         key={opt.value}
                         type="button"
                         onClick={() => handleMonthJump(opt.value)}
-                        className="text-[10px] px-1.5 py-1 rounded hover:bg-accent text-tl-text-dim hover:text-tl-text transition-colors text-center truncate"
+                        className="text-[11px] px-1.5 py-1 rounded hover:bg-accent text-tl-text-dim hover:text-tl-text transition-colors text-center truncate"
                       >
                         {opt.label}
                       </button>
@@ -287,7 +278,6 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
                       onDayHover={() => {}}
                       initialViewDate={displayDate}
                     />
-                    {/* Quick month jump */}
                     <div className="mt-4 pt-3 border-t border-border">
                       <p className="text-[11px] text-muted-foreground mb-2 uppercase tracking-wider font-medium">
                         ข้ามไปเดือน
@@ -312,22 +302,23 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
           </div>
 
           <button type="button" onClick={onNext} className={NAV_BTN} aria-label="Next">
-            <ChevronRight size={16} />
+            <ChevronRight size={18} />
           </button>
         </div>
+      </div>
 
-        {/* ── Divider ─────────────────────────────────────────────────────── */}
-        <div className="hidden md:block w-px h-6 bg-tl-border" />
+      {/* ═══════ CENTER: Zoom + Filter ════════════════════════════════════ */}
+      <div className="hidden md:flex items-center gap-3 px-5 flex-1 min-w-0">
 
-        {/* ── Zoom segmented control ──────────────────────────────────────── */}
-        <div className="hidden md:flex items-center h-8 bg-accent/50 rounded-lg p-0.5 gap-0.5">
+        {/* Zoom segmented control */}
+        <div className="flex items-center h-9 bg-accent/50 rounded-lg p-0.5 gap-0.5">
           {(['3d', '7d', '14d'] as const).map((level) => (
             <button
               key={level}
               type="button"
               onClick={() => onZoomChange(level)}
               className={cn(
-                'px-3 h-7 rounded-md text-[13px] font-medium transition-all',
+                'px-3.5 h-8 rounded-md text-sm font-medium transition-all',
                 zoomLevel === level
                   ? 'bg-tl-accent text-white shadow-sm'
                   : 'text-tl-text-dim hover:text-tl-text',
@@ -338,85 +329,88 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
           ))}
         </div>
 
-        {/* ── Room type filter ────────────────────────────────────────────── */}
-        <div className="hidden md:block">
-          <Select
-            value={selectedRoomTypeId ?? '__all__'}
-            onValueChange={(v) => onRoomTypeSelect(v === '__all__' ? null : v)}
-          >
-            <SelectTrigger className="h-8 w-[130px] text-[13px] bg-transparent border-tl-border text-tl-text-dim hover:text-tl-text">
-              <SelectValue placeholder="All Room Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">ทุกประเภท</SelectItem>
-              {roomAvailability.map((rt) => (
-                <SelectItem key={rt.room_type_id} value={rt.room_type_id}>
-                  {rt.room_type_name} ({rt.available_rooms})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Room type filter */}
+        <Select
+          value={selectedRoomTypeId ?? '__all__'}
+          onValueChange={(v) => onRoomTypeSelect(v === '__all__' ? null : v)}
+        >
+          <SelectTrigger className="h-9 w-[140px] text-sm bg-transparent border-tl-border text-tl-text-dim hover:text-tl-text">
+            <SelectValue placeholder="ทุกประเภท" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">ทุกประเภท</SelectItem>
+            {roomAvailability.map((rt) => (
+              <SelectItem key={rt.room_type_id} value={rt.room_type_id}>
+                {rt.room_type_name} ({rt.available_rooms})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* ═══════ RIGHT: KPIs + Actions ════════════════════════════════════ */}
-      <div className="hidden lg:flex items-center gap-5 pr-3 shrink-0 border-l border-tl-border h-full pl-5">
+      {/* ═══════ RIGHT: KPIs (compact inline) + Actions ═══════════════ */}
+      <div className="hidden lg:flex items-center gap-2 pr-4 shrink-0 h-full pl-3">
 
-        {/* KPI: OCC */}
-        <div className="flex flex-col items-center min-w-[44px]">
-          <span className={KPI_LABEL}>OCC</span>
-          <span className={cn(
-            KPI_VALUE,
-            kpiTotals.occupancyPct >= 70 ? 'text-kpi-occ' : 'text-tl-text',
-          )}>
-            {kpiTotals.total > 0 ? `${kpiTotals.occupancyPct}%` : '—'}
-          </span>
-        </div>
+        {/* KPI pills — compact horizontal row */}
+        <div className="flex items-center gap-1.5 mr-2">
 
-        {/* KPI: ARR */}
-        <div className="flex flex-col items-center min-w-[36px]">
-          <span className={KPI_LABEL}>ARR</span>
-          <div className="flex items-center gap-1">
-            <LogIn size={12} className="text-kpi-arr" />
-            <span className={cn(KPI_VALUE, 'text-kpi-arr')}>
+          {/* Occupancy — mini bar + percentage */}
+          <div className="flex items-center gap-2 rounded-lg bg-accent/40 px-3 py-1.5">
+            <div className="w-12 h-2 rounded-full bg-tl-border overflow-hidden">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all duration-300',
+                  occPct >= 90 ? 'bg-destructive' : occPct >= 70 ? 'bg-kpi-occ' : 'bg-tl-accent',
+                )}
+                style={{ width: `${occPct}%` }}
+              />
+            </div>
+            <span className={cn(
+              'text-sm font-bold tabular-nums leading-none',
+              occPct >= 90 ? 'text-destructive' : occPct >= 70 ? 'text-kpi-occ' : 'text-tl-text',
+            )}>
+              {kpiTotals.total > 0 ? `${occPct}%` : '—'}
+            </span>
+          </div>
+
+          {/* Arrivals */}
+          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-3 py-1.5">
+            <LogIn size={14} className="text-kpi-arr" />
+            <span className="text-sm font-bold tabular-nums leading-none text-kpi-arr">
               {arrivalsDepartures.arrivals}
             </span>
+            <span className="text-xs text-tl-text-dim leading-none">เข้า</span>
           </div>
-        </div>
 
-        {/* KPI: DEP */}
-        <div className="flex flex-col items-center min-w-[36px]">
-          <span className={KPI_LABEL}>DEP</span>
-          <div className="flex items-center gap-1">
-            <LogOut size={12} className="text-kpi-dep" />
-            <span className={cn(KPI_VALUE, 'text-kpi-dep')}>
+          {/* Departures */}
+          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-3 py-1.5">
+            <LogOut size={14} className="text-kpi-dep" />
+            <span className="text-sm font-bold tabular-nums leading-none text-kpi-dep">
               {arrivalsDepartures.departures}
             </span>
+            <span className="text-xs text-tl-text-dim leading-none">ออก</span>
+          </div>
+
+          {/* Available */}
+          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-3 py-1.5">
+            <span className={cn(
+              'text-sm font-bold tabular-nums leading-none',
+              kpiTotals.available === 0 ? 'text-destructive' : 'text-kpi-avl',
+            )}>
+              {availLoading ? '…' : kpiTotals.available}
+            </span>
+            <span className="text-xs text-tl-text-dim leading-none">ว่าง</span>
           </div>
         </div>
 
-        {/* KPI: AVL */}
-        <div className="flex flex-col items-center min-w-[36px]">
-          <span className={KPI_LABEL}>AVL</span>
-          <span className={cn(
-            KPI_VALUE,
-            kpiTotals.available === 0 ? 'text-destructive' : 'text-kpi-avl',
-          )}>
-            {availLoading ? '…' : kpiTotals.available}
-          </span>
-        </div>
-
-        {/* ── Divider ─────────────────────────────────────────────────────── */}
-        <div className="w-px h-8 bg-tl-border" />
-
-        {/* ── Action buttons ──────────────────────────────────────────────── */}
+        {/* Action buttons */}
         <Button
           variant="outline"
           size="sm"
           onClick={onNewBooking}
-          className="h-8 px-3 text-[13px] gap-1.5 border-tl-border text-tl-text-dim hover:text-tl-text bg-transparent"
+          className="h-9 px-3 text-sm gap-1.5 border-tl-border text-tl-text-dim hover:text-tl-text bg-transparent"
         >
-          <CalendarPlus size={14} />
+          <CalendarPlus size={15} />
           <span className="hidden xl:inline">จอง</span>
         </Button>
 
@@ -424,40 +418,50 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
           type="button"
           onClick={onToggleOpsDrawer}
           className={cn(
-            'w-8 h-8 flex items-center justify-center rounded-lg transition-colors',
+            'relative w-9 h-9 flex items-center justify-center rounded-lg transition-colors',
             drawerMode === 'ops'
               ? 'bg-tl-accent text-white'
               : 'text-tl-text-dim hover:text-tl-text hover:bg-accent',
           )}
           aria-label="Operations panel"
         >
-          <PanelRight size={16} />
+          <PanelRight size={18} />
+          {todayUnassignedCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white tabular-nums">
+              {todayUnassignedCount}
+            </span>
+          )}
         </button>
       </div>
 
       {/* ═══════ SM/MD fallback: actions when KPIs are hidden ═══════════ */}
-      <div className="flex lg:hidden items-center gap-1 pr-3 shrink-0">
+      <div className="flex lg:hidden items-center gap-1.5 pr-4 shrink-0">
         <Button
           variant="outline"
           size="sm"
           onClick={onNewBooking}
-          className="h-8 px-2.5 text-[13px] gap-1 border-tl-border text-tl-text-dim bg-transparent hidden sm:flex"
+          className="h-9 px-3 text-sm gap-1.5 border-tl-border text-tl-text-dim bg-transparent hidden sm:flex"
         >
-          <CalendarPlus size={14} />
+          <CalendarPlus size={15} />
           จอง
         </Button>
         <button
           type="button"
           onClick={onToggleOpsDrawer}
           className={cn(
-            'w-8 h-8 items-center justify-center rounded-lg transition-colors hidden md:flex',
+            'relative w-9 h-9 items-center justify-center rounded-lg transition-colors hidden md:flex',
             drawerMode === 'ops'
               ? 'bg-tl-accent text-white'
               : 'text-tl-text-dim hover:text-tl-text hover:bg-accent',
           )}
           aria-label="Operations panel"
         >
-          <PanelRight size={16} />
+          <PanelRight size={18} />
+          {todayUnassignedCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white tabular-nums">
+              {todayUnassignedCount}
+            </span>
+          )}
         </button>
       </div>
     </div>

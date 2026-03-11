@@ -286,6 +286,12 @@ export default function TimelinePage() {
 
   const todayStr = useMemo(() => format(startOfDay(new Date()), 'yyyy-MM-dd'), [])
 
+  // Count unassigned stays whose check_in is today (urgent — needs assignment now)
+  const todayUnassignedCount = useMemo(
+    () => unassignedStays.filter((s) => s.check_in.slice(0, 10) === todayStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT').length,
+    [unassignedStays, todayStr],
+  )
+
   // ── KPI totals (memoized) ──────────────────────────────────────────────
   const kpiTotals = useMemo(() => {
     const total     = roomAvailability.reduce((s, r) => s + r.total_rooms, 0)
@@ -302,8 +308,8 @@ export default function TimelinePage() {
     let departures = 0
     for (const room of allRooms) {
       for (const b of room.bookings) {
-        if (b.check_in === centerDateStr) arrivals++
-        if (b.check_out === centerDateStr) departures++
+        if (b.check_in.slice(0, 10) === centerDateStr) arrivals++
+        if (b.check_out.slice(0, 10) === centerDateStr) departures++
       }
     }
     return { arrivals, departures }
@@ -594,6 +600,7 @@ export default function TimelinePage() {
           onNewBooking={() => navigate(ROUTES.bookings.new)}
           onToggleOpsDrawer={handleToggleOpsDrawer}
           drawerMode={drawerMode}
+          todayUnassignedCount={todayUnassignedCount}
         />
 
         {/* ── Mobile: scrollable date strip + MobileTimelineList (< md) ── */}

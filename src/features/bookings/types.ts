@@ -29,6 +29,7 @@ export interface RoomStayResponse {
   check_out: string
   nights: number
   status: string
+  transfer_from_stay_id?: string
   assigned_at?: string
   checked_in_at?: string
   checked_out_at?: string

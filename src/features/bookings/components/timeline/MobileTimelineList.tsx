@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { parseISO, isToday, differenceInDays, format, addDays } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, ChevronDown, BedDouble } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { ROUTES } from '@/app/routes'
@@ -245,6 +245,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     return { checkIn: t, checkOut: tm }
   })
   const [assignSheetBookingId, setAssignSheetBookingId] = useState<string | null>(null)
+  const [availCheckerOpen, setAvailCheckerOpen] = useState(false)
 
   const selectedDate = parseISO(selectedDateStr)
   const viewingToday = isToday(selectedDate)
@@ -435,6 +436,43 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     return count
   }, [unassignedStays, selectedDateStr])
 
+  // Pending assignments grouped by booking — only today & overdue (mobile focus)
+  const todayISO = format(new Date(), 'yyyy-MM-dd')
+  const pendingBookings = useMemo(() => {
+    const map = new Map<string, {
+      bookingId: string
+      guestName: string
+      checkIn: string
+      roomTypeNames: string[]
+      totalRooms: number
+      nights: number
+    }>()
+    for (const s of unassignedStays) {
+      if (s.status === 'CANCELLED' || s.status === 'CHECKED_OUT') continue
+      const ci = toDateStr(s.check_in)
+      if (ci > todayISO) continue // hide future — manage on desktop
+      const existing = map.get(s.booking_id)
+      if (existing) {
+        existing.totalRooms++
+        if (!existing.roomTypeNames.includes(s.room_type_name)) {
+          existing.roomTypeNames.push(s.room_type_name)
+        }
+      } else {
+        map.set(s.booking_id, {
+          bookingId: s.booking_id,
+          guestName: s.guest_name,
+          checkIn: ci,
+          roomTypeNames: [s.room_type_name],
+          totalRooms: 1,
+          nights: differenceInDays(parseISO(s.check_out), parseISO(s.check_in)),
+        })
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.checkIn.localeCompare(b.checkIn))
+  }, [unassignedStays, todayISO])
+
+  const pendingTotalStays = pendingBookings.reduce((sum, b) => sum + b.totalRooms, 0)
+
   // ── Rooms classified for stay range ─────────────────────────────────────
   const rangeEntries = useMemo(() => {
     if (!stayRangeValid) return { entries: [] as RoomEntry[], counts: { range_available: 0, range_occupied: 0, maintenance: 0 } }
@@ -490,91 +528,88 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     <div className="flex-1 overflow-auto pb-6">
 
       {/* ════════════════════════════════════════════════════════════════════
-          SECTION 1: สถานะโรงแรม — follows selectedDate
+          SECTION 1: สถานะโรงแรม — compact
           ════════════════════════════════════════════════════════════════════ */}
       <div className="px-4 pt-3 pb-1 space-y-2">
-        <p className="text-section">
-          สถานะโรงแรม · {fmtShort(selectedDate)} {selectedDate.getFullYear() + 543}
-        </p>
-
-        {/* Available rooms — hero number */}
-        <div className="radius-card border border-border bg-card space-card">
-          <div className="flex items-baseline justify-between">
-            <span className="text-body text-muted-foreground">ห้องว่าง</span>
-            <div className="flex items-baseline gap-1">
-              <span className={cn(
-                'text-metric',
-                dateKPI.availableCount <= 0 ? 'text-destructive' : 'text-success',
-              )}>
-                {Math.max(0, dateKPI.availableCount)}
-              </span>
-              <span className="text-body text-muted-foreground">/ {totalActiveRooms}</span>
-              {dateKPI.availableCount <= 0 && totalActiveRooms > 0 && (
-                <Badge variant="red" className="text-xs radius-badge px-1.5 py-0 ml-1">เต็ม</Badge>
-              )}
-            </div>
+        {/* Available rooms — compact row */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-baseline space-inline flex-1 min-w-0">
+            <span className="text-helper">ห้องว่าง</span>
+            <span className={cn(
+              'text-section tabular-nums leading-none',
+              dateKPI.availableCount <= 0 ? 'text-destructive' : 'text-success',
+            )}>
+              {Math.max(0, dateKPI.availableCount)}
+            </span>
+            <span className="text-helper">/ {totalActiveRooms}</span>
+            {dateKPI.availableCount <= 0 && totalActiveRooms > 0 && (
+              <Badge variant="red" className="text-micro radius-badge px-1.5 py-0">เต็ม</Badge>
+            )}
           </div>
-          <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
+          <div className="flex-1 h-1.5 radius-badge bg-muted overflow-hidden max-w-[6rem]">
             <div
-              className="h-full rounded-full bg-success transition-all duration-300"
+              className="h-full radius-badge bg-success transition-all duration-300"
               style={{ width: `${availablePct}%` }}
             />
           </div>
-
-          {/* Breakdown by room type */}
-          {dateKPI.byType.length > 0 && (
-            <div className="flex gap-3 mt-2.5 flex-wrap">
-              {dateKPI.byType.map((t) => (
-                <div key={t.name} className="flex items-baseline gap-1">
-                  <span className="text-helper">{t.name}</span>
-                  <span className="text-body font-semibold tabular-nums text-foreground">{t.available}</span>
-                  <span className="text-helper text-muted-foreground/50">/{t.total}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {dateKPI.unassignedReserved > 0 && (
-            <p className="text-helper mt-1.5 tabular-nums">
-              รอกำหนดห้อง {dateKPI.unassignedReserved} รายการ
-            </p>
-          )}
         </div>
 
-        {/* Check-in & Check-out — compact inline */}
-        {(dateKPI.checkinTotal > 0 || dateKPI.checkoutTotal > 0) && (
-          <div className="grid grid-cols-2 gap-2">
-            <div className="radius-card border border-border bg-card px-3 py-2">
-              <div className="flex items-center justify-between">
-                <span className="text-helper">เช็คอิน</span>
-                <span className="text-body font-semibold tabular-nums text-primary">
-                  {dateKPI.checkinDone}<span className="text-helper font-normal">/{dateKPI.checkinTotal}</span>
-                </span>
+        {/* Breakdown by room type — inline */}
+        {dateKPI.byType.length > 0 && (
+          <div className="flex gap-3 flex-wrap">
+            {dateKPI.byType.map((t) => (
+              <div key={t.name} className="flex items-baseline gap-1">
+                <span className="text-helper">{t.name}</span>
+                <span className="text-body font-semibold tabular-nums text-foreground">{t.available}</span>
+                <span className="text-helper text-muted-foreground/50">/{t.total}</span>
               </div>
-              {dateKPI.checkinTotal > 0 && (
-                <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
+            ))}
+            {dateKPI.unassignedReserved > 0 && (
+              <span className="text-helper tabular-nums">
+                รอกำหนดห้อง {dateKPI.unassignedReserved}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Check-in & Check-out — only show cards that have data */}
+        {(dateKPI.checkinTotal > 0 || dateKPI.checkoutTotal > 0) && (
+          <div className={cn(
+            'grid gap-2',
+            dateKPI.checkinTotal > 0 && dateKPI.checkoutTotal > 0 ? 'grid-cols-2' : 'grid-cols-1',
+          )}>
+            {dateKPI.checkinTotal > 0 && (
+              <div className="radius-card border border-border bg-card px-3 py-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-helper">เช็คอิน</span>
+                  <span className="text-body font-semibold tabular-nums text-primary">
+                    {dateKPI.checkinDone}<span className="text-helper font-normal">/{dateKPI.checkinTotal}</span>
+                  </span>
+                </div>
+                <div className="mt-1 h-1 radius-badge bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-primary transition-all duration-300"
+                    className="h-full radius-badge bg-primary transition-all duration-300"
                     style={{ width: `${checkinPct}%` }}
                   />
                 </div>
-              )}
-            </div>
-            <div className="radius-card border border-border bg-card px-3 py-2">
-              <div className="flex items-center justify-between">
-                <span className="text-helper">เช็คเอาท์</span>
-                <span className="text-body font-semibold tabular-nums text-warning">
-                  {dateKPI.checkoutDone}<span className="text-helper font-normal">/{dateKPI.checkoutTotal}</span>
-                </span>
               </div>
-              {dateKPI.checkoutTotal > 0 && (
-                <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
+            )}
+            {dateKPI.checkoutTotal > 0 && (
+              <div className="radius-card border border-border bg-card px-3 py-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-helper">เช็คเอาท์</span>
+                  <span className="text-body font-semibold tabular-nums text-warning">
+                    {dateKPI.checkoutDone}<span className="text-helper font-normal">/{dateKPI.checkoutTotal}</span>
+                  </span>
+                </div>
+                <div className="mt-1 h-1 radius-badge bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-warning transition-all duration-300"
+                    className="h-full radius-badge bg-warning transition-all duration-300"
                     style={{ width: `${checkoutPct}%` }}
                   />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -588,11 +623,10 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           {/* ── Check-in ─────────────────────────────────────────────── */}
           {dateOps.checkins.length > 0 && (
             <div className="space-y-2">
-              <p className="text-section">
-                เช็คอิน{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`} ({dateOps.checkins.length})
+              <p className="text-label text-primary flex items-center space-inline">
+                เช็คอิน{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
               </p>
               {dateOps.checkins.map((ci) => {
-                const needsAssign = ci.unassignedCount > 0
                 const assignedCount = ci.totalStays - ci.unassignedCount
                 const allAssigned = ci.unassignedCount === 0
                 const progressPct = ci.totalStays > 0 ? (assignedCount / ci.totalStays) * 100 : 0
@@ -602,7 +636,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                     key={ci.bookingId}
                     type="button"
                     onClick={() => setAssignSheetBookingId(ci.bookingId)}
-                    className="w-full radius-card border border-primary/20 bg-accent/5 px-3 py-3 text-left active:bg-accent/10 transition-colors"
+                    className="w-full radius-card border border-primary/20 bg-accent/5 px-3 py-2.5 text-left active:bg-accent/10 transition-colors"
                   >
                     {/* Row 1: name + rooms · nights */}
                     <div className="flex items-center justify-between gap-2">
@@ -612,45 +646,39 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                       </span>
                     </div>
 
-                    {/* Row 2: type · assigned rooms */}
-                    <div className="flex items-center space-inline mt-1 text-helper">
-                      <span>{ci.typeName}</span>
-                      {ci.assignedRooms.length > 0 && (
-                        <>
-                          <span>·</span>
-                          <span className="font-medium text-foreground/70">
-                            ห้อง {ci.assignedRooms.join(', ')}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Row 3: mini progress bar + count */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={cn(
-                            'h-full rounded-full transition-all duration-300',
-                            allAssigned ? 'bg-success' : 'bg-warning',
-                          )}
-                          style={{ width: `${progressPct}%` }}
-                        />
+                    {/* Row 2: type · assigned rooms + chevron */}
+                    <div className="flex items-center justify-between mt-1">
+                      <div className="flex items-center space-inline text-helper min-w-0">
+                        <span>{ci.typeName}</span>
+                        {ci.assignedRooms.length > 0 && (
+                          <>
+                            <span>·</span>
+                            <span className="font-medium text-foreground/70 truncate">
+                              ห้อง {ci.assignedRooms.join(', ')}
+                            </span>
+                          </>
+                        )}
                       </div>
-                      <span className="text-helper font-medium tabular-nums shrink-0">
-                        กำหนดแล้ว {assignedCount}/{ci.totalStays}
-                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 ml-1" />
                     </div>
 
-                    {/* Row 4: CTA */}
-                    <div className="flex justify-end mt-2">
-                      <span className={cn(
-                        'text-helper font-medium flex items-center gap-0.5',
-                        needsAssign ? 'text-warning' : 'text-primary',
-                      )}>
-                        {needsAssign ? 'กำหนดห้อง' : 'เช็คอิน'}
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
+                    {/* Row 3: mini progress bar + count (only if multi-room) */}
+                    {ci.totalStays > 1 && (
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex-1 h-1 radius-badge bg-muted overflow-hidden">
+                          <div
+                            className={cn(
+                              'h-full radius-badge transition-all duration-300',
+                              allAssigned ? 'bg-success' : 'bg-warning',
+                            )}
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+                        <span className="text-helper tabular-nums shrink-0">
+                          {assignedCount}/{ci.totalStays}
+                        </span>
+                      </div>
+                    )}
                   </button>
                 )
               })}
@@ -660,8 +688,8 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           {/* ── Check-out ────────────────────────────────────────────── */}
           {dateOps.checkouts.length > 0 && (
             <div className="space-y-2">
-              <p className="text-section">
-                เช็คเอาท์{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`} ({dateOps.checkouts.length})
+              <p className="text-label text-muted-foreground flex items-center space-inline">
+                เช็คเอาท์{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
               </p>
               {dateOps.checkouts.map((co) => {
                 const hasBalance = co.balance > 0
@@ -670,33 +698,21 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                     key={co.bookingId}
                     type="button"
                     onClick={() => navigate(ROUTES.bookings.detail(co.bookingId))}
-                    className="w-full radius-card border border-warning/20 bg-warning-muted/30 px-3 py-3 text-left active:bg-warning-muted/50 transition-colors"
+                    className="w-full radius-card border border-border bg-card px-3 py-2.5 text-left active:bg-muted/60 transition-colors"
                   >
-                    {/* Row 1: name + balance */}
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-body font-semibold truncate">{co.guestName}</span>
-                      {hasBalance && (
-                        <span className="text-helper text-destructive font-medium shrink-0">
+                      <span className="text-helper shrink-0">ห้อง {co.roomNumbers.join(', ')}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-helper">{co.nights} คืน</span>
+                      {hasBalance ? (
+                        <span className="text-helper text-destructive font-medium">
                           ค้าง ฿{co.balance.toLocaleString()}
                         </span>
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />
                       )}
-                    </div>
-
-                    {/* Row 2: rooms · check-in date (nights) */}
-                    <div className="flex items-center space-inline mt-1 text-helper">
-                      <span className="font-medium text-foreground/70">
-                        ห้อง {co.roomNumbers.join(', ')}
-                      </span>
-                      <span>·</span>
-                      <span>เข้าพัก {fmtShortISO(co.checkIn)} ({co.nights} คืน)</span>
-                    </div>
-
-                    {/* Row 3: CTA */}
-                    <div className="flex justify-end mt-2">
-                      <span className="text-helper font-medium text-warning flex items-center gap-0.5">
-                        เช็คเอาท์
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </span>
                     </div>
                   </button>
                 )
@@ -707,10 +723,55 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
       )}
 
       {/* ════════════════════════════════════════════════════════════════════
-          SECTION 3: ตรวจสอบห้องว่างสำหรับการจอง
+          SECTION 2.5: รอมอบหมายห้อง — today & overdue only
+          ════════════════════════════════════════════════════════════════════ */}
+      {pendingTotalStays > 0 && (
+        <div className="px-4 space-section space-y-2">
+          <p className="text-label text-muted-foreground flex items-center space-inline">
+            <BedDouble className="w-3 h-3" />
+            รอมอบหมายห้อง
+            <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">{pendingTotalStays}</Badge>
+          </p>
+          {pendingBookings.map((booking) => (
+            <button
+              key={booking.bookingId}
+              type="button"
+              onClick={() => setAssignSheetBookingId(booking.bookingId)}
+              className="w-full radius-card border border-border bg-card px-3 py-2.5 text-left active:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-body font-semibold truncate">{booking.guestName}</span>
+                <span className="text-helper shrink-0 tabular-nums">
+                  {booking.totalRooms} ห้อง · {fmtShortISO(booking.checkIn)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-0.5">
+                <span className="text-helper">{booking.roomTypeNames.join(', ')}</span>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════════════
+          SECTION 3: ตรวจสอบห้องว่าง — collapsible
           ════════════════════════════════════════════════════════════════════ */}
       <div className="px-4 space-section">
-        <StayAvailabilityCard range={stayRange} onRangeChange={setStayRange} />
+        <button
+          type="button"
+          onClick={() => setAvailCheckerOpen((v) => !v)}
+          className="w-full flex items-center justify-between py-2"
+        >
+          <span className="text-label text-muted-foreground">ตรวจสอบห้องว่าง</span>
+          <ChevronDown className={cn(
+            'w-4 h-4 text-muted-foreground/50 transition-transform',
+            availCheckerOpen && 'rotate-180',
+          )} />
+        </button>
+        {availCheckerOpen && (
+          <StayAvailabilityCard range={stayRange} onRangeChange={setStayRange} />
+        )}
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
@@ -721,7 +782,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
         <div className="px-4 pb-2">
           {/* Section title + mode toggle */}
           <div className="flex items-center justify-between mb-2">
-            <p className="text-section">
+            <p className="text-label text-muted-foreground">
               รายการห้องพัก
             </p>
 
@@ -731,7 +792,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                 type="button"
                 onClick={() => { setFreeRoomMode('selected'); setFilter('all') }}
                 className={cn(
-                  'px-2.5 py-1 text-xs font-medium transition-colors',
+                  'px-2.5 py-1 text-caption transition-colors',
                   freeRoomMode === 'selected'
                     ? 'date-selected'
                     : 'bg-card text-muted-foreground date-hover',
@@ -744,7 +805,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                 onClick={() => { setFreeRoomMode('range'); setFilter('all') }}
                 disabled={!stayRangeValid}
                 className={cn(
-                  'px-2.5 py-1 text-xs font-medium transition-colors',
+                  'px-2.5 py-1 text-caption transition-colors',
                   freeRoomMode === 'range'
                     ? 'date-selected'
                     : 'bg-card text-muted-foreground date-hover',
@@ -772,7 +833,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                         type="button"
                         onClick={() => setFilter(value)}
                         className={cn(
-                          'shrink-0 h-8 px-3 radius-badge text-xs font-medium transition-colors',
+                          'shrink-0 h-8 px-3 radius-badge text-caption transition-colors',
                           filter === value
                             ? 'date-selected'
                             : isZero
@@ -833,8 +894,12 @@ const RoomCard = React.memo(function RoomCard({
   const hasGuest = entry.status !== 'available' && entry.status !== 'maintenance'
     && entry.status !== 'range_available' && entry.status !== 'range_occupied'
 
+  const isSimple = entry.status === 'available' || entry.status === 'maintenance'
+    || entry.status === 'range_available' || entry.status === 'range_occupied'
+
   const cardClasses = cn(
-    'w-full px-3 py-2.5',
+    'w-full px-3',
+    isSimple ? 'py-1.5' : 'py-2.5',
     cfg.cardClass,
   )
 

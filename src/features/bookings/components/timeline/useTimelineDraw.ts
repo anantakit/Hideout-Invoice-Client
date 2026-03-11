@@ -84,8 +84,8 @@ export function useTimelineDraw({
         (b) =>
           b.status !== 'CANCELLED' &&
           b.status !== 'CHECKED_OUT' &&
-          b.check_in < checkOut &&
-          b.check_out > checkIn,
+          b.check_in.slice(0, 10) < checkOut &&
+          b.check_out.slice(0, 10) > checkIn,
       )
     },
     [rooms],

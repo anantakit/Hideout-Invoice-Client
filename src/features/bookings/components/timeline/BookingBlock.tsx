@@ -303,7 +303,7 @@ const BookingBlock = React.memo(function BookingBlock({
             ),
             // Past bookings fade
             !isBeingDragged && !isUpcoming && status !== 'CANCELLED' && status !== 'CHECKED_OUT' &&
-              booking.check_out <= format(startOfDay(new Date()), 'yyyy-MM-dd') && 'opacity-60',
+              booking.check_out.slice(0, 10) <= format(startOfDay(new Date()), 'yyyy-MM-dd') && 'opacity-60',
           )}
           style={positionStyle}
           onMouseEnter={() => onHoverStart(booking.booking_id)}
