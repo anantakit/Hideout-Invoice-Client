@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/car
 import { Badge } from '../../../shared/ui/badge'
 import { Button } from '../../../shared/ui/button'
 import { BottomBar } from '../../../shared/ui/BottomBar'
+import { Skeleton } from '../../../shared/ui/skeleton'
 
 function StatCard({
   title,
@@ -37,15 +38,46 @@ function StatCard({
   )
 }
 
+function StatCardSkeleton() {
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-8 w-28" />
+          </div>
+          <Skeleton className="w-10 h-10 rounded-xl" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ReceiptRowSkeleton() {
+  return (
+    <div className="flex items-center justify-between px-5 md:px-6 py-4">
+      <div className="space-y-2 flex-1">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <Skeleton className="h-3 w-32" />
+      </div>
+      <Skeleton className="h-4 w-20" />
+    </div>
+  )
+}
+
 export default function Dashboard() {
-  const { data: recentReceipts } = useQuery({
+  const { data: recentReceipts, isLoading: receiptsLoading } = useQuery({
     queryKey: ['receipts', { page: 1, limit: 5 }],
     queryFn: () => receiptsApi.list({ page: 1, limit: 5 }),
     staleTime: 5 * 60 * 1000,
     placeholderData: (prev) => prev,
   })
 
-  const { data: allReceipts } = useQuery({
+  const { data: allReceipts, isLoading: statsLoading } = useQuery({
     queryKey: ['receipts-stats'],
     queryFn: () => receiptsApi.list({ limit: 1000 }),
     staleTime: 10 * 60 * 1000,
@@ -78,30 +110,41 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="ใบเสร็จทั้งหมด"
-          value={allReceipts?.meta.total ?? '—'}
-          icon={Receipt}
-          iconClassName="bg-accent text-accent-foreground"
-        />
-        <StatCard
-          title="รายรับรวม"
-          value={formatTHB(totalRevenue)}
-          icon={DollarSign}
-          iconClassName="bg-success-muted text-success-muted-foreground"
-        />
-        <StatCard
-          title="ลูกค้าทั้งหมด"
-          value={customers?.meta.total ?? '—'}
-          icon={Users}
-          iconClassName="bg-info-muted text-info-muted-foreground"
-        />
-        <StatCard
-          title="เดือนนี้"
-          value={formatTHB(monthRevenue)}
-          icon={CalendarDays}
-          iconClassName="bg-warning-muted text-warning-muted-foreground"
-        />
+        {statsLoading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="ใบเสร็จทั้งหมด"
+              value={allReceipts?.meta.total ?? '—'}
+              icon={Receipt}
+              iconClassName="bg-accent text-accent-foreground"
+            />
+            <StatCard
+              title="รายรับรวม"
+              value={formatTHB(totalRevenue)}
+              icon={DollarSign}
+              iconClassName="bg-success-muted text-success-muted-foreground"
+            />
+            <StatCard
+              title="ลูกค้าทั้งหมด"
+              value={customers?.meta.total ?? '—'}
+              icon={Users}
+              iconClassName="bg-info-muted text-info-muted-foreground"
+            />
+            <StatCard
+              title="เดือนนี้"
+              value={formatTHB(monthRevenue)}
+              icon={CalendarDays}
+              iconClassName="bg-warning-muted text-warning-muted-foreground"
+            />
+          </>
+        )}
       </div>
 
       <Card className="shadow-card">
@@ -112,7 +155,15 @@ export default function Dashboard() {
           </Link>
         </CardHeader>
         <CardContent className="p-0">
-          {!recentReceipts || recentReceipts.data.length === 0 ? (
+          {receiptsLoading ? (
+            <div className="divide-y divide-border/50">
+              <ReceiptRowSkeleton />
+              <ReceiptRowSkeleton />
+              <ReceiptRowSkeleton />
+              <ReceiptRowSkeleton />
+              <ReceiptRowSkeleton />
+            </div>
+          ) : !recentReceipts || recentReceipts.data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Receipt className="w-12 h-12 mb-3 opacity-30" />
               <p className="text-body">ยังไม่มีใบเสร็จ</p>

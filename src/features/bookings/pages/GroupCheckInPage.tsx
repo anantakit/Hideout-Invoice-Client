@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react'
+import { Skeleton } from '@/shared/ui/skeleton'
 import { differenceInDays, parseISO } from 'date-fns'
 import toast from 'react-hot-toast'
 
@@ -249,8 +250,11 @@ export default function GroupCheckInPage() {
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-32 rounded-xl" />
       </div>
     )
   }

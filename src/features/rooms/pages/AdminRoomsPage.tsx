@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Skeleton } from '@/shared/ui/skeleton'
 import { roomsApi } from '../api'
 import { formatTHB } from '@/shared/utils'
 import type { RoomType, Room } from '../types'
@@ -218,8 +219,14 @@ export default function AdminRoomsPage() {
 
           <Card className="overflow-hidden">
             {rtLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              <div className="p-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-8 rounded-md ml-auto" />
+                  </div>
+                ))}
               </div>
             ) : roomTypes.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
@@ -320,8 +327,14 @@ export default function AdminRoomsPage() {
 
           <Card className="overflow-hidden">
             {isLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              <div className="p-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-8 rounded-md ml-auto" />
+                  </div>
+                ))}
               </div>
             ) : rooms.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">

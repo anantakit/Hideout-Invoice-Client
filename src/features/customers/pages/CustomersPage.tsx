@@ -12,6 +12,7 @@ import { Card } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
 import { BottomBar } from '../../../shared/ui/BottomBar'
+import { Skeleton } from '../../../shared/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -107,8 +108,15 @@ export default function Customers() {
         {/* List */}
         <Card className="overflow-hidden">
           {isLoading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-24 hidden sm:block" />
+                  <Skeleton className="h-4 w-20 hidden md:block" />
+                  <Skeleton className="h-8 w-8 rounded-md ml-auto" />
+                </div>
+              ))}
             </div>
           ) : !data || data.data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">

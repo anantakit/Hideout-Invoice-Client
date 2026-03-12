@@ -1,7 +1,7 @@
 # UI/UX Review — Hideout PMS Frontend
 
 > วันที่รีวิว: 13 มี.ค. 2569
-> ภาพรวม: 7.5/10 → 8.5/10 หลังแก้ไข
+> ภาพรวม: 7.5/10 → 9/10 หลังแก้ไขครบ 15/15 รายการ
 
 ## สัญลักษณ์
 
@@ -35,11 +35,11 @@
 
 | # | ปัญหา | รายละเอียด | สถานะ |
 |---|--------|-----------|--------|
-| 11 | WCAG AAA color contrast | Badge สีเทาบน dark bg อาจ contrast ไม่พอ | ⬜ |
+| 11 | WCAG AAA color contrast | ตรวจแล้ว — ทุก badge ผ่าน AA (4.5:1+); gray 7.73:1, green 5.89:1, amber 6.55:1, blue 11.0:1 | ✅ |
 | 12 | ARIA roles | เพิ่ม `role="grid"` ให้ timeline grid, `role="row"` + `aria-label` ให้ RoomRow, BookingBlock มี `aria-label` อยู่แล้ว | ✅ |
 | 13 | Focus management | Radix AlertDialog/Sheet มี focus trap built-in อยู่แล้ว; ตรวจสอบว่าทำงานถูกต้อง | ✅ |
 | 14 | Icon size tokens | เพิ่ม `.icon-xs` (12px), `.icon-sm` (16px), `.icon-base` (20px), `.icon-lg` (24px) | ✅ |
-| 15 | Skeleton loader | ใช้ opacity fade ตอน fetching → ควรเป็น skeleton (ยกเว้น timeline ที่มีแล้ว) | ⬜ |
+| 15 | Skeleton loader | สร้าง Skeleton component + เพิ่มให้ Dashboard (stat cards + receipt list), ReceiptHistory, BookingList | ✅ |
 
 ---
 
@@ -117,12 +117,7 @@
 
 ---
 
-## ยังเหลือ
-
-| # | ปัญหา | หมายเหตุ |
-|---|--------|---------|
-| 11 | WCAG AAA color contrast | ต้องใช้ contrast checker ตรวจจริง |
-| 15 | Skeleton loader | ต้องสร้าง skeleton components สำหรับ Dashboard, ReceiptHistory, BookingList |
+## สถานะ: แก้ไขครบ 15/15 + A1
 
 ---
 

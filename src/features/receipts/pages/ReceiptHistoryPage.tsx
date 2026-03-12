@@ -31,6 +31,7 @@ import {
 } from '../../../shared/ui/alert-dialog'
 import { ReceiptDateFilter } from '../components/ReceiptDateFilter'
 import { BottomBar } from '../../../shared/ui/BottomBar'
+import { Skeleton } from '../../../shared/ui/skeleton'
 
 async function downloadReceipt(id: string, number: string) {
   try {
@@ -149,8 +150,16 @@ export default function ReceiptHistory() {
       {/* Content */}
       <Card className="overflow-hidden">
         {isLoading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <div className="p-4 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-32 hidden sm:block" />
+                <Skeleton className="h-4 w-28 hidden md:block" />
+                <Skeleton className="h-4 w-20 ml-auto" />
+                <Skeleton className="h-8 w-8 rounded-md" />
+              </div>
+            ))}
           </div>
         ) : !data || data.data.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">

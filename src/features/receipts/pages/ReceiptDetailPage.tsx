@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { ChevronLeft, Download, Trash2, Loader2, ExternalLink } from 'lucide-react'
+import { Skeleton } from '@/shared/ui/skeleton'
 import { receiptsApi } from '../api'
 import ErrorPage from '@/shared/components/ErrorPage'
 import { formatTHB, formatThaiDate } from '../../../shared/utils'
@@ -65,8 +66,14 @@ export default function ReceiptDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+        </div>
+        <Skeleton className="h-40 rounded-xl" />
       </div>
     )
   }
