@@ -786,6 +786,11 @@ function PendingAssignmentsSection({
     (s) => s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT',
   ).length
 
+  const urgentSections = sections.filter((s) => s.isUrgent)
+  const futureSections = sections.filter((s) => !s.isUrgent)
+  const futureStayCount = futureSections.reduce((sum, s) => sum + s.stayCount, 0)
+  const [showFuture, setShowFuture] = useState(false)
+
   return (
     <div className="p-4 border-b border-border space-y-3">
       {/* Header */}
@@ -795,64 +800,129 @@ function PendingAssignmentsSection({
         <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">{totalStays}</Badge>
       </p>
 
-      {/* Sections by date */}
+      {/* Urgent sections (today + overdue) — always visible */}
       <div className="space-y-3">
-        {sections.map((section) => (
-          <div key={section.dateStr} className="space-y-1.5">
-            {/* Date label + auto-assign per date */}
-            <div className="flex items-center justify-between">
-              <p className={cn(
-                'text-helper flex items-center space-inline',
-                section.isUrgent
-                  ? 'font-semibold text-warning'
-                  : 'font-normal text-muted-foreground/60',
-              )}>
-                {section.isUrgent && <span className="w-1.5 h-1.5 radius-badge bg-warning" />}
-                {section.label}
-                <span className="font-normal text-muted-foreground/40">{section.stayCount} ห้อง</span>
-              </p>
-              {section.stayCount > 1 && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button
-                      type="button"
-                      disabled={autoAssign.isPending}
-                      className={cn(
-                        'flex items-center space-inline text-micro text-muted-foreground/60 transition-colors',
-                        'hover:text-primary disabled:opacity-50',
-                      )}
-                    >
-                      {autoAssign.isPending && autoAssignDate === section.dateStr ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <Wand2 className="w-3 h-3" />
-                      )}
-                      อัตโนมัติ
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>ยืนยันจัดห้องอัตโนมัติ</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        มอบหมายห้องอัตโนมัติให้ {section.stayCount} ห้อง เข้าพัก{section.label} ระบบจะเลือกห้องที่เหมาะสมที่สุด
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleAutoAssign(section.dateStr)}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
-                      >
-                        จัดอัตโนมัติ
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
+        {urgentSections.map((section) => (
+          <DateSection
+            key={section.dateStr}
+            section={section}
+            expandedBookingId={expandedBookingId}
+            setExpandedBookingId={setExpandedBookingId}
+            autoAssign={autoAssign}
+            autoAssignDate={autoAssignDate}
+            handleAutoAssign={handleAutoAssign}
+          />
+        ))}
+      </div>
 
-            {/* Booking cards */}
-            {section.bookings.map((booking) => {
+      {/* Future sections — collapsed by default */}
+      {futureSections.length > 0 && (
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setShowFuture(!showFuture)}
+            className="flex items-center justify-between w-full text-left py-1.5"
+          >
+            <span className="text-helper text-muted-foreground/60 flex items-center space-inline">
+              ล่วงหน้า
+              <span className="font-normal text-muted-foreground/40">{futureStayCount} ห้อง</span>
+            </span>
+            <ChevronDown className={cn(
+              'w-3.5 h-3.5 text-muted-foreground/40 transition-transform',
+              showFuture && 'rotate-180',
+            )} />
+          </button>
+
+          {showFuture && futureSections.map((section) => (
+            <DateSection
+              key={section.dateStr}
+              section={section}
+              expandedBookingId={expandedBookingId}
+              setExpandedBookingId={setExpandedBookingId}
+              autoAssign={autoAssign}
+              autoAssignDate={autoAssignDate}
+              handleAutoAssign={handleAutoAssign}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Date Section (extracted for reuse) ─────────────────────────────────────
+
+function DateSection({
+  section,
+  expandedBookingId,
+  setExpandedBookingId,
+  autoAssign,
+  autoAssignDate,
+  handleAutoAssign,
+}: {
+  section: { dateStr: string; label: string; isUrgent: boolean; bookings: PendingBookingGroup[]; stayCount: number }
+  expandedBookingId: string | null
+  setExpandedBookingId: (id: string | null) => void
+  autoAssign: { isPending: boolean }
+  autoAssignDate: string | null
+  handleAutoAssign: (date: string) => void
+}) {
+  return (
+    <div className="space-y-1.5">
+      {/* Date label + auto-assign per date */}
+      <div className="flex items-center justify-between">
+        <p className={cn(
+          'text-helper flex items-center space-inline',
+          section.isUrgent
+            ? 'font-semibold text-warning'
+            : 'font-normal text-muted-foreground/60',
+        )}>
+          {section.isUrgent && <span className="w-1.5 h-1.5 radius-badge bg-warning" />}
+          {section.label}
+          <span className="font-normal text-muted-foreground/40">{section.stayCount} ห้อง</span>
+        </p>
+        {section.stayCount > 1 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                disabled={autoAssign.isPending}
+                className={cn(
+                  'flex items-center space-inline text-micro text-muted-foreground/60 transition-colors',
+                  'hover:text-primary disabled:opacity-50',
+                )}
+              >
+                {autoAssign.isPending && autoAssignDate === section.dateStr ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Wand2 className="w-3 h-3" />
+                )}
+                อัตโนมัติ
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>ยืนยันจัดห้องอัตโนมัติ</AlertDialogTitle>
+                <AlertDialogDescription>
+                  มอบหมายห้องอัตโนมัติให้ {section.stayCount} ห้อง เข้าพัก{section.label} ระบบจะเลือกห้องที่เหมาะสมที่สุด
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => handleAutoAssign(section.dateStr)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  จัดอัตโนมัติ
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+
+      {/* Booking cards */}
+      {section.bookings.map((booking) => {
               const isExpanded = expandedBookingId === booking.bookingId
               return (
                 <div key={booking.bookingId}>
@@ -899,9 +969,6 @@ function PendingAssignmentsSection({
                 </div>
               )
             })}
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
