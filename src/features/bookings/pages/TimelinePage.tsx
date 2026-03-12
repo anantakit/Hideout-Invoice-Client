@@ -112,7 +112,6 @@ export default function TimelinePage() {
     fromStr,
     toStr,
     visibleStartDate,
-    visibleDays,
     jumpToDate,
     jumpToToday,
     shiftBy,
@@ -144,13 +143,9 @@ export default function TimelinePage() {
   const windowEnd   = bufferEnd
   const zoomDays    = totalDays
 
-  // ── KPIs are reactive to the visible center date ─────────────────────────
-  const visibleCenterDate = useMemo(
-    () => addDays(visibleStartDate, Math.floor(visibleDays / 2)),
-    [visibleStartDate, visibleDays],
-  )
-  const availFrom = useMemo(() => format(startOfDay(visibleCenterDate), 'yyyy-MM-dd'), [visibleCenterDate])
-  const availTo   = useMemo(() => format(addDays(startOfDay(visibleCenterDate), 1), 'yyyy-MM-dd'), [visibleCenterDate])
+  // ── KPIs are reactive to the visible start date (= date shown in header) ──
+  const availFrom = useMemo(() => format(startOfDay(visibleStartDate), 'yyyy-MM-dd'), [visibleStartDate])
+  const availTo   = useMemo(() => format(addDays(startOfDay(visibleStartDate), 1), 'yyyy-MM-dd'), [visibleStartDate])
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const { data: timelineData, isLoading, isError } = useTimeline(fromStr, toStr)
@@ -677,6 +672,7 @@ export default function TimelinePage() {
               roomTypeNameMap={roomTypeNameByRoomId}
               unassignedStays={unassignedStays}
               onSelectBooking={handleSelectBooking}
+              onQuickCheckOut={handleDrawerCheckOut}
             />
           </div>
         )}

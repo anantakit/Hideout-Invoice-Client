@@ -157,11 +157,6 @@ export function useInfiniteTimeline({
     el.scrollBy({ left: numDays * cellW, behavior: 'smooth' })
   }, [])
 
-  const visibleCenterDate = useMemo(
-    () => addDays(visibleStartDate, Math.floor(visibleDays / 2)),
-    [visibleStartDate, visibleDays],
-  )
-
   return {
     bufferStart,
     bufferEnd,
@@ -171,7 +166,6 @@ export function useInfiniteTimeline({
     toStr,
     visibleStartDate,
     visibleDays,
-    visibleCenterDate,
     jumpToDate,
     jumpToToday,
     shiftBy,

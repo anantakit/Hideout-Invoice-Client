@@ -16,6 +16,11 @@ import { cn } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
+import {
+  AlertDialog, AlertDialogTrigger, AlertDialogContent,
+  AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+} from '@/shared/ui/alert-dialog'
 import { type TimelineBooking, type TimelineRoom, type UnassignedStay, getStatusLabel } from '../../types'
 import { DesktopOperationsPanel } from './DesktopOperationsPanel'
 
@@ -222,13 +227,28 @@ function BookingDetailContent({
         )}
 
         {canCheckOut && onQuickCheckOut && (
-          <Button
-            className="w-full gap-1.5 bg-info hover:bg-info/90 text-info-foreground"
-            onClick={() => onQuickCheckOut(booking)}
-          >
-            <LogOut size={14} />
-            เช็คเอาท์
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button className="w-full gap-1.5" variant="outline">
+                <LogOut size={14} />
+                เช็คเอาท์
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>ยืนยันเช็คเอาท์</AlertDialogTitle>
+                <AlertDialogDescription>
+                  เช็คเอาท์ {booking.guest_name} ห้อง {roomNumbers.join(', ')} ?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onQuickCheckOut(booking)}>
+                  เช็คเอาท์
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
 
         {isTerminal && (
@@ -278,12 +298,14 @@ function OpsContent({
   roomTypeNameMap,
   unassignedStays,
   onClose,
+  onQuickCheckOut,
 }: {
   rooms: TimelineRoom[]
   todayStr: string
   roomTypeNameMap: Record<string, string>
   unassignedStays: UnassignedStay[]
   onClose: () => void
+  onQuickCheckOut?: (booking: TimelineBooking) => void
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -308,6 +330,7 @@ function OpsContent({
           selectedDateStr={todayStr}
           roomTypeNameMap={roomTypeNameMap}
           unassignedStays={unassignedStays}
+          onQuickCheckOut={onQuickCheckOut}
         />
       </div>
     </div>
@@ -361,6 +384,7 @@ export const OperationsDrawer = React.memo(function OperationsDrawer({
             roomTypeNameMap={roomTypeNameMap}
             unassignedStays={unassignedStays}
             onClose={onClose}
+            onQuickCheckOut={onQuickCheckOut}
           />
         )}
       </div>

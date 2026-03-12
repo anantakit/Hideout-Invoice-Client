@@ -1,9 +1,15 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { parseISO, isToday, differenceInDays, format, addDays } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, ChevronDown, BedDouble } from 'lucide-react'
+import { ChevronRight, ChevronDown, BedDouble, CheckCircle2, LogOut } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
+import {
+  AlertDialog, AlertDialogTrigger, AlertDialogContent,
+  AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+} from '@/shared/ui/alert-dialog'
 import { ROUTES } from '@/app/routes'
 import type { TimelineRoom, TimelineBooking, UnassignedStay } from '../../types'
 import { StayAvailabilityCard } from '../availability/StayAvailabilityCard'
@@ -206,6 +212,13 @@ interface CheckinBooking {
   booking?: TimelineBooking
 }
 
+interface CheckoutStay {
+  roomStayId: string
+  roomNumber: string
+  status: string
+  booking: TimelineBooking
+}
+
 interface CheckoutBooking {
   bookingId: string
   guestName: string
@@ -213,6 +226,7 @@ interface CheckoutBooking {
   balance: number
   checkIn: string
   nights: number
+  stays: CheckoutStay[]
   booking?: TimelineBooking
 }
 
@@ -225,6 +239,7 @@ interface MobileTimelineListProps {
   roomTypeNameMap: Record<string, string>
   unassignedStays: UnassignedStay[]
   onSelectBooking: (booking: TimelineBooking, roomNumbers?: string[]) => void
+  onQuickCheckOut?: (booking: TimelineBooking) => void
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -235,6 +250,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   roomTypeNameMap,
   unassignedStays,
   onSelectBooking,
+  onQuickCheckOut,
 }: MobileTimelineListProps) {
   const navigate = useNavigate()
   const [filter, setFilter] = useState<FilterValue>('all')
@@ -245,6 +261,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     return { checkIn: t, checkOut: tm }
   })
   const [assignSheetBookingId, setAssignSheetBookingId] = useState<string | null>(null)
+  const [expandedCheckoutId, setExpandedCheckoutId] = useState<string | null>(null)
   const [availCheckerOpen, setAvailCheckerOpen] = useState(false)
 
   const selectedDate = parseISO(selectedDateStr)
@@ -369,9 +386,16 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
 
         // Check-out on selectedDate
         if (co === selectedDateStr) {
+          const stay: CheckoutStay = {
+            roomStayId: b.room_stay_id,
+            roomNumber: room.room_number,
+            status: b.status,
+            booking: b,
+          }
           const existing = checkoutMap.get(b.booking_id)
           if (existing) {
             existing.roomNumbers.push(room.room_number)
+            existing.stays.push(stay)
           } else {
             checkoutMap.set(b.booking_id, {
               bookingId: b.booking_id,
@@ -380,6 +404,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
               balance: b.balance_amount,
               checkIn: ci,
               nights: differenceInDays(parseISO(b.check_out), parseISO(b.check_in)),
+              stays: [stay],
               booking: b,
             })
           }
@@ -408,9 +433,29 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
       }
     }
 
+    // Separate fully-checked-in bookings from pending
+    const allCheckins = Array.from(checkinMap.values())
+    const pendingCheckins = allCheckins.filter((ci) => {
+      const st = ci.booking?.status
+      return st !== 'CHECKED_IN' && st !== 'CHECKED_OUT'
+    })
+    const doneCheckins = allCheckins.filter((ci) => {
+      const st = ci.booking?.status
+      return st === 'CHECKED_IN' || st === 'CHECKED_OUT'
+    })
+
+    // Sort checkouts: pending (has unchecked-out stays) first, fully done last
+    const allCheckouts = Array.from(checkoutMap.values())
+    const pendingCheckouts = allCheckouts
+      .filter((co) => co.stays.some((s) => s.status === 'CHECKED_IN'))
+      .sort((a, b) => (b.balance - a.balance))
+    const doneCheckouts = allCheckouts.filter((co) => co.stays.every((s) => s.status === 'CHECKED_OUT'))
+
     return {
-      checkins: Array.from(checkinMap.values()),
-      checkouts: Array.from(checkoutMap.values()),
+      checkins: pendingCheckins,
+      doneCheckins,
+      checkouts: pendingCheckouts,
+      doneCheckouts,
     }
   }, [rooms, selectedDateStr, roomTypeNameMap, unassignedStays])
 
@@ -521,7 +566,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   )
 
   const total = displayedEntries.length
-  const hasOps = dateOps.checkins.length > 0 || dateOps.checkouts.length > 0
+  const hasOps = dateOps.checkins.length > 0 || dateOps.doneCheckins.length > 0 || dateOps.checkouts.length > 0 || dateOps.doneCheckouts.length > 0
 
   // ── Render ──────────────────────────────────────────────────────────────
   return (
@@ -621,12 +666,13 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
         <div className="px-4 space-section space-y-4">
 
           {/* ── Check-in ─────────────────────────────────────────────── */}
-          {dateOps.checkins.length > 0 && (
+          {(dateOps.checkins.length > 0 || dateOps.doneCheckins.length > 0) && (
             <div className="space-y-2">
               <p className="text-label text-primary flex items-center space-inline">
                 เช็คอิน{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
               </p>
               {dateOps.checkins.map((ci) => {
+                const isSingleRoom = ci.totalStays === 1
                 const assignedCount = ci.totalStays - ci.unassignedCount
                 const allAssigned = ci.unassignedCount === 0
                 const progressPct = ci.totalStays > 0 ? (assignedCount / ci.totalStays) * 100 : 0
@@ -638,11 +684,11 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                     onClick={() => setAssignSheetBookingId(ci.bookingId)}
                     className="w-full radius-card border border-primary/20 bg-accent/5 px-3 py-2.5 text-left active:bg-accent/10 transition-colors"
                   >
-                    {/* Row 1: name + rooms · nights */}
+                    {/* Row 1: name + info */}
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-body font-semibold truncate">{ci.guestName}</span>
                       <span className="text-helper shrink-0">
-                        {ci.totalStays} ห้อง · {ci.nights} คืน
+                        {isSingleRoom ? `${ci.nights} คืน` : `${ci.totalStays} ห้อง · ${ci.nights} คืน`}
                       </span>
                     </div>
 
@@ -682,41 +728,213 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                   </button>
                 )
               })}
+
+              {/* Already checked-in bookings (walk-ins etc.) — shown dimmed */}
+              {dateOps.doneCheckins.map((ci) => (
+                <div
+                  key={ci.bookingId}
+                  className="w-full radius-card border border-success/20 bg-success/5 px-3 py-2.5 opacity-60"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center space-inline min-w-0">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+                      <span className="text-body font-semibold truncate">{ci.guestName}</span>
+                    </div>
+                    <span className="text-helper text-success/80 shrink-0">เข้าพักแล้ว</span>
+                  </div>
+                  {ci.assignedRooms.length > 0 && (
+                    <p className="text-helper mt-1">ห้อง {ci.assignedRooms.join(', ')}</p>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
           {/* ── Check-out ────────────────────────────────────────────── */}
-          {dateOps.checkouts.length > 0 && (
+          {(dateOps.checkouts.length > 0 || dateOps.doneCheckouts.length > 0) && (
             <div className="space-y-2">
               <p className="text-label text-muted-foreground flex items-center space-inline">
                 เช็คเอาท์{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
               </p>
+
+              {/* Pending checkouts */}
               {dateOps.checkouts.map((co) => {
                 const hasBalance = co.balance > 0
-                return (
-                  <button
-                    key={co.bookingId}
-                    type="button"
-                    onClick={() => navigate(ROUTES.bookings.detail(co.bookingId))}
-                    className="w-full radius-card border border-border bg-card px-3 py-2.5 text-left active:bg-muted/60 transition-colors"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-body font-semibold truncate">{co.guestName}</span>
-                      <span className="text-helper shrink-0">ห้อง {co.roomNumbers.join(', ')}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-helper">{co.nights} คืน</span>
-                      {hasBalance ? (
-                        <span className="text-helper text-destructive font-medium">
+                const isSingleRoom = co.stays.length === 1
+                const pendingStays = co.stays.filter((s) => s.status === 'CHECKED_IN')
+                const doneStays = co.stays.filter((s) => s.status === 'CHECKED_OUT')
+                const isExpanded = expandedCheckoutId === co.bookingId
+
+                // Single-room: flat card with inline checkout
+                if (isSingleRoom) {
+                  const stay = co.stays[0]
+                  return (
+                    <div
+                      key={co.bookingId}
+                      className="w-full radius-card border border-border bg-card px-3 py-2.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-body font-semibold truncate">{co.guestName}</span>
+                            <span className="text-helper shrink-0">{co.nights} คืน</span>
+                          </div>
+                          <p className="text-helper mt-0.5">ห้อง {stay.roomNumber}</p>
+                        </div>
+                        {onQuickCheckOut && stay.status === 'CHECKED_IN' && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="outline" className="h-8 px-3 text-body font-medium gap-1.5 shrink-0">
+                                <LogOut className="w-3.5 h-3.5" />
+                                เช็คเอาท์
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>ยืนยันเช็คเอาท์</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  เช็คเอาท์ {co.guestName} ห้อง {stay.roomNumber} ?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => onQuickCheckOut(stay.booking)}>
+                                  เช็คเอาท์
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                      {hasBalance && (
+                        <p className="text-helper text-destructive font-medium mt-1">
                           ค้าง ฿{co.balance.toLocaleString()}
-                        </span>
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />
+                        </p>
                       )}
                     </div>
-                  </button>
+                  )
+                }
+
+                // Multi-room: expandable
+                return (
+                  <div key={co.bookingId}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedCheckoutId(isExpanded ? null : co.bookingId)}
+                      className={cn(
+                        'w-full radius-card border space-card text-left transition-colors',
+                        isExpanded
+                          ? 'border-border bg-card'
+                          : 'border-border bg-card active:bg-accent/10',
+                        isExpanded && 'rounded-b-none',
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-body font-semibold truncate">{co.guestName}</span>
+                        <span className="text-helper shrink-0">{co.stays.length} ห้อง · {co.nights} คืน</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-helper">ห้อง {co.roomNumbers.join(', ')}</span>
+                        <ChevronDown className={cn(
+                          'w-3.5 h-3.5 text-muted-foreground/50 transition-transform shrink-0',
+                          isExpanded && 'rotate-180',
+                        )} />
+                      </div>
+                      {hasBalance && (
+                        <p className="text-helper text-destructive font-medium mt-1">
+                          ค้าง ฿{co.balance.toLocaleString()}
+                        </p>
+                      )}
+                    </button>
+
+                    {isExpanded && (
+                      <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-2">
+                        {/* Progress */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-helper font-medium">
+                            เช็คเอาท์ {doneStays.length}/{co.stays.length} ห้อง
+                          </span>
+                          <div className="flex-1 max-w-[6rem] ml-3 h-1.5 radius-badge bg-muted overflow-hidden">
+                            <div
+                              className={cn(
+                                'h-full radius-badge transition-all duration-300',
+                                doneStays.length === co.stays.length ? 'bg-success' : 'bg-warning',
+                              )}
+                              style={{ width: `${Math.round((doneStays.length / co.stays.length) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Pending stays */}
+                        {pendingStays.map((stay) => (
+                          <div
+                            key={stay.roomStayId}
+                            className="flex items-center justify-between radius-button border border-border bg-accent/5 px-3 py-2.5"
+                          >
+                            <span className="text-body font-bold tabular-nums">ห้อง {stay.roomNumber}</span>
+                            {onQuickCheckOut && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm" variant="outline" className="h-8 px-3 text-body font-medium gap-1.5">
+                                    <LogOut className="w-3.5 h-3.5" />
+                                    เช็คเอาท์
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>ยืนยันเช็คเอาท์</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      เช็คเอาท์ {co.guestName} ห้อง {stay.roomNumber} ?
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => onQuickCheckOut(stay.booking)}>
+                                      เช็คเอาท์
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Done stays */}
+                        {doneStays.map((stay) => (
+                          <div
+                            key={stay.roomStayId}
+                            className="flex items-center space-inline radius-button border border-success/20 bg-success/5 px-3 py-2.5 opacity-75"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+                            <span className="text-body font-bold tabular-nums">ห้อง {stay.roomNumber}</span>
+                            <span className="text-helper text-success/80">เช็คเอาท์แล้ว</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )
               })}
+
+              {/* Fully done checkouts — dimmed */}
+              {dateOps.doneCheckouts.map((co) => (
+                <div
+                  key={co.bookingId}
+                  className="w-full radius-card border border-success/20 bg-success/5 px-3 py-2.5 opacity-60"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center space-inline min-w-0">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+                      <span className="text-body font-semibold truncate">{co.guestName}</span>
+                    </div>
+                    <span className="text-helper shrink-0">ห้อง {co.roomNumbers.join(', ')}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <span className="text-helper">{co.nights} คืน</span>
+                    <span className="text-helper text-success/80">เช็คเอาท์แล้ว</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

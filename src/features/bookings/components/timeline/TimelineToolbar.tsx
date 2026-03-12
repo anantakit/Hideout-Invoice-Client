@@ -354,7 +354,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
         {/* KPI pills — compact horizontal row */}
         <div className="flex items-center gap-1.5 mr-2">
 
-          {/* Occupancy — mini bar + percentage */}
+          {/* Occupancy — mini bar + fraction */}
           <div className="flex items-center gap-2 rounded-lg bg-accent/40 px-3 py-1.5">
             <div className="w-12 h-2 rounded-full bg-tl-border overflow-hidden">
               <div
@@ -369,8 +369,9 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
               'text-sm font-bold tabular-nums leading-none',
               occPct >= 90 ? 'text-destructive' : occPct >= 70 ? 'text-kpi-occ' : 'text-tl-text',
             )}>
-              {kpiTotals.total > 0 ? `${occPct}%` : '—'}
+              {kpiTotals.total > 0 ? `${kpiTotals.occupied}/${kpiTotals.total}` : '—'}
             </span>
+            <span className="text-xs text-tl-text-dim leading-none">เข้าพัก</span>
           </div>
 
           {/* Arrivals */}

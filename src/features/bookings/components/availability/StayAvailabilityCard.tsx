@@ -1,7 +1,7 @@
 import { format, addDays } from 'date-fns'
 import { Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { Card, CardContent } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import { ROUTES } from '@/app/routes'
@@ -21,77 +21,61 @@ export function StayAvailabilityCard({ range, onRangeChange }: StayAvailabilityC
   const today = format(new Date(), 'yyyy-MM-dd')
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
-  // Use controlled props if provided, otherwise this is a no-op (shouldn't happen)
   const currentRange = range ?? { checkIn: today, checkOut: tomorrow }
   const handleChange = onRangeChange ?? (() => {})
 
   const isValid = currentRange.checkIn && currentRange.checkOut && currentRange.checkOut > currentRange.checkIn
 
-  // Auto-fetch when both dates are valid
   const { data, isLoading, isFetching } = useStayAvailability(
     isValid ? currentRange.checkIn : '',
     isValid ? currentRange.checkOut : '',
   )
 
   const totalAvailable = data?.roomTypes.reduce((s, rt) => s + rt.available, 0) ?? 0
+  const totalRooms = data?.roomTypes.reduce((s, rt) => s + rt.total, 0) ?? 0
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-body">ตรวจสอบห้องว่างสำหรับการจอง</CardTitle>
-        <CardDescription className="text-helper">
-          เลือกวันเช็คอิน–เช็คเอาท์เพื่อดูห้องว่าง
-        </CardDescription>
-      </CardHeader>
+      <CardContent className="px-4 py-3 space-y-3">
+        <p className="text-label text-muted-foreground">ห้องว่าง</p>
 
-      <CardContent className="space-y-3">
         <DateRangePicker
           value={currentRange}
           onChange={handleChange}
           placeholder="วันเช็คอิน → เช็คเอาท์"
         />
 
-        {/* Loading indicator */}
         {isValid && isLoading && (
           <div className="flex items-center justify-center py-2">
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
           </div>
         )}
 
-        {/* Results — shown automatically when dates are valid */}
         {data && isValid && (
           <>
-            <Separator />
-
-            <div className="space-list">
-              <p className="text-helper font-medium">
-                ห้องว่างในช่วงที่เลือก
-                {isFetching && <Loader2 className="w-3 h-3 animate-spin inline ml-1" />}
-              </p>
-
-              <div className="space-y-0.5">
-                {data.roomTypes.map((rt) => (
-                  <RoomTypeAvailabilityRow
-                    key={rt.id}
-                    name={rt.name}
-                    available={rt.available}
-                    total={rt.total}
-                  />
-                ))}
-              </div>
-
-              {data.roomTypes.length > 1 && (
-                <>
-                  <Separator className="my-2" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-body font-medium">รวม</span>
-                    <span className="text-body font-bold tabular-nums">
-                      {totalAvailable} ว่าง
-                    </span>
-                  </div>
-                </>
-              )}
+            <div className="space-y-0.5">
+              {data.roomTypes.map((rt) => (
+                <RoomTypeAvailabilityRow
+                  key={rt.id}
+                  name={rt.name}
+                  available={rt.available}
+                  total={rt.total}
+                />
+              ))}
             </div>
+
+            {data.roomTypes.length > 1 && (
+              <>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-body font-medium">ว่างทั้งหมด</span>
+                  <span className="text-body font-bold tabular-nums">
+                    {totalAvailable}/{totalRooms} ห้อง
+                    {isFetching && <Loader2 className="w-3 h-3 animate-spin inline ml-1" />}
+                  </span>
+                </div>
+              </>
+            )}
 
             {totalAvailable > 0 && (
               <Button
