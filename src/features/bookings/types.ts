@@ -225,6 +225,12 @@ export interface CreatePaymentPayload {
 
 export interface ExtendStayPayload {
   new_check_out: string // YYYY-MM-DD
+  transfer_room_id?: string // optional: room for overflow period when conflict
+}
+
+export interface ExtendStayConflictData {
+  available_until: string // YYYY-MM-DD — how far current room is available
+  room_types: AvailabilityGroupedRoomType[] // available rooms for overflow period
 }
 
 export interface MoveStayPayload {

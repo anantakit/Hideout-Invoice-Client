@@ -11,6 +11,7 @@ import type {
   CreateBookingPayload,
   CreatePaymentPayload,
   ExtendStayPayload,
+  ExtendStayConflictData,
   MoveStayPayload,
   PaymentResponse,
   TimelineResponse,
@@ -132,12 +133,26 @@ export const bookingsApi = {
     return data.data
   },
 
-  extendStay: async (bookingId: string, stayId: string, payload: ExtendStayPayload): Promise<BookingResponse> => {
-    const { data } = await apiClient.patch<ApiResponse<BookingResponse>>(
-      `/bookings/${bookingId}/stays/${stayId}/extend`,
-      payload,
-    )
-    return data.data
+  extendStay: async (
+    bookingId: string,
+    stayId: string,
+    payload: ExtendStayPayload,
+  ): Promise<
+    | { type: 'success'; booking: BookingResponse }
+    | { type: 'conflict'; conflict: ExtendStayConflictData }
+  > => {
+    try {
+      const { data } = await apiClient.patch<ApiResponse<BookingResponse>>(
+        `/bookings/${bookingId}/stays/${stayId}/extend`,
+        payload,
+      )
+      return { type: 'success', booking: data.data }
+    } catch (err: any) {
+      if (err?.response?.status === 409 && err.response.data?.conflict) {
+        return { type: 'conflict', conflict: err.response.data.conflict }
+      }
+      throw err
+    }
   },
 
   moveStay: async (bookingId: string, stayId: string, payload: MoveStayPayload): Promise<BookingResponse> => {

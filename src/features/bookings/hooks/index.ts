@@ -246,17 +246,20 @@ export function useMoveStay() {
   })
 }
 
-/** Extend a stay's check-out date. Refetches the booking detail on success. */
+/** Extend a stay's check-out date. Returns success or conflict with available rooms. */
 export function useExtendStay(bookingId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ stayId, payload }: { stayId: string; payload: ExtendStayPayload }) =>
       bookingsApi.extendStay(bookingId, stayId, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
-      queryClient.invalidateQueries({ queryKey: ['availability'] })
-      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
-      queryClient.invalidateQueries({ queryKey: ['timeline'] })
+    onSuccess: (result) => {
+      if (result.type === 'success') {
+        queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
+        queryClient.invalidateQueries({ queryKey: ['availability'] })
+        queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
+        queryClient.invalidateQueries({ queryKey: ['timeline'] })
+      }
+      // conflict case: don't invalidate — UI will show room picker
     },
   })
 }

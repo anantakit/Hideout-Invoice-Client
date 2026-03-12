@@ -36,6 +36,12 @@ apiClient.interceptors.response.use(
       window.location.href = '/login'
     }
 
+    // For 409 Conflict, preserve the full axios error so callers can
+    // inspect response.data (e.g. conflict details for extend-stay)
+    if (status === 409) {
+      return Promise.reject(error)
+    }
+
     const message =
       error.response?.data?.message ||
       error.message ||

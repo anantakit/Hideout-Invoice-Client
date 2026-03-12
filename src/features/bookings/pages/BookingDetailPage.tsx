@@ -32,7 +32,7 @@ import SearchableComboBox from '@/shared/ui/SearchableComboBox'
 import { customersApi } from '../../customers/api'
 import type { Customer } from '../../customers/types'
 import { PaymentPanel } from '../components/PaymentPanel'
-import { type RoomStayResponse, type BookingEventResponse, type BookingResponse, type InvoiceResponseShort, getStatusLabel } from '../types'
+import { type RoomStayResponse, type BookingEventResponse, type BookingResponse, type InvoiceResponseShort, type ExtendStayConflictData, getStatusLabel } from '../types'
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
 
@@ -636,6 +636,8 @@ function StayCardOperational({
   const [checkoutOpen, setCheckoutOpen]   = useState(false)
   const [transferOpen, setTransferOpen]   = useState(false)
   const [newCheckOut, setNewCheckOut]     = useState('')
+  const [conflictData, setConflictData]   = useState<ExtendStayConflictData | null>(null)
+  const [selectedTransferRoomId, setSelectedTransferRoomId] = useState<string | null>(null)
 
   const isMobile = useIsMobile()
   const cancel   = useCancelStay(bookingId)
@@ -672,6 +674,20 @@ function StayCardOperational({
   const canTransfer      = (isCheckedIn || stay.status === 'ASSIGNED') && Boolean(stay.room_id)
   const showTodayBadge   = isActive && isCheckInToday(stay.check_in)
   const showOverdueBadge = isActive && isCheckInOverdue(stay.check_in)
+
+  // Conflict room groups for extend-with-transfer
+  const conflictRoomGroups = useMemo(() => {
+    if (!conflictData) return []
+    return conflictData.room_types
+      .map((t) => ({
+        typeId: t.room_type_id,
+        typeName: t.room_type_name,
+        pricePerNight: t.price_per_night,
+        isSameType: t.room_type_id === stay.room_type_id,
+        rooms: t.rooms.filter((r) => r.available),
+      }))
+      .filter((g) => g.rooms.length > 0)
+  }, [conflictData, stay.room_type_id])
 
   // Minimum date for extend is the day after current check-out
   const currentCheckOutISO = stay.check_out.slice(0, 10)
@@ -806,21 +822,64 @@ function StayCardOperational({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Extend stay — shared body ────────────────────────────────────── */}
+      {/* ── Extend stay — 2-step: pick date → pick room if conflict ──── */}
       {(() => {
-        const canConfirm = Boolean(newCheckOut && newCheckOut > currentCheckOutISO && !extend.isPending)
-        const handleExtendConfirm = () => {
-          if (!canConfirm) return
+        const hasConflict = conflictData !== null
+        const canConfirmDate = Boolean(newCheckOut && newCheckOut > currentCheckOutISO && !extend.isPending)
+        const canConfirmTransfer = hasConflict && Boolean(selectedTransferRoomId) && !extend.isPending
+
+        // Step 1: submit date only → success or conflict
+        const handleExtendSubmitDate = () => {
+          if (!canConfirmDate) return
           extend.mutate(
             { stayId: stay.id, payload: { new_check_out: newCheckOut } },
             {
-              onSuccess: () => { setExtendOpen(false); toast.success('ขยายวันเช็คเอาท์สำเร็จ') },
+              onSuccess: (result) => {
+                if (result.type === 'success') {
+                  setExtendOpen(false)
+                  setConflictData(null)
+                  toast.success('ขยายวันเช็คเอาท์สำเร็จ')
+                } else {
+                  // Show room picker for the overflow period
+                  setConflictData(result.conflict)
+                  setSelectedTransferRoomId(null)
+                }
+              },
               onError: (err) => { toast.error((err as Error).message || 'เกิดข้อผิดพลาด กรุณาลองใหม่') },
             },
           )
         }
 
-        const extendBody = (
+        // Step 2: submit with transfer room
+        const handleExtendWithTransfer = () => {
+          if (!canConfirmTransfer || !selectedTransferRoomId) return
+          extend.mutate(
+            { stayId: stay.id, payload: { new_check_out: newCheckOut, transfer_room_id: selectedTransferRoomId } },
+            {
+              onSuccess: (result) => {
+                if (result.type === 'success') {
+                  setExtendOpen(false)
+                  setConflictData(null)
+                  setSelectedTransferRoomId(null)
+                  toast.success('ขยายเวลาและย้ายห้องสำเร็จ')
+                } else {
+                  toast.error('ห้องที่เลือกไม่ว่างแล้ว กรุณาเลือกห้องอื่น')
+                  setConflictData(result.conflict)
+                  setSelectedTransferRoomId(null)
+                }
+              },
+              onError: (err) => { toast.error((err as Error).message || 'เกิดข้อผิดพลาด กรุณาลองใหม่') },
+            },
+          )
+        }
+
+        const handleExtendClose = (open: boolean) => {
+          if (!open) { setConflictData(null); setSelectedTransferRoomId(null) }
+          setExtendOpen(open)
+        }
+
+        // ── Date picker step (step 1) ──
+        const datePickerBody = (
           <div className="space-y-3">
             <div className="space-y-1">
               <p className="text-body text-muted-foreground">
@@ -841,7 +900,7 @@ function StayCardOperational({
                       variant={isSelected ? 'default' : 'outline'}
                       size="sm"
                       className="tabular-nums"
-                      onClick={() => setNewCheckOut(target)}
+                      onClick={() => { setNewCheckOut(target); setConflictData(null); setSelectedTransferRoomId(null) }}
                     >
                       +{n}
                     </Button>
@@ -855,10 +914,10 @@ function StayCardOperational({
                 type="date"
                 min={currentCheckOutISO}
                 value={newCheckOut}
-                onChange={(e) => setNewCheckOut(e.target.value)}
+                onChange={(e) => { setNewCheckOut(e.target.value); setConflictData(null); setSelectedTransferRoomId(null) }}
               />
             </div>
-            {newCheckOut && newCheckOut > currentCheckOutISO && (() => {
+            {newCheckOut && newCheckOut > currentCheckOutISO && !hasConflict && (() => {
               const extraNights = differenceInDays(parseISO(newCheckOut), parseISO(currentCheckOutISO))
               const totalNights = nights + extraNights
               return (
@@ -875,42 +934,135 @@ function StayCardOperational({
           </div>
         )
 
-        const extendActions = (
+        // ── Conflict / room picker step (step 2) ──
+        const conflictBody = hasConflict && (
+          <div className="space-y-3">
+            <div className="radius-card border border-warning/30 bg-warning/5 space-card">
+              <p className="text-body font-medium text-warning">
+                <Timer className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+                ห้อง {stay.room_number} ว่างถึง {formatThaiDate(conflictData.available_until)} เท่านั้น
+              </p>
+              <p className="text-helper mt-1">
+                เลือกห้องสำหรับช่วง {formatThaiDate(conflictData.available_until)} → {formatThaiDate(newCheckOut)}
+              </p>
+            </div>
+
+            {conflictRoomGroups.length === 0 ? (
+              <p className="text-helper py-4 text-center">ไม่มีห้องว่างในช่วงเวลาที่ต้องการ</p>
+            ) : (
+              conflictRoomGroups
+                .sort((a, b) => (a.isSameType ? -1 : b.isSameType ? 1 : 0))
+                .map((group) => {
+                  const sameTypePrice = conflictRoomGroups.find((g) => g.isSameType)?.pricePerNight ?? 0
+                  const diff = group.pricePerNight - sameTypePrice
+                  return (
+                    <div key={group.typeId}>
+                      <div className="flex items-baseline justify-between mb-1.5">
+                        <p className="text-label text-foreground">
+                          {group.typeName}
+                          {group.isSameType && (
+                            <span className="text-helper font-normal ml-1">(ประเภทเดียวกัน)</span>
+                          )}
+                        </p>
+                        {!group.isSameType && (
+                          <span className={cn(
+                            'text-micro font-medium',
+                            diff > 0 ? 'text-warning' : diff < 0 ? 'text-success' : 'text-muted-foreground',
+                          )}>
+                            {formatTHB(group.pricePerNight)}/คืน
+                            {diff !== 0 && ` (${diff > 0 ? '+' : ''}${formatTHB(diff)})`}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {group.rooms.map((room) => (
+                          <Button
+                            key={room.room_id}
+                            variant={selectedTransferRoomId === room.room_id ? 'default' : 'outline'}
+                            size="sm"
+                            disabled={extend.isPending}
+                            onClick={() => setSelectedTransferRoomId(room.room_id)}
+                          >
+                            {room.room_number}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })
+            )}
+          </div>
+        )
+
+        // ── Combined body ──
+        const extendBody = (
+          <div className="space-y-4">
+            {datePickerBody}
+            {conflictBody}
+          </div>
+        )
+
+        // ── Actions depend on step ──
+        const extendActions = hasConflict ? (
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" disabled={extend.isPending} onClick={() => handleExtendClose(false)}>
+              ยกเลิก
+            </Button>
+            <Button className="flex-1" disabled={!canConfirmTransfer} onClick={handleExtendWithTransfer}>
+              {extend.isPending ? 'กำลังบันทึก…' : 'ยืนยันย้ายห้อง'}
+            </Button>
+          </div>
+        ) : (
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" disabled={extend.isPending} onClick={() => setExtendOpen(false)}>
               ยกเลิก
             </Button>
-            <Button className="flex-1" disabled={!canConfirm} onClick={handleExtendConfirm}>
-              {extend.isPending ? 'กำลังบันทึก…' : 'ยืนยัน'}
+            <Button className="flex-1" disabled={!canConfirmDate} onClick={handleExtendSubmitDate}>
+              {extend.isPending ? 'กำลังตรวจสอบ…' : 'ยืนยัน'}
             </Button>
           </div>
         )
 
         return isMobile ? (
-          <Sheet open={extendOpen} onOpenChange={setExtendOpen}>
-            <SheetContent side="bottom" className="rounded-t-2xl px-5 pt-5 pb-6">
-              <SheetHeader className="pb-3 text-left">
-                <SheetTitle>ขยายวันเช็คเอาท์</SheetTitle>
+          <Sheet open={extendOpen} onOpenChange={handleExtendClose}>
+            <SheetContent side="bottom" className="rounded-t-2xl px-5 pt-5 pb-6 max-h-[85vh] flex flex-col">
+              <SheetHeader className="pb-3 text-left shrink-0">
+                <SheetTitle>{hasConflict ? 'เลือกห้องสำหรับช่วงที่เหลือ' : 'ขยายวันเช็คเอาท์'}</SheetTitle>
                 <SheetDescription className="sr-only">เลือกวันเช็คเอาท์ใหม่</SheetDescription>
               </SheetHeader>
-              {extendBody}
-              <div className="pt-4">{extendActions}</div>
+              <div className="flex-1 overflow-y-auto">{extendBody}</div>
+              <div className="pt-4 shrink-0">{extendActions}</div>
             </SheetContent>
           </Sheet>
         ) : (
-          <AlertDialog open={extendOpen} onOpenChange={setExtendOpen}>
-            <AlertDialogContent>
+          <AlertDialog open={extendOpen} onOpenChange={handleExtendClose}>
+            <AlertDialogContent className={cn(hasConflict && 'max-h-[80vh] flex flex-col')}>
               <AlertDialogHeader>
-                <AlertDialogTitle>ขยายวันเช็คเอาท์</AlertDialogTitle>
+                <AlertDialogTitle>{hasConflict ? 'เลือกห้องสำหรับช่วงที่เหลือ' : 'ขยายวันเช็คเอาท์'}</AlertDialogTitle>
                 <AlertDialogDescription className="sr-only">เลือกวันเช็คเอาท์ใหม่</AlertDialogDescription>
               </AlertDialogHeader>
-              {extendBody}
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={extend.isPending}>ยกเลิก</AlertDialogCancel>
-                <AlertDialogAction disabled={!canConfirm} onClick={handleExtendConfirm}>
-                  {extend.isPending ? 'กำลังบันทึก…' : 'ยืนยัน'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
+              <div className={cn(hasConflict && 'flex-1 overflow-y-auto')}>{extendBody}</div>
+              <div className="flex justify-end gap-2 pt-2">
+                {hasConflict ? (
+                  <>
+                    <Button variant="outline" disabled={extend.isPending} onClick={() => handleExtendClose(false)}>
+                      ยกเลิก
+                    </Button>
+                    <Button disabled={!canConfirmTransfer} onClick={handleExtendWithTransfer}>
+                      {extend.isPending ? 'กำลังบันทึก…' : 'ยืนยันย้ายห้อง'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" disabled={extend.isPending} onClick={() => handleExtendClose(false)}>
+                      ยกเลิก
+                    </Button>
+                    <Button disabled={!canConfirmDate} onClick={handleExtendSubmitDate}>
+                      {extend.isPending ? 'กำลังตรวจสอบ…' : 'ยืนยัน'}
+                    </Button>
+                  </>
+                )}
+              </div>
             </AlertDialogContent>
           </AlertDialog>
         )
