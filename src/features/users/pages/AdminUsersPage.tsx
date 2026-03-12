@@ -141,7 +141,7 @@ export default function AdminUsers() {
                 </TableHeader>
                 <TableBody>
                   {users.map((u) => (
-                    <TableRow key={u.id}>
+                    <TableRow key={u.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell>
                         <p className="font-medium text-foreground">{u.full_name}</p>
                         <p className="text-helper mt-0.5">@{u.username}</p>

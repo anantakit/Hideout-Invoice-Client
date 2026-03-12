@@ -275,7 +275,7 @@ function DesktopRow({
   onView: () => void
 }) {
   return (
-    <TableRow>
+    <TableRow className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={onView}>
       <TableCell>
         <p className="font-medium">{booking.guest_name}</p>
         <p className="text-helper mt-0.5">{booking.guest_phone}</p>

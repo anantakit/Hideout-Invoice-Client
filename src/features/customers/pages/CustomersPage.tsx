@@ -130,7 +130,7 @@ export default function Customers() {
                 </TableHeader>
                 <TableBody>
                   {data.data.map((customer) => (
-                    <TableRow key={customer.id}>
+                    <TableRow key={customer.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell>
                         <p className="font-medium text-foreground">{customer.name}</p>
                         {customer.phone && <p className="text-helper mt-0.5 sm:hidden">{customer.phone}</p>}

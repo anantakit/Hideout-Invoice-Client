@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/sheet'
@@ -8,6 +8,7 @@ import { SidebarContent, Logo } from './Sidebar'
 
 export default function Layout() {
   const [sheetOpen, setSheetOpen] = useState(false)
+  const location = useLocation()
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -55,7 +56,9 @@ export default function Layout() {
 
         {/* Page content */}
         <main className="flex-1 overflow-auto">
-          <Outlet />
+          <div key={location.pathname} className="page-enter">
+            <Outlet />
+          </div>
         </main>
       </div>
 

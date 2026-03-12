@@ -153,7 +153,7 @@ export default function CreateBookingPage() {
 
         {/* ── Header ──────────────────────────────────────────────────── */}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">สร้างการจอง</h1>
+          <h1 className="text-h1 text-xl sm:text-2xl">สร้างการจอง</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             จองห้องพักล่วงหน้า หรือเช็คอินทันทีสำหรับผู้เข้าพักที่เดินเข้ามา
           </p>
@@ -187,7 +187,7 @@ export default function CreateBookingPage() {
                             className={cn(
                               'flex flex-col items-center gap-0.5 radius-card border px-3 py-3 text-center transition-colors',
                               field.value === opt.value
-                                ? 'border-primary bg-primary/5 text-primary'
+                                ? 'border-primary bg-primary/15 text-primary'
                                 : 'border-border text-muted-foreground hover:border-muted-foreground/50',
                             )}
                           >
@@ -313,7 +313,7 @@ export default function CreateBookingPage() {
                             className={cn(
                               'flex flex-col items-center gap-0.5 radius-card border px-2 py-3 text-center transition-colors',
                               field.value === opt.value
-                                ? 'border-primary bg-primary/5 text-primary'
+                                ? 'border-primary bg-primary/15 text-primary'
                                 : 'border-border text-muted-foreground hover:border-muted-foreground/50',
                             )}
                           >
@@ -418,7 +418,7 @@ function PaymentFields() {
                     className={cn(
                       'radius-button border px-2 py-2 text-xs font-medium transition-colors',
                       field.value === m
-                        ? 'border-primary bg-primary/5 text-primary'
+                        ? 'border-primary bg-primary/15 text-primary'
                         : 'border-border text-muted-foreground hover:border-muted-foreground/50',
                     )}
                   >

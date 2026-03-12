@@ -157,6 +157,8 @@ const RoomRow = React.memo(function RoomRow({
 
   return (
     <div
+      role="row"
+      aria-label={`ห้อง ${room.room_number}`}
       className={cn(
         'flex border-b border-border-soft group/row',
         isEmpty && 'hover:bg-muted/30 transition-colors',

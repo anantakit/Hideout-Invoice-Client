@@ -271,7 +271,7 @@ const BookingBlock = React.memo(function BookingBlock({
               status === 'CANCELLED'
                 ? [
                     // Cancelled: transparent bg, dashed border, faded
-                    'border-dashed border-bk-cancelled/40 bg-transparent text-bk-cancelled-foreground opacity-50',
+                    'border-dashed border-bk-cancelled/70 bg-transparent text-bk-cancelled-foreground opacity-60',
                     isHighlighted === true  && 'opacity-70 ring-1 ring-inset ring-bk-cancelled/30',
                     isHighlighted === false && 'opacity-15',
                   ]
@@ -280,14 +280,14 @@ const BookingBlock = React.memo(function BookingBlock({
                       // Checked-out: same color but reduced opacity
                       'border-transparent shadow-card',
                       colorClass,
-                      'opacity-45',
+                      'opacity-60',
                       isHighlighted === true  && '!opacity-65 ring-1 ring-inset ring-foreground/20',
                       isHighlighted === false && '!opacity-15',
                     ]
                   : isUpcoming
                     ? [
                         // Upcoming / reserved: dashed border, muted
-                        'border-dashed border-bk-reserved/40 bg-bk-reserved/15 text-bk-reserved-foreground/80',
+                        'border-dashed border-bk-reserved/60 bg-bk-reserved/20 text-bk-reserved-foreground/80',
                         isHighlighted === null  && 'opacity-80 hover:opacity-95 hover:shadow-md hover:brightness-105',
                         isHighlighted === true  && 'opacity-95 shadow-md ring-2 ring-inset ring-primary/30',
                         isHighlighted === false && 'opacity-20',
@@ -320,7 +320,7 @@ const BookingBlock = React.memo(function BookingBlock({
           {/* Resize handle — left edge (stays inside block to avoid blocking adjacent cells) */}
           {isDraggable && !isBeingDragged && (
             <div
-              className="absolute left-0 inset-y-0 w-3 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
+              className="absolute left-0 inset-y-0 w-3 cursor-col-resize opacity-0 group-hover/block:opacity-100 tl-resize-handle transition-opacity z-10 flex items-center justify-center"
               onPointerDown={handleResizeLeftDown}
             >
               <div className="flex gap-px">
@@ -333,7 +333,7 @@ const BookingBlock = React.memo(function BookingBlock({
           {/* Resize handle — right edge (stays inside block to avoid blocking adjacent cells) */}
           {isDraggable && !isBeingDragged && (
             <div
-              className="absolute right-0 inset-y-0 w-3 cursor-col-resize opacity-0 group-hover/block:opacity-100 transition-opacity z-10 flex items-center justify-center"
+              className="absolute right-0 inset-y-0 w-3 cursor-col-resize opacity-0 group-hover/block:opacity-100 tl-resize-handle transition-opacity z-10 flex items-center justify-center"
               onPointerDown={handleResizeRightDown}
             >
               <div className="flex gap-px">

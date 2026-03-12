@@ -3,9 +3,10 @@ import { addDays, subDays, format, startOfDay } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { CalendarPlus } from 'lucide-react'
+import { CalendarPlus, Keyboard } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { TooltipProvider } from '@/shared/ui/tooltip'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/dialog'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import ErrorPanel from '@/shared/components/ErrorPanel'
@@ -200,9 +201,10 @@ export default function TimelinePage() {
   // ── Bottom-sheet state ────────────────────────────────────────────────────
   const [selectedBooking, setSelectedBooking] = useState<SelectedBookingContext | null>(null)
 
-  // ── Context menu + cancel dialog state ──────────────────────────────────
+  // ── Context menu + cancel dialog + keyboard help state ──────────────────
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const [cancelTarget, setCancelTarget] = useState<TimelineBooking | null>(null)
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
 
   // ── Mobile date strip: anchor date (center of the 21-day strip) ─────────
   const [mobileAnchor, setMobileAnchor] = useState<Date>(() => startOfDay(new Date()))
@@ -360,6 +362,20 @@ export default function TimelinePage() {
   }, [mobileStripStart])
 
   const todayStr = useMemo(() => format(startOfDay(new Date()), 'yyyy-MM-dd'), [])
+
+  // ── Keyboard help: `?` key opens shortcut help dialog ────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+        const tag = (e.target as HTMLElement).tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+        e.preventDefault()
+        setShowKeyboardHelp((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   // Count pending check-in tasks for today (unassigned + assigned but not yet checked in)
   const todayPendingCheckinCount = useMemo(() => {
@@ -784,6 +800,8 @@ export default function TimelinePage() {
                   {filteredRooms.length > 0 && (
                     <div
                       ref={gridContainerRef}
+                      role="grid"
+                      aria-label="Timeline ห้องพัก"
                       style={{
                         height:   rowVirtualizer.getTotalSize(),
                         position: 'relative',
@@ -883,6 +901,40 @@ export default function TimelinePage() {
             onTransfer={handleContextTransfer}
           />
         )}
+
+        {/* Keyboard shortcuts help dialog */}
+        <Dialog open={showKeyboardHelp} onOpenChange={setShowKeyboardHelp}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Keyboard className="w-5 h-5" />
+                คีย์ลัด Timeline
+              </DialogTitle>
+              <DialogDescription>ใช้คีย์ลัดเพื่อจัดการ booking บน timeline ได้เร็วขึ้น</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 text-sm">
+              <div className="space-y-2">
+                <p className="text-label text-muted-foreground">การเลือก</p>
+                <div className="flex justify-between"><span>เปิดรายละเอียด</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">Enter</kbd></div>
+                <div className="flex justify-between"><span>เมนูคลิกขวา</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">Shift + F10</kbd></div>
+              </div>
+              <div className="border-t border-border-soft" />
+              <div className="space-y-2">
+                <p className="text-label text-muted-foreground">ย้าย Booking</p>
+                <div className="flex justify-between"><span>ย้ายซ้าย/ขวา (±1 วัน)</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">← →</kbd></div>
+                <div className="flex justify-between"><span>ย้ายห้อง (ขึ้น/ลง)</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">↑ ↓</kbd></div>
+              </div>
+              <div className="border-t border-border-soft" />
+              <div className="space-y-2">
+                <p className="text-label text-muted-foreground">ปรับระยะเวลา</p>
+                <div className="flex justify-between"><span>ขยาย check-out +1 วัน</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">Shift + →</kbd></div>
+                <div className="flex justify-between"><span>ลด check-out -1 วัน</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">Shift + ←</kbd></div>
+              </div>
+              <div className="border-t border-border-soft" />
+              <p className="text-helper text-center">กด <kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">?</kbd> เพื่อเปิด/ปิดหน้าต่างนี้</p>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Cancel confirmation dialog */}
         <AlertDialog open={cancelTarget !== null} onOpenChange={(open) => !open && setCancelTarget(null)}>

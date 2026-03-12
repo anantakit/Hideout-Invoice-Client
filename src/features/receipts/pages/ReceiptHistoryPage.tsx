@@ -95,7 +95,7 @@ export default function ReceiptHistory() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">รายการใบเสร็จ</h1>
+          <h1 className="text-h1 text-xl sm:text-2xl">รายการใบเสร็จ</h1>
           <p className="text-muted-foreground text-sm mt-1">
             {data ? `ใบเสร็จทั้งหมด ${total} รายการ` : 'กำลังโหลด…'}
           </p>
@@ -176,7 +176,7 @@ export default function ReceiptHistory() {
                 </TableHeader>
                 <TableBody>
                   {data.data.map((receipt) => (
-                    <TableRow key={receipt.id}>
+                    <TableRow key={receipt.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell>
                         <Link to={`/receipts/${receipt.id}`} className="font-semibold text-primary hover:text-primary/80">
                           {receipt.invoice_number}

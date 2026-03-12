@@ -164,7 +164,7 @@ export default function CreateReceipt() {
       <div className="px-4 md:px-6 py-6 max-w-4xl mx-auto pb-28 md:pb-6">
         {/* Page header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">สร้างใบเสร็จใหม่</h1>
+          <h1 className="text-h1 text-xl sm:text-2xl">สร้างใบเสร็จใหม่</h1>
           <p className="text-muted-foreground text-sm mt-1">กรอกรายละเอียดด้านล่างเพื่อออกใบเสร็จรับเงิน</p>
           {bookingId && (
             <div className="mt-3 space-y-2">

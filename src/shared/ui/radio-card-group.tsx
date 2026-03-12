@@ -54,7 +54,7 @@ function RadioCardItem({ value, children, className, disabled }: RadioCardItemPr
       onClick={() => ctx.onValueChange(value)}
       className={cn(
         'flex items-center gap-3 w-full rounded-lg border px-3 py-3 text-left transition-colors',
-        selected ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent/40',
+        selected ? 'border-primary bg-primary/15' : 'border-border hover:bg-accent/40',
         disabled && 'opacity-50 pointer-events-none',
         className,
       )}

@@ -20,7 +20,7 @@ function CheckboxCard({ checked, onCheckedChange, children, className, disabled 
       onClick={() => onCheckedChange(!checked)}
       className={cn(
         'flex items-center gap-3 w-full rounded-lg border px-3 py-2.5 text-left transition-colors',
-        checked ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent/40',
+        checked ? 'border-primary bg-primary/15' : 'border-border hover:bg-accent/40',
         disabled && 'opacity-50 pointer-events-none',
         className,
       )}
