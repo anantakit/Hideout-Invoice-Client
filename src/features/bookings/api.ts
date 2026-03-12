@@ -60,6 +60,17 @@ export const bookingsApi = {
     return data.data
   },
 
+  update: async (id: string, payload: {
+    guest_name?: string
+    guest_phone?: string
+    customer_id?: string
+    clear_customer?: boolean
+    discount_amount?: number
+  }): Promise<BookingResponse> => {
+    const { data } = await apiClient.patch<ApiResponse<BookingResponse>>(`/bookings/${id}`, payload)
+    return data.data
+  },
+
   getById: async (id: string): Promise<BookingResponse> => {
     const { data } = await apiClient.get<ApiResponse<BookingResponse>>(`/bookings/${id}`)
     return data.data

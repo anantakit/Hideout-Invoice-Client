@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { differenceInDays, isToday, isBefore, startOfDay, parseISO, format, addDays } from 'date-fns'
-import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock, Receipt, FileText, Clock, ArrowRightLeft, CreditCard, DoorOpen, LogIn, LogOut, Ban, Timer, Wand2, Repeat } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock, Receipt, FileText, Clock, ArrowRightLeft, CreditCard, DoorOpen, LogIn, LogOut, Ban, Timer, Wand2, Repeat, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
@@ -27,7 +27,10 @@ import { useIsMobile } from '../../../shared/hooks/useIsMobile'
 import { formatThaiDate, formatTHB } from '../../../shared/utils'
 import { ROUTES } from '@/app/routes'
 import ErrorPage from '@/shared/components/ErrorPage'
-import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useCheckoutRooms, useAvailabilityGrouped, useTransferRoom } from '../hooks'
+import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useCheckoutRooms, useAvailabilityGrouped, useTransferRoom, useUpdateBooking } from '../hooks'
+import SearchableComboBox from '@/shared/ui/SearchableComboBox'
+import { customersApi } from '../../customers/api'
+import type { Customer } from '../../customers/types'
 import { PaymentPanel } from '../components/PaymentPanel'
 import { type RoomStayResponse, type BookingEventResponse, type BookingResponse, type InvoiceResponseShort, getStatusLabel } from '../types'
 
@@ -117,6 +120,15 @@ export default function BookingDetailPage() {
   const [availMode, setAvailMode] = useState<'range' | 'today'>('range')
   const [assigningRoomId, setAssigningRoomId] = useState<string | null>(null)
 
+  // ── Edit mode ───────────────────────────────────────────────────────────
+  const [editing, setEditing] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [editDiscount, setEditDiscount] = useState('')
+  const [editCustomerId, setEditCustomerId] = useState<string | undefined>(undefined)
+  const [editCustomerLabel, setEditCustomerLabel] = useState<string | undefined>(undefined)
+  const updateBooking = useUpdateBooking(id)
+
   // ── Derived booking data ──────────────────────────────────────────────────
   const bd = useMemo(() => {
     if (!booking) return null
@@ -193,6 +205,50 @@ export default function BookingDetailPage() {
     )
   }
 
+  // ── Edit mode handlers ───────────────────────────────────────────────────
+  function startEdit() {
+    if (!booking) return
+    setEditName(booking.guest_name)
+    setEditPhone(booking.guest_phone)
+    setEditDiscount(String(booking.discount_amount || 0))
+    setEditCustomerId(booking.customer_id ?? undefined)
+    setEditCustomerLabel(booking.customer_name ?? undefined)
+    setEditing(true)
+  }
+
+  function cancelEdit() {
+    setEditing(false)
+  }
+
+  function saveEdit() {
+    if (!booking) return
+    const payload: Record<string, unknown> = {}
+    if (editName !== booking.guest_name) payload.guest_name = editName
+    if (editPhone !== booking.guest_phone) payload.guest_phone = editPhone
+    const disc = parseFloat(editDiscount) || 0
+    if (disc !== booking.discount_amount) payload.discount_amount = disc
+    if (editCustomerId !== (booking.customer_id ?? undefined)) {
+      if (editCustomerId) {
+        payload.customer_id = editCustomerId
+      } else {
+        payload.clear_customer = true
+      }
+    }
+    if (Object.keys(payload).length === 0) {
+      setEditing(false)
+      return
+    }
+    updateBooking.mutate(payload as Parameters<typeof updateBooking.mutate>[0], {
+      onSuccess: () => {
+        toast.success('บันทึกการแก้ไขเรียบร้อย')
+        setEditing(false)
+      },
+      onError: (err) => {
+        toast.error((err as Error).message || 'เกิดข้อผิดพลาด')
+      },
+    })
+  }
+
   // ── Loading / Error ───────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -251,27 +307,121 @@ export default function BookingDetailPage() {
                   สร้างเมื่อ {formatThaiDate(booking.created_at)}
                 </p>
               </div>
+              {!editing && booking.status !== 'CHECKED_OUT' && booking.status !== 'CANCELLED' && (
+                <Button variant="ghost" size="sm" className="text-muted-foreground shrink-0" onClick={startEdit}>
+                  <Pencil className="w-3.5 h-3.5 mr-1" />
+                  แก้ไข
+                </Button>
+              )}
             </div>
 
             <Separator className="my-3" />
 
-            {/* Guest info inline */}
-            <div className="flex flex-wrap gap-x-5 gap-y-2">
-              <div className="flex items-center gap-2">
-                <User className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                <span className="text-body font-medium">{booking.guest_name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                <span className="text-body">{booking.guest_phone}</span>
-              </div>
-              {booking.customer_name && (
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                  <span className="text-body text-muted-foreground">ผู้ชำระเงิน: {booking.customer_name}</span>
+            {editing ? (
+              /* ── Edit mode ── */
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-caption block mb-1">ชื่อผู้เข้าพัก</label>
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="ชื่อ-สกุล"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-caption block mb-1">เบอร์โทร</label>
+                    <Input
+                      value={editPhone}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, '').slice(0, 10)
+                        setEditPhone(v)
+                      }}
+                      placeholder="0812345678"
+                      inputMode="tel"
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
+                <div>
+                  <label className="text-caption block mb-1">ส่วนลด (฿)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editDiscount}
+                    onChange={(e) => setEditDiscount(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="text-caption block mb-1">ผู้ชำระเงิน</label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <SearchableComboBox<Customer>
+                        value={editCustomerId ?? ''}
+                        onChange={(val) => setEditCustomerId(val || undefined)}
+                        onSelectItem={(item) => setEditCustomerLabel(item?.name)}
+                        fetchFunction={(params) => customersApi.list(params)}
+                        valueKey="id"
+                        labelKey="name"
+                        displayValue={editCustomerLabel}
+                        placeholder="ค้นหาลูกค้า..."
+                        sheetTitle="เลือกผู้ชำระเงิน"
+                      />
+                    </div>
+                    {editCustomerId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive/70 shrink-0"
+                        onClick={() => { setEditCustomerId(undefined); setEditCustomerLabel(undefined) }}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" size="sm" className="flex-1" disabled={updateBooking.isPending} onClick={cancelEdit}>
+                    ยกเลิก
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    disabled={!editName.trim() || !editPhone.trim() || updateBooking.isPending}
+                    onClick={saveEdit}
+                  >
+                    {updateBooking.isPending ? 'กำลังบันทึก…' : 'บันทึก'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* ── View mode ── */
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  <div className="flex items-center gap-2">
+                    <User className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                    <span className="text-body font-medium">{booking.guest_name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                    <span className="text-body">{booking.guest_phone}</span>
+                  </div>
+                </div>
+                {booking.customer_name && (
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                    <span className="text-body text-muted-foreground">ผู้ชำระเงิน: {booking.customer_name}</span>
+                  </div>
+                )}
+                {booking.discount_amount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Receipt className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                    <span className="text-body text-muted-foreground">ส่วนลด: {formatTHB(booking.discount_amount)}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -1135,6 +1285,7 @@ const EVENT_CONFIG: Record<string, EventConfig> = {
   STAY_MOVED:       { label: 'ย้ายห้อง',            icon: Repeat,         color: 'text-info' },
   ROOM_TRANSFERRED: { label: 'ย้ายห้อง',            icon: ArrowRightLeft, color: 'text-info' },
   INVOICE_ISSUED:   { label: 'ออกใบเสร็จ',          icon: Receipt,        color: 'text-foreground' },
+  BOOKING_MODIFIED: { label: 'แก้ไขข้อมูล',         icon: Pencil,         color: 'text-info' },
 }
 
 const DEFAULT_EVENT: EventConfig = { label: '', icon: Clock, color: 'text-muted-foreground' }

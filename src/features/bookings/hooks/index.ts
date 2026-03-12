@@ -56,6 +56,24 @@ export function useBooking(id: string) {
   })
 }
 
+/** Update booking-level fields (guest info, discount, customer). */
+export function useUpdateBooking(bookingId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: {
+      guest_name?: string
+      guest_phone?: string
+      customer_id?: string
+      clear_customer?: boolean
+      discount_amount?: number
+    }) => bookingsApi.update(bookingId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
+    },
+  })
+}
+
 /** Fetch invoice prefill data for a booking with optional mode/filters. */
 export function useInvoicePrefill(
   bookingId: string | undefined,

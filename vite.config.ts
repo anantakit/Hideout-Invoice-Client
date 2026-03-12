@@ -69,6 +69,14 @@ export default defineConfig({
   base: '/',
   server: {
     port: 3000,
+    host: true,
+    watch: {
+      usePolling: true,
+      interval: 500,
+    },
+    hmr: {
+      clientPort: 3000,
+    },
   },
   resolve: {
     alias: {
