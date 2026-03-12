@@ -281,11 +281,23 @@ export default function TimelinePage() {
 
   const todayStr = useMemo(() => format(startOfDay(new Date()), 'yyyy-MM-dd'), [])
 
-  // Count unassigned stays whose check_in is today (urgent — needs assignment now)
-  const todayUnassignedCount = useMemo(
-    () => unassignedStays.filter((s) => s.check_in.slice(0, 10) === todayStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT').length,
-    [unassignedStays, todayStr],
-  )
+  // Count pending check-in tasks for today (unassigned + assigned but not yet checked in)
+  const todayPendingCheckinCount = useMemo(() => {
+    let count = 0
+    // Unassigned stays checking in today
+    count += unassignedStays.filter(
+      (s) => s.check_in.slice(0, 10) === todayStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT',
+    ).length
+    // Assigned stays checking in today but not yet checked in
+    for (const room of allRooms) {
+      for (const b of room.bookings) {
+        if (b.check_in.slice(0, 10) === todayStr && (b.status === 'RESERVED' || b.status === 'ASSIGNED')) {
+          count++
+        }
+      }
+    }
+    return count
+  }, [unassignedStays, allRooms, todayStr])
 
   // ── KPI totals (memoized) ──────────────────────────────────────────────
   const kpiTotals = useMemo(() => {
@@ -602,7 +614,7 @@ export default function TimelinePage() {
           onNewBooking={() => navigate(ROUTES.bookings.new)}
           onToggleOpsDrawer={handleToggleOpsDrawer}
           drawerMode={drawerMode}
-          todayUnassignedCount={todayUnassignedCount}
+          todayPendingCheckinCount={todayPendingCheckinCount}
         />
 
         {/* ── Mobile: scrollable date strip + MobileTimelineList (< md) ── */}

@@ -728,11 +728,12 @@ function PendingAssignmentsSection({
     autoAssign.mutate(date)
   }, [autoAssign])
 
-  // Group by booking
+  // Group by booking — exclude today (already shown in check-in section)
   const grouped = useMemo(() => {
     const map = new Map<string, PendingBookingGroup>()
     for (const s of unassignedStays) {
       if (s.status === 'CANCELLED' || s.status === 'CHECKED_OUT') continue
+      if (toDateStr(s.check_in) === todayStr) continue
       const existing = map.get(s.booking_id)
       if (existing) {
         existing.totalRooms++
@@ -783,7 +784,7 @@ function PendingAssignmentsSection({
   }, [grouped, todayStr])
 
   const totalStays = unassignedStays.filter(
-    (s) => s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT',
+    (s) => s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT' && toDateStr(s.check_in) !== todayStr,
   ).length
 
   const urgentSections = sections.filter((s) => s.isUrgent)

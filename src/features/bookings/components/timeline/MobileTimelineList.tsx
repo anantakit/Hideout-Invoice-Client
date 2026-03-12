@@ -495,7 +495,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     for (const s of unassignedStays) {
       if (s.status === 'CANCELLED' || s.status === 'CHECKED_OUT') continue
       const ci = toDateStr(s.check_in)
-      if (ci > todayISO) continue // hide future — manage on desktop
+      if (ci >= todayISO) continue // today shown in check-in section, future on desktop
       const existing = map.get(s.booking_id)
       if (existing) {
         existing.totalRooms++

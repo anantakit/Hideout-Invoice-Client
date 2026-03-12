@@ -84,8 +84,8 @@ interface TimelineToolbarProps {
   onToggleOpsDrawer: () => void
   drawerMode: string | null
 
-  /** Number of unassigned stays checking in today — drives the amber badge */
-  todayUnassignedCount?: number
+  /** Number of pending check-in tasks today (unassigned + assigned not checked in) */
+  todayPendingCheckinCount?: number
 }
 
 // ─── Shared styles ───────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
   onNewBooking,
   onToggleOpsDrawer,
   drawerMode,
-  todayUnassignedCount = 0,
+  todayPendingCheckinCount = 0,
 }: TimelineToolbarProps) {
   // ── Mobile detection ───────────────────────────────────────────────────
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
@@ -427,9 +427,9 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
           aria-label="Operations panel"
         >
           <PanelRight size={18} />
-          {todayUnassignedCount > 0 && (
+          {todayPendingCheckinCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white tabular-nums">
-              {todayUnassignedCount}
+              {todayPendingCheckinCount}
             </span>
           )}
         </button>
@@ -458,9 +458,9 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
           aria-label="Operations panel"
         >
           <PanelRight size={18} />
-          {todayUnassignedCount > 0 && (
+          {todayPendingCheckinCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white tabular-nums">
-              {todayUnassignedCount}
+              {todayPendingCheckinCount}
             </span>
           )}
         </button>
