@@ -23,6 +23,7 @@ export function useCustomers(params?: UseCustomersParams) {
         page,
         limit,
       }),
+    staleTime: 5 * 60 * 1000,
     enabled,
   })
 }

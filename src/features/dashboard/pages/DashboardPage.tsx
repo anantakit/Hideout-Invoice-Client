@@ -41,16 +41,22 @@ export default function Dashboard() {
   const { data: recentReceipts } = useQuery({
     queryKey: ['receipts', { page: 1, limit: 5 }],
     queryFn: () => receiptsApi.list({ page: 1, limit: 5 }),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: allReceipts } = useQuery({
     queryKey: ['receipts-stats'],
     queryFn: () => receiptsApi.list({ limit: 1000 }),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: customers } = useQuery({
     queryKey: ['customers-stats'],
     queryFn: () => customersApi.list({ limit: 1000 }),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const receiptList = allReceipts?.data ?? []

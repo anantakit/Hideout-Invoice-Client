@@ -35,6 +35,8 @@ export const ZOOM_CONFIG: Record<
   '14d': { label: '14D', cssWidth: '4.375rem',  pxWidth: 70 },
 }
 
+const noop = () => {}
+
 // ─── Thai helpers ────────────────────────────────────────────────────────────
 
 const THAI_MONTHS_FULL = [
@@ -49,6 +51,67 @@ const EN_MONTHS_SHORT = [
 
 function fmtHeaderDate(d: Date): string {
   return `${d.getDate()} ${EN_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`
+}
+
+// ─── DatePickerContent (shared between desktop dropdown and mobile sheet) ────
+
+function DatePickerContent({
+  displayDate,
+  monthOptions,
+  onDayClick,
+  onMonthJump,
+  mobile,
+}: {
+  displayDate: Date
+  monthOptions: { label: string; value: string }[]
+  onDayClick: (date: Date) => void
+  onMonthJump: (value: string) => void
+  mobile?: boolean
+}) {
+  const labelCls = mobile
+    ? 'text-[11px] text-muted-foreground mb-2 uppercase tracking-wider font-medium'
+    : 'text-[11px] text-tl-text-dim mb-1.5 uppercase tracking-wider font-medium'
+  const btnCls = mobile
+    ? 'text-[11px] px-2 py-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors text-center truncate'
+    : 'text-[11px] px-1.5 py-1 rounded hover:bg-accent text-tl-text-dim hover:text-tl-text transition-colors text-center truncate'
+  const gridCls = mobile ? 'grid grid-cols-3 gap-1.5' : 'grid grid-cols-3 gap-1'
+  const separatorCls = mobile ? 'mt-4 pt-3 border-t border-border' : 'border-t border-tl-border px-3 pb-2.5 pt-2'
+
+  // Single delegated handler — no closure per button
+  const handleMonthClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const value = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-month]')?.dataset.month
+    if (value) onMonthJump(value)
+  }, [onMonthJump])
+
+  return (
+    <>
+      <div className={mobile ? undefined : 'p-3 w-72'}>
+        <Calendar
+          pendingStart={displayDate}
+          pendingEnd={null}
+          hoveredDate={null}
+          onDayClick={onDayClick}
+          onDayHover={noop}
+          initialViewDate={displayDate}
+        />
+      </div>
+      <div className={separatorCls}>
+        <p className={labelCls}>ข้ามไปเดือน</p>
+        <div className={gridCls} onClick={handleMonthClick}>
+          {monthOptions.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              data-month={opt.value}
+              className={btnCls}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  )
 }
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -227,33 +290,12 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
             {/* Desktop: absolute dropdown */}
             {datePickerOpen && !isMobile && (
               <div className="absolute left-0 top-full mt-2 z-50 bg-tl-header border border-tl-border rounded-xl shadow-popover overflow-hidden">
-                <div className="p-3 w-72">
-                  <Calendar
-                    pendingStart={displayDate}
-                    pendingEnd={null}
-                    hoveredDate={null}
-                    onDayClick={handleJumpToDate}
-                    onDayHover={() => {}}
-                    initialViewDate={displayDate}
-                  />
-                </div>
-                <div className="border-t border-tl-border px-3 pb-2.5 pt-2">
-                  <p className="text-[11px] text-tl-text-dim mb-1.5 uppercase tracking-wider font-medium">
-                    ข้ามไปเดือน
-                  </p>
-                  <div className="grid grid-cols-3 gap-1">
-                    {monthOptions.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => handleMonthJump(opt.value)}
-                        className="text-[11px] px-1.5 py-1 rounded hover:bg-accent text-tl-text-dim hover:text-tl-text transition-colors text-center truncate"
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <DatePickerContent
+                  displayDate={displayDate}
+                  monthOptions={monthOptions}
+                  onDayClick={handleJumpToDate}
+                  onMonthJump={handleMonthJump}
+                />
               </div>
             )}
 
@@ -270,31 +312,13 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
                     </SheetDescription>
                   </SheetHeader>
                   <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6">
-                    <Calendar
-                      pendingStart={displayDate}
-                      pendingEnd={null}
-                      hoveredDate={null}
+                    <DatePickerContent
+                      displayDate={displayDate}
+                      monthOptions={monthOptions}
                       onDayClick={handleJumpToDate}
-                      onDayHover={() => {}}
-                      initialViewDate={displayDate}
+                      onMonthJump={handleMonthJump}
+                      mobile
                     />
-                    <div className="mt-4 pt-3 border-t border-border">
-                      <p className="text-[11px] text-muted-foreground mb-2 uppercase tracking-wider font-medium">
-                        ข้ามไปเดือน
-                      </p>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {monthOptions.map((opt) => (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => handleMonthJump(opt.value)}
-                            className="text-[11px] px-2 py-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors text-center truncate"
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </div>
                 </SheetContent>
               </Sheet>

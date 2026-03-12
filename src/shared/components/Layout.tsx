@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Menu } from 'lucide-react'
-import { cn } from '../utils'
-import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
-import { Button } from '../ui/button'
+import { cn } from '@/shared/utils'
+import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/sheet'
+import { Button } from '@/shared/ui/button'
 import { SidebarContent, Logo } from './Sidebar'
 
 export default function Layout() {

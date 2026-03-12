@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { ChevronDown, Check, Search, X } from 'lucide-react'
 import { Input } from './input'
-import { cn } from '../utils'
-import { useIsMobile } from '../hooks/useIsMobile'
-import addressData from '../data/thai-address.json'
+import { cn } from '@/shared/utils'
+import { useIsMobile } from '@/shared/hooks/useIsMobile'
+import addressData from '@/shared/data/thai-address.json'
 
 // Data format: [[province, [[amphoe, [[district, zipcode], ...]], ...]], ...]
 type DistrictEntry = [string, string]

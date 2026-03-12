@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect, useSyncExternalStore } from 'react'
+import React, { useState, useMemo, useCallback, useRef, useEffect, useSyncExternalStore } from 'react'
 import { addDays, subDays, format, startOfDay } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
@@ -86,6 +86,77 @@ const THAI_MONTHS_SHORT = [
   'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
   'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
 ]
+
+const THAI_DAYS_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
+
+const MOBILE_STRIP_DAYS = 21
+const MOBILE_CENTER = 10 // anchor is at index 10
+
+// ─── MobileDateStrip ──────────────────────────────────────────────────────────
+
+const MobileDateStrip = React.memo(function MobileDateStrip({
+  days,
+  selectedIndex,
+  todayStr,
+  stripRef,
+  onSelectDay,
+}: {
+  days: Date[]
+  selectedIndex: number
+  todayStr: string
+  stripRef: React.RefObject<HTMLDivElement>
+  onSelectDay: (index: number) => void
+}) {
+  return (
+    <div
+      ref={stripRef}
+      className="shrink-0 flex border-b border-border-soft bg-sidebar overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+    >
+      {days.map((day, i) => {
+        const isActive = i === selectedIndex
+        const isToday = format(day, 'yyyy-MM-dd') === todayStr
+        const dayOfWeek = day.getDay()
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+        return (
+          <button
+            key={day.toISOString()}
+            type="button"
+            onClick={() => onSelectDay(i)}
+            className={cn(
+              'flex-shrink-0 w-12 snap-center flex flex-col items-center py-1.5 gap-0.5 text-center transition-colors',
+              isActive
+                ? 'bg-primary/15 text-foreground'
+                : isWeekend
+                  ? 'text-muted-foreground/70'
+                  : 'text-muted-foreground hover:bg-muted',
+            )}
+          >
+            <span className={cn(
+              'text-[10px] font-medium leading-none',
+              isActive && 'text-primary',
+            )}>
+              {THAI_DAYS_SHORT[dayOfWeek]}
+            </span>
+            <span className={cn(
+              'text-sm font-semibold leading-none',
+              isActive && 'text-primary',
+            )}>
+              {day.getDate()}
+            </span>
+            {isToday && (
+              <span className="w-1 h-1 rounded-full bg-primary" />
+            )}
+            {day.getDate() === 1 && (
+              <span className="text-[8px] text-muted-foreground/60 leading-none">
+                {THAI_MONTHS_SHORT[day.getMonth()]}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+})
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -176,6 +247,8 @@ export default function TimelinePage() {
 
   // ── Derived data ──────────────────────────────────────────────────────────
   const allRooms        = timelineData?.rooms           ?? []
+  const allRoomsRef     = useRef(allRooms)
+  allRoomsRef.current   = allRooms
   const unassignedStays = timelineData?.unassigned_stays ?? []
   const availRoomTypes  = availData?.room_types          ?? []
 
@@ -246,8 +319,6 @@ export default function TimelinePage() {
   }, [allRooms, fromStr, toStr])
 
   // Mobile scrollable date strip — 21 days centered on mobileAnchor
-  const MOBILE_STRIP_DAYS = 21
-  const MOBILE_CENTER = 10  // anchor is at index 10
   const mobileStripStart = useMemo(
     () => subDays(mobileAnchor, MOBILE_CENTER),
     [mobileAnchor],
@@ -278,6 +349,15 @@ export default function TimelinePage() {
     el.scrollTo({ left: scrollTarget, behavior: mobileStripInitial.current ? 'instant' : 'smooth' })
     mobileStripInitial.current = false
   }, [mobileDayOffset, mobileAnchor, isLoading])
+
+  const handleMobileDaySelect = useCallback((i: number) => {
+    setMobileDayOffset(i)
+    if (i <= 2 || i >= MOBILE_STRIP_DAYS - 3) {
+      const tappedDate = addDays(mobileStripStart, i)
+      setMobileAnchor(tappedDate)
+      setMobileDayOffset(MOBILE_CENTER)
+    }
+  }, [mobileStripStart])
 
   const todayStr = useMemo(() => format(startOfDay(new Date()), 'yyyy-MM-dd'), [])
 
@@ -347,14 +427,14 @@ export default function TimelinePage() {
 
   const handleRoomTypeSelect     = useCallback((id: string | null) => setSelectedRoomTypeId(id), [])
   const handleSelectBooking      = useCallback((b: TimelineBooking, roomNumbers?: string[]) => {
-    const rooms = roomNumbers ?? allRooms
+    const rooms = roomNumbers ?? allRoomsRef.current
       .filter((r) => r.bookings.some((bk) => bk.booking_id === b.booking_id))
       .map((r) => r.room_number)
     // Force a fresh object reference so React.memo always sees the change
     setSelectedBooking({ booking: { ...b }, roomNumbers: rooms })
     // On desktop, open the push drawer in booking-detail mode
     setDrawerMode('booking-detail')
-  }, [allRooms])
+  }, [])
   const handleCloseSheet         = useCallback(() => {
     setSelectedBooking(null as SelectedBookingContext | null)
     // Close drawer if showing booking detail
@@ -620,62 +700,13 @@ export default function TimelinePage() {
         {/* ── Mobile: scrollable date strip + MobileTimelineList (< md) ── */}
         {!isLoading && !isError && !forceSkeleton && (
           <div className="md:hidden flex flex-col flex-1 overflow-hidden">
-            <div
-              ref={mobileStripRef}
-              className="shrink-0 flex border-b border-border-soft bg-sidebar overflow-x-auto scrollbar-hide snap-x snap-mandatory"
-            >
-              {mobileDays.map((day, i) => {
-                const isActive = i === mobileDayOffset
-                const isToday = format(day, 'yyyy-MM-dd') === todayStr
-                const dayOfWeek = day.getDay()
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
-                return (
-                  <button
-                    key={day.toISOString()}
-                    type="button"
-                    onClick={() => {
-                      setMobileDayOffset(i)
-                      // When tapping near the edges, re-anchor strip so user can keep going
-                      if (i <= 2 || i >= MOBILE_STRIP_DAYS - 3) {
-                        const tappedDate = addDays(mobileStripStart, i)
-                        setMobileAnchor(tappedDate)
-                        setMobileDayOffset(MOBILE_CENTER)
-                      }
-                    }}
-                    className={cn(
-                      'flex-shrink-0 w-12 snap-center flex flex-col items-center py-1.5 gap-0.5 text-center transition-colors',
-                      isActive
-                        ? 'bg-primary/15 text-foreground'
-                        : isWeekend
-                          ? 'text-muted-foreground/70'
-                          : 'text-muted-foreground hover:bg-muted',
-                    )}
-                  >
-                    <span className={cn(
-                      'text-[10px] font-medium leading-none',
-                      isActive && 'text-primary',
-                    )}>
-                      {['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'][dayOfWeek]}
-                    </span>
-                    <span className={cn(
-                      'text-sm font-semibold leading-none',
-                      isActive && 'text-primary',
-                    )}>
-                      {day.getDate()}
-                    </span>
-                    {isToday && (
-                      <span className="w-1 h-1 rounded-full bg-primary" />
-                    )}
-                    {/* Show month label on 1st of month */}
-                    {day.getDate() === 1 && (
-                      <span className="text-[8px] text-muted-foreground/60 leading-none">
-                        {THAI_MONTHS_SHORT[day.getMonth()]}
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
+            <MobileDateStrip
+              days={mobileDays}
+              selectedIndex={mobileDayOffset}
+              todayStr={todayStr}
+              stripRef={mobileStripRef}
+              onSelectDay={handleMobileDaySelect}
+            />
 
             <MobileTimelineList
               rooms={filteredRooms}
