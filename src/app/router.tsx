@@ -4,6 +4,7 @@ import { AuthProvider } from './providers/AuthProvider'
 import ProtectedRoute from '../shared/components/ProtectedRoute'
 import Layout from '../shared/components/Layout'
 import ErrorPage from '../shared/components/ErrorPage'
+import { Skeleton } from '../shared/ui/skeleton'
 import Login from '../features/auth/pages/LoginPage'
 import ChangePassword from '../features/auth/pages/ChangePasswordPage'
 
@@ -24,8 +25,13 @@ const TodayBoard        = lazy(() => import('../features/operations/pages/TodayB
 
 function PageLoader() {
   return (
-    <div className="flex justify-center items-center h-64">
-      <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-4">
+      <Skeleton className="h-8 w-48" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+      </div>
+      <Skeleton className="h-48 rounded-xl" />
     </div>
   )
 }
