@@ -261,7 +261,7 @@ const RoomRow = React.memo(function RoomRow({
           const roomCount  = bookingRoomCountMap[booking.booking_id] ?? 1
           const isUpcoming = booking.check_in.slice(0, 10) > todayStr
           const showCheckoutEdge = checkOut > windowStart && checkOut <= windowEnd
-          const layerInfo = layout.layers.get(booking.booking_id)
+          const layerInfo = layout.layers.get(booking.room_stay_id)
 
           return (
             <BookingBlock

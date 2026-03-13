@@ -8,7 +8,7 @@ export interface BookingLayerInfo {
 }
 
 export interface RoomLayoutResult {
-  /** Maps booking_id → layer assignment. */
+  /** Maps room_stay_id → layer assignment. */
   layers: Map<string, BookingLayerInfo>
   /** Total number of vertical layers needed for this room. */
   totalLayers: number
@@ -39,24 +39,24 @@ export function computeRoomLayout(
 
   if (bookings.length === 1) {
     const layers = new Map<string, BookingLayerInfo>()
-    layers.set(bookings[0].booking_id, { layerIndex: 0 })
+    layers.set(bookings[0].room_stay_id, { layerIndex: 0 })
     return { layers, totalLayers: 1 }
   }
 
-  // Sort by clamped start, then longer spans first for visual stability.
+  // Sort by clamped start, then by creation time (older stays on top, newer below).
+  // Using created_at ensures stable layer ordering that doesn't change on extend/resize.
   const sorted = [...bookings].sort((a, b) => {
     const aCi = a.check_in.slice(0, 10)
     const bCi = b.check_in.slice(0, 10)
     const aStart = aCi < windowStartStr ? windowStartStr : aCi
     const bStart = bCi < windowStartStr ? windowStartStr : bCi
     if (aStart !== bStart) return aStart < bStart ? -1 : 1
-    // Longer bookings first — they anchor the top layer.
-    const aCo = a.check_out.slice(0, 10)
-    const bCo = b.check_out.slice(0, 10)
-    const aEnd = aCo > windowEndStr ? windowEndStr : aCo
-    const bEnd = bCo > windowEndStr ? windowEndStr : bCo
-    if (aEnd !== bEnd) return aEnd > bEnd ? -1 : 1
-    return 0
+    // Stable tiebreaker: older stays first (top layer), newer stays below.
+    const aCreated = a.created_at ?? ''
+    const bCreated = b.created_at ?? ''
+    if (aCreated !== bCreated) return aCreated < bCreated ? -1 : 1
+    // Final fallback: room_stay_id for determinism.
+    return a.room_stay_id < b.room_stay_id ? -1 : a.room_stay_id > b.room_stay_id ? 1 : 0
   })
 
   // layerEnds[i] = the clamped check_out of the last booking placed in layer i.
@@ -87,7 +87,7 @@ export function computeRoomLayout(
     }
 
     layerEnds[assignedLayer] = clampedEnd
-    result.set(booking.booking_id, { layerIndex: assignedLayer })
+    result.set(booking.room_stay_id, { layerIndex: assignedLayer })
   }
 
   return { layers: result, totalLayers: Math.max(layerEnds.length, 1) }

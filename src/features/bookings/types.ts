@@ -265,6 +265,8 @@ export interface TimelineBooking {
   early_checkout?: boolean
   /** ISO timestamp of actual checkout (set when guest checks out). */
   checked_out_at?: string
+  /** ISO timestamp of stay creation — used for stable layer ordering. */
+  created_at?: string
 }
 
 /**
