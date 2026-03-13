@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react'
 import { parseISO, differenceInDays } from 'date-fns'
-import { Loader2, Check, CheckCircle2, ArrowRightLeft } from 'lucide-react'
+import { Loader2, Check, CheckCircle2, ArrowRightLeft, Phone, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   Sheet,
@@ -22,6 +22,7 @@ import {
 } from '../../hooks'
 import type { RoomStayResponse } from '../../types'
 import { cn, todayISO } from '@/shared/utils'
+import { useNavigate } from 'react-router-dom'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
   bookingId,
   onClose,
 }: CheckInBottomSheetProps) {
+  const navigate = useNavigate()
   const isOpen = bookingId !== null
   const safeId = bookingId ?? ''
 
@@ -260,10 +262,31 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
             {booking?.guest_name ?? '...'}
           </SheetTitle>
           <SheetDescription asChild>
-            <div className="flex items-center gap-2 text-body text-muted-foreground">
-              {ciDate && coDate && (
-                <span>{fmtShortISO(ciDate)} → {fmtShortISO(coDate)} ({nights} คืน)</span>
-              )}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-body text-muted-foreground">
+                {ciDate && coDate && (
+                  <span>{fmtShortISO(ciDate)} → {fmtShortISO(coDate)} ({nights} คืน)</span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                {booking?.guest_phone && (
+                  <a
+                    href={`tel:${booking.guest_phone}`}
+                    className="flex items-center gap-1.5 text-body text-primary active:opacity-70"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    {booking.guest_phone}
+                  </a>
+                )}
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-body text-muted-foreground active:text-foreground"
+                  onClick={() => { onClose(); navigate(`/bookings/${safeId}`) }}
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  รายละเอียด
+                </button>
+              </div>
             </div>
           </SheetDescription>
         </SheetHeader>

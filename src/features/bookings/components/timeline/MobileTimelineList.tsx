@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { parseISO, isToday, differenceInDays, format, addDays } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, ChevronDown, BedDouble, CheckCircle2, LogOut } from 'lucide-react'
+import { ChevronRight, ChevronDown, BedDouble, CheckCircle2, LogOut, Phone, ExternalLink } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
@@ -738,6 +738,11 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                       </div>
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 ml-1" />
                     </div>
+                    {ci.booking?.guest_phone && (
+                      <div className="flex items-center gap-1 text-helper text-primary mt-1">
+                        <Phone className="w-3 h-3" />{ci.booking.guest_phone}
+                      </div>
+                    )}
 
                     {/* Row 3: mini progress bar + count (only if multi-room) */}
                     {ci.totalStays > 1 && (
@@ -776,6 +781,16 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                   {ci.assignedRooms.length > 0 && (
                     <p className="text-helper mt-1">ห้อง {ci.assignedRooms.join(', ')}</p>
                   )}
+                  <div className="flex items-center gap-3 mt-1">
+                    {ci.booking?.guest_phone && (
+                      <a href={`tel:${ci.booking.guest_phone}`} className="flex items-center gap-1 text-helper text-primary active:opacity-70">
+                        <Phone className="w-3 h-3" />{ci.booking.guest_phone}
+                      </a>
+                    )}
+                    <button type="button" onClick={() => navigate(`/bookings/${ci.bookingId}`)} className="flex items-center gap-1 text-helper text-muted-foreground active:text-foreground">
+                      <ExternalLink className="w-3 h-3" />รายละเอียด
+                    </button>
+                  </div>
                 </div>
               ))}
           </>
@@ -819,6 +834,16 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                             <span className="text-helper shrink-0">{co.nights} คืน</span>
                           </div>
                           <p className="text-helper mt-0.5">ห้อง {stay.roomNumber}</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            {co.booking?.guest_phone && (
+                              <a href={`tel:${co.booking.guest_phone}`} className="flex items-center gap-1 text-helper text-primary active:opacity-70">
+                                <Phone className="w-3 h-3" />{co.booking.guest_phone}
+                              </a>
+                            )}
+                            <button type="button" onClick={() => navigate(`/bookings/${co.bookingId}`)} className="flex items-center gap-1 text-helper text-muted-foreground active:text-foreground">
+                              <ExternalLink className="w-3 h-3" />รายละเอียด
+                            </button>
+                          </div>
                         </div>
                         {onQuickCheckOut && stay.status === 'CHECKED_IN' && (
                           <AlertDialog>
@@ -878,6 +903,16 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                           'w-3.5 h-3.5 text-muted-foreground/50 transition-transform shrink-0',
                           isExpanded && 'rotate-180',
                         )} />
+                      </div>
+                      <div className="flex items-center gap-3 mt-1" onClick={(e) => e.stopPropagation()}>
+                        {co.booking?.guest_phone && (
+                          <a href={`tel:${co.booking.guest_phone}`} className="flex items-center gap-1 text-helper text-primary active:opacity-70">
+                            <Phone className="w-3 h-3" />{co.booking.guest_phone}
+                          </a>
+                        )}
+                        <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); navigate(`/bookings/${co.bookingId}`) }} className="flex items-center gap-1 text-helper text-muted-foreground active:text-foreground cursor-pointer">
+                          <ExternalLink className="w-3 h-3" />รายละเอียด
+                        </span>
                       </div>
                       {hasBalance && (
                         <p className="text-helper text-destructive font-medium mt-1">
@@ -971,6 +1006,16 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                   <div className="flex items-center justify-between mt-0.5">
                     <span className="text-helper">{co.nights} คืน</span>
                     <span className="text-helper text-success/80">เช็คเอาท์แล้ว</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    {co.booking?.guest_phone && (
+                      <a href={`tel:${co.booking.guest_phone}`} className="flex items-center gap-1 text-helper text-primary active:opacity-70">
+                        <Phone className="w-3 h-3" />{co.booking.guest_phone}
+                      </a>
+                    )}
+                    <button type="button" onClick={() => navigate(`/bookings/${co.bookingId}`)} className="flex items-center gap-1 text-helper text-muted-foreground active:text-foreground">
+                      <ExternalLink className="w-3 h-3" />รายละเอียด
+                    </button>
                   </div>
                 </div>
               ))}

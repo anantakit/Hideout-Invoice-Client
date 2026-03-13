@@ -1,7 +1,7 @@
 import React from 'react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import { DoorOpen, CheckCircle2, CircleAlert } from 'lucide-react'
+import { DoorOpen, CheckCircle2, CircleAlert, Phone } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -117,6 +117,17 @@ const BookingBottomSheet = React.memo(function BookingBottomSheet({
               ))}
             </div>
           </div>
+        )}
+
+        {/* ── Phone ────────────────────────────────────────────────── */}
+        {booking.guest_phone && (
+          <a
+            href={`tel:${booking.guest_phone}`}
+            className="flex items-center gap-2 mb-3 text-primary active:opacity-70"
+          >
+            <Phone className="w-4 h-4 shrink-0" />
+            <span className="text-body">{booking.guest_phone}</span>
+          </a>
         )}
 
         {/* ── Balance ─────────────────────────────────────────────── */}

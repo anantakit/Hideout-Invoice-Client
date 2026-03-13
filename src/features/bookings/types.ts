@@ -250,6 +250,7 @@ export interface TimelineBooking {
   room_stay_id: string
   booking_id: string
   guest_name: string
+  guest_phone?: string
   /** YYYY-MM-DD inclusive */
   check_in: string
   /** YYYY-MM-DD exclusive */
