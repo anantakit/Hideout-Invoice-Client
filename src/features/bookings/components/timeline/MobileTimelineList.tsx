@@ -1247,7 +1247,10 @@ const RoomCard = React.memo(function RoomCard({
             {entry.booking && (
               <>
                 {entry.guestName && <span>·</span>}
-                <span className="shrink-0">CO {fmtShortISO(entry.booking.check_out)}</span>
+                <span className="shrink-0">
+                  ออก {fmtShortISO(entry.booking.check_out)}
+                  {' '}({differenceInDays(parseISO(entry.booking.check_out), parseISO(entry.booking.check_in))} คืน)
+                </span>
               </>
             )}
           </div>
