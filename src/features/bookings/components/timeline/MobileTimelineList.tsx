@@ -129,12 +129,25 @@ function classifyRooms(
       continue
     }
 
-    // Precompute: checkout today (check_out = D) and checkin today (check_in = D)
-    const coStay = room.bookings.find((b) => toDateStr(b.check_out) === dateStr)
-    const ciStay = room.bookings.find((b) => toDateStr(b.check_in) === dateStr)
+    // Active stays exclude completed checkouts and cancellations
+    const activeBookings = room.bookings.filter(
+      (b) => b.status !== 'CHECKED_OUT' && b.status !== 'CANCELLED',
+    )
+    // Non-cancelled stays (includes CHECKED_OUT — needed for checkout-today display)
+    const nonCancelled = room.bookings.filter((b) => b.status !== 'CANCELLED')
 
-    // ── P2: TURNOVER ─────────────────────────────────────────────────
-    if (coStay && ciStay && coStay.booking_id !== ciStay.booking_id) {
+    // Precompute: checkout today — for CHECKED_OUT stays, use actual checkout date
+    const coStay = nonCancelled.find((b) => {
+      const coDate = b.status === 'CHECKED_OUT' && b.checked_out_at
+        ? toDateStr(b.checked_out_at)
+        : toDateStr(b.check_out)
+      return coDate === dateStr
+    })
+    // Checkin today — only active stays (CHECKED_OUT check-ins are historical)
+    const ciStay = activeBookings.find((b) => toDateStr(b.check_in) === dateStr)
+
+    // ── P2: TURNOVER — only if checkout is still pending (not already CHECKED_OUT)
+    if (coStay && coStay.status !== 'CHECKED_OUT' && ciStay && coStay.booking_id !== ciStay.booking_id) {
       c.turnover++
       result.push({
         room, typeName, status: 'turnover',
@@ -148,8 +161,15 @@ function classifyRooms(
       continue
     }
 
-    // ── P3: CHECKOUT TODAY ───────────────────────────────────────────
-    if (coStay) {
+    // Active stay overlapping D — takes priority over historical checkout
+    const activeOverlapping = activeBookings.find((b) => {
+      const ci = toDateStr(b.check_in)
+      const co = toDateStr(b.check_out)
+      return ci <= dateStr && co > dateStr
+    })
+
+    // ── P3: CHECKOUT TODAY — only if no active stay currently occupies the room
+    if (coStay && !activeOverlapping) {
       c.checkout_today++
       result.push({
         room, typeName, status: 'checkout_today',
@@ -161,7 +181,7 @@ function classifyRooms(
     }
 
     // Stay overlapping D: check_in <= D AND check_out > D
-    const overlapping = room.bookings.find((b) => {
+    const overlapping = activeOverlapping ?? activeBookings.find((b) => {
       const ci = toDateStr(b.check_in)
       const co = toDateStr(b.check_out)
       return ci <= dateStr && co > dateStr
@@ -301,11 +321,16 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     for (const room of rooms) {
       if (room.status === 'MAINTENANCE') continue
       for (const b of room.bookings) {
-        if (toDateStr(b.check_in) === selectedDateStr) {
+        if (b.status === 'CANCELLED') continue
+        if (toDateStr(b.check_in) === selectedDateStr && b.status !== 'CHECKED_OUT') {
           checkinTotal++
-          if (b.status === 'CHECKED_IN' || b.status === 'CHECKED_OUT') checkinDone++
+          if (b.status === 'CHECKED_IN') checkinDone++
         }
-        if (toDateStr(b.check_out) === selectedDateStr) {
+        // Use actual checkout date for CHECKED_OUT stays
+        const coDate = b.status === 'CHECKED_OUT' && b.checked_out_at
+          ? toDateStr(b.checked_out_at)
+          : toDateStr(b.check_out)
+        if (coDate === selectedDateStr) {
           checkoutTotal++
           if (b.status === 'CHECKED_OUT') checkoutDone++
         }
@@ -384,8 +409,12 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           }
         }
 
-        // Check-out on selectedDate
-        if (co === selectedDateStr) {
+        // For CHECKED_OUT stays, use the actual checkout date (checked_out_at) instead
+        // of the scheduled check_out date — so early checkouts show on the correct day.
+        const actualCheckoutDate = b.status === 'CHECKED_OUT' && b.checked_out_at
+          ? toDateStr(b.checked_out_at)
+          : co
+        if (actualCheckoutDate === selectedDateStr) {
           const stay: CheckoutStay = {
             roomStayId: b.room_stay_id,
             roomNumber: room.room_number,

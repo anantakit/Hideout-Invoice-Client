@@ -262,6 +262,8 @@ export interface TimelineBooking {
   transfer_from_stay_id?: string
   /** True when this stay was ended via early checkout. */
   early_checkout?: boolean
+  /** ISO timestamp of actual checkout (set when guest checks out). */
+  checked_out_at?: string
 }
 
 /**

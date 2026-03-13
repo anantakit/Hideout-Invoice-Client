@@ -122,29 +122,43 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
       const t = byType.get(typeName) ?? { total: 0, available: 0 }
       t.total++
 
-      const coStay = room.bookings.find((b) => toDateStr(b.check_out) === selectedDateStr)
-      const ciStay = room.bookings.find((b) => toDateStr(b.check_in) === selectedDateStr)
-      const overlapping = room.bookings.find((b) => {
+      const activeBookings = room.bookings.filter(
+        (b) => b.status !== 'CHECKED_OUT' && b.status !== 'CANCELLED',
+      )
+      const nonCancelled = room.bookings.filter((b) => b.status !== 'CANCELLED')
+
+      const coStay = nonCancelled.find((b) => {
+        const coDate = b.status === 'CHECKED_OUT' && b.checked_out_at
+          ? toDateStr(b.checked_out_at)
+          : toDateStr(b.check_out)
+        return coDate === selectedDateStr
+      })
+      const ciStay = activeBookings.find((b) => toDateStr(b.check_in) === selectedDateStr)
+      const activeOverlapping = activeBookings.find((b) => {
         const ci = toDateStr(b.check_in)
         const co = toDateStr(b.check_out)
         return ci <= selectedDateStr && co > selectedDateStr
       })
 
       // Classify
-      if (coStay && ciStay && coStay.booking_id !== ciStay.booking_id) { /* turnover */ }
-      else if (coStay) { /* checkout */ }
-      else if (overlapping) { /* occupied/reserved */ }
+      if (coStay && coStay.status !== 'CHECKED_OUT' && ciStay && coStay.booking_id !== ciStay.booking_id) { /* turnover */ }
+      else if (coStay && !activeOverlapping) { /* checkout */ }
+      else if (activeOverlapping) { /* occupied/reserved */ }
       else { available++; t.available++ }
 
       byType.set(typeName, t)
 
       // Check-in / check-out counting
       for (const b of room.bookings) {
-        if (toDateStr(b.check_in) === selectedDateStr) {
+        if (b.status === 'CANCELLED') continue
+        if (toDateStr(b.check_in) === selectedDateStr && b.status !== 'CHECKED_OUT') {
           checkinTotal++
-          if (b.status === 'CHECKED_IN' || b.status === 'CHECKED_OUT') checkinDone++
+          if (b.status === 'CHECKED_IN') checkinDone++
         }
-        if (toDateStr(b.check_out) === selectedDateStr) {
+        const coDate = b.status === 'CHECKED_OUT' && b.checked_out_at
+          ? toDateStr(b.checked_out_at)
+          : toDateStr(b.check_out)
+        if (coDate === selectedDateStr) {
           checkoutTotal++
           if (b.status === 'CHECKED_OUT') checkoutDone++
         }

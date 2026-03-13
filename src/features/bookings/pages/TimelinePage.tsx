@@ -424,8 +424,12 @@ export default function TimelinePage() {
     let departures = 0
     for (const room of allRooms) {
       for (const b of room.bookings) {
-        if (b.check_in.slice(0, 10) === centerDateStr) arrivals++
-        if (b.check_out.slice(0, 10) === centerDateStr) departures++
+        if (b.status === 'CANCELLED') continue
+        if (b.check_in.slice(0, 10) === centerDateStr && b.status !== 'CHECKED_OUT') arrivals++
+        const coDate = b.status === 'CHECKED_OUT' && b.checked_out_at
+          ? b.checked_out_at.slice(0, 10)
+          : b.check_out.slice(0, 10)
+        if (coDate === centerDateStr) departures++
       }
     }
     return { arrivals, departures }
