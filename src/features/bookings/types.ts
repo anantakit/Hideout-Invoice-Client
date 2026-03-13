@@ -337,6 +337,7 @@ export interface AvailabilityGroupedRoomType {
   room_type_id: string
   room_type_name: string
   price_per_night: number
+  unassigned_count: number
   rooms: AvailabilityGroupedRoom[]
 }
 

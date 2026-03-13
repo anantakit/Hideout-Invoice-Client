@@ -300,7 +300,8 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   const dateKPI = useMemo(() => {
     const classification = classifyRooms(rooms, selectedDateStr, roomTypeNameMap)
     const tc = classification.counts
-    const availableCount = tc.available
+    // Completed checkouts (guest already left) count as available for KPI
+    let availableCount = tc.available
 
     // Availability by room type
     const byType = new Map<string, { total: number; available: number }>()
@@ -308,7 +309,9 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
       if (e.room.status === 'MAINTENANCE') continue
       const t = byType.get(e.typeName) ?? { total: 0, available: 0 }
       t.total++
-      if (e.status === 'available') t.available++
+      const isAvailable = e.status === 'available'
+        || (e.status === 'checkout_today' && e.booking?.status === 'CHECKED_OUT')
+      if (isAvailable) { t.available++; if (e.status !== 'available') availableCount++ }
       byType.set(e.typeName, t)
     }
 
@@ -345,20 +348,26 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
       }
     }
 
-    // Unassigned stays that consume inventory (no physical room yet)
+    // Unassigned stays that consume inventory — count per room type
     let unassignedReserved = 0
+    const unassignedByType = new Map<string, number>()
     for (const s of unassignedStays) {
       const ci = toDateStr(s.check_in)
       const co = toDateStr(s.check_out)
       if (ci <= selectedDateStr && co > selectedDateStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT') {
         unassignedReserved++
+        unassignedByType.set(s.room_type_name, (unassignedByType.get(s.room_type_name) ?? 0) + 1)
       }
     }
 
     return {
       availableCount: availableCount - unassignedReserved,
       unassignedReserved,
-      byType: Array.from(byType.entries()).map(([name, v]) => ({ name, ...v })),
+      byType: Array.from(byType.entries()).map(([name, v]) => ({
+        name,
+        total: v.total,
+        available: Math.max(0, v.available - (unassignedByType.get(name) ?? 0)),
+      })),
       checkinTotal, checkinDone,
       checkoutTotal, checkoutDone,
     }

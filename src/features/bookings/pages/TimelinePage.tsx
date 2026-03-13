@@ -257,13 +257,19 @@ export default function TimelinePage() {
 
   const roomAvailability = useMemo<RoomAvailability[]>(
     () =>
-      availRoomTypes.map((rt) => ({
-        room_type_id:    rt.room_type_id,
-        room_type_name:  rt.room_type_name,
-        total_rooms:     rt.rooms.length,
-        available_rooms: rt.rooms.filter((r) => r.available).length,
-        occupied_rooms:  rt.rooms.filter((r) => !r.available).length,
-      })),
+      availRoomTypes.map((rt) => {
+        const physicallyAvailable = rt.rooms.filter((r) => r.available).length
+        // Subtract unassigned reservations — they consume capacity even without
+        // a specific room assigned yet.
+        const effectiveAvailable = Math.max(0, physicallyAvailable - (rt.unassigned_count ?? 0))
+        return {
+          room_type_id:    rt.room_type_id,
+          room_type_name:  rt.room_type_name,
+          total_rooms:     rt.rooms.length,
+          available_rooms: effectiveAvailable,
+          occupied_rooms:  rt.rooms.length - effectiveAvailable,
+        }
+      }),
     [availRoomTypes],
   )
 

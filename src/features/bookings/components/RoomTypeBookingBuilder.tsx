@@ -346,8 +346,9 @@ function RoomTypeBookingItemCard({
     showRoomPicker,
   )
 
-  const roomsForType =
-    availData?.room_types.find((rt) => rt.room_type_id === roomTypeId)?.rooms ?? []
+  const matchedType = availData?.room_types.find((rt) => rt.room_type_id === roomTypeId)
+  const roomsForType = matchedType?.rooms ?? []
+  const unassignedCount = matchedType?.unassigned_count ?? 0
 
   // Max quantity = number of available rooms for this type (0 if not yet loaded)
   const availableCount = roomsForType.filter((r) => r.available).length
@@ -509,6 +510,11 @@ function RoomTypeBookingItemCard({
         {showRoomPicker && availableCount > 0 && (
           <p className="text-[11px] text-muted-foreground -mt-2">
             ห้องว่าง {availableCount} ห้อง
+            {unassignedCount > 0 && (
+              <span className="text-warning font-medium ml-1">
+                (จองล่วงหน้า {unassignedCount} ห้องยังไม่มอบหมาย)
+              </span>
+            )}
             {quantity > availableCount && (
               <span className="text-destructive font-medium ml-1">
                 (เกินจำนวนห้องว่าง)

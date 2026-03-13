@@ -140,9 +140,12 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
         return ci <= selectedDateStr && co > selectedDateStr
       })
 
-      // Classify
+      // Classify — for KPI "ว่าง", a completed checkout (guest already left) counts
+      // as available since the room is bookable.
       if (coStay && coStay.status !== 'CHECKED_OUT' && ciStay && coStay.booking_id !== ciStay.booking_id) { /* turnover */ }
-      else if (coStay && !activeOverlapping) { /* checkout */ }
+      else if (coStay && !activeOverlapping) {
+        if (coStay.status === 'CHECKED_OUT') { available++; t.available++ }
+      }
       else if (activeOverlapping) { /* occupied/reserved */ }
       else { available++; t.available++ }
 
@@ -165,8 +168,9 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
       }
     }
 
-    // Unassigned stays
+    // Unassigned stays — count per room type so byType breakdown is accurate
     let unassignedReserved = 0
+    const unassignedByType = new Map<string, number>()
     for (const s of unassignedStays) {
       if (toDateStr(s.check_in) === selectedDateStr) {
         checkinTotal++
@@ -176,13 +180,18 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
       const co = toDateStr(s.check_out)
       if (ci <= selectedDateStr && co > selectedDateStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT') {
         unassignedReserved++
+        unassignedByType.set(s.room_type_name, (unassignedByType.get(s.room_type_name) ?? 0) + 1)
       }
     }
 
     return {
       availableCount: available - unassignedReserved,
       unassignedReserved,
-      byType: Array.from(byType.entries()).map(([name, v]) => ({ name, ...v })),
+      byType: Array.from(byType.entries()).map(([name, v]) => ({
+        name,
+        total: v.total,
+        available: Math.max(0, v.available - (unassignedByType.get(name) ?? 0)),
+      })),
       checkinTotal, checkinDone,
       checkoutTotal, checkoutDone,
     }
