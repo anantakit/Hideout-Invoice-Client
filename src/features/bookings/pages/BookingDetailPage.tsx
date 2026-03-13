@@ -645,6 +645,8 @@ function StayCardOperational({
   const [extendOpen, setExtendOpen]       = useState(false)
   const [checkoutOpen, setCheckoutOpen]   = useState(false)
   const [transferOpen, setTransferOpen]   = useState(false)
+  const [transferDate, setTransferDate]  = useState(() => format(new Date(), 'yyyy-MM-dd'))
+  const [returnDate, setReturnDate]      = useState('')
   const [earlyCheckoutOpen, setEarlyCheckoutOpen] = useState(false)
   const [newCheckOut, setNewCheckOut]     = useState('')
   const [conflictData, setConflictData]   = useState<ExtendStayConflictData | null>(null)
@@ -656,10 +658,13 @@ function StayCardOperational({
   const checkout = useCheckoutRooms(bookingId)
   const transfer = useTransferRoom(bookingId)
 
-  // Fetch available rooms for transfer (all types, same dates)
+  // Fetch available rooms for transfer — when returning to original room,
+  // only check availability for the temporary period (transferDate → returnDate).
+  const transferAvailFrom = stay.status === 'CHECKED_IN' ? transferDate : stay.check_in.slice(0, 10)
+  const transferAvailTo   = returnDate || stay.check_out.slice(0, 10)
   const transferQuery = useAvailabilityGrouped(
-    stay.check_in.slice(0, 10),
-    stay.check_out.slice(0, 10),
+    transferAvailFrom,
+    transferAvailTo,
     transferOpen,
   )
   const transferRoomGroups = useMemo(() => {
@@ -791,7 +796,7 @@ function StayCardOperational({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setTransferOpen(true)}
+                onClick={() => { setTransferDate(format(new Date(), 'yyyy-MM-dd')); setReturnDate(''); setTransferOpen(true) }}
               >
                 <ArrowRightLeft className="w-4 h-4 mr-1.5" />
                 ย้ายห้อง
@@ -1155,6 +1160,38 @@ function StayCardOperational({
 
         const transferBody = (
           <div className="space-y-4">
+            {/* Date pickers — only for CHECKED_IN (split-stay transfer) */}
+            {isCheckedIn && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium block mb-1.5">วันที่ย้ายห้อง</label>
+                  <Input
+                    type="date"
+                    min={format(new Date(), 'yyyy-MM-dd')}
+                    max={format(addDays(parseISO(stay.check_out), -1), 'yyyy-MM-dd')}
+                    value={transferDate}
+                    onChange={(e) => { setTransferDate(e.target.value); setReturnDate('') }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium block mb-1.5">
+                    วันที่กลับห้องเดิม <span className="font-normal text-muted-foreground">(ไม่บังคับ)</span>
+                  </label>
+                  <Input
+                    type="date"
+                    min={transferDate ? format(addDays(parseISO(transferDate), 1), 'yyyy-MM-dd') : ''}
+                    max={format(addDays(parseISO(stay.check_out), -1), 'yyyy-MM-dd')}
+                    value={returnDate}
+                    onChange={(e) => setReturnDate(e.target.value)}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {returnDate
+                      ? `ย้ายชั่วคราว: ห้องใหม่ ${transferDate} → ${returnDate} แล้วกลับห้อง ${stay.room_number}`
+                      : 'ระบุเพื่อย้ายชั่วคราวแล้วกลับห้องเดิมอัตโนมัติ'}
+                  </p>
+                </div>
+              </div>
+            )}
             {transferQuery.isLoading ? (
               <div className="flex items-center gap-2 py-4 justify-center text-helper">
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -1197,7 +1234,7 @@ function StayCardOperational({
                             className={cn(!group.isSameType && 'border border-border-soft')}
                             onClick={() => {
                               transfer.mutate(
-                                { stayId: stay.id, roomId: room.room_id },
+                                { stayId: stay.id, roomId: room.room_id, transferDate: isCheckedIn ? transferDate : undefined, returnDate: isCheckedIn && returnDate ? returnDate : undefined },
                                 {
                                   onSuccess: () => {
                                     setTransferOpen(false)

@@ -89,10 +89,14 @@ export const bookingsApi = {
     await apiClient.post(`/bookings/${bookingId}/stays/${stayId}/cancel`)
   },
 
-  transferRoom: async (bookingId: string, stayId: string, roomId: string): Promise<BookingResponse> => {
+  transferRoom: async (bookingId: string, stayId: string, roomId: string, transferDate?: string, returnDate?: string): Promise<BookingResponse> => {
     const { data } = await apiClient.post<ApiResponse<BookingResponse>>(
       `/bookings/${bookingId}/stays/${stayId}/transfer`,
-      { room_id: roomId },
+      {
+        room_id: roomId,
+        ...(transferDate && { transfer_date: transferDate }),
+        ...(returnDate && { return_date: returnDate }),
+      },
     )
     return data.data
   },

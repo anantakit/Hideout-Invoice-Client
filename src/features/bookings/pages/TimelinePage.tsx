@@ -307,12 +307,17 @@ export default function TimelinePage() {
   }, [allRooms, selectedRoomTypeId, roomTypeIdByRoomId])
 
   const bookingRoomCountMap = useMemo<Record<string, number>>(() => {
-    const counts: Record<string, number> = {}
+    // Count unique physical rooms per booking (not stays — transfers create
+    // multiple stays on the same room which shouldn't inflate the count).
+    const roomSets: Record<string, Set<string>> = {}
     for (const room of allRooms) {
       for (const b of room.bookings) {
-        counts[b.booking_id] = (counts[b.booking_id] ?? 0) + 1
+        if (!roomSets[b.booking_id]) roomSets[b.booking_id] = new Set()
+        roomSets[b.booking_id].add(room.id)
       }
     }
+    const counts: Record<string, number> = {}
+    for (const [bid, s] of Object.entries(roomSets)) counts[bid] = s.size
     return counts
   }, [allRooms])
 

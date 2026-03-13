@@ -288,7 +288,7 @@ const BookingBlock = React.memo(function BookingBlock({
                   : isUpcoming
                     ? [
                         // Upcoming / reserved: dashed border, muted
-                        'border-dashed border-bk-reserved/60 bg-bk-reserved/20 text-bk-reserved-foreground/80',
+                        'border-dashed border-bk-reserved/60 bg-bk-reserved/20 text-bk-reserved',
                         isHighlighted === null  && 'opacity-80 hover:opacity-95 hover:shadow-md hover:brightness-105',
                         isHighlighted === true  && 'opacity-95 shadow-md ring-2 ring-inset ring-primary/30',
                         isHighlighted === false && 'opacity-20',

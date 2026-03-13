@@ -123,8 +123,8 @@ export function useCancelStay(bookingId: string) {
 export function useTransferRoom(bookingId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ stayId, roomId }: { stayId: string; roomId: string }) =>
-      bookingsApi.transferRoom(bookingId, stayId, roomId),
+    mutationFn: ({ stayId, roomId, transferDate, returnDate }: { stayId: string; roomId: string; transferDate?: string; returnDate?: string }) =>
+      bookingsApi.transferRoom(bookingId, stayId, roomId, transferDate, returnDate),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
       queryClient.invalidateQueries({ queryKey: ['availability'] })
