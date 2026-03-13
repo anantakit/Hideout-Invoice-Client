@@ -9,7 +9,6 @@ const HEADER_COLS = TOTAL_DAYS
 
 // ─── Deterministic booking-block layout ─────────────────────────────────────────
 // Pre-computed to mimic realistic booking density across the full 42-day buffer.
-// Each block: { offset: days from buffer start, span: duration in days }
 
 const ROOM_ROWS = [
   { w1: 'w-7', w2: 'w-10', blocks: [{ o: 1, s: 3 }, { o: 6, s: 5 }, { o: 16, s: 3 }, { o: 22, s: 4 }, { o: 32, s: 6 }] },
@@ -32,9 +31,9 @@ const TimelineSkeleton = React.memo(function TimelineSkeleton() {
   return (
     <div className="tl-skeleton" style={{ minWidth: gridWidth }}>
       {/* ── Month row (sticky room col + day placeholder) ────── */}
-      <div className="flex border-b border-white/[0.04] bg-[hsl(224,20%,12%)] sticky top-0 z-10">
+      <div className="flex border-b border-border-soft bg-sidebar sticky top-0 z-10">
         <div
-          className="shrink-0 border-r border-white/[0.04] sticky left-0 z-10 bg-[hsl(224,20%,12%)]"
+          className="shrink-0 border-r border-border-soft sticky left-0 z-10 bg-sidebar"
           style={{ width: 'var(--timeline-room-col-width)' }}
         />
         <div className="flex items-center h-5 px-3">
@@ -43,9 +42,9 @@ const TimelineSkeleton = React.memo(function TimelineSkeleton() {
       </div>
 
       {/* ── Day header row ─────────────────────────────────── */}
-      <div className="flex border-b border-white/[0.04] bg-[hsl(224,20%,12%)] sticky top-5 z-10">
+      <div className="flex border-b border-border-soft bg-sidebar sticky top-5 z-10">
         <div
-          className="shrink-0 border-r border-white/[0.04] flex items-center px-3 sticky left-0 z-10 bg-[hsl(224,20%,12%)]"
+          className="shrink-0 border-r border-border-soft flex items-center px-3 sticky left-0 z-10 bg-sidebar"
           style={{ width: 'var(--timeline-room-col-width)' }}
         >
           <div className="h-3 w-12 rounded tl-shimmer" />
@@ -53,7 +52,7 @@ const TimelineSkeleton = React.memo(function TimelineSkeleton() {
         {Array.from({ length: HEADER_COLS }).map((_, i) => (
           <div
             key={i}
-            className="shrink-0 flex flex-col items-center justify-center gap-1 border-r border-white/[0.04] py-2"
+            className="shrink-0 flex flex-col items-center justify-center gap-1 border-r border-border-soft py-2"
             style={{ width: 'var(--timeline-cell-width)' }}
           >
             <div className="h-2.5 w-5 rounded tl-shimmer" />
@@ -66,7 +65,7 @@ const TimelineSkeleton = React.memo(function TimelineSkeleton() {
       {ROOM_ROWS.map((room, rowIdx) => (
         <div
           key={rowIdx}
-          className="flex border-b border-white/[0.04]"
+          className="flex border-b border-border-soft"
           style={{
             height: 'var(--timeline-row-height)',
             '--row-idx': rowIdx,
@@ -74,7 +73,7 @@ const TimelineSkeleton = React.memo(function TimelineSkeleton() {
         >
           {/* Room label — sticky left */}
           <div
-            className="shrink-0 border-r border-white/[0.04] flex items-center gap-2.5 px-3 sticky left-0 z-[1] bg-[hsl(224,16%,10%)]"
+            className="shrink-0 border-r border-border-soft flex items-center gap-2.5 px-3 sticky left-0 z-[1] bg-background"
             style={{ width: 'var(--timeline-room-col-width)' }}
           >
             <div className="h-2 w-2 rounded-full tl-shimmer shrink-0" />
@@ -90,7 +89,7 @@ const TimelineSkeleton = React.memo(function TimelineSkeleton() {
             {Array.from({ length: TOTAL_DAYS }).map((_, i) => (
               <div
                 key={i}
-                className="absolute top-0 bottom-0 border-r border-white/[0.03]"
+                className="absolute top-0 bottom-0 border-r border-border-soft/50"
                 style={{ left: `calc(${i + 1} * var(--timeline-cell-width))` }}
               />
             ))}
