@@ -13,6 +13,7 @@ import type {
   ExtendStayPayload,
   ExtendStayConflictData,
   MoveStayPayload,
+  EarlyCheckoutPayload,
   PaymentResponse,
   TimelineResponse,
   AvailabilityGroupedResponse,
@@ -167,6 +168,14 @@ export const bookingsApi = {
     const { data } = await apiClient.post<ApiResponse<BookingResponse>>(
       `/bookings/${bookingId}/checkout`,
       { stay_ids: stayIds },
+    )
+    return data.data
+  },
+
+  earlyCheckout: async (bookingId: string, stayId: string, payload?: EarlyCheckoutPayload): Promise<BookingResponse> => {
+    const { data } = await apiClient.post<ApiResponse<BookingResponse>>(
+      `/bookings/${bookingId}/stays/${stayId}/early-checkout`,
+      payload ?? {},
     )
     return data.data
   },

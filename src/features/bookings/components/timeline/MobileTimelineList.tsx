@@ -665,12 +665,12 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           ════════════════════════════════════════════════════════════════════ */}
       {hasCheckins && (
       <div className="px-4 space-section space-y-2">
-        <p className="text-label text-primary flex items-center space-inline">
+        <div className="text-label text-primary flex items-center space-inline">
           เช็คอิน{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
           <Badge variant="default" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
             {dateKPI.checkinDone}/{dateKPI.checkinTotal}
           </Badge>
-        </p>
+        </div>
 
         <>
               {dateOps.checkins.map((ci) => {
@@ -758,12 +758,12 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           ════════════════════════════════════════════════════════════════════ */}
       {hasCheckouts && (
       <div className="px-4 space-section space-y-2">
-        <p className="text-label text-warning flex items-center space-inline">
+        <div className="text-label text-warning flex items-center space-inline">
           เช็คเอาท์{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
           <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
             {dateKPI.checkoutDone}/{dateKPI.checkoutTotal}
           </Badge>
-        </p>
+        </div>
 
         <>
 
@@ -954,11 +954,11 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           ════════════════════════════════════════════════════════════════════ */}
       {pendingTotalStays > 0 && (
         <div className="px-4 space-section space-y-2">
-          <p className="text-label text-muted-foreground flex items-center space-inline">
+          <div className="text-label text-muted-foreground flex items-center space-inline">
             <BedDouble className="w-3 h-3" />
             รอมอบหมายห้อง
             <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">{pendingTotalStays}</Badge>
-          </p>
+          </div>
           {pendingBookings.map((booking) => (
             <button
               key={booking.bookingId}

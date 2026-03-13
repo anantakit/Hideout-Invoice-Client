@@ -27,6 +27,7 @@ interface BookingContextMenuProps {
   onClose: () => void
   onCheckIn: (booking: TimelineBooking, roomId: string) => void
   onCheckOut: (booking: TimelineBooking) => void
+  onEarlyCheckout?: (booking: TimelineBooking) => void
   onOpenDetail: (booking: TimelineBooking) => void
   onCancel: (booking: TimelineBooking) => void
   onTransfer: (booking: TimelineBooking, roomId: string) => void
@@ -74,6 +75,7 @@ const BookingContextMenu = React.memo(function BookingContextMenu({
   onClose,
   onCheckIn,
   onCheckOut,
+  onEarlyCheckout,
   onOpenDetail,
   onCancel,
   onTransfer,
@@ -158,8 +160,10 @@ const BookingContextMenu = React.memo(function BookingContextMenu({
   // Only allow check-in on or after the stay's check-in date (not early).
   const today = startOfDay(new Date())
   const stayCheckIn = startOfDay(parseISO(booking.check_in))
+  const stayCheckOut = startOfDay(parseISO(booking.check_out))
   const canCheckIn = (status === 'RESERVED' || status === 'ASSIGNED') && stayCheckIn <= today
   const canCheckOut = status === 'CHECKED_IN'
+  const canEarlyCheckout = status === 'CHECKED_IN' && today < stayCheckOut
   const canTransfer = status === 'CHECKED_IN' || status === 'ASSIGNED'
   const canCancel = status === 'RESERVED' || status === 'ASSIGNED' || status === 'CHECKED_IN'
   const isTerminal = status === 'CHECKED_OUT' || status === 'CANCELLED'
@@ -204,8 +208,15 @@ const BookingContextMenu = React.memo(function BookingContextMenu({
       {canCheckOut && (
         <MenuItem
           icon={LogOut}
-          label="เช็คเอาท์"
-          onClick={() => { onCheckOut(booking); onClose() }}
+          label={canEarlyCheckout ? 'เช็คเอาท์ (ก่อนกำหนด)' : 'เช็คเอาท์'}
+          onClick={() => {
+            if (canEarlyCheckout && onEarlyCheckout) {
+              onEarlyCheckout(booking)
+            } else {
+              onCheckOut(booking)
+            }
+            onClose()
+          }}
         />
       )}
 

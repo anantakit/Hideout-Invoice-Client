@@ -20,7 +20,7 @@ import type { SelectedBookingContext } from '../components/timeline/BookingBotto
 import DragPreview from '../components/timeline/DragPreview'
 import type { RoomAvailability } from '../components/timeline/AvailabilitySummary'
 import TimelineToolbar, { type ZoomLevel, ZOOM_CONFIG } from '../components/timeline/TimelineToolbar'
-import { OperationsDrawer, type DrawerMode } from '../components/timeline/OperationsDrawer'
+import { OperationsDrawer, type DrawerMode, type CreateBookingPrefill } from '../components/timeline/OperationsDrawer'
 import { MobileTimelineList } from '../components/timeline/MobileTimelineList'
 import {
   TIMELINE_ROW_HEIGHT_PX,
@@ -197,6 +197,7 @@ export default function TimelinePage() {
 
   // ── Operations drawer state ─────────────────────────────────────────────
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(null)
+  const [createBookingPrefill, setCreateBookingPrefill] = useState<CreateBookingPrefill | null>(null)
 
   // ── Bottom-sheet state ────────────────────────────────────────────────────
   const [selectedBooking, setSelectedBooking] = useState<SelectedBookingContext | null>(null)
@@ -273,6 +274,8 @@ export default function TimelinePage() {
     }
     return map
   }, [availRoomTypes])
+  const roomTypeIdByRoomIdRef = useRef(roomTypeIdByRoomId)
+  roomTypeIdByRoomIdRef.current = roomTypeIdByRoomId
 
   const roomTypeNameByRoomId = useMemo(() => {
     const map: Record<string, string> = {}
@@ -281,6 +284,16 @@ export default function TimelinePage() {
     }
     return map
   }, [availRoomTypes])
+  const roomTypeNameByRoomIdRef = useRef(roomTypeNameByRoomId)
+  roomTypeNameByRoomIdRef.current = roomTypeNameByRoomId
+
+  const priceByRoomTypeId = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const rt of availRoomTypes) map[rt.room_type_id] = rt.price_per_night
+    return map
+  }, [availRoomTypes])
+  const priceByRoomTypeIdRef = useRef(priceByRoomTypeId)
+  priceByRoomTypeIdRef.current = priceByRoomTypeId
 
   const filteredRooms = useMemo(() => {
     if (!selectedRoomTypeId) return allRooms
@@ -674,26 +687,42 @@ export default function TimelinePage() {
   })
 
   // ── Draw to create ──────────────────────────────────────────────────────
-  const handleDrawComplete = useCallback(
-    (roomId: string, checkIn: string, checkOut: string) => {
-      const roomTypeId = roomTypeIdByRoomId[roomId] ?? ''
-      const params = new URLSearchParams({ check_in: checkIn, check_out: checkOut, room_id: roomId })
-      if (roomTypeId) params.set('room_type_id', roomTypeId)
-      navigate(`${ROUTES.bookings.new}?${params.toString()}`)
+  const handleBookingCreated = useCallback(
+    (_bookingId: string) => {
+      setCreateBookingPrefill(null)
+      setDrawerMode(null)
     },
-    [navigate, roomTypeIdByRoomId],
+    [],
   )
 
-  const { drawPreview, handleDrawStart } = useTimelineDraw({
+  const { drawPreview, completedDraw, clearCompletedDraw, handleDrawStart } = useTimelineDraw({
     rooms: filteredRooms,
     windowStart,
     windowDays: zoomDays,
     scrollContainerRef,
-    onDrawComplete: handleDrawComplete,
     getRoomTop,
     getRoomHeight,
     isDragging,
   })
+
+  // React to completed draw — open create-booking drawer
+  useEffect(() => {
+    if (!completedDraw) return
+    const { roomId, checkIn, checkOut } = completedDraw
+    const roomTypeId = roomTypeIdByRoomIdRef.current[roomId] ?? ''
+    const room = allRoomsRef.current.find((r) => r.id === roomId)
+    setCreateBookingPrefill({
+      roomId,
+      roomTypeId,
+      roomNumber: room?.room_number ?? '',
+      roomTypeName: roomTypeNameByRoomIdRef.current[roomId] ?? '',
+      pricePerNight: priceByRoomTypeIdRef.current[roomTypeId] ?? 0,
+      checkIn,
+      checkOut,
+    })
+    setDrawerMode('create-booking')
+    clearCompletedDraw()
+  }, [completedDraw, clearCompletedDraw])
 
   // ── Render ──────────────────────────────────────────────────────────────
   return (
@@ -889,6 +918,8 @@ export default function TimelinePage() {
             onQuickCheckIn={handleDrawerCheckIn}
             onQuickCheckOut={handleDrawerCheckOut}
             onOpenDetail={handleDoubleClickBooking}
+            createBookingPrefill={createBookingPrefill}
+            onBookingCreated={handleBookingCreated}
             rooms={allRooms}
             todayStr={todayStr}
             roomTypeNameMap={roomTypeNameByRoomId}
@@ -908,6 +939,7 @@ export default function TimelinePage() {
             onClose={handleCloseContextMenu}
             onCheckIn={handleQuickCheckIn}
             onCheckOut={handleQuickCheckOut}
+            onEarlyCheckout={handleContextOpenDetail}
             onOpenDetail={handleContextOpenDetail}
             onCancel={handleContextCancel}
             onTransfer={handleContextTransfer}

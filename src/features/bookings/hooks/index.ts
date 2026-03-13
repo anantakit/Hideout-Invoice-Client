@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingsApi } from '../api'
-import type { CreateBookingPayload, BookingQueryParams, CreatePaymentPayload, ExtendStayPayload, MoveStayPayload } from '../types'
+import type { CreateBookingPayload, BookingQueryParams, CreatePaymentPayload, ExtendStayPayload, MoveStayPayload, EarlyCheckoutPayload } from '../types'
 
 export const AVAILABILITY_GROUPED_KEY = (checkIn: string, checkOut: string, excludeBookingId?: string) =>
   ['availability-grouped', checkIn, checkOut, excludeBookingId ?? ''] as const
@@ -183,6 +183,21 @@ export function useCheckoutRooms(bookingId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (stayIds: string[]) => bookingsApi.checkoutRooms(bookingId, stayIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
+      queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
+    },
+  })
+}
+
+/** Early checkout: truncate check_out to today (or specified date), recompute total, free room. */
+export function useEarlyCheckout(bookingId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ stayId, payload }: { stayId: string; payload?: EarlyCheckoutPayload }) =>
+      bookingsApi.earlyCheckout(bookingId, stayId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
       queryClient.invalidateQueries({ queryKey: ['availability'] })

@@ -1,6 +1,6 @@
 import React, { type CSSProperties, useCallback, useMemo, useRef } from 'react'
 import { differenceInDays, format, parseISO, startOfDay } from 'date-fns'
-import { Users, Clock, Footprints, CalendarCheck, ArrowRightLeft } from 'lucide-react'
+import { Users, Clock, Footprints, CalendarCheck, ArrowRightLeft, CheckCircle2 } from 'lucide-react'
 import {
   TIMELINE_BLOCK_HEIGHT_PX,
   TIMELINE_BLOCK_GAP_PX,
@@ -363,6 +363,11 @@ const BookingBlock = React.memo(function BookingBlock({
             <ArrowRightLeft className="w-2.5 h-2.5 shrink-0 opacity-70" />
           )}
 
+          {/* Early checkout indicator */}
+          {booking.early_checkout && !isUpcoming && (
+            <CheckCircle2 className="w-2.5 h-2.5 shrink-0 text-success opacity-80" />
+          )}
+
           {/* Clock icon for upcoming */}
           {isUpcoming && (
             <Clock className="w-3 h-3 shrink-0 text-muted-foreground/60" />
@@ -449,6 +454,13 @@ const BookingBlock = React.memo(function BookingBlock({
           <p className="text-micro text-info mt-0.5 flex items-center gap-1">
             <ArrowRightLeft className="w-3 h-3" />
             ย้ายมาจากห้องอื่น
+          </p>
+        )}
+
+        {booking.early_checkout && (
+          <p className="text-micro text-success mt-0.5 flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" />
+            เช็คเอาท์ก่อนกำหนด
           </p>
         )}
 

@@ -29,6 +29,7 @@ import { formatThaiDate, formatTHB } from '../../../shared/utils'
 import { ROUTES } from '@/app/routes'
 import ErrorPage from '@/shared/components/ErrorPage'
 import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useCheckoutRooms, useAvailabilityGrouped, useTransferRoom, useUpdateBooking } from '../hooks'
+import { EarlyCheckoutDialog } from '../components/EarlyCheckoutDialog'
 import SearchableComboBox from '@/shared/ui/SearchableComboBox'
 import { customersApi } from '../../customers/api'
 import type { Customer } from '../../customers/types'
@@ -610,7 +611,7 @@ export default function BookingDetailPage() {
           </span>
         </h2>
         {booking.room_stays.map((stay) => (
-          <StayCardOperational key={stay.id} bookingId={booking.id} stay={stay} />
+          <StayCardOperational key={stay.id} bookingId={booking.id} stay={stay} booking={booking} />
         ))}
       </div>
 
@@ -634,14 +635,17 @@ export default function BookingDetailPage() {
 function StayCardOperational({
   bookingId,
   stay,
+  booking,
 }: {
   bookingId: string
   stay: RoomStayResponse
+  booking?: BookingResponse
 }) {
   const [cancelOpen, setCancelOpen]       = useState(false)
   const [extendOpen, setExtendOpen]       = useState(false)
   const [checkoutOpen, setCheckoutOpen]   = useState(false)
   const [transferOpen, setTransferOpen]   = useState(false)
+  const [earlyCheckoutOpen, setEarlyCheckoutOpen] = useState(false)
   const [newCheckOut, setNewCheckOut]     = useState('')
   const [conflictData, setConflictData]   = useState<ExtendStayConflictData | null>(null)
   const [selectedTransferRoomId, setSelectedTransferRoomId] = useState<string | null>(null)
@@ -679,6 +683,7 @@ function StayCardOperational({
   const isCheckedIn      = stay.status === 'CHECKED_IN'
   const canExtend        = isActive || isCheckedIn
   const canTransfer      = (isCheckedIn || stay.status === 'ASSIGNED') && Boolean(stay.room_id)
+  const canEarlyCheckout = isCheckedIn && isBefore(startOfDay(new Date()), startOfDay(parseISO(stay.check_out)))
   const showTodayBadge   = isActive && isCheckInToday(stay.check_in)
   const showOverdueBadge = isActive && isCheckInOverdue(stay.check_in)
 
@@ -737,6 +742,33 @@ function StayCardOperational({
           </p>
         )}
 
+        {/* ── Early checkout indicator ──────────────────────────────────── */}
+        {stay.status === 'CHECKED_OUT' && stay.checked_out_at && (() => {
+          const actualCheckOut = stay.checked_out_at!.slice(0, 10)
+          const originalCheckOut = stay.check_out.slice(0, 10)
+          if (actualCheckOut >= originalCheckOut) return null
+          const origNights = calcNights(stay.check_in, originalCheckOut)
+          const actualNights = calcNights(stay.check_in, actualCheckOut)
+          return (
+            <div className="rounded-lg border border-success/30 bg-success/5 p-2.5">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-success mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-micro font-semibold text-success">
+                    เช็คเอาท์ก่อนกำหนด
+                  </p>
+                  <p className="text-micro text-muted-foreground mt-0.5">
+                    <span className="line-through">{formatThaiDate(originalCheckOut)}</span>
+                    {' → '}
+                    <span className="font-semibold text-foreground">{formatThaiDate(actualCheckOut)}</span>
+                    {' '}(ลดจาก {origNights} เหลือ {actualNights} คืน)
+                  </p>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
         {/* ── Action buttons ──────────────────────────────────────────────── */}
         {(isActive || canExtend) && (
           <div className="flex flex-wrap gap-2 pt-0.5">
@@ -745,7 +777,7 @@ function StayCardOperational({
                 variant="default"
                 size="sm"
                 disabled={checkout.isPending}
-                onClick={() => setCheckoutOpen(true)}
+                onClick={() => canEarlyCheckout ? setEarlyCheckoutOpen(true) : setCheckoutOpen(true)}
               >
                 {checkout.isPending ? (
                   <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
@@ -1105,6 +1137,15 @@ function StayCardOperational({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Early checkout confirmation ─────────────────────────────────────── */}
+      <EarlyCheckoutDialog
+        open={earlyCheckoutOpen}
+        onOpenChange={setEarlyCheckoutOpen}
+        bookingId={bookingId}
+        stay={stay}
+        booking={booking}
+      />
 
       {/* ── Transfer room ─────────────────────────────────────────────────── */}
       {(() => {

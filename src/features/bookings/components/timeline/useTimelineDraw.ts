@@ -29,8 +29,6 @@ interface UseTimelineDrawOptions {
   windowStart: Date
   windowDays: number
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
-  /** Called when draw completes successfully. */
-  onDrawComplete: (roomId: string, checkIn: string, checkOut: string) => void
   getRoomTop: (roomId: string) => number | undefined
   getRoomHeight: (roomId: string) => number
   /** Whether another drag operation is active. */
@@ -42,13 +40,13 @@ export function useTimelineDraw({
   windowStart,
   windowDays,
   scrollContainerRef,
-  onDrawComplete,
   getRoomTop,
   getRoomHeight,
   isDragging,
 }: UseTimelineDrawOptions) {
   const [drawState, setDrawState] = useState<DrawState | null>(null)
   const [drawPreview, setDrawPreview] = useState<DrawPreviewPosition | null>(null)
+  const [completedDraw, setCompletedDraw] = useState<DrawState | null>(null)
 
   const drawRef = useRef<{
     roomId: string
@@ -178,7 +176,7 @@ export function useTimelineDraw({
   )
 
   const handlePointerUp = useCallback(
-    (_e: PointerEvent) => {
+    (e: PointerEvent) => {
       const ref = drawRef.current
       drawRef.current = null
 
@@ -190,15 +188,21 @@ export function useTimelineDraw({
         return
       }
 
-      const state = drawState
-      if (state) {
-        onDrawComplete(state.roomId, state.checkIn, state.checkOut)
+      // Compute final draw result from ref data + pointer position.
+      const currentDay = getDayIndex(e.clientX)
+      const minDay = Math.min(ref.startDayIndex, currentDay)
+      const maxDay = Math.max(ref.startDayIndex, currentDay)
+      const checkIn = format(addDays(windowStart, minDay), 'yyyy-MM-dd')
+      const checkOut = format(addDays(windowStart, maxDay + 1), 'yyyy-MM-dd')
+
+      if (isCellEmpty(ref.roomId, checkIn, checkOut)) {
+        setCompletedDraw({ roomId: ref.roomId, checkIn, checkOut })
       }
 
       setDrawState(null)
       setDrawPreview(null)
     },
-    [drawState, onDrawComplete],
+    [getDayIndex, windowStart, isCellEmpty],
   )
 
   // ── Global listeners ────────────────────────────────────────────────────
@@ -226,6 +230,9 @@ export function useTimelineDraw({
     drawState,
     drawPreview,
     isDrawing: drawRef.current?.phase === 'active',
+    /** Set after a successful draw completes. Consumer should read and then clear it. */
+    completedDraw,
+    clearCompletedDraw: useCallback(() => setCompletedDraw(null), []),
     handleDrawStart,
   }
 }

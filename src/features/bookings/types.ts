@@ -239,6 +239,10 @@ export interface MoveStayPayload {
   check_out: string  // YYYY-MM-DD
 }
 
+export interface EarlyCheckoutPayload {
+  checkout_date?: string // YYYY-MM-DD — defaults to today on backend
+}
+
 // ─── Timeline API ───────────────────────────────────────────────────────────
 
 /** Booking entry as returned by GET /timeline. */
@@ -256,6 +260,8 @@ export interface TimelineBooking {
   source: string
   /** Set when this stay was created by a room transfer (split stay). */
   transfer_from_stay_id?: string
+  /** True when this stay was ended via early checkout. */
+  early_checkout?: boolean
 }
 
 /**
