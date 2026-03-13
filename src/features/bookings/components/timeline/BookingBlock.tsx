@@ -247,6 +247,7 @@ const BookingBlock = React.memo(function BookingBlock({
         <button
           type="button"
           tabIndex={0}
+          data-stay-status={booking.status}
           className={cn(
             'tl-booking-block',
             'absolute',

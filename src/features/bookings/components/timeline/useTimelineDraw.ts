@@ -175,6 +175,10 @@ export function useTimelineDraw({
     [getDayIndex, windowStart, isCellEmpty, getRoomTop, getRoomHeight],
   )
 
+  // Suppress the click event that fires after a completed draw —
+  // without this, drawing on a CHECKED_OUT block also triggers its onClick (booking detail).
+  const suppressNextClickRef = useRef(false)
+
   const handlePointerUp = useCallback(
     (e: PointerEvent) => {
       const ref = drawRef.current
@@ -199,6 +203,10 @@ export function useTimelineDraw({
         setCompletedDraw({ roomId: ref.roomId, checkIn, checkOut })
       }
 
+      // A click event always fires after pointerup on the same target.
+      // Suppress it so it doesn't open booking detail for CHECKED_OUT blocks.
+      suppressNextClickRef.current = true
+
       setDrawState(null)
       setDrawPreview(null)
     },
@@ -216,13 +224,25 @@ export function useTimelineDraw({
       }
     }
 
+    // Suppress the click that fires after a completed draw (pointerup → click).
+    // Uses capture phase so it runs before React's onClick handlers.
+    const onClickCapture = (e: MouseEvent) => {
+      if (suppressNextClickRef.current) {
+        suppressNextClickRef.current = false
+        e.stopPropagation()
+        e.preventDefault()
+      }
+    }
+
     window.addEventListener('pointermove', handlePointerMove)
     window.addEventListener('pointerup', handlePointerUp)
     window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('click', onClickCapture, true) // capture phase
     return () => {
       window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('pointerup', handlePointerUp)
       window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('click', onClickCapture, true)
     }
   }, [handlePointerMove, handlePointerUp])
 

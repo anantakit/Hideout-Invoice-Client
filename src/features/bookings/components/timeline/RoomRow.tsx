@@ -135,8 +135,9 @@ const RoomRow = React.memo(function RoomRow({
   // Converts pixel coordinates → dayIndex → date.
   // Booking blocks handle their own clicks; this only fires for empty areas.
   const handleAreaClick = useCallback((e: React.MouseEvent) => {
-    // Ignore if the click was on a booking block (they handle their own clicks)
-    if ((e.target as HTMLElement).closest('.tl-booking-block')) return
+    // Ignore if the click was on an active booking block (CHECKED_OUT blocks are passthrough)
+    const block = (e.target as HTMLElement).closest('.tl-booking-block') as HTMLElement | null
+    if (block && block.dataset.stayStatus !== 'CHECKED_OUT') return
     if (!onEmptyCellClick) return
 
     const rect = e.currentTarget.getBoundingClientRect()
@@ -149,8 +150,10 @@ const RoomRow = React.memo(function RoomRow({
   }, [onEmptyCellClick, room.id, windowStart, windowDays])
 
   // ── Draw-to-create: pointer down on empty area ────────────────────────
+  // Allow draw through CHECKED_OUT blocks (they're history, room is available).
   const handleAreaPointerDown = useCallback((e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('.tl-booking-block')) return
+    const block = (e.target as HTMLElement).closest('.tl-booking-block') as HTMLElement | null
+    if (block && block.dataset.stayStatus !== 'CHECKED_OUT') return
     if (!onDrawStart) return
     onDrawStart(e, room.id)
   }, [onDrawStart, room.id])
