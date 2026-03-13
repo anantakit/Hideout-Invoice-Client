@@ -1,6 +1,6 @@
 import React, { type CSSProperties, useCallback, useMemo, useRef } from 'react'
 import { differenceInDays, format, parseISO, startOfDay } from 'date-fns'
-import { Users, Clock, Footprints, CalendarCheck, ArrowRightLeft, CheckCircle2 } from 'lucide-react'
+import { Users, BedDouble, Clock, Footprints, CalendarCheck, ArrowRightLeft, CheckCircle2 } from 'lucide-react'
 import {
   TIMELINE_BLOCK_HEIGHT_PX,
   TIMELINE_BLOCK_GAP_PX,
@@ -396,22 +396,12 @@ const BookingBlock = React.memo(function BookingBlock({
             <span className="truncate text-[11px] font-bold leading-tight drop-shadow-sm">
               {booking.guest_name}
             </span>
-            {spanDays >= 2 && (
-              isUpcoming ? (
-                <span className="truncate text-[10px] leading-tight opacity-70">
-                  Check-in {fmtDate(booking.check_in)}
-                </span>
-              ) : isMultiRoom ? (
-                <span className="flex items-center gap-0.5 text-[10px] leading-tight opacity-80">
-                  <Users className="w-2.5 h-2.5 shrink-0" />
-                  {roomCount} ห้อง
-                </span>
-              ) : (
-                <span className="truncate text-[10px] leading-tight opacity-75">
-                  {fmtDate(booking.check_in)} – {fmtDate(booking.check_out)}
-                </span>
-              )
-            )}
+            <span className="flex items-center gap-0.5 text-[10px] leading-tight opacity-80 truncate">
+              {isMultiRoom
+                ? <Users className="w-2.5 h-2.5 shrink-0" />
+                : <BedDouble className="w-2.5 h-2.5 shrink-0" />}
+              {roomCount} ห้อง
+            </span>
           </div>
         </button>
       </TooltipTrigger>

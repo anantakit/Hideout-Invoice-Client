@@ -590,6 +590,12 @@ export default function TimelinePage() {
     overscan:         TIMELINE_OVERSCAN_ROWS,
   })
 
+  // Force virtualizer to recalculate row heights when layer counts change
+  // (e.g. after early checkout + same-day walk-in creates overlapping layers).
+  useEffect(() => {
+    rowVirtualizer.measure()
+  }, [rowVirtualizer, roomLayerCountMap])
+
   // ── Room position helpers for drag ────────────────────────────────────
   const gridContainerRef = useRef<HTMLDivElement>(null)
 
