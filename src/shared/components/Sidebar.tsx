@@ -7,12 +7,16 @@ import {
   DoorOpen,
   FileText,
   LogOut,
+  Moon,
+  Sun,
+  Monitor,
   UserCog,
   Users,
   X,
 } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { useTheme } from '@/app/providers/ThemeProvider'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 
@@ -138,6 +142,62 @@ function NavItem({
   )
 }
 
+// ── ThemeToggle ───────────────────────────────────────────────────────────────
+
+const THEME_OPTIONS = [
+  { value: 'light' as const, icon: Sun, label: 'สว่าง' },
+  { value: 'dark' as const, icon: Moon, label: 'มืด' },
+  { value: 'system' as const, icon: Monitor, label: 'ระบบ' },
+]
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme()
+
+  return (
+    <div className="px-3 py-2 border-t border-border-soft">
+      {/* Expanded view (mobile sheet + xl desktop) */}
+      <div className="md:hidden xl:block">
+        <p className="text-helper text-[10px] uppercase tracking-widest mb-1.5">ธีม</p>
+        <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
+          {THEME_OPTIONS.map(({ value, icon: Icon, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setTheme(value)}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                theme === value
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+              title={label}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      {/* Icon-only view (md sidebar) */}
+      <div className="hidden md:flex xl:hidden justify-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            const next = theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark'
+            setTheme(next)
+          }}
+          title={THEME_OPTIONS.find((o) => o.value === theme)?.label}
+          aria-label="เปลี่ยนธีม"
+          className="text-muted-foreground"
+        >
+          {theme === 'light' ? <Sun className="w-4 h-4" /> : theme === 'dark' ? <Moon className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 // ── SidebarContent ────────────────────────────────────────────────────────────
 
 export function SidebarContent({ onClose }: { onClose?: () => void }) {
@@ -198,6 +258,9 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
           )
         })}
       </nav>
+
+      {/* ── Theme toggle ───────────────────────────────────────────────── */}
+      <ThemeToggle />
 
       {/* ── User + logout ─────────────────────────────────────────────────── */}
       <div className="p-3 border-t border-border-soft">

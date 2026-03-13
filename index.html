@@ -9,6 +9,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/icon-192.svg" />
     <title>Hideout — Hotel Operations</title>
+    <script>
+      // Prevent FOUC: apply saved theme class before first paint
+      (function(){
+        var t = localStorage.getItem('hideout-theme');
+        if (t === 'light') document.documentElement.classList.add('light');
+        else if (t === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches)
+          document.documentElement.classList.add('light');
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

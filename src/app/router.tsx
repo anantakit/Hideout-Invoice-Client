@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './providers/AuthProvider'
+import { ThemeProvider } from './providers/ThemeProvider'
 import ProtectedRoute from '../shared/components/ProtectedRoute'
 import Layout from '../shared/components/Layout'
 import ErrorPage from '../shared/components/ErrorPage'
@@ -38,64 +39,66 @@ function PageLoader() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Public */}
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/change-password"
-              element={
-                <ProtectedRoute>
-                  <ChangePassword />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Protected app shell */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="/timeline" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/receipts/new" element={<CreateReceipt />} />
-              <Route path="/receipts" element={<ReceiptHistory />} />
-              <Route path="/receipts/:id" element={<ReceiptDetail />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/bookings" element={<BookingList />} />
-              <Route path="/bookings/new" element={<CreateBooking />} />
-              <Route path="/timeline" element={<Timeline />} />
-              <Route path="/bookings/:id/checkin" element={<GroupCheckIn />} />
-              <Route path="/bookings/:id" element={<BookingDetail />} />
-              <Route path="/operations/today" element={<TodayBoard />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* Public */}
+              <Route path="/login" element={<Login />} />
               <Route
-                path="/admin/users"
+                path="/change-password"
                 element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminUsers />
+                  <ProtectedRoute>
+                    <ChangePassword />
                   </ProtectedRoute>
                 }
               />
+
+              {/* Protected app shell */}
               <Route
-                path="/admin/rooms"
                 element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminRooms />
+                  <ProtectedRoute>
+                    <Layout />
                   </ProtectedRoute>
                 }
-              />
-            </Route>
+              >
+                <Route index element={<Navigate to="/timeline" replace />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/receipts/new" element={<CreateReceipt />} />
+                <Route path="/receipts" element={<ReceiptHistory />} />
+                <Route path="/receipts/:id" element={<ReceiptDetail />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/bookings" element={<BookingList />} />
+                <Route path="/bookings/new" element={<CreateBooking />} />
+                <Route path="/timeline" element={<Timeline />} />
+                <Route path="/bookings/:id/checkin" element={<GroupCheckIn />} />
+                <Route path="/bookings/:id" element={<BookingDetail />} />
+                <Route path="/operations/today" element={<TodayBoard />} />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminUsers />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/rooms"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminRooms />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
 
-            {/* 404 catch-all */}
-            <Route path="*" element={<ErrorPage variant="not-found" />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </AuthProvider>
+              {/* 404 catch-all */}
+              <Route path="*" element={<ErrorPage variant="not-found" />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }

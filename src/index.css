@@ -244,6 +244,99 @@
     --kpi-avl: 263 60% 70%;         /* muted purple */
   }
 
+  /* ══════════════════════════════════════════════════════════════════
+     Light Theme — Soft Slate (Linear / Notion inspired)
+     Clean, professional, eye-friendly for all-day use.
+     ══════════════════════════════════════════════════════════════════ */
+  .light {
+    /* ── Surface Layers ────────────────────────────────── */
+    --background: 210 40% 98%;       /* #F8FAFC — slate-50 */
+    --foreground: 222 47% 11%;       /* #0F172A — slate-900 */
+
+    --card: 0 0% 100%;               /* #FFFFFF */
+    --card-foreground: 222 47% 11%;
+
+    --sidebar: 210 40% 96%;          /* #F1F5F9 — slate-100 */
+    --sidebar-foreground: 222 47% 11%;
+
+    /* ── Primary Accent — Deeper blue for light bg ────── */
+    --primary: 224 76% 57%;          /* #3B6FE8 */
+    --primary-foreground: 0 0% 100%;
+
+    /* ── Secondary / Muted ─────────────────────────────── */
+    --secondary: 210 40% 96%;        /* #F1F5F9 */
+    --secondary-foreground: 215 25% 27%;  /* #334155 — slate-700 */
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;      /* #64748B — slate-500 */
+
+    /* ── Accent (hover / subtle highlight) ─────────────── */
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    /* ── Borders / Inputs / Ring ────────────────────────── */
+    --border: 214 32% 91%;               /* #E2E8F0 — slate-200 */
+    --border-soft: 210 40% 94%;          /* #EDF2F7 */
+    --input: 0 0% 100%;                  /* white */
+    --ring: 224 76% 57%;
+
+    /* ── Status Colors (vivid for light bg) ────────────── */
+    --success: 152 60% 36%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 152 40% 93%;
+    --success-muted-foreground: 152 60% 30%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 45 90% 93%;
+    --warning-muted-foreground: 32 80% 32%;
+
+    --info: 200 80% 44%;
+    --info-foreground: 0 0% 100%;
+    --info-muted: 200 60% 94%;
+    --info-muted-foreground: 200 70% 32%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* ── Booking Status Colors ─────────────────────────── */
+    --bk-reserved: 224 76% 57%;      /* blue */
+    --bk-reserved-fg: 0 0% 100%;
+    --bk-checked-in: 152 60% 36%;    /* green */
+    --bk-checked-in-fg: 0 0% 100%;
+    --bk-checked-out: 215 14% 60%;   /* gray */
+    --bk-checked-out-fg: 0 0% 100%;
+    --bk-no-show: 38 92% 50%;        /* amber */
+    --bk-no-show-fg: 0 0% 100%;
+    --bk-cancelled: 215 14% 70%;     /* muted gray */
+    --bk-cancelled-fg: 215 25% 27%;
+
+    /* ── Room Status Indicator Colors ──────────────────── */
+    --room-clean: 152 60% 40%;
+    --room-dirty: 32 75% 50%;
+    --room-ooo: 0 65% 51%;
+    --room-ooo-tint: 0 65% 51%;
+
+    /* ── Timeline View ─────────────────────────────────── */
+    --timeline-bg: 210 40% 97%;
+    --timeline-grid: 214 32% 88%;
+    --timeline-today: 200 80% 44%;
+    --timeline-row-hover: 0 0% 0%;
+
+    /* ── Timeline Toolbar ───────────────────────────────── */
+    --tl-header-bg: 0 0% 100%;
+    --tl-border: 214 32% 91%;
+    --tl-text: 222 47% 11%;
+    --tl-text-dim: 215 16% 47%;
+    --tl-accent: 224 76% 57%;
+
+    /* ── KPI Colors ─────────────────────────────────────── */
+    --kpi-occ: 152 60% 36%;
+    --kpi-arr: 200 80% 44%;
+    --kpi-dep: 38 80% 50%;
+    --kpi-avl: 263 50% 55%;
+  }
+
   * {
     @apply border-border;
   }
