@@ -307,7 +307,7 @@ export default function BookingDetailPage() {
                     {getStatusLabel(booking.status)}
                   </Badge>
                   <Badge variant="outline" className="text-micro">
-                    {booking.source === 'walk_in' ? 'Walk-in' : booking.source === 'online' ? 'Online' : 'จองล่วงหน้า'}
+                    {booking.source === 'walk_in' ? 'วอล์คอิน' : booking.source === 'online' ? 'ออนไลน์' : 'จองล่วงหน้า'}
                   </Badge>
                 </div>
                 <p className="text-helper mt-1">
@@ -315,7 +315,7 @@ export default function BookingDetailPage() {
                 </p>
               </div>
               {!editing && booking.status !== 'CHECKED_OUT' && booking.status !== 'CANCELLED' && (
-                <Button variant="ghost" size="sm" className="text-muted-foreground shrink-0" onClick={startEdit}>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground shrink-0" onClick={startEdit}>
                   <Pencil className="w-3.5 h-3.5 mr-1" />
                   แก้ไข
                 </Button>

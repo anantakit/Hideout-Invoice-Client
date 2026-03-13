@@ -419,8 +419,20 @@ export default function TimelinePage() {
   }, [allRooms, centerDateStr])
 
   // ── Handlers ──────────────────────────────────────────────────────────────
-  const handlePrev  = useCallback(() => shiftBy(-7), [shiftBy])
-  const handleNext  = useCallback(() => shiftBy(7), [shiftBy])
+  const handlePrev  = useCallback(() => {
+    shiftBy(-7) // desktop: shift 7 days
+    // mobile: shift 1 day
+    const newDate = subDays(mobileSelectedDate, 1)
+    setMobileAnchor(newDate)
+    setMobileDayOffset(MOBILE_CENTER)
+  }, [shiftBy, mobileSelectedDate])
+  const handleNext  = useCallback(() => {
+    shiftBy(7) // desktop: shift 7 days
+    // mobile: shift 1 day
+    const newDate = addDays(mobileSelectedDate, 1)
+    setMobileAnchor(newDate)
+    setMobileDayOffset(MOBILE_CENTER)
+  }, [shiftBy, mobileSelectedDate])
   const handleToday = useCallback(() => {
     jumpToToday()
     // Re-center mobile strip on today

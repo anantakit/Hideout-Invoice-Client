@@ -566,7 +566,8 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   )
 
   const total = displayedEntries.length
-  const hasOps = dateOps.checkins.length > 0 || dateOps.doneCheckins.length > 0 || dateOps.checkouts.length > 0 || dateOps.doneCheckouts.length > 0
+  const hasCheckins = dateOps.checkins.length > 0 || dateOps.doneCheckins.length > 0
+  const hasCheckouts = dateOps.checkouts.length > 0 || dateOps.doneCheckouts.length > 0
 
   // ── Render ──────────────────────────────────────────────────────────────
   return (
@@ -660,17 +661,18 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          SECTION 2: งานประจำวัน — scoped to selectedDate
+          SECTION 2A: เช็คอิน — hidden when no data
           ════════════════════════════════════════════════════════════════════ */}
-      {hasOps && (
-        <div className="px-4 space-section space-y-4">
+      {hasCheckins && (
+      <div className="px-4 space-section space-y-2">
+        <p className="text-label text-primary flex items-center space-inline">
+          เช็คอิน{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
+          <Badge variant="default" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
+            {dateKPI.checkinDone}/{dateKPI.checkinTotal}
+          </Badge>
+        </p>
 
-          {/* ── Check-in ─────────────────────────────────────────────── */}
-          {(dateOps.checkins.length > 0 || dateOps.doneCheckins.length > 0) && (
-            <div className="space-y-2">
-              <p className="text-label text-primary flex items-center space-inline">
-                เช็คอิน{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
-              </p>
+        <>
               {dateOps.checkins.map((ci) => {
                 const isSingleRoom = ci.totalStays === 1
                 const assignedCount = ci.totalStays - ci.unassignedCount
@@ -747,15 +749,23 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                   )}
                 </div>
               ))}
-            </div>
-          )}
+          </>
+      </div>
+      )}
 
-          {/* ── Check-out ────────────────────────────────────────────── */}
-          {(dateOps.checkouts.length > 0 || dateOps.doneCheckouts.length > 0) && (
-            <div className="space-y-2">
-              <p className="text-label text-muted-foreground flex items-center space-inline">
-                เช็คเอาท์{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
-              </p>
+      {/* ════════════════════════════════════════════════════════════════════
+          SECTION 2B: เช็คเอาท์ — hidden when no data
+          ════════════════════════════════════════════════════════════════════ */}
+      {hasCheckouts && (
+      <div className="px-4 space-section space-y-2">
+        <p className="text-label text-warning flex items-center space-inline">
+          เช็คเอาท์{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
+          <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
+            {dateKPI.checkoutDone}/{dateKPI.checkoutTotal}
+          </Badge>
+        </p>
+
+        <>
 
               {/* Pending checkouts */}
               {dateOps.checkouts.map((co) => {
@@ -784,7 +794,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                         {onQuickCheckOut && stay.status === 'CHECKED_IN' && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="outline" className="h-8 px-3 text-body font-medium gap-1.5 shrink-0">
+                              <Button size="sm" variant="outline" className="h-8 px-3 text-sm font-semibold gap-1.5 shrink-0">
                                 <LogOut className="w-3.5 h-3.5" />
                                 เช็คเอาท์
                               </Button>
@@ -875,7 +885,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                             {onQuickCheckOut && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button size="sm" variant="outline" className="h-8 px-3 text-body font-medium gap-1.5">
+                                  <Button size="sm" variant="outline" className="h-8 px-3 text-sm font-semibold gap-1.5">
                                     <LogOut className="w-3.5 h-3.5" />
                                     เช็คเอาท์
                                   </Button>
@@ -935,9 +945,8 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-        </div>
+          </>
+      </div>
       )}
 
       {/* ════════════════════════════════════════════════════════════════════

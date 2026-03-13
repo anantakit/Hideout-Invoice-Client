@@ -9,7 +9,6 @@ import {
   LogOut,
   Moon,
   Sun,
-  Monitor,
   UserCog,
   Users,
   X,
@@ -144,54 +143,41 @@ function NavItem({
 
 // ── ThemeToggle ───────────────────────────────────────────────────────────────
 
-const THEME_OPTIONS = [
-  { value: 'light' as const, icon: Sun, label: 'สว่าง' },
-  { value: 'dark' as const, icon: Moon, label: 'มืด' },
-  { value: 'system' as const, icon: Monitor, label: 'ระบบ' },
-]
-
 function ThemeToggle() {
   const { theme, setTheme } = useTheme()
+  const isDark = theme === 'dark'
+  const toggle = () => setTheme(isDark ? 'light' : 'dark')
 
   return (
     <div className="px-3 py-2 border-t border-border-soft">
       {/* Expanded view (mobile sheet + xl desktop) */}
       <div className="md:hidden xl:block">
-        <p className="text-helper text-[10px] uppercase tracking-widest mb-1.5">ธีม</p>
-        <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
-          {THEME_OPTIONS.map(({ value, icon: Icon, label }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setTheme(value)}
-              className={cn(
-                'flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
-                theme === value
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-              title={label}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
+        <button
+          type="button"
+          onClick={toggle}
+          className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="เปลี่ยนธีม"
+        >
+          <span className="flex items-center gap-2">
+            {isDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            {isDark ? 'มืด' : 'สว่าง'}
+          </span>
+          <span className="text-xs text-muted-foreground/60">
+            {isDark ? 'เปลี่ยนเป็นสว่าง' : 'เปลี่ยนเป็นมืด'}
+          </span>
+        </button>
       </div>
       {/* Icon-only view (md sidebar) */}
       <div className="hidden md:flex xl:hidden justify-center">
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => {
-            const next = theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark'
-            setTheme(next)
-          }}
-          title={THEME_OPTIONS.find((o) => o.value === theme)?.label}
+          onClick={toggle}
+          title={isDark ? 'เปลี่ยนเป็นสว่าง' : 'เปลี่ยนเป็นมืด'}
           aria-label="เปลี่ยนธีม"
           className="text-muted-foreground"
         >
-          {theme === 'light' ? <Sun className="w-4 h-4" /> : theme === 'dark' ? <Moon className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+          {isDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
         </Button>
       </div>
     </div>

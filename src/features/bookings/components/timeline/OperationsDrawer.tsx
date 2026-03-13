@@ -205,7 +205,7 @@ function BookingDetailContent({
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">ช่องทาง</span>
               <span className="text-sm font-medium text-foreground capitalize">
-                {booking.source === 'walk_in' ? 'Walk-in' : 'จองล่วงหน้า'}
+                {booking.source === 'walk_in' ? 'วอล์คอิน' : 'จองล่วงหน้า'}
               </span>
             </div>
           </>

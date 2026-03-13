@@ -330,7 +330,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-2 text-helper"
+                        className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
                         onClick={() => setTransferringStay(null)}
                       >
                         ยกเลิก
@@ -478,7 +478,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-9 px-2.5 text-helper hover:text-foreground"
+                          className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground"
                           disabled={isBusy}
                           onClick={() => handleReassign(stay)}
                         >
@@ -491,14 +491,14 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                         {isCheckInDay && (
                           <Button
                             size="sm"
-                            className="h-9 px-3 text-helper"
+                            className="h-9 px-3 text-sm font-semibold"
                             disabled={isBusy}
                             onClick={() => handleCheckInOne(stay)}
                           >
                             {busyStayId === stay.id && checkInMutation.isPending ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
-                              'Check-in'
+                              'เช็คอิน'
                             )}
                           </Button>
                         )}
@@ -528,7 +528,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-9 px-2.5 text-helper hover:text-foreground shrink-0"
+                          className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground shrink-0"
                           disabled={isBusy}
                           onClick={() => setTransferringStay(isTransferring ? null : stay)}
                         >
@@ -553,7 +553,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
 
               {isCheckInDay && assignedStays.length > 1 && (
                 <Button
-                  className="w-full h-11"
+                  className="w-full h-11 font-semibold"
                   disabled={isBusy}
                   onClick={handleCheckInAll}
                 >

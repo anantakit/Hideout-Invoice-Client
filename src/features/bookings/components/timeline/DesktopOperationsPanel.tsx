@@ -390,6 +390,9 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
           <p className="text-label text-primary flex items-center space-inline">
             <LogIn className="w-3 h-3" />
             เช็คอิน{viewingToday ? 'วันนี้' : ''}
+            <Badge variant="default" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
+              {dateKPI.checkinDone}/{dateKPI.checkinTotal}
+            </Badge>
           </p>
 
           {dateOps.checkins.map((ci) => {
@@ -475,9 +478,12 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
       {/* ── Check-outs (secondary) ────────────────────────────────── */}
       {(dateOps.checkouts.length > 0 || dateOps.doneCheckouts.length > 0) && (
         <div className="p-4 space-y-2 border-b border-border">
-          <p className="text-label text-muted-foreground flex items-center space-inline">
+          <p className="text-label text-warning flex items-center space-inline">
             <LogOut className="w-3 h-3" />
             เช็คเอาท์{viewingToday ? 'วันนี้' : ''}
+            <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
+              {dateKPI.checkoutDone}/{dateKPI.checkoutTotal}
+            </Badge>
           </p>
 
           {/* Pending checkouts */}
@@ -507,7 +513,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                     {onQuickCheckOut && stay.status === 'CHECKED_IN' && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="outline" className="h-8 px-3 text-body font-medium gap-1.5 shrink-0">
+                          <Button size="sm" variant="outline" className="h-8 px-3 text-sm font-semibold gap-1.5 shrink-0">
                             <LogOut className="w-3.5 h-3.5" />
                             เช็คเอาท์
                           </Button>
@@ -598,7 +604,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                         {onQuickCheckOut && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="outline" className="h-8 px-3 text-body font-medium gap-1.5">
+                              <Button size="sm" variant="outline" className="h-8 px-3 text-sm font-semibold gap-1.5">
                                 <LogOut className="w-3.5 h-3.5" />
                                 เช็คเอาท์
                               </Button>
@@ -1151,7 +1157,7 @@ function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
         ) : hasRoom && isCheckInDay && !needsAssign ? (
           <Button
             size="sm"
-            className="h-8 px-3 text-body font-medium shrink-0"
+            className="h-8 px-3 text-sm font-semibold shrink-0"
             disabled={checkInMutation.isPending}
             onClick={handleCheckIn}
           >
@@ -1328,7 +1334,7 @@ function InlineCheckInPanel({
                   {isCheckInDay ? (
                     <Button
                       size="sm"
-                      className="h-8 px-3 text-body font-medium"
+                      className="h-8 px-3 text-sm font-semibold"
                       disabled={isBusy}
                       onClick={() => handleCheckInOne(stay.id, stay.room_id!)}
                     >
@@ -1426,7 +1432,7 @@ function InlineCheckInPanel({
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
-                  className="w-full h-9 text-body font-medium"
+                  className="w-full h-9 text-sm font-semibold"
                   disabled={isBusy}
                 >
                   {checkingInAll ? (

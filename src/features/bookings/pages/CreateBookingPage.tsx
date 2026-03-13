@@ -109,8 +109,8 @@ export default function CreateBookingPage() {
   const submitLabel =
     source === 'walk_in'
       ? paymentMode === 'reserve'
-        ? 'Check In (ค้างชำระ)'
-        : 'Check In & ชำระเงิน'
+        ? 'เช็คอิน (ค้างชำระ)'
+        : 'เช็คอิน & ชำระเงิน'
       : 'ยืนยันการจอง'
 
   const onSubmit = form.handleSubmit((values) => {
@@ -177,7 +177,7 @@ export default function CreateBookingPage() {
                         {(
                           [
                             { value: 'advance', label: 'จองล่วงหน้า', desc: 'จองห้องพักล่วงหน้า' },
-                            { value: 'walk_in', label: 'Walk-in',      desc: 'เช็คอินทันที' },
+                            { value: 'walk_in', label: 'วอล์คอิน',     desc: 'เช็คอินทันที' },
                           ] as const
                         ).map((opt) => (
                           <button

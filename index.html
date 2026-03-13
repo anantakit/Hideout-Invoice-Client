@@ -13,9 +13,9 @@
       // Prevent FOUC: apply saved theme class before first paint
       (function(){
         var t = localStorage.getItem('hideout-theme');
-        if (t === 'light') document.documentElement.classList.add('light');
-        else if (t === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches)
-          document.documentElement.classList.add('light');
+        // If no stored preference, follow OS; otherwise use stored value
+        var isLight = t ? t === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+        if (isLight) document.documentElement.classList.add('light');
       })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

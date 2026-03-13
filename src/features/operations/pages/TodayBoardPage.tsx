@@ -42,7 +42,7 @@ function QuickWalkInButton() {
       <Button asChild size="lg" className="w-full sm:w-auto">
         <Link to={ROUTES.bookings.new}>
           <LogIn className="w-4 h-4" />
-          Walk-in Check-in
+          วอล์คอิน เช็คอิน
         </Link>
       </Button>
     </div>
