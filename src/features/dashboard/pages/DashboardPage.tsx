@@ -1,212 +1,347 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Receipt, DollarSign, Users, CalendarDays, Plus } from 'lucide-react'
-import { receiptsApi } from '../../receipts/api'
-import { customersApi } from '../../customers/api'
-import { formatTHB, formatThaiDate } from '../../../shared/utils'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
-import { Badge } from '../../../shared/ui/badge'
-import { Button } from '../../../shared/ui/button'
-import { BottomBar } from '../../../shared/ui/BottomBar'
+import { Banknote, TrendingUp, TrendingDown, BedDouble, AlertTriangle, ChevronRight, CalendarPlus } from 'lucide-react'
 import { Skeleton } from '../../../shared/ui/skeleton'
+import { Card, CardContent } from '../../../shared/ui/card'
+import { useDashboard } from '../hooks/useDashboard'
+import { KPICard } from '../components/KPICard'
+import { MonthSelector } from '../components/MonthSelector'
+import { TodayActionPanel } from '../components/TodayActionPanel'
+import { OccupancySparkline } from '../components/OccupancySparkline'
+import { RevenueTrend14Chart } from '../components/RevenueTrend14Chart'
+import { OccupancyTrendChart } from '../components/OccupancyTrendChart'
+import { RevenueTrendChart } from '../components/RevenueTrendChart'
+import { DailyRevenueHeatmap } from '../components/DailyRevenueHeatmap'
+import { PaymentMethodChart } from '../components/PaymentMethodChart'
+import { UpcomingCheckinsChart } from '../components/UpcomingCheckinsChart'
+import { ForecastRevenueChart } from '../components/ForecastRevenueChart'
+import { OutstandingList } from '../components/OutstandingList'
+import { OwnerInsights } from '../components/OwnerInsights'
 
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  iconClassName,
-}: {
-  title: string
-  value: string | number
-  icon: React.ElementType
-  iconClassName?: string
-}) {
+function currentMonth(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
+function thaiYear(yyyymm: string): string {
+  const y = Number(yyyymm.split('-')[0])
+  return String(y + 543)
+}
+
+/** Format number as compact — no decimals for KPI display */
+function formatKPI(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  return new Intl.NumberFormat('th-TH', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(n)
+}
+
+function KPICardSkeleton() {
   return (
     <Card>
-      <CardContent className="p-5">
+      <CardContent className="px-4 py-4">
         <div className="flex items-start justify-between">
-          <div className="min-w-0">
-            <p className="text-helper font-medium truncate">{title}</p>
-            <p className="mt-1 text-metric tracking-tight text-foreground truncate">{value}</p>
+          <div className="space-y-2.5">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-7 w-24" />
+            <Skeleton className="h-4 w-20" />
           </div>
-          <div className={`w-10 h-10 radius-card flex items-center justify-center shrink-0 ml-3 ${iconClassName}`}>
-            <Icon className="w-5 h-5" />
-          </div>
+          <Skeleton className="w-9 h-9 rounded-lg" />
         </div>
       </CardContent>
     </Card>
   )
 }
 
-function StatCardSkeleton() {
+function ActionPanelSkeleton() {
   return (
     <Card>
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-8 w-28" />
-          </div>
-          <Skeleton className="w-10 h-10 rounded-xl" />
+      <CardContent className="px-4 py-4 sm:px-5 sm:py-4">
+        <Skeleton className="h-4 w-36 mb-3" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+          <Skeleton className="h-14 rounded-lg" />
+          <Skeleton className="h-14 rounded-lg" />
+          <Skeleton className="h-14 rounded-lg" />
         </div>
       </CardContent>
     </Card>
   )
 }
 
-function ReceiptRowSkeleton() {
+function ChartSkeleton() {
   return (
-    <div className="flex items-center justify-between px-5 md:px-6 py-4">
-      <div className="space-y-2 flex-1">
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-5 w-16 rounded-full" />
-        </div>
-        <Skeleton className="h-3 w-32" />
-      </div>
-      <Skeleton className="h-4 w-20" />
-    </div>
+    <Card className="h-full">
+      <CardContent className="p-5">
+        <Skeleton className="h-5 w-32 mb-4" />
+        <Skeleton className="w-full h-48" />
+      </CardContent>
+    </Card>
   )
 }
 
 export default function Dashboard() {
-  const { data: recentReceipts, isLoading: receiptsLoading } = useQuery({
-    queryKey: ['receipts', { page: 1, limit: 5 }],
-    queryFn: () => receiptsApi.list({ page: 1, limit: 5 }),
-    staleTime: 5 * 60 * 1000,
-    placeholderData: (prev) => prev,
-  })
+  const [month, setMonth] = useState(currentMonth)
+  const { data, isLoading } = useDashboard(month)
 
-  const { data: allReceipts, isLoading: statsLoading } = useQuery({
-    queryKey: ['receipts-stats'],
-    queryFn: () => receiptsApi.list({ limit: 1000 }),
-    staleTime: 10 * 60 * 1000,
-    placeholderData: (prev) => prev,
-  })
-
-  const { data: customers } = useQuery({
-    queryKey: ['customers-stats'],
-    queryFn: () => customersApi.list({ limit: 1000 }),
-    staleTime: 10 * 60 * 1000,
-    placeholderData: (prev) => prev,
-  })
-
-  const receiptList = allReceipts?.data ?? []
-  const totalRevenue = receiptList.reduce((sum, r) => sum + r.total, 0)
-  const now = new Date()
-  const monthRevenue = receiptList
-    .filter((r) => {
-      const d = new Date(r.created_at)
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-    })
-    .reduce((s, r) => s + r.total, 0)
+  const year = thaiYear(month)
+  const prevYear = String(Number(year) - 1)
 
   return (
-    <>
-    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-28 md:pb-6">
-      <div className="mb-6">
-        <h1 className="text-section text-2xl">ภาพรวม</h1>
-        <p className="text-helper mt-1">สรุปกิจกรรมใบเสร็จรับเงิน</p>
+    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">ภาพรวมวันนี้</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">สรุปผลประกอบการโรงแรม</p>
+        </div>
+        <MonthSelector month={month} onChange={setMonth} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {statsLoading ? (
+      {/* 1. Today's Action Panel — first thing the owner sees */}
+      <div className="mb-4">
+        {isLoading ? (
+          <ActionPanelSkeleton />
+        ) : data ? (
+          <TodayActionPanel data={data.today_actions} />
+        ) : null}
+      </div>
+
+      {/* 2. KPI Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+        {isLoading ? (
           <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
+            <KPICardSkeleton />
+            <KPICardSkeleton />
+            <KPICardSkeleton />
+            <KPICardSkeleton />
           </>
-        ) : (
+        ) : data ? (
           <>
-            <StatCard
-              title="ใบเสร็จทั้งหมด"
-              value={allReceipts?.meta.total ?? '—'}
-              icon={Receipt}
+            {/* Cash collected today */}
+            <Card>
+              <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted-foreground font-medium">เงินสดเข้าวันนี้</p>
+                    <p className={`mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight leading-none ${
+                      data.kpi.revenue_today > 0 ? 'text-foreground' : 'text-muted-foreground/50'
+                    }`}>
+                      {data.kpi.revenue_today > 0 ? `${formatKPI(data.kpi.revenue_today)} ฿` : '0 ฿'}
+                    </p>
+                    <div className="mt-2 space-y-1">
+                      {data.kpi.revenue_today_change !== undefined && isFinite(data.kpi.revenue_today_change) && data.kpi.revenue_today_change !== -1 && data.kpi.revenue_today_change !== 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          <span className={`font-medium ${data.kpi.revenue_today_change > 0 ? 'text-success' : 'text-destructive'}`}>
+                            {data.kpi.revenue_today_change > 0 ? '+' : ''}{(data.kpi.revenue_today_change * 100).toFixed(0)}%
+                          </span>
+                          {' '}จากเมื่อวาน
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        มูลค่าเข้าพักคืนนี้ <span className="font-medium text-foreground tabular-nums">{formatKPI(data.kpi.earned_revenue_today)} ฿</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-success-muted text-success-muted-foreground">
+                    <Banknote className="w-4 h-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            {/* Revenue MTD */}
+            <KPICard
+              title="รายได้เดือนนี้"
+              value={`${formatKPI(data.kpi.revenue_mtd)} ฿`}
+              change={data.kpi.revenue_mtd_change}
+              changeLabel="เทียบช่วงเดียวกันเดือนก่อน"
+              icon={TrendingUp}
               iconClassName="bg-accent text-accent-foreground"
             />
-            <StatCard
-              title="รายรับรวม"
-              value={formatTHB(totalRevenue)}
-              icon={DollarSign}
-              iconClassName="bg-success-muted text-success-muted-foreground"
-            />
-            <StatCard
-              title="ลูกค้าทั้งหมด"
-              value={customers?.meta.total ?? '—'}
-              icon={Users}
-              iconClassName="bg-info-muted text-info-muted-foreground"
-            />
-            <StatCard
-              title="เดือนนี้"
-              value={formatTHB(monthRevenue)}
-              icon={CalendarDays}
-              iconClassName="bg-warning-muted text-warning-muted-foreground"
-            />
+            {/* Occupancy with sparkline */}
+            <Card>
+              <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted-foreground font-medium">เข้าพักวันนี้</p>
+                    <p className="mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
+                      {data.kpi.occupied_rooms}/{data.kpi.total_rooms} ห้อง
+                    </p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <span className={`text-xs font-semibold tabular-nums ${
+                        data.kpi.occupancy_rate >= 0.8 ? 'text-success' :
+                        data.kpi.occupancy_rate <= 0.3 ? 'text-destructive' :
+                        'text-info'
+                      }`}>
+                        {(data.kpi.occupancy_rate * 100).toFixed(0)}%
+                      </span>
+                      {data.occupancy_trend && data.occupancy_trend.length > 0 && (
+                        <OccupancySparkline data={data.occupancy_trend} totalRooms={data.kpi.total_rooms} />
+                      )}
+                    </div>
+                  </div>
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-info-muted text-info-muted-foreground">
+                    <BedDouble className="w-4 h-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            {/* Outstanding */}
+            {data.kpi.outstanding_count > 0 ? (
+              <Link to="/bookings" className="block">
+                <Card className="h-full cursor-pointer hover:border-warning/50 transition-colors">
+                  <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-muted-foreground font-medium">ยอดค้างชำระ</p>
+                        <p className="mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight text-warning leading-none">
+                          {formatKPI(data.kpi.outstanding_balance)} ฿
+                        </p>
+                        <div className="mt-2 flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">{data.kpi.outstanding_count} รายการ</span>
+                          <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                      </div>
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-warning-muted text-warning-muted-foreground">
+                        <AlertTriangle className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ) : (
+              <KPICard
+                title="ยอดค้างชำระ"
+                value="-"
+                subtitle="ไม่มียอดค้าง"
+                icon={AlertTriangle}
+                iconClassName="bg-success-muted text-success-muted-foreground"
+              />
+            )}
           </>
-        )}
+        ) : null}
       </div>
 
-      <Card className="shadow-card">
-        <CardHeader className="px-5 md:px-6 py-4 border-b border-border flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-section">ใบเสร็จล่าสุด</CardTitle>
-          <Link to="/receipts" className="text-helper text-primary hover:text-primary/80 font-medium transition-colors">
-            ดูทั้งหมด →
-          </Link>
-        </CardHeader>
-        <CardContent className="p-0">
-          {receiptsLoading ? (
-            <div className="divide-y divide-border/50">
-              <ReceiptRowSkeleton />
-              <ReceiptRowSkeleton />
-              <ReceiptRowSkeleton />
-              <ReceiptRowSkeleton />
-              <ReceiptRowSkeleton />
-            </div>
-          ) : !recentReceipts || recentReceipts.data.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Receipt className="w-12 h-12 mb-3 opacity-30" />
-              <p className="text-body">ยังไม่มีใบเสร็จ</p>
-              <Button asChild className="mt-4" size="sm">
-                <Link to="/receipts/new">สร้างใบเสร็จแรก</Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="divide-y divide-border/50">
-              {recentReceipts.data.map((receipt) => (
-                <Link
-                  key={receipt.id}
-                  to={`/receipts/${receipt.id}`}
-                  className="flex items-center justify-between px-5 md:px-6 py-4 hover:bg-muted/40 transition-colors"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-body font-semibold text-foreground">{receipt.invoice_number}</span>
-                      <Badge variant="blue">{receipt.customer.name}</Badge>
-                    </div>
-                    <p className="text-helper mt-0.5">
-                      ออกเมื่อ {formatThaiDate(receipt.issue_date)}
-                    </p>
-                  </div>
-                  <span className="text-body font-semibold text-foreground shrink-0 ml-4">
-                    {formatTHB(receipt.total)}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      {/* Booking Pace indicator */}
+      {!isLoading && data && data.kpi.booking_pace_week > 0 && (() => {
+        const prev = data.kpi.booking_pace_prev
+        const diff = data.kpi.booking_pace_week - prev
+        const pct = prev > 0 ? Math.round((diff / prev) * 100) : 0
+        return (
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              Booking pace 7 วัน:
+            </span>
+            <span className="text-xs font-semibold tabular-nums text-foreground">
+              {data.kpi.booking_pace_week} รายการ
+            </span>
+            {prev > 0 ? (
+              <>
+                <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-md ${
+                  diff > 0 ? 'text-success bg-success/10' :
+                  diff < 0 ? 'text-destructive bg-destructive/10' :
+                  'text-muted-foreground bg-muted'
+                }`}>
+                  {diff > 0 ? <TrendingUp className="w-3 h-3" /> :
+                   diff < 0 ? <TrendingDown className="w-3 h-3" /> : null}
+                  {diff > 0 ? '+' : ''}{diff} ({pct > 0 ? '+' : ''}{pct}%)
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  vs สัปดาห์ก่อน {prev}
+                </span>
+              </>
+            ) : (
+              <span className="text-[11px] text-muted-foreground">(ไม่มีข้อมูลสัปดาห์ก่อน)</span>
+            )}
+          </div>
+        )
+      })()}
 
-    <BottomBar>
-      <Button asChild className="w-full min-h-[48px] radius-card font-medium transition-transform duration-150 active:scale-[0.98]">
-        <Link to="/receipts/new">
-          <Plus className="w-4 h-4" />
-          สร้างใบเสร็จ
-        </Link>
-      </Button>
-    </BottomBar>
-    </>
+      {/* 3. Performance Trends: Revenue 14d + Occupancy & ADR 14d */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+        <div>
+          {isLoading ? (
+            <ChartSkeleton />
+          ) : data?.revenue_trend && data.revenue_trend.length > 0 ? (
+            <RevenueTrend14Chart data={data.revenue_trend} />
+          ) : null}
+        </div>
+        <div>
+          {isLoading ? (
+            <ChartSkeleton />
+          ) : data?.occupancy_trend && data.occupancy_trend.length > 0 ? (
+            <OccupancyTrendChart data={data.occupancy_trend} totalRooms={data.kpi.total_rooms} />
+          ) : null}
+        </div>
+      </div>
+
+      {/* 4. Forecast: Revenue + Check-ins (2 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+        <div>
+          {isLoading ? (
+            <ChartSkeleton />
+          ) : data ? (
+            <ForecastRevenueChart data={data.forecast_revenue} />
+          ) : null}
+        </div>
+        <div>
+          {isLoading ? (
+            <ChartSkeleton />
+          ) : data ? (
+            <UpcomingCheckinsChart data={data.upcoming_checkins} totalRooms={data.kpi.total_rooms} />
+          ) : null}
+        </div>
+      </div>
+
+      {/* 5. Heatmap + Payment + Outstanding (3 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
+        <div>
+          {isLoading ? (
+            <ChartSkeleton />
+          ) : data ? (
+            <DailyRevenueHeatmap data={data.daily_revenue} month={month} />
+          ) : null}
+        </div>
+        <div>
+          {isLoading ? (
+            <ChartSkeleton />
+          ) : data ? (
+            <PaymentMethodChart data={data.payment_method_breakdown} />
+          ) : null}
+        </div>
+        <div>
+          {isLoading ? (
+            <ChartSkeleton />
+          ) : data ? (
+            <OutstandingList
+              data={data.outstanding_bookings}
+              total={data.kpi.outstanding_balance}
+              count={data.kpi.outstanding_count}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      {/* 6. Owner Insights */}
+      {!isLoading && data && data.insights && data.insights.length > 0 && (
+        <div className="mb-3 sm:mb-4">
+          <OwnerInsights data={data.insights} />
+        </div>
+      )}
+
+      {/* 7. Monthly Revenue YoY (lower prominence) */}
+      <div className="mb-3 sm:mb-4">
+        {isLoading ? (
+          <ChartSkeleton />
+        ) : data ? (
+          <RevenueTrendChart
+            data={data.monthly_revenue}
+            yearLabel={year}
+            prevYearLabel={prevYear}
+          />
+        ) : null}
+      </div>
+    </div>
   )
 }
