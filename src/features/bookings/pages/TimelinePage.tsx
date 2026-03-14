@@ -255,6 +255,23 @@ export default function TimelinePage() {
   const unassignedStays = timelineData?.unassigned_stays ?? []
   const availRoomTypes  = availData?.room_types          ?? []
 
+  // Sync selectedBooking with fresh timeline data after mutations (e.g. move/extend).
+  // Without this, the detail panel shows stale balance_amount until manual refresh.
+  useEffect(() => {
+    if (!selectedBooking) return
+    const stayId = selectedBooking.booking.room_stay_id
+    for (const room of allRooms) {
+      const fresh = room.bookings.find((b) => b.room_stay_id === stayId)
+      if (fresh) {
+        const rooms = allRooms
+          .filter((r) => r.bookings.some((bk) => bk.booking_id === fresh.booking_id))
+          .map((r) => r.room_number)
+        setSelectedBooking({ booking: { ...fresh }, roomNumbers: rooms })
+        return
+      }
+    }
+  }, [allRooms]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const roomAvailability = useMemo<RoomAvailability[]>(
     () =>
       availRoomTypes.map((rt) => {
