@@ -231,7 +231,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2 mb-4 px-1">
             <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
-              Booking pace 7 วัน:
+              จำนวนจอง 7 วัน:
             </span>
             <span className="text-xs font-semibold tabular-nums text-foreground">
               {data.kpi.booking_pace_week} รายการ

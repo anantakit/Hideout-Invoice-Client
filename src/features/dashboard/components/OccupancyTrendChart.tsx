@@ -63,14 +63,14 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
       <p className="font-semibold text-foreground mb-1">
         {dateLabel}
         {isToday(label) ? ' (วันนี้)' : ''}
-        {isWeekend(label) ? ' 🅦' : ''}
+        {isWeekend(label) ? ' (สุดสัปดาห์)' : ''}
       </p>
       <div className="space-y-0.5">
         <p className="text-muted-foreground">
-          Occ <span className="font-semibold text-info tabular-nums">{occ.toFixed(0)}%</span>
+          อัตราเข้าพัก <span className="font-semibold text-info tabular-nums">{occ.toFixed(0)}%</span>
         </p>
         <p className="text-muted-foreground">
-          ADR <span className="font-semibold text-warning tabular-nums">{formatKPI(adr)} ฿</span>
+          ราคาเฉลี่ย <span className="font-semibold text-warning tabular-nums">{formatKPI(adr)} ฿</span>
         </p>
       </div>
     </div>
@@ -99,19 +99,19 @@ export function OccupancyTrendChart({ data, totalRooms }: Props) {
       <CardHeader className="px-5 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-section">Occupancy & ADR 14 วัน</CardTitle>
+            <CardTitle className="text-section">อัตราเข้าพัก & ราคาเฉลี่ย 14 วัน</CardTitle>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Avg Occ {avgOcc.toFixed(0)}% | Avg ADR {formatKPI(avgAdr)} ฿
+              เฉลี่ยเข้าพัก {avgOcc.toFixed(0)}% | ราคาเฉลี่ย {formatKPI(avgAdr)} ฿/คืน
             </p>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm bg-info" />
-              <span className="text-muted-foreground">Occ%</span>
+              <span className="text-muted-foreground">เข้าพัก%</span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-0.5 bg-warning" />
-              <span className="text-muted-foreground">ADR</span>
+              <span className="text-muted-foreground">ราคาเฉลี่ย</span>
             </span>
           </div>
         </div>

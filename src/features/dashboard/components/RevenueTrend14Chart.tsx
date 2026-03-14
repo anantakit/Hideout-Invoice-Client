@@ -130,7 +130,7 @@ export function RevenueTrend14Chart({ data }: Props) {
               strokeDasharray="4 4"
               strokeOpacity={0.4}
               label={{
-                value: `avg ${formatCompact(avgCash)}`,
+                value: `เฉลี่ย ${formatCompact(avgCash)}`,
                 position: 'right',
                 fill: 'hsl(var(--muted-foreground))',
                 fontSize: 10,
