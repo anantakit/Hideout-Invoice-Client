@@ -1,4 +1,11 @@
 import { Button } from './button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './select'
 
 interface Props {
   page: number
@@ -31,24 +38,30 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-border">
-      <div className="flex items-center gap-3 text-sm text-muted-foreground order-2 sm:order-1">
-        <span>
-          {total > 0 ? `${from}–${to} จาก ${total} รายการ` : 'ไม่มีรายการ'}
-        </span>
-        <select
-          value={limit}
-          onChange={(e) => { onLimitChange(Number(e.target.value)); onPageChange(1) }}
-          className="h-8 radius-button border border-input bg-card px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          {LIMITS.map((l) => (
-            <option key={l} value={l}>{l} ต่อหน้า</option>
-          ))}
-        </select>
-      </div>
+    <div className="border-t border-border px-4 sm:px-6 py-4">
 
-      <div className="flex items-center gap-1 order-1 sm:order-2">
-        <div className="hidden sm:flex items-center gap-1">
+      {/* ── Desktop ─────────────────────────────────────────────────── */}
+      <div className="hidden sm:flex items-center justify-between">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span>
+            {total > 0 ? `${from}–${to} จาก ${total} รายการ` : 'ไม่มีรายการ'}
+          </span>
+          <Select
+            value={String(limit)}
+            onValueChange={(v) => { onLimitChange(Number(v)); onPageChange(1) }}
+          >
+            <SelectTrigger className="h-8 w-[5.5rem] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LIMITS.map((l) => (
+                <SelectItem key={l} value={String(l)}>{l} ต่อหน้า</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
@@ -83,26 +96,35 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
             →
           </Button>
         </div>
+      </div>
 
-        <div className="flex sm:hidden items-center gap-2">
+      {/* ── Mobile: compact single row ──────────────────────────────── */}
+      <div className="flex sm:hidden items-center justify-between">
+        <span className="text-xs text-muted-foreground">
+          {total > 0 ? `${from}–${to} จาก ${total}` : 'ไม่มีรายการ'}
+        </span>
+
+        <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
+            className="h-8 w-8"
             onClick={() => onPageChange(page - 1)}
             disabled={page === 1}
           >
-            ← ก่อนหน้า
+            ←
           </Button>
-          <span className="text-sm text-muted-foreground whitespace-nowrap">
+          <span className="text-sm text-muted-foreground tabular-nums min-w-[3rem] text-center">
             {page}/{totalPages}
           </span>
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
+            className="h-8 w-8"
             onClick={() => onPageChange(page + 1)}
             disabled={page === totalPages}
           >
-            ถัดไป →
+            →
           </Button>
         </div>
       </div>

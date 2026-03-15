@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ChevronRight, CalendarX, X } from 'lucide-react'
-import { formatThaiDate, THAI_MONTHS_SHORT } from '../../../shared/utils'
+import { Plus, Search, ChevronRight, CalendarX } from 'lucide-react'
+import { formatThaiDate } from '../../../shared/utils'
 import ErrorPanel from '../../../shared/components/ErrorPanel'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import { useBookings } from '../hooks'
@@ -9,13 +9,6 @@ import { Badge } from '../../../shared/ui/badge'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
 import { Card, CardContent } from '../../../shared/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../../shared/ui/select'
 import {
   Table,
   TableBody,
@@ -25,9 +18,9 @@ import {
   TableRow,
 } from '../../../shared/ui/table'
 import Pagination from '../../../shared/ui/Pagination'
-import { DateRangePicker } from '../components/DateRangePicker'
 import { Skeleton } from '../../../shared/ui/skeleton'
 import { type BookingResponse, getStatusLabel } from '../types'
+import { cn } from '../../../shared/utils'
 
 // ─── Status display maps ───────────────────────────────────────────────────────
 
@@ -50,13 +43,27 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-// ─── Date display helper ───────────────────────────────────────────────────────
+// ─── Quick filter chips ─────────────────────────────────────────────────────────
 
-function formatDateShort(iso: string): string {
-  if (!iso) return ''
-  const [y, m, d] = iso.split('-').map(Number)
-  if (!y || !m || !d) return iso
-  return `${d} ${THAI_MONTHS_SHORT[m - 1]} ${y + 543}`
+interface FilterChip {
+  key: string
+  label: string
+  status: string
+  view: string
+}
+
+const FILTER_CHIPS: FilterChip[] = [
+  { key: 'all',         label: 'ทั้งหมด',       status: '',            view: '' },
+  { key: 'checked_in',  label: 'เข้าพักอยู่',    status: 'CHECKED_IN',  view: '' },
+  { key: 'arrivals',    label: 'เช็คอินวันนี้',   status: '',            view: 'arrivals_today' },
+  { key: 'departures',  label: 'เช็คเอาท์วันนี้', status: '',            view: 'departures_today' },
+  { key: 'outstanding', label: 'ค้างชำระ',       status: '',            view: 'outstanding' },
+  { key: 'history',     label: 'ประวัติ',        status: 'CHECKED_OUT', view: '' },
+]
+
+function getActiveChipKey(status: string, view: string): string {
+  const match = FILTER_CHIPS.find((c) => c.status === status && c.view === view)
+  return match?.key ?? 'all'
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -67,33 +74,22 @@ export default function BookingListPage() {
 
   // ── URL-backed filter state ─────────────────────────────────────────────────
   const statusParam = searchParams.get('status') ?? ''
-  const startDate   = searchParams.get('start_date') ?? ''
-  const endDate     = searchParams.get('end_date') ?? ''
   const viewParam   = searchParams.get('view') ?? ''
 
-  const hasDateFilter = Boolean(startDate && endDate)
+  const activeChip = getActiveChipKey(statusParam, viewParam)
 
-  function updateUrlParams(updates: Record<string, string>) {
+  function selectChip(chip: FilterChip) {
     const next = new URLSearchParams(searchParams)
-    for (const [k, v] of Object.entries(updates)) {
-      if (v) next.set(k, v)
-      else   next.delete(k)
-    }
+    // Clear old filter params
+    next.delete('status')
+    next.delete('view')
+    next.delete('start_date')
+    next.delete('end_date')
+    // Set new ones
+    if (chip.status) next.set('status', chip.status)
+    if (chip.view) next.set('view', chip.view)
     setSearchParams(next, { replace: true })
-  }
-
-  function setStatus(v: string) {
-    updateUrlParams({ status: v })
     setPage(1)
-  }
-
-  function setDateRange(range: { checkIn: string; checkOut: string }) {
-    updateUrlParams({ start_date: range.checkIn, end_date: range.checkOut })
-    setPage(1)
-  }
-
-  function clearDateRange() {
-    setDateRange({ checkIn: '', checkOut: '' })
   }
 
   // ── Pagination + search (local state, debounced) ────────────────────────────
@@ -103,9 +99,8 @@ export default function BookingListPage() {
   // ── Data fetch ──────────────────────────────────────────────────────────────
   const { data, isLoading, isError, refetch, isFetching } = useBookings({
     ...params,
-    ...(statusParam                  && { status:     statusParam }),
-    ...(startDate && endDate         && { start_date: startDate, end_date: endDate }),
-    ...(viewParam                    && { view:       viewParam }),
+    ...(statusParam && { status: statusParam }),
+    ...(viewParam   && { view:   viewParam }),
   })
 
   const bookings   = data?.data ?? []
@@ -119,15 +114,17 @@ export default function BookingListPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
+  const hasFilters = Boolean(searchInput || statusParam || viewParam)
+
   return (
     <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-5xl mx-auto">
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 gap-4">
+      <div className="flex items-start justify-between mb-4 gap-4">
         <div>
           <h1 className="text-section text-2xl">รายการจอง</h1>
           <p className="text-helper mt-1">
-            {data ? `ทั้งหมด ${total} รายการ` : ''}
+            {data ? `${total} รายการ` : ''}
           </p>
         </div>
         <Button onClick={() => navigate('/bookings/new')} className="shrink-0">
@@ -137,93 +134,42 @@ export default function BookingListPage() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-card radius-card border border-border p-4 mb-6 space-y-3">
+      {/* Search */}
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="ค้นหาชื่อ หรือเบอร์โทร…"
+          className="pl-9"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+      </div>
 
-        {/* Row 1: search + status */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="ค้นหาชื่อ หรือเบอร์โทร…"
-              className="pl-9"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-          </div>
-          <Select
-            value={statusParam || '_all'}
-            onValueChange={(v) => setStatus(v === '_all' ? '' : v)}
-          >
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="ทุกสถานะ" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_all">ทุกสถานะ</SelectItem>
-              <SelectItem value="RESERVED">รอดำเนินการ</SelectItem>
-              <SelectItem value="PARTIALLY_CHECKED_IN">เช็คอินบางส่วน</SelectItem>
-              <SelectItem value="CHECKED_IN">เช็คอินแล้ว</SelectItem>
-              <SelectItem value="CHECKED_OUT">เช็คเอาท์แล้ว</SelectItem>
-              <SelectItem value="CANCELLED">ยกเลิก</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Row 2: date range picker + clear */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1">
-            <DateRangePicker
-              value={{ checkIn: startDate, checkOut: endDate }}
-              onChange={setDateRange}
-              placeholder="กรองตามช่วงวันเช็คอิน – เช็คเอาท์"
-            />
-          </div>
-          {hasDateFilter && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearDateRange}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
+      {/* Filter chips — horizontal scroll on mobile, wrap on desktop */}
+      <div className="-mx-4 px-4 sm:mx-0 sm:px-0 mb-5">
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible scrollbar-hide">
+          {FILTER_CHIPS.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => selectChip(chip)}
+              className={cn(
+                'shrink-0 h-9 px-3.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                activeChip === chip.key
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-accent/60 text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent',
+              )}
             >
-              <X className="w-4 h-4 mr-1" />
-              ล้าง
-            </Button>
-          )}
+              {chip.label}
+            </button>
+          ))}
         </div>
-
-        {/* Active date filter badge */}
-        {hasDateFilter && (
-          <div className="flex items-center gap-2 pt-0.5">
-            <Badge variant="secondary" className="text-xs gap-1.5">
-              ช่วงวันพัก: {formatDateShort(startDate)} – {formatDateShort(endDate)}
-            </Badge>
-          </div>
-        )}
-
-        {/* Active view filter badge */}
-        {viewParam && (
-          <div className="flex items-center gap-2 pt-0.5">
-            <Badge variant="amber" className="text-xs gap-1.5">
-              {viewParam === 'arrivals_today' && 'เช็คอินวันนี้'}
-              {viewParam === 'departures_today' && 'เช็คเอาท์วันนี้'}
-              {viewParam === 'outstanding' && 'ค้างชำระ'}
-              {viewParam === 'departures_today_owing' && 'เช็คเอาท์วันนี้ — ค้างชำระ'}
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => updateUrlParams({ view: '' })}
-              className="h-6 px-1.5 text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Content */}
       {bookings.length === 0 ? (
-        <EmptyState hasFilters={Boolean(searchInput || statusParam || hasDateFilter || viewParam)} />
+        <EmptyState hasFilters={hasFilters} />
       ) : (
         <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
 
@@ -411,7 +357,7 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
         </p>
         <p className="text-helper mt-1">
           {hasFilters
-            ? 'ลองเปลี่ยนคำค้นหา สถานะ หรือช่วงวันที่'
+            ? 'ลองเปลี่ยนตัวกรอง หรือคำค้นหา'
             : 'กดปุ่ม "สร้างการจอง" เพื่อเริ่มต้น'}
         </p>
       </div>
