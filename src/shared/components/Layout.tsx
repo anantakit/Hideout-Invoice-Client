@@ -55,8 +55,8 @@ export default function Layout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto">
-          <div key={location.pathname} className="page-enter">
+        <main className="flex-1 min-h-0 flex flex-col">
+          <div key={location.pathname} className="page-enter flex-1 min-h-0 overflow-auto">
             <Outlet />
           </div>
         </main>

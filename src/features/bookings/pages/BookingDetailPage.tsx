@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { differenceInDays, isToday, isBefore, startOfDay, parseISO, format, addDays } from 'date-fns'
+import { differenceInDays, isToday, isBefore, startOfDay, parseISO, addDays } from 'date-fns'
 import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock, Receipt, FileText, Clock, ArrowRightLeft, CreditCard, DoorOpen, LogIn, LogOut, Ban, Timer, Wand2, Repeat, Pencil } from 'lucide-react'
 import { Skeleton } from '@/shared/ui/skeleton'
 import toast from 'react-hot-toast'
-import { cn, fmtShortISO } from '@/shared/utils'
+import { cn, fmtShortISO, todayISO } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Badge } from '../../../shared/ui/badge'
@@ -63,7 +63,43 @@ function stayStatusVariant(status: string): BadgeVariant {
 }
 
 
+// ─── Room group mapper (shared by transfer + extend-conflict) ─────────────────
+
+interface RoomGroupSource {
+  room_types: Array<{
+    room_type_id: string
+    room_type_name: string
+    price_per_night: number
+    rooms: Array<{ room_id: string; room_number: string; available: boolean }>
+  }>
+}
+
+function mapRoomGroups(
+  source: RoomGroupSource,
+  stayRoomTypeId: string,
+  excludeRoomId?: string,
+) {
+  return source.room_types
+    .map((t) => ({
+      typeId: t.room_type_id,
+      typeName: t.room_type_name,
+      pricePerNight: t.price_per_night,
+      isSameType: t.room_type_id === stayRoomTypeId,
+      rooms: t.rooms.filter((r) => r.available && r.room_id !== excludeRoomId),
+    }))
+    .filter((g) => g.rooms.length > 0)
+}
+
 // ─── Date helpers ─────────────────────────────────────────────────────────────
+
+/** Add n days to an ISO date string → ISO string (no date-fns format()) */
+function addDaysToISO(iso: string, n: number): string {
+  const d = addDays(parseISO(iso), n)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
 
 function calcNights(checkIn: string, checkOut: string): number {
   try {
@@ -189,7 +225,7 @@ export default function BookingDetailPage() {
   }
 
   // Pending stays eligible for check-in (check_in <= today)
-  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const todayStr = todayISO()
   const checkInPendingStays = bd
     ? bd.pending.filter((s) => s.check_in.slice(0, 10) <= todayStr)
     : []
@@ -370,7 +406,7 @@ export default function BookingDetailPage() {
       <PaymentPanel booking={booking} />
 
       {/* ── 7. Receipts ────────────────────────────────────────────────── */}
-      <ReceiptSection bookingId={id} booking={booking} navigate={navigate} stays={bd.active} />
+      <ReceiptSection bookingId={id} booking={booking} stays={bd.active} />
 
       {/* ── 8. Event Timeline ──────────────────────────────────────────── */}
       {booking.events && booking.events.length > 0 && (
@@ -396,7 +432,7 @@ function StayCardOperational({
   const [extendOpen, setExtendOpen]       = useState(false)
   const [checkoutOpen, setCheckoutOpen]   = useState(false)
   const [transferOpen, setTransferOpen]   = useState(false)
-  const [transferDate, setTransferDate]  = useState(() => format(new Date(), 'yyyy-MM-dd'))
+  const [transferDate, setTransferDate]  = useState(todayISO)
   const [returnDate, setReturnDate]      = useState('')
   const [earlyCheckoutOpen, setEarlyCheckoutOpen] = useState(false)
   const [newCheckOut, setNewCheckOut]     = useState('')
@@ -420,15 +456,7 @@ function StayCardOperational({
   )
   const transferRoomGroups = useMemo(() => {
     if (!transferQuery.data) return []
-    return transferQuery.data.room_types
-      .map((t) => ({
-        typeId: t.room_type_id,
-        typeName: t.room_type_name,
-        pricePerNight: t.price_per_night,
-        isSameType: t.room_type_id === stay.room_type_id,
-        rooms: t.rooms.filter((r) => r.available && r.room_id !== stay.room_id),
-      }))
-      .filter((g) => g.rooms.length > 0)
+    return mapRoomGroups(transferQuery.data, stay.room_type_id, stay.room_id)
   }, [transferQuery.data, stay.room_type_id, stay.room_id])
 
   const nights       = calcNights(stay.check_in, stay.check_out)
@@ -446,15 +474,7 @@ function StayCardOperational({
   // Conflict room groups for extend-with-transfer
   const conflictRoomGroups = useMemo(() => {
     if (!conflictData) return []
-    return conflictData.room_types
-      .map((t) => ({
-        typeId: t.room_type_id,
-        typeName: t.room_type_name,
-        pricePerNight: t.price_per_night,
-        isSameType: t.room_type_id === stay.room_type_id,
-        rooms: t.rooms.filter((r) => r.available),
-      }))
-      .filter((g) => g.rooms.length > 0)
+    return mapRoomGroups(conflictData, stay.room_type_id)
   }, [conflictData, stay.room_type_id])
 
   // Minimum date for extend is the day after current check-out
@@ -547,7 +567,7 @@ function StayCardOperational({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { setTransferDate(format(new Date(), 'yyyy-MM-dd')); setReturnDate(''); setTransferOpen(true) }}
+                onClick={() => { setTransferDate(todayISO()); setReturnDate(''); setTransferOpen(true) }}
               >
                 <ArrowRightLeft className="w-4 h-4 mr-1.5" />
                 ย้ายห้อง
@@ -686,7 +706,7 @@ function StayCardOperational({
               <label className="text-caption block mb-1.5">เพิ่มจำนวนคืน</label>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 5, 7].map((n) => {
-                  const target = format(addDays(parseISO(currentCheckOutISO), n), 'yyyy-MM-dd')
+                  const target = addDaysToISO(currentCheckOutISO, n)
                   const isSelected = newCheckOut === target
                   return (
                     <Button
@@ -746,7 +766,7 @@ function StayCardOperational({
               <p className="text-helper py-4 text-center">ไม่มีห้องว่างในช่วงเวลาที่ต้องการ</p>
             ) : (
               conflictRoomGroups
-                .sort((a, b) => (a.isSameType ? -1 : b.isSameType ? 1 : 0))
+                .slice().sort((a, b) => (a.isSameType ? -1 : b.isSameType ? 1 : 0))
                 .map((group) => {
                   const sameTypePrice = conflictRoomGroups.find((g) => g.isSameType)?.pricePerNight ?? 0
                   const diff = group.pricePerNight - sameTypePrice
@@ -918,8 +938,8 @@ function StayCardOperational({
                   <label className="text-xs font-medium block mb-1.5">วันที่ย้ายห้อง</label>
                   <Input
                     type="date"
-                    min={format(new Date(), 'yyyy-MM-dd')}
-                    max={format(addDays(parseISO(stay.check_out), -1), 'yyyy-MM-dd')}
+                    min={todayISO()}
+                    max={addDaysToISO(stay.check_out, -1)}
                     value={transferDate}
                     onChange={(e) => { setTransferDate(e.target.value); setReturnDate('') }}
                   />
@@ -930,8 +950,8 @@ function StayCardOperational({
                   </label>
                   <Input
                     type="date"
-                    min={transferDate ? format(addDays(parseISO(transferDate), 1), 'yyyy-MM-dd') : ''}
-                    max={format(addDays(parseISO(stay.check_out), -1), 'yyyy-MM-dd')}
+                    min={transferDate ? addDaysToISO(transferDate, 1) : ''}
+                    max={addDaysToISO(stay.check_out, -1)}
                     value={returnDate}
                     onChange={(e) => setReturnDate(e.target.value)}
                   />
@@ -952,7 +972,7 @@ function StayCardOperational({
               <p className="text-helper py-4 text-center">ไม่มีห้องว่าง</p>
             ) : (
               transferRoomGroups
-                .sort((a, b) => (a.isSameType ? -1 : b.isSameType ? 1 : 0))
+                .slice().sort((a, b) => (a.isSameType ? -1 : b.isSameType ? 1 : 0))
                 .map((group) => {
                   const sameTypePrice = transferRoomGroups.find((g) => g.isSameType)?.pricePerNight ?? 0
                   const diff = group.pricePerNight - sameTypePrice
@@ -1060,14 +1080,13 @@ type BillingMode = 'booking' | 'stay' | 'night'
 function ReceiptSection({
   bookingId,
   booking,
-  navigate,
   stays,
 }: {
   bookingId: string
   booking: BookingResponse
-  navigate: (path: string) => void
   stays: RoomStayResponse[]
 }) {
+  const navigate = useNavigate()
   const [showModeSelect, setShowModeSelect] = useState(false)
   const [billingMode, setBillingMode] = useState<BillingMode>('booking')
   const [selectedStayIds, setSelectedStayIds] = useState<string[]>([])
@@ -1230,11 +1249,7 @@ function ReceiptSection({
                         type="date"
                         value={selectedDate}
                         min={stay.check_in.slice(0, 10)}
-                        max={(() => {
-                          // max = check_out - 1 day (last night)
-                          const co = parseISO(stay.check_out)
-                          return format(addDays(co, -1), 'yyyy-MM-dd')
-                        })()}
+                        max={addDaysToISO(stay.check_out, -1)}
                         onChange={(e) => setSelectedDate(e.target.value)}
                       />
                     </div>
