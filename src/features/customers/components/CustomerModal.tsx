@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -81,28 +81,27 @@ export default function CustomerModal({ open, onClose, onCreated, customer }: Pr
   const [thaiAddr, setThaiAddr] = useState<ThaiAddress>(emptyAddr)
   const [addrDetail, setAddrDetail] = useState('')
 
-  // Sync picker → form.address
-  const syncAddress = useCallback(
-    (detail: string, thai: ThaiAddress) => {
-      form.setValue('address', buildAddressString(detail, thai))
-    },
-    [form]
-  )
+  // Refs to read latest state without adding deps to callbacks
+  const addrDetailRef = useRef(addrDetail)
+  addrDetailRef.current = addrDetail
+  const thaiAddrRef = useRef(thaiAddr)
+  thaiAddrRef.current = thaiAddr
 
   const handleThaiAddrChange = useCallback(
     (addr: ThaiAddress) => {
       setThaiAddr(addr)
-      syncAddress(addrDetail, addr)
+      form.setValue('address', buildAddressString(addrDetailRef.current, addr))
     },
-    [addrDetail, syncAddress]
+    [form],
   )
 
   const handleDetailChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setAddrDetail(e.target.value)
-      syncAddress(e.target.value, thaiAddr)
+      const detail = e.target.value
+      setAddrDetail(detail)
+      form.setValue('address', buildAddressString(detail, thaiAddrRef.current))
     },
-    [thaiAddr, syncAddress]
+    [form],
   )
 
   useEffect(() => {

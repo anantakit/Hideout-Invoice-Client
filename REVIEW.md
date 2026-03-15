@@ -27,7 +27,7 @@
 | RoomRow.tsx | 295 | 0 | 0 | 1 | ⬜ P3 partial |
 | BookingContextMenu.tsx | 267 | 0 | ~~1~~ 0 | 1 | ⬜ P3 partial |
 | CreateBookingPage.tsx | 444 | ~~1~~ 0 | 0 | ~~3~~ ~~1~~ 0 | ⬜ P1 partial |
-| CreateReceiptPage.tsx | 492 | ~~2~~ 1 | ~~4~~ ~~3~~ ~~2~~ 1 | 4 | ⬜ P3 partial |
+| CreateReceiptPage.tsx | 492 | ~~2~~ 1 | ~~4~~ ~~3~~ ~~2~~ ~~1~~ 0 | 4 | ⬜ P4 partial |
 | CalendarRangeModal.tsx | 683 | 0 | 0 | ~~3~~ ~~2~~ 1 | ⬜ P1 partial |
 | AssignRoomBottomSheet.tsx | 649 | 0 | 1 | 3 | ⬜ |
 | RoomTypeBookingBuilder.tsx | 613 | 0 | 1 | ~~4~~ ~~3~~ 2 | ⬜ P1 partial |
@@ -45,7 +45,7 @@
 | TodayActionPanel.tsx | 239 | 0 | ~~1~~ 0 | ~~1~~ 0 | ✅ P1 done |
 | PaymentPanel.tsx | 267 | 0 | 0 | 2 | ⬜ |
 | Sidebar.tsx | 276 | 0 | ~~1~~ 0 | 0 | ✅ |
-| CustomerModal.tsx | 229 | 0 | 2 | 0 | ⬜ |
+| CustomerModal.tsx | 229 | 0 | ~~2~~ 0 | 0 | ✅ |
 | PendingAssignmentsPanel.tsx | 161 | 0 | ~~1~~ 0 | 0 | ✅ |
 | AvailabilitySummary.tsx | 195 | 0 | 0 | 1 | ⬜ |
 | AdminUsersPage.tsx | 247 | 0 | 0 | 1 | ⬜ |
@@ -148,7 +148,8 @@
 | M5 | 867, 912, 1222, 1251 | ✅ `.toLocaleString()` แทน `formatTHBCurrency()` | ใช้ shared formatter |
 | M6 | 350 | ⬜ `Array.from(byType.entries()).map()` intermediate array | ใช้ `Array.from(byType, ([k, v]) => ...)` |
 | M7 | 545–561 | ⬜ `rangeEntries` spread clone ทุก entry | Memoize range classification |
-| M8 | 283–482 | ⬜ 2 mega-useMemo blocks (75+ บรรทัด) | แยก checkins vs checkouts |
+| 
+ | 283–482 | ⬜ 2 mega-useMemo blocks (75+ บรรทัด) | แยก checkins vs checkouts |
 | M9 | 1115 | ⬜ IIFE สำหรับ filter chip rendering | Extract component หรือ useMemo |
 
 ---
@@ -286,7 +287,7 @@
 |---|---------|-------|-------|
 | R3 | 319–384 | ✅ Field array items re-render เมื่อ sibling เปลี่ยน | Extract memoized ReceiptItemRow |
 | R4 | 98–99 | ✅ `methodMap` สร้างใหม่ใน effect | Hoist module-level constant |
-| R5 | 117–122 | ⬜ Customer fetch waterfall — no abort | ใช้ separate useQuery |
+| R5 | 117–122 | ✅ Customer fetch waterfall — no abort | ใช้ separate useQuery |
 | R6 | 152–160 | ⬜ `useCallback` deps อาจไม่ stable | ตรวจสอบ form stability |
 
 #### MEDIUM
@@ -558,8 +559,8 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| CU1 | 92–98 | ⬜ `handleThaiAddrChange` useCallback deps on `syncAddress` | Inline form.setValue |
-| CU2 | 85–90 | ⬜ `syncAddress` useCallback depends on unstable `form` object | Extract form.setValue as stable ref |
+| CU1 | 92–98 | ✅ `handleThaiAddrChange` useCallback deps on `syncAddress` | Ref-based stabilization |
+| CU2 | 85–90 | ✅ `syncAddress` useCallback depends on unstable `form` object | addrDetailRef + thaiAddrRef pattern |
 
 ---
 
@@ -641,10 +642,10 @@
 25. ⬜ **D5, D6** — Stabilize drag state + RAF loop (deferred — partially fixed by Phase 2)
 26. ✅ **CM1, RR2** — Memoize date flags in context menu + RoomRow
 
-### Phase 4: Architecture
-27. **T3** — Cache `computeRoomLayout` per room
-28. **T7** — Incremental `bookingColorMap` update
-29. **R5** — Refactor customer fetch to useQuery
-30. **M8** — Split mega-useMemo blocks
-31. **SC1** — Consolidate SearchableComboBox useEffects
-32. **CU1, CU2** — Stabilize CustomerModal callbacks
+### Phase 4: Architecture (selective)
+27. ⬜ **T3** — Cache `computeRoomLayout` per room (deferred — low ROI)
+28. ⬜ **T7** — Incremental `bookingColorMap` update (deferred — low ROI)
+29. ✅ **R5** — Refactor customer fetch to useQuery
+30. ⬜ **M8** — Split mega-useMemo blocks (deferred — low ROI)
+31. ⬜ **SC1** — Consolidate SearchableComboBox useEffects (deferred — low ROI)
+32. ✅ **CU1, CU2** — Stabilize CustomerModal callbacks

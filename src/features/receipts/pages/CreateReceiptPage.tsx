@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFieldArray, Controller, type UseFormRegister } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Plus, X, Check, Loader2, AlertTriangle } from 'lucide-react'
 import { receiptsApi } from '../api'
@@ -174,6 +174,21 @@ export default function CreateReceipt() {
     0,
   )
 
+  // Fetch customer from booking's customer_id (replaces manual fetch in prefill effect)
+  const prefillCustomerId = prefill?.customer_id
+  const { data: prefillCustomer } = useQuery({
+    queryKey: ['customer', prefillCustomerId],
+    queryFn: () => customersApi.getById(prefillCustomerId!),
+    enabled: !!prefillCustomerId && !selectedCustomer,
+  })
+
+  useEffect(() => {
+    if (prefillCustomer && !selectedCustomer) {
+      setSelectedCustomer(prefillCustomer)
+      form.setValue('customer_id', prefillCustomer.id, { shouldValidate: true })
+    }
+  }, [prefillCustomer, selectedCustomer, form])
+
   // Prefill form from booking data
   useEffect(() => {
     if (!prefill || prefilled) return
@@ -200,14 +215,7 @@ export default function CreateReceipt() {
     if (prefill.guest_phone) noteParts.push(`โทร: ${prefill.guest_phone}`)
     if (noteParts.length > 0) form.setValue('notes', noteParts.join('\n'))
 
-    // Auto-select customer from booking link
-    if (prefill.customer_id && !selectedCustomer) {
-      customersApi.getById(prefill.customer_id).then((customer) => {
-        setSelectedCustomer(customer)
-        form.setValue('customer_id', customer.id, { shouldValidate: true })
-      }).catch(() => {})
-    }
-  }, [prefill, prefilled, form, selectedCustomer])
+  }, [prefill, prefilled, form])
 
   const createMutation = useMutation({
     mutationFn: receiptsApi.create,
