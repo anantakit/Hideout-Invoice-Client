@@ -29,24 +29,28 @@ export function FilterChipBar<K extends string = string>({
 
       {/* Scrollable chip row — horizontal on mobile, wraps on desktop */}
       <div
-        className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible pb-0.5 scrollbar-hide"
+        className="flex gap-1.5 overflow-x-auto sm:flex-wrap sm:overflow-visible pb-0.5 scrollbar-hide"
       >
-        {chips.map((chip) => (
-          <button
-            key={chip.key}
-            type="button"
-            onClick={() => onSelect(chip.key)}
-            className={cn(
-              'h-9 px-4 rounded-xl text-sm font-medium transition-colors duration-150 shrink-0 whitespace-nowrap',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              activeKey === chip.key
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-foreground hover:bg-muted/80 active:bg-muted/70',
-            )}
-          >
-            {chip.label}
-          </button>
-        ))}
+        {chips.map((chip) => {
+          const isActive = activeKey === chip.key
+          return (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => onSelect(chip.key)}
+              className={cn(
+                'h-8 px-3.5 rounded-lg text-[13px] font-medium shrink-0 whitespace-nowrap',
+                'transition-all duration-150',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                isActive
+                  ? 'bg-primary text-primary-foreground shadow-[0_1px_3px_rgba(91,124,250,0.35)]'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/60 active:bg-accent/80',
+              )}
+            >
+              {chip.label}
+            </button>
+          )
+        })}
         {children}
       </div>
     </div>

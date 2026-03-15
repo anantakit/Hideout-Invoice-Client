@@ -339,12 +339,12 @@ export function ReceiptDateFilter({ startDate, endDate, onRangeChange }: Receipt
           type="button"
           onClick={openPicker}
           className={cn(
-            'h-9 px-3 rounded-xl text-sm font-medium transition-colors duration-150 shrink-0 whitespace-nowrap',
+            'h-8 px-3.5 rounded-lg text-[13px] font-medium transition-all duration-150 shrink-0 whitespace-nowrap',
             'inline-flex items-center gap-1.5',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             isCustomActive
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-foreground hover:bg-muted/80 active:bg-muted/70',
+              ? 'bg-primary text-primary-foreground shadow-[0_1px_3px_rgba(91,124,250,0.35)]'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/60 active:bg-accent/80',
           )}
         >
           <span>{customBtnLabel ?? 'เลือกช่วงวันที่'}</span>

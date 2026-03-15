@@ -133,19 +133,18 @@ export default function BookingListPage() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="ค้นหาชื่อ หรือเบอร์โทร…"
-          className="pl-9"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-        />
-      </div>
+      {/* Search + Filter chips */}
+      <div className="bg-card radius-card border border-border p-3 sm:p-4 mb-6 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="ค้นหาชื่อ หรือเบอร์โทร…"
+            className="pl-9"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
 
-      {/* Filter chips */}
-      <div className="mb-5">
         <FilterChipBar
           chips={FILTER_CHIPS}
           activeKey={activeChip}
