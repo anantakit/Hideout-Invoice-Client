@@ -25,6 +25,7 @@ import {
 } from 'date-fns'
 import { X } from 'lucide-react'
 import { cn, THAI_MONTHS_SHORT } from '../../../shared/utils'
+import { FilterChipBar } from '../../../shared/ui/FilterChipBar'
 import { Button } from '../../../shared/ui/button'
 import { Sheet, SheetContent } from '../../../shared/ui/sheet'
 import { Calendar } from '../../../shared/ui/calendar'
@@ -55,15 +56,16 @@ function formatRange(start: Date, end: Date | null): string {
 // ─── Quick presets ────────────────────────────────────────────────────────────
 
 interface Preset {
+  key: string
   label: string
   getRange: () => [Date, Date]
 }
 
 const QUICK_PRESETS: Preset[] = [
-  { label: 'วันนี้',   getRange: () => { const t = new Date(); return [t, t] } },
-  { label: '7 วัน',   getRange: () => [subDays(new Date(), 6), new Date()] },
-  { label: '30 วัน',  getRange: () => [subDays(new Date(), 29), new Date()] },
-  { label: 'เดือนนี้', getRange: () => [startOfMonth(new Date()), new Date()] },
+  { key: 'today',      label: 'วันนี้',   getRange: () => { const t = new Date(); return [t, t] } },
+  { key: '7d',         label: '7 วัน',   getRange: () => [subDays(new Date(), 6), new Date()] },
+  { key: '30d',        label: '30 วัน',  getRange: () => [subDays(new Date(), 29), new Date()] },
+  { key: 'this_month', label: 'เดือนนี้', getRange: () => [startOfMonth(new Date()), new Date()] },
 ]
 
 // ─── Desktop portal popover ───────────────────────────────────────────────────
@@ -240,18 +242,18 @@ export function ReceiptDateFilter({ startDate, endDate, onRangeChange }: Receipt
 
   // ── Derived active state (computed every render, no extra state) ──────────
 
-  /** Label of the quick-preset that matches the current applied range, else null. */
-  const activePresetLabel: string | null = (() => {
+  /** Key of the quick-preset that matches the current applied range, else null. */
+  const activePresetKey: string | null = (() => {
     if (!startDate || !endDate) return null
     for (const preset of QUICK_PRESETS) {
       const [s, e] = preset.getRange()
-      if (startDate === toApiDate(s) && endDate === toApiDate(e)) return preset.label
+      if (startDate === toApiDate(s) && endDate === toApiDate(e)) return preset.key
     }
     return null
   })()
 
   /** True when a range is applied that doesn't match any quick preset. */
-  const isCustomActive = !!(startDate || endDate) && activePresetLabel === null
+  const isCustomActive = !!(startDate || endDate) && activePresetKey === null
 
   /**
    * Label shown INSIDE the "เลือกช่วงวันที่" button when a custom range is active.
@@ -323,75 +325,49 @@ export function ReceiptDateFilter({ startDate, endDate, onRangeChange }: Receipt
     <div className="space-y-2">
 
       {/* ── STEP 1: Quick filter bar ─────────────────────────────────────────── */}
-      <div className="relative">
-
-        {/* Gradient scroll-hint — visible on mobile only (parent bg is bg-card) */}
-        <div
-          aria-hidden
-          className="absolute right-0 top-0 bottom-0.5 w-10 bg-gradient-to-l from-card to-transparent pointer-events-none z-10 sm:hidden"
-        />
-
-        {/* Scrollable chip row — no wrap on mobile, wrap on desktop */}
-        <div
-          className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible pb-0.5 [&::-webkit-scrollbar]:hidden"
-          style={{ scrollbarWidth: 'none' }}
+      <FilterChipBar
+        chips={QUICK_PRESETS}
+        activeKey={activePresetKey ?? ''}
+        onSelect={(key) => {
+          const preset = QUICK_PRESETS.find((p) => p.key === key)
+          if (preset) applyPreset(preset)
+        }}
+      >
+        {/* Custom range trigger — rendered after preset chips */}
+        <button
+          ref={customBtnRef}
+          type="button"
+          onClick={openPicker}
+          className={cn(
+            'h-9 px-3 rounded-xl text-sm font-medium transition-colors duration-150 shrink-0 whitespace-nowrap',
+            'inline-flex items-center gap-1.5',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            isCustomActive
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-foreground hover:bg-muted/80 active:bg-muted/70',
+          )}
         >
+          <span>{customBtnLabel ?? 'เลือกช่วงวันที่'}</span>
 
-          {/* Quick preset chips */}
-          {QUICK_PRESETS.map(preset => {
-            const isActive = activePresetLabel === preset.label
-            return (
-              <button
-                key={preset.label}
-                type="button"
-                onClick={() => applyPreset(preset)}
-                className={cn(
-                  'h-9 px-4 rounded-xl text-sm transition-all duration-150 shrink-0 whitespace-nowrap',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-foreground hover:bg-muted/80',
-                )}
-              >
-                {preset.label}
-              </button>
-            )
-          })}
-
-          {/* Custom range trigger */}
-          <button
-            ref={customBtnRef}
-            type="button"
-            onClick={openPicker}
-            className={cn(
-              'h-9 px-3 rounded-xl text-sm transition-all duration-150 shrink-0 whitespace-nowrap',
-              'inline-flex items-center gap-1.5',
-              isCustomActive
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-foreground hover:bg-muted/80',
-            )}
-          >
-            <span>{customBtnLabel ?? 'เลือกช่วงวันที่'}</span>
-
-            {/* Clear × — only when a custom range is applied */}
-            {isCustomActive && (
-              <span
-                role="button"
-                tabIndex={0}
-                aria-label="ล้างช่วงวันที่"
-                onClick={clearCustomRange}
-                onKeyDown={e => e.key === 'Enter' && clearCustomRange(e)}
-                className={cn(
-                  'flex items-center justify-center w-4 h-4 radius-badge shrink-0',
-                  'bg-primary-foreground/20 hover:bg-primary-foreground/35',
-                  'transition-colors duration-150',
-                )}
-              >
-                <X className="w-2.5 h-2.5" />
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
+          {/* Clear × — only when a custom range is applied */}
+          {isCustomActive && (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label="ล้างช่วงวันที่"
+              onClick={clearCustomRange}
+              onKeyDown={e => e.key === 'Enter' && clearCustomRange(e)}
+              className={cn(
+                'flex items-center justify-center w-4 h-4 radius-badge shrink-0',
+                'bg-primary-foreground/20 hover:bg-primary-foreground/35',
+                'transition-colors duration-150',
+              )}
+            >
+              <X className="w-2.5 h-2.5" />
+            </span>
+          )}
+        </button>
+      </FilterChipBar>
 
       {/* ── PART 3: Active filter summary ────────────────────────────────────── */}
       {activeSummaryLabel && (

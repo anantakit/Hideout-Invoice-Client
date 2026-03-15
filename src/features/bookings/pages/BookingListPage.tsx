@@ -20,7 +20,7 @@ import {
 import Pagination from '../../../shared/ui/Pagination'
 import { Skeleton } from '../../../shared/ui/skeleton'
 import { type BookingResponse, getStatusLabel } from '../types'
-import { cn } from '../../../shared/utils'
+import { FilterChipBar, type FilterChip as FilterChipType } from '../../../shared/ui/FilterChipBar'
 
 // ─── Status display maps ───────────────────────────────────────────────────────
 
@@ -45,14 +45,14 @@ function StatusBadge({ status }: { status: string }) {
 
 // ─── Quick filter chips ─────────────────────────────────────────────────────────
 
-interface FilterChip {
-  key: string
-  label: string
+type BookingFilter = 'all' | 'checked_in' | 'arrivals' | 'departures' | 'outstanding' | 'history'
+
+interface BookingFilterDef extends FilterChipType<BookingFilter> {
   status: string
   view: string
 }
 
-const FILTER_CHIPS: FilterChip[] = [
+const FILTER_CHIPS: BookingFilterDef[] = [
   { key: 'all',         label: 'ทั้งหมด',       status: '',            view: '' },
   { key: 'checked_in',  label: 'เข้าพักอยู่',    status: 'CHECKED_IN',  view: '' },
   { key: 'arrivals',    label: 'เช็คอินวันนี้',   status: '',            view: 'arrivals_today' },
@@ -61,7 +61,7 @@ const FILTER_CHIPS: FilterChip[] = [
   { key: 'history',     label: 'ประวัติ',        status: 'CHECKED_OUT', view: '' },
 ]
 
-function getActiveChipKey(status: string, view: string): string {
+function getActiveChipKey(status: string, view: string): BookingFilter {
   const match = FILTER_CHIPS.find((c) => c.status === status && c.view === view)
   return match?.key ?? 'all'
 }
@@ -78,14 +78,13 @@ export default function BookingListPage() {
 
   const activeChip = getActiveChipKey(statusParam, viewParam)
 
-  function selectChip(chip: FilterChip) {
+  function handleChipSelect(key: BookingFilter) {
+    const chip = FILTER_CHIPS.find((c) => c.key === key)!
     const next = new URLSearchParams(searchParams)
-    // Clear old filter params
     next.delete('status')
     next.delete('view')
     next.delete('start_date')
     next.delete('end_date')
-    // Set new ones
     if (chip.status) next.set('status', chip.status)
     if (chip.view) next.set('view', chip.view)
     setSearchParams(next, { replace: true })
@@ -145,26 +144,13 @@ export default function BookingListPage() {
         />
       </div>
 
-      {/* Filter chips — horizontal scroll on mobile, wrap on desktop */}
-      <div className="-mx-4 px-4 sm:mx-0 sm:px-0 mb-5">
-        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible scrollbar-hide">
-          {FILTER_CHIPS.map((chip) => (
-            <button
-              key={chip.key}
-              type="button"
-              onClick={() => selectChip(chip)}
-              className={cn(
-                'shrink-0 h-9 px-3.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                activeChip === chip.key
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-accent/60 text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent',
-              )}
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
+      {/* Filter chips */}
+      <div className="mb-5">
+        <FilterChipBar
+          chips={FILTER_CHIPS}
+          activeKey={activeChip}
+          onSelect={handleChipSelect}
+        />
       </div>
 
       {/* Content */}
