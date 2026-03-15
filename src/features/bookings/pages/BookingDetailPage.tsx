@@ -26,9 +26,9 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../../../shared/ui/sheet'
 import { useIsMobile } from '../../../shared/hooks/useIsMobile'
 import { formatThaiDate, formatTHB } from '../../../shared/utils'
-import { ROUTES } from '@/app/routes'
 import ErrorPage from '@/shared/components/ErrorPage'
-import { useBooking, useCancelStay, useExtendStay, useCheckInRooms, useCheckoutRooms, useAvailabilityGrouped, useTransferRoom, useUpdateBooking } from '../hooks'
+import { useBooking, useCancelStay, useExtendStay, useCheckoutRooms, useAvailabilityGrouped, useTransferRoom, useUpdateBooking } from '../hooks'
+import { InlineCheckIn } from '../components/InlineCheckIn'
 import { EarlyCheckoutDialog } from '../components/EarlyCheckoutDialog'
 import SearchableComboBox from '@/shared/ui/SearchableComboBox'
 import { customersApi } from '../../customers/api'
@@ -101,15 +101,6 @@ function fmtShortISO(iso: string): string {
   } catch { return iso }
 }
 
-/**
- * Near-full: only for room types with total >= 5 and available <= 20%.
- * Small inventory types (< 5 rooms) never show near-full.
- */
-function isNearFull(available: number, total: number): boolean {
-  if (available === 0 || total < 5) return false
-  return available / total <= 0.20
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function BookingDetailPage() {
@@ -117,10 +108,6 @@ export default function BookingDetailPage() {
   const navigate = useNavigate()
 
   const { data: booking, isLoading, isError } = useBooking(id)
-  const assignRoom = useCheckInRooms(id)
-
-  const [availMode, setAvailMode] = useState<'range' | 'today'>('range')
-  const [assigningRoomId, setAssigningRoomId] = useState<string | null>(null)
 
   // ── Edit mode ───────────────────────────────────────────────────────────
   const [editing, setEditing] = useState(false)
@@ -137,75 +124,12 @@ export default function BookingDetailPage() {
 
     const active = booking.room_stays.filter((s) => s.status !== 'CANCELLED')
     const pending = active.filter((s) => s.status === 'RESERVED' || s.status === 'ASSIGNED')
-    const unassigned = pending.filter((s) => !s.room_id)
-    const assignedCount = active.filter(
-      (s) => s.room_id || s.status === 'CHECKED_IN' || s.status === 'CHECKED_OUT',
-    ).length
-
-    const assignedRoomIds = new Set(
-      active.filter((s) => s.room_id).map((s) => s.room_id!),
-    )
-
-    const unassignedByType = new Map<string, RoomStayResponse[]>()
-    for (const s of unassigned) {
-      const list = unassignedByType.get(s.room_type_id) ?? []
-      list.push(s)
-      unassignedByType.set(s.room_type_id, list)
-    }
-
-    const rangeCI = pending.length > 0
-      ? pending.reduce((min, s) => (s.check_in < min ? s.check_in : min), pending[0].check_in).slice(0, 10)
-      : ''
-    const rangeCO = pending.length > 0
-      ? pending.reduce((max, s) => (s.check_out > max ? s.check_out : max), pending[0].check_out).slice(0, 10)
-      : ''
 
     return {
       active,
       pending,
-      unassigned,
-      assignedCount,
-      totalActive: active.length,
-      assignedRoomIds,
-      unassignedByType,
-      rangeCI,
-      rangeCO,
-      allAssigned: unassigned.length === 0,
     }
   }, [booking])
-
-  // ── Availability query ────────────────────────────────────────────────────
-  const todayStr = format(new Date(), 'yyyy-MM-dd')
-  const tomorrowStr = format(addDays(new Date(), 1), 'yyyy-MM-dd')
-
-  const effCI = availMode === 'today' ? todayStr : (bd?.rangeCI ?? '')
-  const effCO = availMode === 'today' ? tomorrowStr : (bd?.rangeCO ?? '')
-  const hasPending = (bd?.pending.length ?? 0) > 0
-
-  const { data: availability, isLoading: availLoading } = useAvailabilityGrouped(
-    effCI, effCO, hasPending, id,
-  )
-
-  // ── Quick assign handler ──────────────────────────────────────────────────
-  function handleQuickAssign(roomTypeId: string, roomId: string) {
-    const staysOfType = bd?.unassignedByType.get(roomTypeId)
-    if (!staysOfType?.[0]) return
-
-    setAssigningRoomId(roomId)
-    assignRoom.mutate(
-      [{ room_stay_id: staysOfType[0].id, room_id: roomId }],
-      {
-        onSuccess: () => {
-          toast.success('กำหนดห้องเรียบร้อย')
-          setAssigningRoomId(null)
-        },
-        onError: (err: Error) => {
-          toast.error(err.message || 'เกิดข้อผิดพลาด')
-          setAssigningRoomId(null)
-        },
-      },
-    )
-  }
 
   // ── Edit mode handlers ───────────────────────────────────────────────────
   function startEdit() {
@@ -276,9 +200,11 @@ export default function BookingDetailPage() {
     )
   }
 
-  // Check if ALL room types show zero availability
-  const noRoomsAvailable = availability != null &&
-    availability.room_types.every((rt) => rt.rooms.every((r) => !r.available))
+  // Pending stays eligible for check-in (check_in <= today)
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const checkInPendingStays = bd
+    ? bd.pending.filter((s) => s.check_in.slice(0, 10) <= todayStr)
+    : []
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -434,175 +360,12 @@ export default function BookingDetailPage() {
         </Card>
       </div>
 
-      {/* ── 3. Room Assignment Status + Check-in CTA ────────────────── */}
-      {bd.pending.length > 0 && bd.allAssigned && (
-        <Button
-          className="w-full"
-          onClick={() => navigate(ROUTES.bookings.groupCheckIn(id))}
-        >
-          <LogIn className="w-4 h-4 mr-1.5" />
-          เช็คอิน ({bd.pending.length} ห้อง)
-        </Button>
+      {/* ── 2. Inline Check-In (conditional) ────────────────────────── */}
+      {checkInPendingStays.length > 0 && (
+        <InlineCheckIn bookingId={id} pendingStays={checkInPendingStays} />
       )}
 
-      {bd.totalActive > 0 && !bd.allAssigned && (
-        <Card>
-          <CardContent className="px-4 py-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-body font-semibold">กำหนดห้อง</p>
-                <p className="text-helper mt-0.5">
-                  {bd.assignedCount} / {bd.totalActive} ห้อง
-                </p>
-              </div>
-              <Badge variant="amber">
-                เหลือ {bd.unassigned.length} ห้อง
-              </Badge>
-            </div>
-
-            {/* Progress bar */}
-            <div className="h-1.5 radius-badge bg-secondary overflow-hidden">
-              <div
-                className="h-full radius-badge bg-primary transition-all"
-                style={{ width: `${(bd.assignedCount / bd.totalActive) * 100}%` }}
-              />
-            </div>
-
-            {bd.pending.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => navigate(ROUTES.bookings.groupCheckIn(id))}
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                กำหนดห้อง + เช็คอิน ({bd.pending.length} ห้อง)
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ── 4. Available Rooms (only when rooms still need assigning) ── */}
-      {hasPending && !bd.allAssigned && (
-        <Card>
-          <CardHeader className="px-4 py-3">
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-body">ห้องว่าง</CardTitle>
-              <div className="flex radius-button border border-border overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setAvailMode('today')}
-                  className={cn(
-                    'px-2.5 py-1 text-caption transition-colors',
-                    availMode === 'today'
-                      ? 'date-selected'
-                      : 'bg-card text-muted-foreground date-hover',
-                  )}
-                >
-                  วันนี้
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAvailMode('range')}
-                  className={cn(
-                    'px-2.5 py-1 text-caption transition-colors',
-                    availMode === 'range'
-                      ? 'date-selected'
-                      : 'bg-card text-muted-foreground date-hover',
-                  )}
-                >
-                  ช่วงเข้าพัก
-                </button>
-              </div>
-            </div>
-            <p className="text-helper">
-              {availMode === 'today'
-                ? 'ห้องว่างสำหรับวันนี้'
-                : `ว่างตลอดช่วง ${fmtShortISO(effCI)} → ${fmtShortISO(effCO)}`}
-            </p>
-          </CardHeader>
-
-          <CardContent className="px-4 pt-0 pb-3 space-y-3">
-            {availLoading ? (
-              <div className="flex justify-center py-6">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : noRoomsAvailable ? (
-              <div className="py-4 text-center">
-                <p className="text-helper">
-                  ไม่มีห้องว่างสำหรับช่วงเวลาที่เลือก
-                </p>
-              </div>
-            ) : availability ? (
-              <div className="space-y-3">
-                {availability.room_types.map((rt) => {
-                  const totalRooms = rt.rooms.length
-                  const availableRooms = rt.rooms.filter(
-                    (r) => r.available && !bd.assignedRoomIds.has(r.room_id),
-                  )
-                  const availableCount = availableRooms.length
-                  const isFull = availableCount === 0
-                  const nearFull = isNearFull(availableCount, totalRooms)
-                  const canAssign = bd.unassignedByType.has(rt.room_type_id) && availableCount > 0
-
-                  return (
-                    <div key={rt.room_type_id}>
-                      {/* Room type header */}
-                      <div className="flex items-center justify-between py-1.5">
-                        <span className="text-body font-medium">{rt.room_type_name}</span>
-                        <div className="flex items-center gap-1.5">
-                          {isFull && (
-                            <Badge variant="destructive" className="text-helper px-1.5 py-0">เต็ม</Badge>
-                          )}
-                          {nearFull && !isFull && (
-                            <Badge variant="amber" className="text-helper px-1.5 py-0">ใกล้เต็ม</Badge>
-                          )}
-                          <span className={cn(
-                            'text-body font-semibold tabular-nums',
-                            isFull ? 'text-destructive' : 'text-foreground',
-                          )}>
-                            {availableCount} ว่าง
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Assignable rooms */}
-                      {canAssign && (
-                        <div className="ml-1 space-y-1.5 mt-1 mb-2">
-                          {availableRooms.map((room) => (
-                            <div
-                              key={room.room_id}
-                              className="flex items-center justify-between radius-button border border-border bg-card px-3 py-2"
-                            >
-                              <span className="text-body">ห้อง {room.room_number}</span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 px-3 text-xs"
-                                disabled={assignRoom.isPending}
-                                onClick={() => handleQuickAssign(rt.room_type_id, room.room_id)}
-                              >
-                                {assigningRoomId === room.room_id ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  'Assign'
-                                )}
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ── 5. Room Stays ──────────────────────────────────────────────── */}
+      {/* ── 3. Room Stays ──────────────────────────────────────────────── */}
       <div className="space-y-4">
         <h2 className="text-section">
           รายการห้องพัก

@@ -11,6 +11,7 @@ import {
   AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
   AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
+import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import type { TimelineRoom, TimelineBooking, UnassignedStay, RoomStayResponse } from '../../types'
 import { useBooking, useAvailabilityGrouped, useAssignRooms, useCheckInRooms } from '../../hooks'
 import { bookingsApi } from '../../api'
@@ -441,8 +442,8 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                   className={cn(
                     'w-full radius-card border space-card text-left transition-colors',
                     isExpanded
-                      ? 'border-primary/30 bg-primary/5'
-                      : 'border-primary/20 bg-accent/5 hover:bg-accent/10',
+                      ? 'border-border bg-card'
+                      : 'border-border bg-card hover:bg-accent/10',
                     isExpanded && 'rounded-b-none',
                   )}
                 >
@@ -517,53 +518,18 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
             const doneStays = co.stays.filter((s) => s.status === 'CHECKED_OUT')
             const isExpanded = expandedCheckoutId === co.bookingId
 
-            // Single-room: flat card with inline checkout button
+            // Single-room: tappable card — tap opens confirmation
             if (isSingleRoom) {
               const stay = co.stays[0]
+              const canCheckOut = onQuickCheckOut && stay.status === 'CHECKED_IN'
               return (
-                <div
+                <SingleRoomCheckOutCard
                   key={co.bookingId}
-                  className="w-full radius-card border border-border bg-card px-3 py-2.5"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-body font-semibold truncate">{co.guestName}</span>
-                        <span className="text-helper shrink-0">{co.nights} คืน</span>
-                      </div>
-                      <p className="text-helper mt-0.5">ห้อง {stay.roomNumber}</p>
-                    </div>
-                    {onQuickCheckOut && stay.status === 'CHECKED_IN' && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="outline" className="h-8 px-3 text-sm font-semibold gap-1.5 shrink-0">
-                            <LogOut className="w-3.5 h-3.5" />
-                            เช็คเอาท์
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>ยืนยันเช็คเอาท์</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              เช็คเอาท์ {co.guestName} ห้อง {stay.roomNumber} ?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onQuickCheckOut(stay.booking)}>
-                              เช็คเอาท์
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
-                  {hasBalance && (
-                    <p className="text-helper text-destructive font-medium mt-1">
-                      ค้าง ฿{co.balance.toLocaleString()}
-                    </p>
-                  )}
-                </div>
+                  co={co}
+                  stay={stay}
+                  canCheckOut={!!canCheckOut}
+                  onCheckOut={() => canCheckOut && onQuickCheckOut!(stay.booking)}
+                />
               )
             }
 
@@ -617,39 +583,29 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                       </div>
                     </div>
 
-                    {/* Pending stays */}
+                    {/* Pending stays — tappable rows */}
                     {pendingStays.map((stay) => (
-                      <div
+                      <MultiRoomCheckOutRow
                         key={stay.roomStayId}
-                        className="flex items-center justify-between radius-button border border-border bg-accent/5 px-3 py-2.5"
-                      >
-                        <span className="text-body font-bold tabular-nums">ห้อง {stay.roomNumber}</span>
-                        {onQuickCheckOut && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="outline" className="h-8 px-3 text-sm font-semibold gap-1.5">
-                                <LogOut className="w-3.5 h-3.5" />
-                                เช็คเอาท์
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>ยืนยันเช็คเอาท์</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  เช็คเอาท์ {co.guestName} ห้อง {stay.roomNumber} ?
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => onQuickCheckOut(stay.booking)}>
-                                  เช็คเอาท์
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
+                        stay={stay}
+                        guestName={co.guestName}
+                        canCheckOut={!!onQuickCheckOut}
+                        onCheckOut={() => onQuickCheckOut?.(stay.booking)}
+                      />
                     ))}
+
+                    {/* Checkout all button */}
+                    {pendingStays.length > 1 && onQuickCheckOut && (
+                      <CheckOutAllButton
+                        guestName={co.guestName}
+                        pendingStays={pendingStays}
+                        onCheckOutAll={() => {
+                          for (const stay of pendingStays) {
+                            onQuickCheckOut(stay.booking)
+                          }
+                        }}
+                      />
+                    )}
 
                     {/* Done stays */}
                     {doneStays.map((stay) => (
@@ -962,7 +918,7 @@ function DateSection({
                     className={cn(
                       'w-full radius-card border px-3 py-2 text-left transition-colors',
                       isExpanded
-                        ? 'border-primary/30 bg-primary/5'
+                        ? 'border-border bg-card'
                         : section.isUrgent
                           ? 'border-border bg-card hover:bg-muted'
                           : 'border-border-soft bg-transparent hover:bg-muted/50',
@@ -1073,7 +1029,7 @@ function InlineRoomPicker({
   const isBusy = assignMutation.isPending
 
   return (
-    <div className="radius-card rounded-t-none border border-t-0 border-primary/30 bg-primary/5 space-card space-y-2">
+    <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-2">
       {isLoading ? (
         <div className="flex items-center justify-center py-3">
           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -1106,7 +1062,7 @@ function InlineRoomPicker({
                       onClick={() => handleAssign(rt.typeId, room.room_id, room.room_number)}
                       className={cn(
                         'h-9 min-w-[3.5rem] px-3 radius-button border text-body font-bold tabular-nums transition-colors',
-                        'border-primary/30 bg-card hover:bg-primary/10 hover:border-primary/50',
+                        'border-border bg-card hover:bg-accent/10',
                         'disabled:opacity-50',
                       )}
                     >
@@ -1156,50 +1112,165 @@ function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
 
   const hasRoom = ci.assignedRooms.length > 0
   const needsAssign = ci.unassignedCount > 0
+  const canCheckIn = hasRoom && isCheckInDay && !needsAssign
+
+  // Status indicator shown on the right when cannot check in
+  const statusIndicator = !canCheckIn && !isLoading ? (
+    <div className="shrink-0">
+      {needsAssign
+        ? <span className="text-helper text-warning">รอกำหนดห้อง</span>
+        : <span className="text-helper">รอเช็คอิน</span>}
+    </div>
+  ) : null
 
   return (
-    <div className="w-full radius-card border border-primary/20 bg-accent/5 space-card">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-body font-semibold truncate">{ci.guestName}</span>
-            <span className="text-helper shrink-0">{ci.nights} คืน</span>
+    <>
+      <ConfirmActionCard
+        disabled={!canCheckIn || checkInMutation.isPending || isLoading}
+        loading={isLoading || checkInMutation.isPending}
+        loader={<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+        icon={<LogIn className="w-4 h-4 text-primary" />}
+        confirmTitle="ยืนยันเช็คอิน"
+        confirmDescription={`เช็คอิน ${ci.guestName} ห้อง ${ci.assignedRooms[0]} ?`}
+        confirmLabel="เช็คอิน"
+        onConfirm={handleCheckIn}
+        className="space-card"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-body font-semibold truncate">{ci.guestName}</span>
+              <span className="text-helper shrink-0">{ci.nights} คืน</span>
+            </div>
+            <div className="flex items-center space-inline text-helper mt-0.5">
+              <span>{ci.typeName}</span>
+              {hasRoom && (
+                <>
+                  <span>·</span>
+                  <span className="font-medium text-foreground/70">ห้อง {ci.assignedRooms[0]}</span>
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex items-center space-inline text-helper mt-0.5">
-            <span>{ci.typeName}</span>
-            {hasRoom && (
-              <>
-                <span>·</span>
-                <span className="font-medium text-foreground/70">ห้อง {ci.assignedRooms[0]}</span>
-              </>
-            )}
-          </div>
+          {statusIndicator}
         </div>
-        {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />
-        ) : hasRoom && isCheckInDay && !needsAssign ? (
-          <Button
-            size="sm"
-            className="h-8 px-3 text-sm font-semibold shrink-0"
-            disabled={checkInMutation.isPending}
-            onClick={handleCheckIn}
-          >
-            {checkInMutation.isPending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <>
-                <LogIn className="w-3.5 h-3.5 mr-1" />
-                เช็คอิน
-              </>
-            )}
-          </Button>
-        ) : needsAssign ? (
-          <span className="text-helper text-warning shrink-0">รอกำหนดห้อง</span>
-        ) : (
-          <span className="text-helper shrink-0">รอเช็คอิน</span>
-        )}
+      </ConfirmActionCard>
+    </>
+  )
+}
+
+// ─── Single-Room Check-Out Card (tappable) ──────────────────────────────────
+
+function SingleRoomCheckOutCard({
+  co,
+  stay,
+  canCheckOut,
+  onCheckOut,
+}: {
+  co: CheckoutBooking
+  stay: CheckoutStay
+  canCheckOut: boolean
+  onCheckOut: () => void
+}) {
+  const hasBalance = co.balance > 0
+
+  return (
+    <ConfirmActionCard
+      disabled={!canCheckOut}
+      icon={<LogOut className="w-4 h-4 text-warning" />}
+      confirmTitle="ยืนยันเช็คเอาท์"
+      confirmDescription={`เช็คเอาท์ ${co.guestName} ห้อง ${stay.roomNumber} ?`}
+      confirmLabel="เช็คเอาท์"
+      onConfirm={onCheckOut}
+      className="space-card"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-body font-semibold truncate">{co.guestName}</span>
+        <span className="text-helper shrink-0">{co.nights} คืน</span>
       </div>
-    </div>
+      <p className="text-helper mt-0.5">ห้อง {stay.roomNumber}</p>
+      {hasBalance && (
+        <p className="text-helper text-destructive font-medium mt-0.5">
+          ค้าง ฿{co.balance.toLocaleString()}
+        </p>
+      )}
+    </ConfirmActionCard>
+  )
+}
+
+// ─── Multi-Room Check-Out Row (tappable) ────────────────────────────────────
+
+function MultiRoomCheckOutRow({
+  stay,
+  guestName,
+  canCheckOut,
+  onCheckOut,
+}: {
+  stay: CheckoutStay
+  guestName: string
+  canCheckOut: boolean
+  onCheckOut: () => void
+}) {
+  return (
+    <ConfirmActionCard
+      disabled={!canCheckOut}
+      icon={<LogOut className="w-4 h-4 text-warning" />}
+      confirmTitle="ยืนยันเช็คเอาท์"
+      confirmDescription={`เช็คเอาท์ ${guestName} ห้อง ${stay.roomNumber} ?`}
+      confirmLabel="เช็คเอาท์"
+      onConfirm={onCheckOut}
+      className="radius-button px-3 py-2.5"
+    >
+      <span className="text-body font-bold tabular-nums">ห้อง {stay.roomNumber}</span>
+    </ConfirmActionCard>
+  )
+}
+
+// ─── Check-Out All Button ───────────────────────────────────────────────────
+
+function CheckOutAllButton({
+  guestName,
+  pendingStays,
+  onCheckOutAll,
+}: {
+  guestName: string
+  pendingStays: CheckoutStay[]
+  onCheckOutAll: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const roomLabel = pendingStays.map((s) => s.roomNumber).join(', ')
+
+  return (
+    <>
+      <Button
+        className="w-full h-9 text-sm font-semibold"
+        variant="ghost"
+        onClick={() => setOpen(true)}
+      >
+        <LogOut className="w-3.5 h-3.5 mr-1.5" />
+        เช็คเอาท์ทั้งหมด ({pendingStays.length} ห้อง)
+      </Button>
+
+      <AlertDialog open={open} onOpenChange={(v) => !v && setOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันเช็คเอาท์ทั้งหมด</AlertDialogTitle>
+            <AlertDialogDescription>
+              เช็คเอาท์ {guestName} ห้อง {roomLabel} ({pendingStays.length} ห้อง) พร้อมกัน ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              onCheckOutAll()
+              setOpen(false)
+            }}>
+              เช็คเอาท์ทั้งหมด
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
 
@@ -1316,7 +1387,7 @@ function InlineCheckInPanel({
   const isLoading = bookingLoading
 
   return (
-    <div className="radius-card rounded-t-none border border-t-0 border-primary/30 bg-primary/5 space-card space-y-3">
+    <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-3">
       {isLoading ? (
         <div className="flex items-center justify-center py-3">
           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -1341,39 +1412,33 @@ function InlineCheckInPanel({
             </div>
           )}
 
-          {/* Assigned rooms — ready for check-in */}
+          {/* Assigned rooms — tappable rows for check-in */}
           {assignedStays.length > 0 && (
             <div className="space-y-1.5">
               {assignedStays.map((stay) => (
-                <div
+                <ConfirmActionCard
                   key={stay.id}
-                  className="flex items-center justify-between radius-button border border-primary/20 bg-card px-3 py-2.5"
+                  disabled={!isCheckInDay || isBusy}
+                  loading={busyStayId === stay.id && checkInMutation.isPending}
+                  loader={<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                  icon={isCheckInDay ? <LogIn className="w-4 h-4 text-primary" /> : undefined}
+                  confirmTitle="ยืนยันเช็คอิน"
+                  confirmDescription={`เช็คอิน ห้อง ${stay.room_number} ?`}
+                  confirmLabel="เช็คอิน"
+                  onConfirm={() => { if (stay.room_id) handleCheckInOne(stay.id, stay.room_id) }}
+                  className="radius-button px-3 py-2.5"
                 >
-                  <div className="flex items-center space-inline min-w-0">
-                    <KeyRound className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span className="text-body font-bold tabular-nums">ห้อง {stay.room_number}</span>
-                    <span className="text-helper">{stay.room_type_name}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-inline min-w-0">
+                      <KeyRound className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="text-body font-bold tabular-nums">ห้อง {stay.room_number}</span>
+                      <span className="text-helper">{stay.room_type_name}</span>
+                    </div>
+                    {!isCheckInDay && (
+                      <span className="text-helper shrink-0">รอเช็คอิน</span>
+                    )}
                   </div>
-                  {isCheckInDay ? (
-                    <Button
-                      size="sm"
-                      className="h-8 px-3 text-sm font-semibold"
-                      disabled={isBusy}
-                      onClick={() => handleCheckInOne(stay.id, stay.room_id!)}
-                    >
-                      {busyStayId === stay.id && checkInMutation.isPending ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <>
-                          <LogIn className="w-3.5 h-3.5 mr-1" />
-                          เช็คอิน
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <span className="text-helper">รอเช็คอิน</span>
-                  )}
-                </div>
+                </ConfirmActionCard>
               ))}
             </div>
           )}
@@ -1424,7 +1489,7 @@ function InlineCheckInPanel({
                             onClick={() => handleAssign(rt.typeId, room.room_id, room.room_number)}
                             className={cn(
                               'h-9 min-w-[3.5rem] px-3 radius-button border text-body font-bold tabular-nums transition-colors',
-                              'border-primary/30 bg-card hover:bg-primary/10 hover:border-primary/50',
+                              'border-border bg-card hover:bg-accent/10',
                               'disabled:opacity-50',
                             )}
                           >
@@ -1456,6 +1521,7 @@ function InlineCheckInPanel({
               <AlertDialogTrigger asChild>
                 <Button
                   className="w-full h-9 text-sm font-semibold"
+                  variant="ghost"
                   disabled={isBusy}
                 >
                   {checkingInAll ? (
@@ -1493,6 +1559,7 @@ function InlineCheckInPanel({
               <p className="text-helper text-success">เช็คอินครบทุกห้องแล้ว</p>
             </div>
           )}
+
         </>
       )}
     </div>

@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   CircleAlert,
   ChevronRight,
-  LogIn,
   LogOut,
   Banknote,
   FileText,
@@ -23,12 +22,13 @@ import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Separator } from '@/shared/ui/separator'
 import {
-  AlertDialog, AlertDialogTrigger, AlertDialogContent,
-  AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
-  AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
+  AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
+import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import { type TimelineBooking, type TimelineRoom, type UnassignedStay, getStatusLabel } from '../../types'
-import { useCreateBooking, useAvailabilityGrouped } from '../../hooks'
+import { useBooking, useCreateBooking, useAvailabilityGrouped, useCheckoutRooms } from '../../hooks'
+import { InlineCheckIn } from '../InlineCheckIn'
 import { DesktopOperationsPanel } from './DesktopOperationsPanel'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -109,19 +109,71 @@ function statusVariant(status: string): 'default' | 'amber' | 'green' | 'gray' |
   }
 }
 
+// ─── Checkout All Button ──────────────────────────────────────────────────────
+
+function CheckoutAllButton({
+  guestName,
+  stays,
+  checkoutMutation,
+}: {
+  guestName: string
+  stays: { id: string; room_number?: string }[]
+  checkoutMutation: ReturnType<typeof useCheckoutRooms>
+}) {
+  const [open, setOpen] = useState(false)
+  const roomLabel = stays.map((s) => s.room_number ?? '?').join(', ')
+
+  return (
+    <>
+      <Button
+        className="w-full gap-1.5"
+        variant="ghost"
+        disabled={checkoutMutation.isPending}
+        onClick={() => setOpen(true)}
+      >
+        {checkoutMutation.isPending ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <LogOut className="w-4 h-4" />
+        )}
+        เช็คเอาท์ทั้งหมด ({stays.length} ห้อง)
+      </Button>
+
+      <AlertDialog open={open} onOpenChange={(v) => !v && setOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันเช็คเอาท์ทั้งหมด</AlertDialogTitle>
+            <AlertDialogDescription>
+              เช็คเอาท์ {guestName} ห้อง {roomLabel} ({stays.length} ห้อง) พร้อมกัน ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              checkoutMutation.mutate(stays.map((s) => s.id), {
+                onSuccess: () => toast.success(`เช็คเอาท์ ${stays.length} ห้องสำเร็จ`),
+                onError: (err: Error) => toast.error(err.message || 'เกิดข้อผิดพลาด'),
+              })
+              setOpen(false)
+            }}>
+              เช็คเอาท์ทั้งหมด
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
+
 // ─── Booking Detail Content ────────────────────────────────────────────────────
 
 function BookingDetailContent({
   selected,
   onClose,
-  onQuickCheckIn,
-  onQuickCheckOut,
   onOpenDetail,
 }: {
   selected: SelectedBookingContext
   onClose: () => void
-  onQuickCheckIn?: (booking: TimelineBooking, roomId?: string) => void
-  onQuickCheckOut?: (booking: TimelineBooking) => void
   onOpenDetail?: (booking: TimelineBooking) => void
 }) {
   const navigate = useNavigate()
@@ -130,9 +182,30 @@ function BookingDetailContent({
   const nights = differenceInDays(parseISO(booking.check_out), parseISO(booking.check_in))
   const status = booking.status
 
-  // Determine primary action based on status
+  // Fetch full booking data for inline check-in & per-stay checkout
   const canCheckIn = status === 'RESERVED' || status === 'ASSIGNED' || status === 'CONFIRMED'
-  const canCheckOut = status === 'CHECKED_IN'
+  const canCheckOut = status === 'CHECKED_IN' || status === 'PARTIALLY_CHECKED_IN'
+  const needsFullBooking = canCheckIn || canCheckOut
+  const { data: fullBooking } = useBooking(needsFullBooking ? booking.booking_id : '')
+
+  const todayDate = format(new Date(), 'yyyy-MM-dd')
+  const pendingStays = useMemo(() => {
+    if (!fullBooking) return []
+    return fullBooking.room_stays.filter(
+      (s) =>
+        (s.status === 'RESERVED' || s.status === 'ASSIGNED') &&
+        s.check_in.slice(0, 10) <= todayDate,
+    )
+  }, [fullBooking, todayDate])
+
+  // Per-stay checkout
+  const checkedInStays = useMemo(() => {
+    if (!fullBooking) return []
+    return fullBooking.room_stays.filter((s) => s.status === 'CHECKED_IN')
+  }, [fullBooking])
+
+  const checkoutMutation = useCheckoutRooms(booking.booking_id)
+
   const isTerminal = status === 'CHECKED_OUT' || status === 'CANCELLED'
 
   const handleOpenDetail = () => {
@@ -233,44 +306,54 @@ function BookingDetailContent({
           </>
         )}
 
+        {/* Inline check-in */}
+        {pendingStays.length > 0 && (
+          <>
+            <Separator />
+            <InlineCheckIn bookingId={booking.booking_id} pendingStays={pendingStays} compact />
+          </>
+        )}
+
         {/* Actions — inline after content */}
         <Separator />
         <div className="space-y-2 pt-1">
-          {/* Primary action based on status */}
-          {canCheckIn && onQuickCheckIn && (
-            <Button
-              className="w-full gap-1.5"
-              variant="default"
-              onClick={() => onQuickCheckIn(booking)}
-            >
-              <LogIn size={14} />
-              เช็คอิน
-            </Button>
-          )}
-
-          {canCheckOut && onQuickCheckOut && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button className="w-full gap-1.5" variant="outline">
-                  <LogOut size={14} />
-                  เช็คเอาท์
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>ยืนยันเช็คเอาท์</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    เช็คเอาท์ {booking.guest_name} ห้อง {roomNumbers.join(', ')} ?
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onQuickCheckOut(booking)}>
-                    เช็คเอาท์
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          {canCheckOut && checkedInStays.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <LogOut className="w-3.5 h-3.5" />
+                เช็คเอาท์ {checkedInStays.length > 1 ? `${checkedInStays.length} ห้อง` : ''}
+              </p>
+              {checkedInStays.map((stay) => (
+                <ConfirmActionCard
+                  key={stay.id}
+                  disabled={checkoutMutation.isPending}
+                  loading={checkoutMutation.isPending}
+                  loader={<Loader2 size={14} className="animate-spin text-muted-foreground" />}
+                  icon={<LogOut size={14} className="text-warning" />}
+                  confirmTitle="ยืนยันเช็คเอาท์"
+                  confirmDescription={`เช็คเอาท์ ${booking.guest_name} ห้อง ${stay.room_number} ?`}
+                  confirmLabel="เช็คเอาท์"
+                  onConfirm={() => {
+                    checkoutMutation.mutate([stay.id], {
+                      onSuccess: () => toast.success(`เช็คเอาท์ ห้อง ${stay.room_number} สำเร็จ`),
+                      onError: (err: Error) => toast.error(err.message || 'เกิดข้อผิดพลาด'),
+                    })
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">ห้อง {stay.room_number}</span>
+                    <span className="text-xs text-muted-foreground">{stay.room_type_name}</span>
+                  </div>
+                </ConfirmActionCard>
+              ))}
+              {checkedInStays.length > 1 && (
+                <CheckoutAllButton
+                  guestName={booking.guest_name}
+                  stays={checkedInStays}
+                  checkoutMutation={checkoutMutation}
+                />
+              )}
+            </div>
           )}
 
           {isTerminal && (
@@ -284,17 +367,15 @@ function BookingDetailContent({
             </Button>
           )}
 
-          {/* Secondary: open detail page */}
-          {!isTerminal && (
-            <Button
-              className="w-full gap-1.5"
-              variant="outline"
-              onClick={handleOpenDetail}
-            >
-              เปิดรายละเอียด
-              <ChevronRight size={14} />
-            </Button>
-          )}
+          {/* Open detail page */}
+          <Button
+            className="w-full gap-1.5"
+            variant="outline"
+            onClick={handleOpenDetail}
+          >
+            เปิดรายละเอียด
+            <ChevronRight size={14} />
+          </Button>
 
           {/* Payment shortcut if balance > 0 */}
           {hasBalance && !isTerminal && (
@@ -779,7 +860,7 @@ export const OperationsDrawer = React.memo(function OperationsDrawer({
   mode,
   onClose,
   selectedBooking,
-  onQuickCheckIn,
+  // onQuickCheckIn — no longer used; check-in handled inline via InlineCheckIn
   onQuickCheckOut,
   onOpenDetail,
   createBookingPrefill,
@@ -807,8 +888,6 @@ export const OperationsDrawer = React.memo(function OperationsDrawer({
             key={selectedBooking.booking.booking_id + selectedBooking.booking.room_stay_id}
             selected={selectedBooking}
             onClose={onClose}
-            onQuickCheckIn={onQuickCheckIn}
-            onQuickCheckOut={onQuickCheckOut}
             onOpenDetail={onOpenDetail}
           />
         )}

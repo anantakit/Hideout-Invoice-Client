@@ -13,6 +13,16 @@ import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/shared/ui/alert-dialog'
+import {
   useBooking,
   useAvailabilityGrouped,
   useAssignRooms,
@@ -65,6 +75,8 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
   const [busyStayId, setBusyStayId] = useState<string | null>(null)
   const [checkingInAll, setCheckingInAll] = useState(false)
   const [transferringStay, setTransferringStay] = useState<RoomStayResponse | null>(null)
+  const [confirmCheckInStay, setConfirmCheckInStay] = useState<RoomStayResponse | null>(null)
+  const [confirmCheckInAll, setConfirmCheckInAll] = useState(false)
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── Categorize stays ────────────────────────────────────────────────────
@@ -516,7 +528,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                             size="sm"
                             className="h-9 px-3 text-sm font-semibold"
                             disabled={isBusy}
-                            onClick={() => handleCheckInOne(stay)}
+                            onClick={() => setConfirmCheckInStay(stay)}
                           >
                             {busyStayId === stay.id && checkInMutation.isPending ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -578,7 +590,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                 <Button
                   className="w-full h-11 font-semibold"
                   disabled={isBusy}
-                  onClick={handleCheckInAll}
+                  onClick={() => setConfirmCheckInAll(true)}
                 >
                   {checkingInAll ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -599,6 +611,48 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
             </>
           )}
         </div>
+
+        {/* Single check-in confirmation */}
+        <AlertDialog open={confirmCheckInStay !== null} onOpenChange={(open) => !open && setConfirmCheckInStay(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>ยืนยันเช็คอิน</AlertDialogTitle>
+              <AlertDialogDescription>
+                เช็คอิน ห้อง {confirmCheckInStay?.room_number} ?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+              <AlertDialogAction onClick={() => {
+                if (confirmCheckInStay) handleCheckInOne(confirmCheckInStay)
+                setConfirmCheckInStay(null)
+              }}>
+                เช็คอิน
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Batch check-in confirmation */}
+        <AlertDialog open={confirmCheckInAll} onOpenChange={(open) => !open && setConfirmCheckInAll(false)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>ยืนยันเช็คอิน</AlertDialogTitle>
+              <AlertDialogDescription>
+                เช็คอินทั้งหมด {assignedStays.length} ห้อง ?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+              <AlertDialogAction onClick={() => {
+                handleCheckInAll()
+                setConfirmCheckInAll(false)
+              }}>
+                เช็คอินทั้งหมด
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SheetContent>
     </Sheet>
   )

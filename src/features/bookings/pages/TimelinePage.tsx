@@ -205,6 +205,8 @@ export default function TimelinePage() {
   // ── Context menu + cancel dialog + keyboard help state ──────────────────
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const [cancelTarget, setCancelTarget] = useState<TimelineBooking | null>(null)
+  const [checkInTarget, setCheckInTarget] = useState<{ booking: TimelineBooking; roomId: string } | null>(null)
+  const [checkOutTarget, setCheckOutTarget] = useState<TimelineBooking | null>(null)
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
 
   // ── Mobile date strip: anchor date (center of the 21-day strip) ─────────
@@ -525,20 +527,11 @@ export default function TimelinePage() {
   const handleDrawerCheckIn = useCallback((b: TimelineBooking) => {
     const room = allRooms.find((r) => r.bookings.some((bk) => bk.room_stay_id === b.room_stay_id))
     if (!room) return
-    timelineActions.checkIn({
-      bookingId: b.booking_id,
-      roomStayId: b.room_stay_id,
-      roomId: room.id,
-    })
-    handleCloseDrawer()
-  }, [allRooms, timelineActions, handleCloseDrawer])
+    setCheckInTarget({ booking: b, roomId: room.id })
+  }, [allRooms])
   const handleDrawerCheckOut = useCallback((b: TimelineBooking) => {
-    timelineActions.checkOut({
-      bookingId: b.booking_id,
-      roomStayId: b.room_stay_id,
-    })
-    handleCloseDrawer()
-  }, [timelineActions, handleCloseDrawer])
+    setCheckOutTarget(b)
+  }, [])
   const handleDoubleClickBooking = useCallback((b: TimelineBooking) => {
     navigate(ROUTES.bookings.detail(b.booking_id))
   }, [navigate])
@@ -555,24 +548,36 @@ export default function TimelinePage() {
 
   const handleQuickCheckIn = useCallback(
     (booking: TimelineBooking, roomId: string) => {
-      timelineActions.checkIn({
-        bookingId: booking.booking_id,
-        roomStayId: booking.room_stay_id,
-        roomId,
-      })
+      setCheckInTarget({ booking, roomId })
     },
-    [timelineActions],
+    [],
   )
+
+  const handleConfirmCheckIn = useCallback(() => {
+    if (!checkInTarget) return
+    timelineActions.checkIn({
+      bookingId: checkInTarget.booking.booking_id,
+      roomStayId: checkInTarget.booking.room_stay_id,
+      roomId: checkInTarget.roomId,
+    })
+    setCheckInTarget(null)
+  }, [checkInTarget, timelineActions])
 
   const handleQuickCheckOut = useCallback(
     (booking: TimelineBooking) => {
-      timelineActions.checkOut({
-        bookingId: booking.booking_id,
-        roomStayId: booking.room_stay_id,
-      })
+      setCheckOutTarget(booking)
     },
-    [timelineActions],
+    [],
   )
+
+  const handleConfirmCheckOut = useCallback(() => {
+    if (!checkOutTarget) return
+    timelineActions.checkOut({
+      bookingId: checkOutTarget.booking_id,
+      roomStayId: checkOutTarget.room_stay_id,
+    })
+    setCheckOutTarget(null)
+  }, [checkOutTarget, timelineActions])
 
   const handleContextOpenDetail = useCallback(
     (booking: TimelineBooking) => {
@@ -1033,6 +1038,42 @@ export default function TimelinePage() {
               <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
               <AlertDialogAction onClick={handleConfirmCancel}>
                 ยืนยัน ยกเลิกการจอง
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Check-in confirmation dialog */}
+        <AlertDialog open={checkInTarget !== null} onOpenChange={(open) => !open && setCheckInTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>ยืนยันเช็คอิน</AlertDialogTitle>
+              <AlertDialogDescription>
+                เช็คอิน {checkInTarget?.booking.guest_name} ?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmCheckIn}>
+                เช็คอิน
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Check-out confirmation dialog */}
+        <AlertDialog open={checkOutTarget !== null} onOpenChange={(open) => !open && setCheckOutTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>ยืนยันเช็คเอาท์</AlertDialogTitle>
+              <AlertDialogDescription>
+                เช็คเอาท์ {checkOutTarget?.guest_name} ?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmCheckOut}>
+                เช็คเอาท์
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

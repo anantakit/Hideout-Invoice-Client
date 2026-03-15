@@ -5,7 +5,7 @@ import { useForm, useFormContext, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { BottomBar } from '@/shared/ui/BottomBar'
@@ -153,6 +153,15 @@ export default function CreateBookingPage() {
 
         {/* ── Header ──────────────────────────────────────────────────── */}
         <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-2 text-muted-foreground mb-1"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            กลับ
+          </Button>
           <h1 className="text-h1 text-xl sm:text-2xl">สร้างการจอง</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             จองห้องพักล่วงหน้า หรือเช็คอินทันทีสำหรับผู้เข้าพักที่เดินเข้ามา

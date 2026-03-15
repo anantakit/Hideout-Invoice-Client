@@ -13,7 +13,6 @@ export const ROUTES = {
     list: '/bookings',
     new: '/bookings/new',
     detail: (id: string) => `/bookings/${id}`,
-    groupCheckIn: (id: string) => `/bookings/${id}/checkin`,
   },
 
   operations: {
