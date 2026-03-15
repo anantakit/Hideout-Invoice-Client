@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/car
 import { Input } from '../../../shared/ui/input'
 import { Button } from '../../../shared/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../shared/ui/select'
-import { formatTHB } from '../../../shared/utils'
+import { formatTHB, THAI_MONTHS_SHORT, THAI_MONTHS_FULL, formatCompact } from '../../../shared/utils'
 import { dashboardApi } from '../api'
 import type { MonthlyRevenueEntry } from '../types'
 
@@ -16,24 +16,6 @@ interface Props {
   yearLabel: string
   /** e.g. "2568" */
   prevYearLabel: string
-}
-
-const THAI_SHORT_MONTHS = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
-  'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
-  'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
-const THAI_FULL_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
-  'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
-  'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-]
-
-function formatCompact(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`
-  return n.toFixed(0)
 }
 
 export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
@@ -146,7 +128,7 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
                 <SelectContent>
                   {data.map((d) => (
                     <SelectItem key={d.month} value={String(d.month)}>
-                      {THAI_FULL_MONTHS[d.month - 1]}
+                      {THAI_MONTHS_FULL[d.month - 1]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -193,7 +175,7 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
               axisLine={{ stroke: 'hsl(var(--border))' }}
               tickLine={false}
-              tickFormatter={(m) => THAI_SHORT_MONTHS[m - 1] ?? m}
+              tickFormatter={(m) => THAI_MONTHS_SHORT[m - 1] ?? m}
             />
             <YAxis
               yAxisId="left"
@@ -231,7 +213,7 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
                   name === 'ytd' ? 'สะสม YTD' : String(name)
                 return [formatTHB(Number(value)), label]
               }}
-              labelFormatter={(m) => THAI_SHORT_MONTHS[Number(m) - 1] ?? m}
+              labelFormatter={(m) => THAI_MONTHS_SHORT[Number(m) - 1] ?? m}
               cursor={{ fill: 'hsl(var(--accent))', opacity: 0.3 }}
             />
             <Legend

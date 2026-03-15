@@ -44,6 +44,8 @@ const receiptSchema = z.object({
 
 type ReceiptFormValues = z.infer<typeof receiptSchema>
 
+const METHOD_MAP: Record<string, string> = { CASH: 'เงินสด', TRANSFER: 'โอนเงิน' }
+
 export default function CreateReceipt() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -95,8 +97,7 @@ export default function CreateReceipt() {
       form.setValue('check_in_date', prefill.check_in_date.slice(0, 10))
     }
     if (prefill.payment_method) {
-      const methodMap: Record<string, string> = { CASH: 'เงินสด', TRANSFER: 'โอนเงิน' }
-      form.setValue('payment_method', methodMap[prefill.payment_method] ?? prefill.payment_method)
+      form.setValue('payment_method', METHOD_MAP[prefill.payment_method] ?? prefill.payment_method)
     }
     if (prefill.items.length > 0) {
       form.setValue(

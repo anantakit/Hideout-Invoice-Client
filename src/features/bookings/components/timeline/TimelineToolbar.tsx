@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-import { format, startOfDay } from 'date-fns'
+import { format } from 'date-fns'
 import {
   ChevronLeft,
   ChevronRight,
@@ -19,7 +19,7 @@ import {
 } from '@/shared/ui/select'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/ui/sheet'
 import { Calendar } from '@/shared/ui/calendar'
-import { cn } from '@/shared/utils'
+import { cn, THAI_MONTHS_FULL, todayISO } from '@/shared/utils'
 import type { RoomAvailability } from './AvailabilitySummary'
 
 // ─── Zoom ────────────────────────────────────────────────────────────────────
@@ -38,11 +38,6 @@ export const ZOOM_CONFIG: Record<
 const noop = () => {}
 
 // ─── Thai helpers ────────────────────────────────────────────────────────────
-
-const THAI_MONTHS_FULL = [
-  'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
-  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม',
-]
 
 const EN_MONTHS_SHORT = [
   'Jan','Feb','Mar','Apr','May','Jun',
@@ -237,7 +232,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
 
   // ── Check if start date is today ─────────────────────────────────────────
   const isToday = useMemo(
-    () => format(displayDate, 'yyyy-MM-dd') === format(startOfDay(new Date()), 'yyyy-MM-dd'),
+    () => format(displayDate, 'yyyy-MM-dd') === todayISO(),
     [displayDate],
   )
 

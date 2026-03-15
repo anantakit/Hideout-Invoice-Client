@@ -1,7 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { addDays, format } from 'date-fns'
+import { addDays } from 'date-fns'
 import type { TimelineRoom } from '../../types'
 import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from './tokens'
+
+/** Fast ISO date formatter — avoids date-fns format() overhead on every pointermove. */
+function formatDateISO(d: Date): string {
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
 
 /** Minimum pointer movement (px) before a draw activates. */
 const DRAW_THRESHOLD_PX = 8
@@ -153,8 +161,8 @@ export function useTimelineDraw({
       const minDay = Math.min(ref.startDayIndex, currentDay)
       const maxDay = Math.max(ref.startDayIndex, currentDay)
 
-      const checkIn = format(addDays(windowStart, minDay), 'yyyy-MM-dd')
-      const checkOut = format(addDays(windowStart, maxDay + 1), 'yyyy-MM-dd')
+      const checkIn = formatDateISO(addDays(windowStart, minDay))
+      const checkOut = formatDateISO(addDays(windowStart, maxDay + 1))
 
       const isEmpty = isCellEmpty(ref.roomId, checkIn, checkOut)
 
@@ -196,8 +204,8 @@ export function useTimelineDraw({
       const currentDay = getDayIndex(e.clientX)
       const minDay = Math.min(ref.startDayIndex, currentDay)
       const maxDay = Math.max(ref.startDayIndex, currentDay)
-      const checkIn = format(addDays(windowStart, minDay), 'yyyy-MM-dd')
-      const checkOut = format(addDays(windowStart, maxDay + 1), 'yyyy-MM-dd')
+      const checkIn = formatDateISO(addDays(windowStart, minDay))
+      const checkOut = formatDateISO(addDays(windowStart, maxDay + 1))
 
       if (isCellEmpty(ref.roomId, checkIn, checkOut)) {
         setCompletedDraw({ roomId: ref.roomId, checkIn, checkOut })

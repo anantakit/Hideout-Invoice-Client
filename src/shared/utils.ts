@@ -20,11 +20,14 @@ export function formatTHB(amount: number): string {
 // Kept as alias so existing call-sites still compile
 export const formatCurrency = formatTHB
 
-const thaiMonths = [
+export const THAI_MONTHS_FULL = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
   'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
   'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
 ]
+
+// Kept as private alias for internal use
+const thaiMonths = THAI_MONTHS_FULL
 
 // Formats an ISO date string as Buddhist Era Thai date: "23 กุมภาพันธ์ 2569"
 export function formatThaiDate(dateString: string): string {
@@ -113,6 +116,19 @@ const compactFormatter = new Intl.NumberFormat('th-TH', {
 /** Format number with Thai locale grouping, no decimals: "1,234" */
 export function formatCompactNumber(n: number): string {
   return compactFormatter.format(n)
+}
+
+/** Format number with M/k suffix for compact display: 1200000 → "1.2M", 4500 → "4500k", 800 → "800" */
+export function formatCompact(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`
+  return n.toFixed(0)
+}
+
+/** Format number for KPI display: M suffix for millions, else Thai locale grouping */
+export function formatKPI(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  return formatCompactNumber(n)
 }
 
 export function addDaysISO(days: number): string {

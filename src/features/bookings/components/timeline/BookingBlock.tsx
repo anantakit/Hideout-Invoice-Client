@@ -1,12 +1,12 @@
 import React, { type CSSProperties, useCallback, useMemo, useRef } from 'react'
-import { differenceInDays, format, parseISO, startOfDay } from 'date-fns'
+import { differenceInDays, format, parseISO } from 'date-fns'
 import { Users, BedDouble, Clock, Footprints, CalendarCheck, ArrowRightLeft, CheckCircle2 } from 'lucide-react'
 import {
   TIMELINE_BLOCK_HEIGHT_PX,
   TIMELINE_BLOCK_GAP_PX,
   TIMELINE_BLOCK_PADDING_PX,
 } from './tokens'
-import { cn } from '@/shared/utils'
+import { cn, todayISO } from '@/shared/utils'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/shared/ui/tooltip'
 import { Badge } from '@/shared/ui/badge'
 import { Separator } from '@/shared/ui/separator'
@@ -304,7 +304,7 @@ const BookingBlock = React.memo(function BookingBlock({
             ),
             // Past bookings fade
             !isBeingDragged && !isUpcoming && status !== 'CANCELLED' && status !== 'CHECKED_OUT' &&
-              booking.check_out.slice(0, 10) <= format(startOfDay(new Date()), 'yyyy-MM-dd') && 'opacity-60',
+              booking.check_out.slice(0, 10) <= todayISO() && 'opacity-60',
           )}
           style={positionStyle}
           onMouseEnter={() => onHoverStart(booking.booking_id)}

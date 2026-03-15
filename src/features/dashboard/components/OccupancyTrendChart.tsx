@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts'
-import { formatCompactNumber } from '@/shared/utils'
+import { formatCompact, formatCompactNumber } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import type { DailyOccupancyEntry } from '../types'
 
@@ -19,12 +19,6 @@ interface Props {
 }
 
 const DAY_NAMES = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
-
-function formatCompact(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`
-  return n.toFixed(0)
-}
 
 function formatKPI(n: number): string {
   return formatCompactNumber(n)

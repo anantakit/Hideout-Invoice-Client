@@ -1,4 +1,4 @@
-import { differenceInDays, parseISO, format, addDays } from 'date-fns'
+import { differenceInDays, parseISO } from 'date-fns'
 import { Loader2, Timer, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
@@ -11,7 +11,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
-import { formatThaiDate, formatTHB } from '@/shared/utils'
+import { formatThaiDate, formatTHB, addDaysISO } from '@/shared/utils'
 import { useEarlyCheckout } from '../hooks'
 import type { RoomStayResponse, BookingResponse } from '../types'
 
@@ -25,7 +25,7 @@ interface EarlyCheckoutDialogProps {
 
 export function EarlyCheckoutDialog({ open, onOpenChange, bookingId, stay, booking }: EarlyCheckoutDialogProps) {
   const earlyCheckout = useEarlyCheckout(bookingId)
-  const tomorrowStr = format(addDays(new Date(), 1), 'yyyy-MM-dd')
+  const tomorrowStr = addDaysISO(1)
 
   // Night calculations
   const originalNights = differenceInDays(parseISO(stay.check_out), parseISO(stay.check_in))

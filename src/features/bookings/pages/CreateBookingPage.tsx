@@ -1,12 +1,11 @@
 import { useState, useCallback } from 'react'
-import { format, addDays } from 'date-fns'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFormContext, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { cn } from '@/shared/utils'
+import { cn, todayISO, addDaysISO, formatCompactNumber } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { BottomBar } from '@/shared/ui/BottomBar'
 import { Button } from '@/shared/ui/button'
@@ -31,15 +30,6 @@ import { customersApi } from '../../customers/api'
 import CustomerModal from '../../customers/components/CustomerModal'
 import type { Customer } from '../../customers/types'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function todayStr(): string {
-  return format(new Date(), 'yyyy-MM-dd')
-}
-function tomorrowStr(): string {
-  return format(addDays(new Date(), 1), 'yyyy-MM-dd')
-}
-
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CreateBookingPage() {
@@ -51,8 +41,8 @@ export default function CreateBookingPage() {
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
 
   // Allow pre-filling from URL: /bookings/new?check_in=...&check_out=...&room_type_id=...&room_id=...
-  const urlCheckIn    = searchParams.get('check_in')     || todayStr()
-  const urlCheckOut   = searchParams.get('check_out')    || tomorrowStr()
+  const urlCheckIn    = searchParams.get('check_in')     || todayISO()
+  const urlCheckOut   = searchParams.get('check_out')    || addDaysISO(1)
   const urlRoomTypeId = searchParams.get('room_type_id') || ''
   const urlRoomId     = searchParams.get('room_id')      || ''
 
@@ -398,7 +388,7 @@ function PaymentFields() {
                 step={0.01}
                 placeholder={
                   paymentMode === 'full' && totalAmount > 0
-                    ? totalAmount.toLocaleString()
+                    ? formatCompactNumber(totalAmount)
                     : 'เช่น 1500'
                 }
                 value={field.value ?? ''}

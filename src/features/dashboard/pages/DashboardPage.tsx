@@ -4,7 +4,7 @@ import { Banknote, TrendingUp, TrendingDown, BedDouble, AlertTriangle, ChevronRi
 import { Skeleton } from '../../../shared/ui/skeleton'
 import { Card, CardContent } from '../../../shared/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../shared/ui/tooltip'
-import { formatCompactNumber } from '@/shared/utils'
+import { formatKPI } from '@/shared/utils'
 import { useDashboard } from '../hooks/useDashboard'
 import { KPICard } from '../components/KPICard'
 import { MonthSelector } from '../components/MonthSelector'
@@ -25,12 +25,6 @@ function currentMonth(): string {
 function thaiYear(yyyymm: string): string {
   const y = Number(yyyymm.split('-')[0])
   return String(y + 543)
-}
-
-/** Format number as compact — no decimals for KPI display */
-function formatKPI(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  return formatCompactNumber(n)
 }
 
 // ─── Skeleton components ────────────────────────────────────────────────────

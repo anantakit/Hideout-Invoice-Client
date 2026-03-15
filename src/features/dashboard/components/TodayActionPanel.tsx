@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { LogIn, LogOut, SprayCan, ChevronRight, AlertCircle, Wallet, CheckCircle2 } from 'lucide-react'
-import { formatCompactNumber } from '@/shared/utils'
+import { formatKPI } from '@/shared/utils'
 import { Card, CardContent } from '../../../shared/ui/card'
 import type { TodayActions } from '../types'
 
@@ -8,10 +8,8 @@ interface Props {
   data: TodayActions
 }
 
-function formatCompact(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  return formatCompactNumber(n)
-}
+// Use shared formatKPI (same logic: M suffix for millions, else Thai locale grouping)
+const formatCompact = formatKPI
 
 // ── Action item definition for urgency-based rendering ──
 

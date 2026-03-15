@@ -8,7 +8,7 @@ import { Button } from '@/shared/ui/button'
 import { TooltipProvider } from '@/shared/ui/tooltip'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/dialog'
 import toast from 'react-hot-toast'
-import { cn, THAI_MONTHS_SHORT, THAI_DAYS as THAI_DAYS_SHORT } from '@/shared/utils'
+import { cn, THAI_MONTHS_SHORT, THAI_DAYS as THAI_DAYS_SHORT, todayISO } from '@/shared/utils'
 import ErrorPanel from '@/shared/components/ErrorPanel'
 import TimelineSkeleton from '../components/timeline/TimelineSkeleton'
 import { useTimeline, useAvailabilityGrouped, useMoveStay } from '../hooks'
@@ -397,7 +397,7 @@ export default function TimelinePage() {
     }
   }, [mobileStripStart])
 
-  const todayStr = useMemo(() => format(startOfDay(new Date()), 'yyyy-MM-dd'), [])
+  const todayStr = useMemo(() => todayISO(), [])
 
   // ── Keyboard help: `?` key opens shortcut help dialog ────────────────────
   useEffect(() => {

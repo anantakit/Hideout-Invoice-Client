@@ -202,11 +202,7 @@ export function InlineCheckIn({ bookingId, pendingStays, compact }: InlineCheckI
                     <div className="flex items-center gap-2">
                       <Key className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span className="text-sm font-semibold">
-                        {(() => {
-                          const rooms = roomsByType.get(stay.room_type_id) ?? []
-                          const room = rooms.find((r) => r.room_id === roomId)
-                          return room ? `ห้อง ${room.room_number}` : `ห้อง ${roomId.slice(0, 6)}`
-                        })()}
+                        {getRoomLabel(stay)}
                       </span>
                       <span className="text-xs text-muted-foreground">{stay.room_type_name}</span>
                     </div>

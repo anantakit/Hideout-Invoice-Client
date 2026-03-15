@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 import { addDays, differenceInDays, format, isToday, isSaturday, isSunday, parseISO, max, min, startOfDay } from 'date-fns'
-import { cn } from '@/shared/utils'
+import { cn, todayISO } from '@/shared/utils'
 import type { TimelineRoom, TimelineBooking } from '../../types'
 import BookingBlock from './BookingBlock'
 import { getCellWidthPx, TIMELINE_WINDOW_DAYS } from './tokens'
@@ -55,10 +55,10 @@ interface RoomRowProps {
 
 function deriveDisplayStatus(
   room: TimelineRoom,
+  todayStr: string,
 ): 'AVAILABLE' | 'OCCUPIED' | 'CLEANING' | 'MAINTENANCE' {
   if (room.status === 'MAINTENANCE') return 'MAINTENANCE'
   if (room.status === 'CLEANING')    return 'CLEANING'
-  const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd')
   const isOccupiedToday = room.bookings.some(
     (b) => b.check_in.slice(0, 10) <= todayStr && b.check_out.slice(0, 10) > todayStr,
   )
@@ -103,10 +103,10 @@ const RoomRow = React.memo(function RoomRow({
   onDrawStart,
 }: RoomRowProps) {
   const windowDays = windowDaysProp ?? TIMELINE_WINDOW_DAYS
-  const displayStatus = deriveDisplayStatus(room)
+  const todayStr = useMemo(() => todayISO(), [])
+  const displayStatus = deriveDisplayStatus(room, todayStr)
   const isEmpty = room.bookings.length === 0
   const today = startOfDay(new Date())
-  const todayStr = format(today, 'yyyy-MM-dd')
 
   // Today indicator offset (column index within window, -1 if not visible)
   const todayOffset = useMemo(() => {

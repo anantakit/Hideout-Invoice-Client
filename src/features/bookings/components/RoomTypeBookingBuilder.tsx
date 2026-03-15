@@ -1,8 +1,7 @@
 import { useEffect, useCallback } from 'react'
-import { format, addDays } from 'date-fns'
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form'
 import { Plus, Minus, Trash2, Loader2, Wand2 } from 'lucide-react'
-import { cn } from '@/shared/utils'
+import { cn, todayISO, addDaysISO } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -25,15 +24,6 @@ import { DateRangePicker } from './DateRangePicker'
 import type { DateRange } from './DateRangePicker'
 import type { CreateBookingFormValues } from '../createBookingSchema'
 import type { RoomTypeResponse, AvailabilityGroupedRoom, AvailabilityGroupedResponse } from '../types'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function todayStr(): string {
-  return format(new Date(), 'yyyy-MM-dd')
-}
-function tomorrowStr(): string {
-  return format(addDays(new Date(), 1), 'yyyy-MM-dd')
-}
 
 // ─── Proximity Auto-Assign ──────────────────────────────────────────────────
 
@@ -237,8 +227,8 @@ export function RoomTypeBookingBuilder() {
   }, [sameDates, firstCheckIn, firstCheckOut, fields.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function addItem() {
-    const ci = sameDates && firstCheckIn  ? firstCheckIn  : todayStr()
-    const co = sameDates && firstCheckOut ? firstCheckOut : tomorrowStr()
+    const ci = sameDates && firstCheckIn  ? firstCheckIn  : todayISO()
+    const co = sameDates && firstCheckOut ? firstCheckOut : addDaysISO(1)
     append({ room_type_id: '', quantity: 1, check_in: ci, check_out: co, assigned_room_ids: [] })
   }
 

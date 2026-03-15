@@ -22,7 +22,7 @@ import {
 } from 'date-fns'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { cn, THAI_MONTHS_SHORT } from '@/shared/utils'
+import { cn, THAI_MONTHS_SHORT, THAI_MONTHS_FULL } from '@/shared/utils'
 import { Button } from '../../../shared/ui/button'
 import { Dialog, DialogPortal, DialogOverlay } from '../../../shared/ui/dialog'
 import { Sheet, SheetPortal, SheetOverlay } from '../../../shared/ui/sheet'
@@ -92,12 +92,6 @@ const VIEW_REGISTRY: Partial<Record<ViewType, React.ComponentType<CalendarViewPr
 }
 
 // ─── Thai locale constants ────────────────────────────────────────────────────
-
-const THAI_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
-  'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
-  'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-]
 
 const DAY_HEADERS = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']
 
@@ -363,7 +357,7 @@ function ModalHeader({
       </button>
 
       <span className="flex-1 text-center text-sm font-semibold text-foreground">
-        {THAI_MONTHS[month.getMonth()]} {month.getFullYear() + 543}
+        {THAI_MONTHS_FULL[month.getMonth()]} {month.getFullYear() + 543}
       </span>
 
       <button

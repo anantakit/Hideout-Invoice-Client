@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { parseISO, isToday, differenceInDays, format, addDays } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, ChevronDown, BedDouble, CheckCircle2, LogOut, Phone, ExternalLink } from 'lucide-react'
-import { cn, fmtShort, fmtShortISO } from '@/shared/utils'
+import { cn, fmtShort, fmtShortISO, formatTHBCurrency, todayISO as todayISOUtil, addDaysISO } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import {
@@ -260,8 +260,8 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   const [filter, setFilter] = useState<FilterValue>('all')
   const [freeRoomMode, setFreeRoomMode] = useState<'selected' | 'range'>('selected')
   const [stayRange, setStayRange] = useState<DateRange>(() => {
-    const t = format(new Date(), 'yyyy-MM-dd')
-    const tm = format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')
+    const t = todayISOUtil()
+    const tm = addDaysISO(1)
     return { checkIn: t, checkOut: tm }
   })
   const [assignSheetBookingId, setAssignSheetBookingId] = useState<string | null>(null)
@@ -504,7 +504,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   }, [unassignedStays, selectedDateStr])
 
   // Pending assignments grouped by booking — only today & overdue (mobile focus)
-  const todayISO = format(new Date(), 'yyyy-MM-dd')
+  const todayISO = todayISOUtil()
   const pendingBookings = useMemo(() => {
     const map = new Map<string, {
       bookingId: string
@@ -865,7 +865,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                       </div>
                       {hasBalance && (
                         <p className="text-helper text-destructive font-medium mt-1">
-                          ค้าง ฿{co.balance.toLocaleString()}
+                          ค้าง {formatTHBCurrency(co.balance)}
                         </p>
                       )}
                     </div>
@@ -909,7 +909,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                       </div>
                       {hasBalance && (
                         <p className="text-helper text-destructive font-medium mt-1">
-                          ค้าง ฿{co.balance.toLocaleString()}
+                          ค้าง {formatTHBCurrency(co.balance)}
                         </p>
                       )}
                     </button>
@@ -1219,7 +1219,7 @@ const RoomCard = React.memo(function RoomCard({
               ออก: {entry.checkoutGuestName}
               {checkoutHasBalance && (
                 <span className="text-destructive font-medium ml-1">
-                  ฿{entry.checkoutBalance!.toLocaleString()}
+                  {formatTHBCurrency(entry.checkoutBalance!)}
                 </span>
               )}
             </p>
@@ -1248,7 +1248,7 @@ const RoomCard = React.memo(function RoomCard({
         </Badge>
         {hasBalance && (
           <span className="text-helper text-destructive font-medium tabular-nums">
-            ค้าง ฿{entry.balance!.toLocaleString()}
+            ค้าง {formatTHBCurrency(entry.balance!)}
           </span>
         )}
       </div>

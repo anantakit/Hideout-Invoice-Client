@@ -1,4 +1,4 @@
-import { format, addDays } from 'date-fns'
+import { todayISO, addDaysISO } from '@/shared/utils'
 import { Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/shared/ui/card'
@@ -18,8 +18,8 @@ interface StayAvailabilityCardProps {
 
 export function StayAvailabilityCard({ range, onRangeChange }: StayAvailabilityCardProps) {
   const navigate = useNavigate()
-  const today = format(new Date(), 'yyyy-MM-dd')
-  const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
+  const today = todayISO()
+  const tomorrow = addDaysISO(1)
 
   const currentRange = range ?? { checkIn: today, checkOut: tomorrow }
   const handleChange = onRangeChange ?? (() => {})
