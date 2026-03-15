@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Banknote, TrendingUp, TrendingDown, BedDouble, AlertTriangle, ChevronRight, CalendarPlus } from 'lucide-react'
 import { Skeleton } from '../../../shared/ui/skeleton'
 import { Card, CardContent } from '../../../shared/ui/card'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../shared/ui/tooltip'
 import { useDashboard } from '../hooks/useDashboard'
 import { KPICard } from '../components/KPICard'
 import { MonthSelector } from '../components/MonthSelector'
@@ -34,17 +35,19 @@ function formatKPI(n: number): string {
   }).format(n)
 }
 
+// ─── Skeleton components ────────────────────────────────────────────────────
+
 function KPICardSkeleton() {
   return (
     <Card>
-      <CardContent className="px-4 py-4">
+      <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex items-start justify-between">
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-7 w-24" />
-            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-3.5 w-20" />
           </div>
-          <Skeleton className="w-9 h-9 rounded-lg" />
+          <Skeleton className="w-8 h-8 rounded-lg" />
         </div>
       </CardContent>
     </Card>
@@ -54,9 +57,9 @@ function KPICardSkeleton() {
 function ActionPanelSkeleton() {
   return (
     <Card>
-      <CardContent className="px-4 py-4 sm:px-5 sm:py-4">
+      <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
         <Skeleton className="h-4 w-36 mb-3" />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <Skeleton className="h-14 rounded-lg" />
           <Skeleton className="h-14 rounded-lg" />
           <Skeleton className="h-14 rounded-lg" />
@@ -69,13 +72,15 @@ function ActionPanelSkeleton() {
 function ChartSkeleton() {
   return (
     <Card className="h-full">
-      <CardContent className="p-5">
-        <Skeleton className="h-5 w-32 mb-4" />
-        <Skeleton className="w-full h-48" />
+      <CardContent className="px-4 py-4 sm:p-5">
+        <Skeleton className="h-4 w-32 mb-4" />
+        <Skeleton className="w-full h-44" />
       </CardContent>
     </Card>
   )
 }
+
+// ─── Main Dashboard ─────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const [month, setMonth] = useState(currentMonth)
@@ -86,29 +91,24 @@ export default function Dashboard() {
   const isCurrentMonth = month === currentMonth()
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-4 py-5 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-4">
+
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">ภาพรวมวันนี้</h1>
+          <h1 className="text-lg sm:text-xl font-semibold text-foreground">ภาพรวมวันนี้</h1>
           <p className="text-xs text-muted-foreground mt-0.5">สรุปผลประกอบการโรงแรม</p>
         </div>
         <MonthSelector month={month} onChange={setMonth} />
       </div>
 
-      {/* 1. Today's Action Panel — only for current month */}
+      {/* ── 1. Today's Action Panel — current month only ─────────────── */}
       {isCurrentMonth && (
-        <div className="mb-4">
-          {isLoading ? (
-            <ActionPanelSkeleton />
-          ) : data ? (
-            <TodayActionPanel data={data.today_actions} />
-          ) : null}
-        </div>
+        isLoading ? <ActionPanelSkeleton /> : data ? <TodayActionPanel data={data.today_actions} /> : null
       )}
 
-      {/* 2. KPI Row (4 cards + booking pace integrated) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+      {/* ── 2. KPI Row ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {isLoading ? (
           <>
             <KPICardSkeleton />
@@ -118,57 +118,60 @@ export default function Dashboard() {
           </>
         ) : data ? (
           <>
-            {/* Cash collected today */}
+            {/* 2a. Cash collected today */}
             <Card>
-              <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+              <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted-foreground font-medium">เงินสดเข้าวันนี้</p>
-                    <p className={`mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight leading-none ${
-                      data.kpi.revenue_today > 0 ? 'text-foreground' : 'text-muted-foreground/50'
+                    <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">เงินสดเข้าวันนี้</p>
+                    <p className={`mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight leading-none ${
+                      data.kpi.revenue_today > 0 ? 'text-foreground' : 'text-muted-foreground/40'
                     }`}>
                       {data.kpi.revenue_today > 0 ? `${formatKPI(data.kpi.revenue_today)} ฿` : '0 ฿'}
                     </p>
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-1.5 space-y-0.5">
                       {data.kpi.revenue_today_change !== undefined && isFinite(data.kpi.revenue_today_change) && data.kpi.revenue_today_change !== -1 && data.kpi.revenue_today_change !== 0 && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[11px] text-muted-foreground">
                           <span className={`font-medium ${data.kpi.revenue_today_change > 0 ? 'text-success' : 'text-destructive'}`}>
                             {data.kpi.revenue_today_change > 0 ? '+' : ''}{(data.kpi.revenue_today_change * 100).toFixed(0)}%
                           </span>
                           {' '}จากเมื่อวาน
                         </p>
                       )}
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[11px] text-muted-foreground">
                         มูลค่าเข้าพักคืนนี้ <span className="font-medium text-foreground tabular-nums">{formatKPI(data.kpi.earned_revenue_today)} ฿</span>
                       </p>
                     </div>
                   </div>
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-success-muted text-success-muted-foreground">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-success-muted text-success-muted-foreground">
                     <Banknote className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
             </Card>
-            {/* Revenue MTD */}
+
+            {/* 2b. Cash MTD */}
             <KPICard
-              title="รายได้เดือนนี้"
+              title="เงินสดเข้าเดือนนี้"
               value={`${formatKPI(data.kpi.revenue_mtd)} ฿`}
               change={data.kpi.revenue_mtd_change}
               changeLabel="เทียบช่วงเดียวกันเดือนก่อน"
               icon={TrendingUp}
               iconClassName="bg-accent text-accent-foreground"
             />
-            {/* Occupancy with sparkline */}
+
+            {/* 2c. Occupancy + ADR/RevPAR */}
             <Card>
-              <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+              <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted-foreground font-medium">เข้าพักวันนี้</p>
-                    <p className="mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
-                      {data.kpi.occupied_rooms}/{data.kpi.total_rooms} ห้อง
+                    <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">เข้าพักวันนี้</p>
+                    <p className="mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
+                      {data.kpi.occupied_rooms}/{data.kpi.total_rooms} <span className="text-sm font-normal text-muted-foreground">ห้อง</span>
                     </p>
+                    {/* Occupancy % + sparkline */}
                     <div className="mt-1.5 flex items-center gap-2">
-                      <span className={`text-xs font-semibold tabular-nums ${
+                      <span className={`text-[11px] sm:text-xs font-semibold tabular-nums ${
                         data.kpi.occupancy_rate >= 0.8 ? 'text-success' :
                         data.kpi.occupancy_rate <= 0.3 ? 'text-destructive' :
                         'text-info'
@@ -179,30 +182,53 @@ export default function Dashboard() {
                         <OccupancySparkline data={data.occupancy_trend} totalRooms={data.kpi.total_rooms} />
                       )}
                     </div>
+                    {/* ADR / RevPAR with tooltips */}
+                    <TooltipProvider delayDuration={200}>
+                      <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help border-b border-dotted border-muted-foreground/30">
+                              ราคาเฉลี่ย <span className="font-medium text-foreground tabular-nums">{formatKPI(data.kpi.adr)}</span>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="text-xs">ราคาเฉลี่ยต่อห้องที่ขายได้ (ADR)</TooltipContent>
+                        </Tooltip>
+                        <span className="text-border">|</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help border-b border-dotted border-muted-foreground/30">
+                              รายได้/ห้อง <span className="font-medium text-foreground tabular-nums">{formatKPI(data.kpi.revpar)}</span>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="text-xs">รายได้ต่อห้องทั้งหมด รวมห้องว่าง (RevPAR)</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TooltipProvider>
                   </div>
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-info-muted text-info-muted-foreground">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-info-muted text-info-muted-foreground">
                     <BedDouble className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
             </Card>
-            {/* Outstanding / Booking Pace */}
+
+            {/* 2d. Outstanding / Booking Pace */}
             {data.kpi.outstanding_count > 0 ? (
               <Link to="/bookings?view=outstanding" className="block">
-                <Card className="h-full cursor-pointer hover:border-warning/50 transition-colors">
-                  <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+                <Card className="h-full cursor-pointer hover:border-warning/50 transition-colors duration-200">
+                  <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs text-muted-foreground font-medium">ยอดค้างชำระ</p>
-                        <p className="mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight text-warning leading-none">
+                        <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">ยอดค้างชำระ</p>
+                        <p className="mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight text-warning leading-none">
                           {formatKPI(data.kpi.outstanding_balance)} ฿
                         </p>
-                        <div className="mt-2 flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground">{data.kpi.outstanding_count} รายการ</span>
+                        <div className="mt-1.5 flex items-center gap-1">
+                          <span className="text-[11px] text-muted-foreground">{data.kpi.outstanding_count} รายการ</span>
                           <ChevronRight className="w-3 h-3 text-muted-foreground" />
                         </div>
                       </div>
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-warning-muted text-warning-muted-foreground">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-warning-muted text-warning-muted-foreground">
                         <AlertTriangle className="w-4 h-4" />
                       </div>
                     </div>
@@ -211,16 +237,16 @@ export default function Dashboard() {
               </Link>
             ) : (
               <Card>
-                <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+                <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs text-muted-foreground font-medium">Booking Pace</p>
+                      <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">จองสัปดาห์นี้</p>
                       {data.kpi.booking_pace_week > 0 ? (
                         <>
-                          <p className="mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
+                          <p className="mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
                             {data.kpi.booking_pace_week} <span className="text-sm font-normal text-muted-foreground">รายการ</span>
                           </p>
-                          <div className="mt-2">
+                          <div className="mt-1.5">
                             {data.kpi.booking_pace_prev > 0 ? (() => {
                               const diff = data.kpi.booking_pace_week - data.kpi.booking_pace_prev
                               const pct = Math.round((diff / data.kpi.booking_pace_prev) * 100)
@@ -239,20 +265,20 @@ export default function Dashboard() {
                                 </div>
                               )
                             })() : (
-                              <p className="text-xs text-muted-foreground">จอง 7 วันล่าสุด</p>
+                              <p className="text-[11px] text-muted-foreground">7 วันล่าสุด</p>
                             )}
                           </div>
                         </>
                       ) : (
                         <>
-                          <p className="mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight text-muted-foreground/50 leading-none">
+                          <p className="mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight text-muted-foreground/40 leading-none">
                             -
                           </p>
-                          <p className="mt-2 text-xs text-muted-foreground">ไม่มียอดค้าง</p>
+                          <p className="mt-1.5 text-[11px] text-muted-foreground">ไม่มียอดค้าง</p>
                         </>
                       )}
                     </div>
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-accent text-accent-foreground">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-accent text-accent-foreground">
                       <CalendarPlus className="w-4 h-4" />
                     </div>
                   </div>
@@ -263,63 +289,49 @@ export default function Dashboard() {
         ) : null}
       </div>
 
-      {/* 3. Occupancy Pressure */}
-      <div className="mb-3 sm:mb-4">
-        {isLoading ? (
-          <ChartSkeleton />
-        ) : data?.occupancy_pressure && data.occupancy_pressure.length > 0 ? (
-          <OccupancyPressureChart data={data.occupancy_pressure} />
-        ) : null}
-      </div>
+      {/* ── 3. Occupancy Pressure ────────────────────────────────────── */}
+      {isLoading ? (
+        <ChartSkeleton />
+      ) : data?.occupancy_pressure && data.occupancy_pressure.length > 0 ? (
+        <OccupancyPressureChart data={data.occupancy_pressure} />
+      ) : null}
 
-      {/* 4. Owner Insights (moved up) */}
-      {!isLoading && data && data.insights && data.insights.length > 0 && (
-        <div className="mb-3 sm:mb-4">
-          <OwnerInsights data={data.insights} />
-        </div>
+      {/* ── 4. Owner Insights ────────────────────────────────────────── */}
+      {!isLoading && data?.insights && data.insights.length > 0 && (
+        <OwnerInsights data={data.insights} />
       )}
 
-      {/* 5. Heatmap + Payment + Outstanding (3 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
-        <div>
-          {isLoading ? (
+      {/* ── 5. Cash Flow Row: Heatmap + Payment + Outstanding ────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {isLoading ? (
+          <>
             <ChartSkeleton />
-          ) : data ? (
+            <ChartSkeleton />
+            <ChartSkeleton />
+          </>
+        ) : data ? (
+          <>
             <DailyRevenueHeatmap data={data.daily_revenue} month={month} />
-          ) : null}
-        </div>
-        <div>
-          {isLoading ? (
-            <ChartSkeleton />
-          ) : data ? (
             <PaymentMethodChart data={data.payment_method_breakdown} />
-          ) : null}
-        </div>
-        <div>
-          {isLoading ? (
-            <ChartSkeleton />
-          ) : data ? (
             <OutstandingList
               data={data.outstanding_bookings}
               total={data.kpi.outstanding_balance}
               count={data.kpi.outstanding_count}
             />
-          ) : null}
-        </div>
-      </div>
-
-      {/* 6. Monthly Revenue YoY */}
-      <div className="mb-3 sm:mb-4">
-        {isLoading ? (
-          <ChartSkeleton />
-        ) : data ? (
-          <RevenueTrendChart
-            data={data.monthly_revenue}
-            yearLabel={year}
-            prevYearLabel={prevYear}
-          />
+          </>
         ) : null}
       </div>
+
+      {/* ── 6. Monthly Revenue YoY ───────────────────────────────────── */}
+      {isLoading ? (
+        <ChartSkeleton />
+      ) : data ? (
+        <RevenueTrendChart
+          data={data.monthly_revenue}
+          yearLabel={year}
+          prevYearLabel={prevYear}
+        />
+      ) : null}
     </div>
   )
 }

@@ -12,28 +12,23 @@ interface KPICardProps {
 }
 
 export function KPICard({ title, value, subtitle, change, changeLabel, icon: Icon, iconClassName }: KPICardProps) {
-  // Only show change badge when the comparison is meaningful:
-  // - change must be a finite number and non-zero
-  // - skip if change is -1 (i.e. -100%) — means "yesterday was > 0 but today is 0", not a real decline
-  // - skip if change is 0 — "- 0%" is confusing, just show the label
   const hasChange = change !== undefined && isFinite(change) && change !== -1 && change !== 0
   const isPositive = hasChange && change > 0
   const isNegative = hasChange && change < 0
-  const isNeutral = false
 
   return (
     <Card>
-      <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+      <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground font-medium">{title}</p>
-            <p className="mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
+            <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">{title}</p>
+            <p className="mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
               {value}
             </p>
-            <div className="mt-2 space-y-0.5">
+            <div className="mt-1.5 space-y-0.5">
               {hasChange ? (
                 <div className="flex items-center gap-1.5">
-                  <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-md ${
+                  <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-md ${
                     isPositive ? 'text-success bg-success/10' :
                     isNegative ? 'text-destructive bg-destructive/10' :
                     'text-muted-foreground bg-muted'
@@ -41,22 +36,21 @@ export function KPICard({ title, value, subtitle, change, changeLabel, icon: Ico
                     {isPositive ? <TrendingUp className="w-3 h-3" /> :
                      isNegative ? <TrendingDown className="w-3 h-3" /> :
                      <Minus className="w-3 h-3" />}
-                    {isNeutral ? '0%' : `${change > 0 ? '+' : ''}${(change * 100).toFixed(0)}%`}
+                    {change > 0 ? '+' : ''}{(change * 100).toFixed(0)}%
                   </span>
                   {changeLabel && (
-                    <span className="text-xs text-muted-foreground">{changeLabel}</span>
+                    <span className="text-[11px] text-muted-foreground hidden sm:inline">{changeLabel}</span>
                   )}
                 </div>
               ) : changeLabel && change === undefined ? (
-                // changeLabel without change — just show the label
-                <span className="text-xs text-muted-foreground">{changeLabel}</span>
+                <span className="text-[11px] text-muted-foreground">{changeLabel}</span>
               ) : null}
               {subtitle && (
-                <p className="text-xs text-muted-foreground leading-relaxed">{subtitle}</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">{subtitle}</p>
               )}
             </div>
           </div>
-          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${iconClassName}`}>
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${iconClassName}`}>
             <Icon className="w-4 h-4" />
           </div>
         </div>

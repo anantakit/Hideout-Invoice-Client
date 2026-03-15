@@ -76,7 +76,7 @@ export function DailyRevenueHeatmap({ data, month }: Props) {
     <Card className="h-full">
       <CardHeader className="px-5 py-4">
         <div className="flex items-baseline justify-between">
-          <CardTitle className="text-section">รายได้รายวัน</CardTitle>
+          <CardTitle className="text-section">เงินสดเข้ารายวัน</CardTitle>
           <span className="text-xs text-muted-foreground font-medium tabular-nums">
             รวม {formatCompact(total)} ฿
           </span>

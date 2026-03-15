@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Bar, CartesianGrid, ComposedChart, LabelList, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Pencil } from 'lucide-react'
+import { Check, Pencil, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import { Input } from '../../../shared/ui/input'
+import { Button } from '../../../shared/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../shared/ui/select'
 import { formatTHB } from '../../../shared/utils'
 import { dashboardApi } from '../api'
 import type { MonthlyRevenueEntry } from '../types'
@@ -22,17 +24,16 @@ const THAI_SHORT_MONTHS = [
   'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
 ]
 
+const THAI_FULL_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
+  'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
+  'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+]
+
 function formatCompact(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`
   return n.toFixed(0)
-}
-
-const LEGEND_NAMES: Record<string, string> = {
-  current: '',
-  previous: '',
-  target: 'เป้า',
-  ytd: 'สะสม YTD',
 }
 
 export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
@@ -60,7 +61,6 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
       dashboardApi.upsertRevenueTarget(ceYear, month, amount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-      setEditMonth(null)
     },
   })
 
@@ -95,12 +95,13 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
   const maxYTD = chartData.length > 0 ? chartData[chartData.length - 1].ytd : 1
 
   return (
-    <Card className="h-full">
-      <CardHeader className="px-5 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-section">รายได้ประจำเดือน (Accrual)</CardTitle>
-            <p className="text-helper mt-0.5">
+    <Card>
+      {/* ── Header ── */}
+      <CardHeader className="px-4 py-3 sm:px-5 sm:py-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <CardTitle className="text-sm sm:text-base font-semibold text-foreground">รายได้ประจำเดือน (Accrual)</CardTitle>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
               {hasPrevData
                 ? `มูลค่าห้องพักรายเดือน ปี ${yearLabel} vs ${prevYearLabel}`
                 : `มูลค่าห้องพักรายเดือน ปี ${yearLabel}`}
@@ -115,7 +116,7 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
                   setEditValue((first.target || 0).toFixed(0))
                 }
               }}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
+              className="text-muted-foreground hover:text-foreground transition-colors duration-200 p-1.5 rounded-md hover:bg-accent cursor-pointer"
               title="ตั้งเป้ารายได้"
             >
               <Pencil className="w-3.5 h-3.5" />
@@ -123,83 +124,93 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="px-2 pb-4">
-        {/* Inline target editor */}
+
+      <CardContent className="px-2 sm:px-3 pb-3 sm:pb-4 pt-0">
+        {/* ── Target editor ── */}
         {editMonth !== null && (
-          <div className="flex items-center gap-2 px-3 mb-3">
-            <span className="text-xs text-muted-foreground">เป้า {THAI_SHORT_MONTHS[editMonth - 1]}:</span>
-            <Input
-              inputMode="numeric"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value.replace(/\D/g, ''))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleEditSubmit(editMonth)
-                if (e.key === 'Escape') setEditMonth(null)
-              }}
-              className="w-32 tabular-nums"
-              autoFocus
-            />
-            <button
-              onClick={() => handleEditSubmit(editMonth)}
-              disabled={mutation.isPending}
-              className="text-xs text-primary hover:underline"
-            >
-              บันทึก
-            </button>
-            <button
-              onClick={() => setEditMonth(null)}
-              className="text-xs text-muted-foreground hover:underline"
-            >
-              ยกเลิก
-            </button>
-            {/* Month navigation */}
-            <div className="flex gap-1 ml-auto">
-              {data.map((d) => (
-                <button
-                  key={d.month}
-                  onClick={() => {
-                    setEditMonth(d.month)
-                    setEditValue((d.target || 0).toFixed(0))
-                  }}
-                  className={`text-[10px] px-1.5 py-0.5 rounded ${
-                    d.month === editMonth
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-accent'
-                  }`}
-                >
-                  {THAI_SHORT_MONTHS[d.month - 1]}
-                </button>
-              ))}
+          <div className="mx-2 sm:mx-0 mb-3 p-3 rounded-lg bg-accent/50 border border-border">
+            <p className="text-[11px] text-muted-foreground font-medium mb-2">ตั้งเป้ารายได้</p>
+            <div className="flex items-center gap-2">
+              <Select
+                value={String(editMonth)}
+                onValueChange={(v) => {
+                  const m = Number(v)
+                  const entry = data.find((d) => d.month === m)
+                  setEditMonth(m)
+                  setEditValue((entry?.target || 0).toFixed(0))
+                }}
+              >
+                <SelectTrigger className="w-[7.5rem] shrink-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {data.map((d) => (
+                    <SelectItem key={d.month} value={String(d.month)}>
+                      {THAI_FULL_MONTHS[d.month - 1]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                inputMode="numeric"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value.replace(/\D/g, ''))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleEditSubmit(editMonth)
+                  if (e.key === 'Escape') setEditMonth(null)
+                }}
+                placeholder="จำนวนเงิน"
+                className="flex-1 min-w-0 tabular-nums"
+                autoFocus
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0 h-9 w-9 text-success hover:text-success hover:bg-success/10"
+                onClick={() => handleEditSubmit(editMonth)}
+                disabled={mutation.isPending}
+              >
+                <Check className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+                onClick={() => setEditMonth(null)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         )}
 
-        <ResponsiveContainer width="100%" height={220}>
-          <ComposedChart data={chartData} margin={{ top: 20, right: 50, left: 10, bottom: 5 }}>
+        {/* ── Chart ── */}
+        <ResponsiveContainer width="100%" height={200}>
+          <ComposedChart data={chartData} margin={{ top: 18, right: 45, left: 5, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
               dataKey="month"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
               axisLine={{ stroke: 'hsl(var(--border))' }}
               tickLine={false}
               tickFormatter={(m) => THAI_SHORT_MONTHS[m - 1] ?? m}
             />
             <YAxis
               yAxisId="left"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
               axisLine={false}
               tickLine={false}
-              width={45}
+              width={40}
               tickFormatter={(v) => formatCompact(v)}
               domain={[0, Math.ceil(maxBarVal * 1.15)]}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
-              tick={{ fill: 'hsl(var(--warning))', fontSize: 10 }}
+              tick={{ fill: 'hsl(var(--warning))', fontSize: 9 }}
               axisLine={false}
               tickLine={false}
-              width={45}
+              width={40}
               tickFormatter={(v) => formatCompact(v)}
               domain={[0, Math.ceil(maxYTD * 1.1)]}
             />
@@ -209,7 +220,8 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '8px',
                 color: 'hsl(var(--foreground))',
-                fontSize: 13,
+                fontSize: 12,
+                padding: '8px 12px',
               }}
               formatter={(value, name) => {
                 const label =
@@ -226,9 +238,11 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
               formatter={(value) => {
                 if (value === 'current') return `ปี ${yearLabel}`
                 if (value === 'previous') return `ปี ${prevYearLabel}`
-                return LEGEND_NAMES[value] ?? value
+                if (value === 'target') return 'เป้า'
+                if (value === 'ytd') return 'สะสม YTD'
+                return value
               }}
-              wrapperStyle={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}
+              wrapperStyle={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', paddingTop: 4 }}
             />
             {/* Previous year bars */}
             {hasPrevData && (
@@ -236,11 +250,11 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
                 yAxisId="left"
                 dataKey="previous"
                 fill="hsl(var(--muted-foreground))"
-                opacity={0.25}
+                opacity={0.2}
                 radius={[3, 3, 0, 0]}
               />
             )}
-            {/* Current year bars with YoY labels */}
+            {/* Current year bars */}
             <Bar
               yAxisId="left"
               dataKey="current"
