@@ -58,17 +58,15 @@ export default function SearchableComboBox<T extends object>({
   const debouncedMobileSearch = useDebounce(mobileSearch, 300)
   const selectedRef = useRef<HTMLButtonElement>(null)
 
+  // Sync inputText from external state — single effect avoids race between
+  // displayValue sync and value-cleared reset.
   useEffect(() => {
     if (displayValue !== undefined) {
       setInputText(displayValue)
-    }
-  }, [displayValue])
-
-  useEffect(() => {
-    if (!value && !isOpen) {
+    } else if (!value && !isOpen) {
       setInputText('')
     }
-  }, [value, isOpen])
+  }, [displayValue, value, isOpen])
 
   // Reset mobile search when sheet opens
   useEffect(() => {

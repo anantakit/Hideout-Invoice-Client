@@ -432,7 +432,7 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| SC1 | 61–82 | ⬜ 3 useEffects จัดการ state transitions คล้ายกัน | Consolidate เป็น chain เดียว |
+| SC1 | 61–82 | ✅ 3 useEffects จัดการ state transitions คล้ายกัน | Merged effects 1+2 (inputText sync) — displayValue takes precedence over value-cleared reset |
 
 #### MEDIUM
 
@@ -647,5 +647,5 @@
 28. ⬜ **T7** — Incremental `bookingColorMap` update (deferred — low ROI)
 29. ✅ **R5** — Refactor customer fetch to useQuery
 30. ⬜ **M8** — Split mega-useMemo blocks (deferred — low ROI)
-31. ⬜ **SC1** — Consolidate SearchableComboBox useEffects (deferred — low ROI)
+31. ✅ **SC1** — Consolidate SearchableComboBox useEffects
 32. ✅ **CU1, CU2** — Stabilize CustomerModal callbacks
