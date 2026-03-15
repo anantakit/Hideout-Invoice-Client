@@ -137,6 +137,11 @@ export function useTimelineDrag({
   // Auto-scroll animation frame ID
   const autoScrollRaf = useRef<number>(0)
 
+  // Stable refs for functions used inside RAF loop — avoids restarting the loop
+  // when deps like windowStart/windowDays change mid-drag.
+  const snapToGridRef = useRef<typeof snapToGrid>(null!)
+  const updatePreviewPosRef = useRef<typeof updatePreviewPos>(null!)
+
   // Keep room maps fresh
   useEffect(() => {
     const rMap = new Map<string, TimelineRoom>()
@@ -242,7 +247,7 @@ export function useTimelineDrag({
         isMaintenanceRoom: maintenance,
       }
     },
-    [scrollContainerRef, gridContainerRef, windowStart, windowDays, checkConflict, isMaintenanceRoom, getRoomTop, getRoomHeight, getRoomAtY],
+    [scrollContainerRef, gridContainerRef, windowStart, windowDays, checkConflict, isMaintenanceRoom, getRoomAtY],
   )
 
   // ── Update preview position ─────────────────────────────────────────────
@@ -271,6 +276,10 @@ export function useTimelineDrag({
     },
     [windowStart, getRoomTop, getRoomHeight],
   )
+
+  // Keep refs in sync with latest callback versions
+  snapToGridRef.current = snapToGrid
+  updatePreviewPosRef.current = updatePreviewPos
 
   // ── Auto-scroll during drag ───────────────────────────────────────────
 
@@ -312,7 +321,7 @@ export function useTimelineDrag({
       el.scrollTop += dy
 
       // Re-snap after scroll so drag coordinates remain correct
-      const snapped = snapToGrid(
+      const snapped = snapToGridRef.current(
         ref.lastClientX,
         ref.lastClientY,
         ref.mode,
@@ -337,13 +346,13 @@ export function useTimelineDrag({
                 }
               : null,
           )
-          updatePreviewPos(snapped.newCheckIn, snapped.newCheckOut, snapped.newRoomId)
+          updatePreviewPosRef.current(snapped.newCheckIn, snapped.newCheckOut, snapped.newRoomId)
         }
       }
     }
 
     autoScrollRaf.current = requestAnimationFrame(runAutoScroll)
-  }, [scrollContainerRef, snapToGrid, updatePreviewPos])
+  }, [scrollContainerRef])
 
   // ── Cancel drag (ESC or programmatic) ─────────────────────────────────
 
@@ -478,7 +487,7 @@ export function useTimelineDrag({
           isMaintenanceRoom: false,
         })
 
-        updatePreviewPos(ref.booking.check_in, ref.booking.check_out, ref.sourceRoomId)
+        updatePreviewPosRef.current(ref.booking.check_in, ref.booking.check_out, ref.sourceRoomId)
 
         // Start auto-scroll loop
         if (!autoScrollRaf.current) {
@@ -487,7 +496,7 @@ export function useTimelineDrag({
       }
 
       // ── Active phase: snap to grid and update ──────────────────────
-      const snapped = snapToGrid(
+      const snapped = snapToGridRef.current(
         e.clientX,
         e.clientY,
         ref.mode,
@@ -516,9 +525,9 @@ export function useTimelineDrag({
           : null,
       )
 
-      updatePreviewPos(snapped.newCheckIn, snapped.newCheckOut, snapped.newRoomId)
+      updatePreviewPosRef.current(snapped.newCheckIn, snapped.newCheckOut, snapped.newRoomId)
     },
-    [snapToGrid, updatePreviewPos, runAutoScroll],
+    [runAutoScroll],
   )
 
   const handlePointerUp = useCallback(

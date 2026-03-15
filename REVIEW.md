@@ -21,7 +21,7 @@
 | BookingDetailPage.tsx | 1353 | 2 | 3 | 3 | ✅ |
 | TimelinePage.tsx | 1077 | ~~4~~ ~~3~~ 1 | 5 | ~~4~~ ~~3~~ 2 | ⬜ P3 partial |
 | MobileTimelineList.tsx | 1271 | ~~1~~ 0 | 3 | ~~5~~ 4 | ⬜ P1 partial |
-| useTimelineDrag.ts | 729 | ~~3~~ 0 | ~~4~~ 3 | 4 | ⬜ P2 partial |
+| useTimelineDrag.ts | 729 | ~~3~~ 0 | ~~4~~ ~~3~~ 1 | 4 | ⬜ P4 partial |
 | useTimelineDraw.ts | 258 | ~~1~~ 0 | ~~1~~ 0 | ~~1~~ 0 | ✅ |
 | BookingBlock.tsx | 493 | ~~1~~ 0 | 0 | 1 | ⬜ P1 partial |
 | RoomRow.tsx | 295 | 0 | 0 | 1 | ⬜ P3 partial |
@@ -169,8 +169,8 @@
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
 | D4 | 326, 503 | ⬜ String allocation สำหรับ `snapKey` ทุก pointermove | Compare fields directly |
-| D5 | 331–338, 507–517 | ⬜ Object spread สร้าง DragState ใหม่ 60+ ครั้ง/วินาที | ใช้ refs แทน state |
-| D6 | 347 | ⬜ `runAutoScroll` dependency on `snapToGrid` — RAF restart | Extract stable function |
+| D5 | 331–338, 507–517 | ✅ Object spread สร้าง DragState ใหม่ 60+ ครั้ง/วินาที | Mitigated by snapKey guard (Phase 2) + ref-based callbacks (Phase 4) |
+| D6 | 347 | ✅ `runAutoScroll` dependency on `snapToGrid` — RAF restart | snapToGridRef + updatePreviewPosRef — RAF deps now `[scrollContainerRef]` only |
 | D7 | 163 | ✅ `isMaintenanceRoom` linear search ทุก conflict check | ใช้ roomMapRef.get() O(1) |
 
 #### MEDIUM
@@ -639,7 +639,7 @@
 22. ⬜ **M3** — Extract memoized CheckInCard (deferred — MobileTimelineList complex)
 23. ✅ **RH1, RH2** — Extract DownloadButton + DeleteReceiptDialog
 24. ✅ **T10** — Combine 3 map-building useMemos into single pass
-25. ⬜ **D5, D6** — Stabilize drag state + RAF loop (deferred — partially fixed by Phase 2)
+25. ✅ **D5, D6** — Stabilize drag state + RAF loop (ref-based callbacks, no RAF restart)
 26. ✅ **CM1, RR2** — Memoize date flags in context menu + RoomRow
 
 ### Phase 4: Architecture (selective)
