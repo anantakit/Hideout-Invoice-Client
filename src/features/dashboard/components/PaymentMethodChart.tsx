@@ -1,4 +1,3 @@
-import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import type { PaymentMethodEntry } from '../types'
 
@@ -6,16 +5,14 @@ interface Props {
   data: PaymentMethodEntry[]
 }
 
-const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--success))',
-  'hsl(var(--warning))',
-  'hsl(var(--info))',
-]
-
 const METHOD_LABELS: Record<string, string> = {
   CASH: 'เงินสด',
   TRANSFER: 'โอนเงิน',
+}
+
+const METHOD_COLORS: Record<string, string> = {
+  CASH: 'bg-primary',
+  TRANSFER: 'bg-success',
 }
 
 function formatCompact(n: number): string {
@@ -46,65 +43,47 @@ export function PaymentMethodChart({ data }: Props) {
         <CardTitle className="text-section">ช่องทางชำระเงิน</CardTitle>
       </CardHeader>
       <CardContent className="px-5 pb-5">
-        <div className="flex items-center gap-5">
-          {/* Donut with center label */}
-          <div className="relative shrink-0">
-            <ResponsiveContainer width={120} height={120}>
-              <PieChart>
-                <Pie
-                  data={data}
-                  dataKey="amount"
-                  nameKey="method"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={36}
-                  outerRadius={56}
-                  paddingAngle={3}
-                  strokeWidth={0}
-                >
-                  {data.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            {/* Center label */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-[10px] text-muted-foreground">รวม</span>
-              <span className="text-sm font-semibold tabular-nums text-foreground">{formatCompact(total)} ฿</span>
-            </div>
-          </div>
+        {/* Total */}
+        <p className="text-lg font-semibold tabular-nums text-foreground mb-3">
+          {formatCompact(total)} ฿
+        </p>
 
-          {/* Legend */}
-          <div className="flex-1 space-y-3">
-            {data.map((entry, i) => {
-              const pct = (entry.amount / total) * 100
-              return (
-                <div key={entry.method}>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                      <span className="text-sm text-muted-foreground">{METHOD_LABELS[entry.method] ?? entry.method}</span>
-                    </div>
-                    <span className="text-sm font-semibold tabular-nums text-foreground">
-                      {formatCompact(entry.amount)} ฿
-                    </span>
-                  </div>
-                  <div className="ml-[18px]">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{ width: `${pct}%`, backgroundColor: COLORS[i % COLORS.length] }}
-                        />
-                      </div>
-                      <span className="text-[11px] text-muted-foreground tabular-nums w-8 text-right">{pct.toFixed(0)}%</span>
-                    </div>
-                  </div>
+        {/* Split bar */}
+        <div className="flex h-3 rounded-full overflow-hidden mb-4">
+          {data.map((entry) => {
+            const pct = (entry.amount / total) * 100
+            if (pct === 0) return null
+            return (
+              <div
+                key={entry.method}
+                className={`${METHOD_COLORS[entry.method] ?? 'bg-info'} transition-all duration-500`}
+                style={{ width: `${pct}%` }}
+              />
+            )
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="space-y-2.5">
+          {data.map((entry) => {
+            const pct = (entry.amount / total) * 100
+            return (
+              <div key={entry.method} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${METHOD_COLORS[entry.method] ?? 'bg-info'}`} />
+                  <span className="text-sm text-muted-foreground">{METHOD_LABELS[entry.method] ?? entry.method}</span>
                 </div>
-              )
-            })}
-          </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    {formatCompact(entry.amount)} ฿
+                  </span>
+                  <span className="text-[11px] text-muted-foreground tabular-nums w-8 text-right">
+                    {pct.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </CardContent>
     </Card>

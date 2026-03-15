@@ -74,6 +74,7 @@ export default function BookingListPage() {
   const statusParam = searchParams.get('status') ?? ''
   const startDate   = searchParams.get('start_date') ?? ''
   const endDate     = searchParams.get('end_date') ?? ''
+  const viewParam   = searchParams.get('view') ?? ''
 
   const hasDateFilter = Boolean(startDate && endDate)
 
@@ -109,6 +110,7 @@ export default function BookingListPage() {
     ...params,
     ...(statusParam                  && { status:     statusParam }),
     ...(startDate && endDate         && { start_date: startDate, end_date: endDate }),
+    ...(viewParam                    && { view:       viewParam }),
   })
 
   const bookings   = data?.data ?? []
@@ -202,11 +204,31 @@ export default function BookingListPage() {
             </Badge>
           </div>
         )}
+
+        {/* Active view filter badge */}
+        {viewParam && (
+          <div className="flex items-center gap-2 pt-0.5">
+            <Badge variant="amber" className="text-xs gap-1.5">
+              {viewParam === 'arrivals_today' && 'เช็คอินวันนี้'}
+              {viewParam === 'departures_today' && 'เช็คเอาท์วันนี้'}
+              {viewParam === 'outstanding' && 'ค้างชำระ'}
+              {viewParam === 'departures_today_owing' && 'เช็คเอาท์วันนี้ — ค้างชำระ'}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => updateUrlParams({ view: '' })}
+              className="h-6 px-1.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Content */}
       {bookings.length === 0 ? (
-        <EmptyState hasFilters={Boolean(searchInput || statusParam || hasDateFilter)} />
+        <EmptyState hasFilters={Boolean(searchInput || statusParam || hasDateFilter || viewParam)} />
       ) : (
         <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
 

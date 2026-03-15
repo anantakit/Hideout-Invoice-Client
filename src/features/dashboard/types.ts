@@ -21,11 +21,7 @@ export interface MonthlyRevenueEntry {
   month: number
   current: number
   previous: number
-}
-
-export interface RoomTypeRevenueEntry {
-  room_type_name: string
-  revenue: number
+  target: number
 }
 
 export interface DailyRevenueEntry {
@@ -38,21 +34,10 @@ export interface PaymentMethodEntry {
   amount: number
 }
 
-export interface UpcomingCheckinEntry {
-  date: string
-  count: number
-  booked_rooms: number
-}
-
 export interface DailyOccupancyEntry {
   date: string
   occupied: number
   earned: number
-}
-
-export interface ForecastRevenueEntry {
-  date: string
-  amount: number
 }
 
 export interface OutstandingBookingEntry {
@@ -79,28 +64,56 @@ export interface TodayActions {
   collection_received: number
 }
 
-export interface RevenueTrendEntry {
-  date: string
-  cash: number
-  earned: number
-}
-
 export interface InsightEntry {
   severity: 'critical' | 'warning' | 'info' | 'success'
   message: string
+}
+
+export interface OccupancyPressureEntry {
+  date: string
+  days_until: number
+  occupied_rooms: number
+  total_rooms: number
+  occupancy_pct: number
+  target_pct: number
+  expected_pct: number
+  curve_sample_size: number
+  remaining_rooms: number
+  scarcity_level: 'last_room' | 'scarce' | 'limited' | 'available' | 'excess'
+  date_adr: number
+  revenue_at_risk: number
+  revenue_upside: number
+  daily_pickup: number
+  momentum: 'accelerating' | 'steady' | 'slowing' | 'stalled'
+  pace_vs_normal: number
+  pace_status: 'ahead' | 'normal' | 'behind' | 'far_behind'
+  cancel_risk_pct: number
+  cancel_risk_level: 'low' | 'medium' | 'high'
+  predicted_walkins: number
+  walkin_confidence: number
+  price_elasticity: 'low' | 'medium' | 'high'
+  suggested_adr_change_pct: number
+  risk_score: number
+  risk_level: 'low' | 'medium' | 'high' | 'critical'
+  action_priority: number
+  action_type: 'pricing' | 'marketing' | 'operations' | 'monitoring'
+  insight: string
+  insight_confidence: number
+  confidence_score: number
+  confidence_factors: string[]
+  zone: 'critical' | 'at_risk' | 'building' | 'healthy' | 'high_demand'
+  zone_label: string
+  action: string
 }
 
 export interface DashboardResponse {
   kpi: DashboardKPI
   today_actions: TodayActions
   insights: InsightEntry[]
-  revenue_trend: RevenueTrendEntry[]
   monthly_revenue: MonthlyRevenueEntry[]
   daily_revenue: DailyRevenueEntry[]
   occupancy_trend: DailyOccupancyEntry[]
-  revenue_by_room_type: RoomTypeRevenueEntry[]
   payment_method_breakdown: PaymentMethodEntry[]
-  upcoming_checkins: UpcomingCheckinEntry[]
-  forecast_revenue: ForecastRevenueEntry[]
   outstanding_bookings: OutstandingBookingEntry[]
+  occupancy_pressure: OccupancyPressureEntry[]
 }

@@ -8,15 +8,12 @@ import { KPICard } from '../components/KPICard'
 import { MonthSelector } from '../components/MonthSelector'
 import { TodayActionPanel } from '../components/TodayActionPanel'
 import { OccupancySparkline } from '../components/OccupancySparkline'
-import { RevenueTrend14Chart } from '../components/RevenueTrend14Chart'
-import { OccupancyTrendChart } from '../components/OccupancyTrendChart'
 import { RevenueTrendChart } from '../components/RevenueTrendChart'
 import { DailyRevenueHeatmap } from '../components/DailyRevenueHeatmap'
 import { PaymentMethodChart } from '../components/PaymentMethodChart'
-import { UpcomingCheckinsChart } from '../components/UpcomingCheckinsChart'
-import { ForecastRevenueChart } from '../components/ForecastRevenueChart'
 import { OutstandingList } from '../components/OutstandingList'
 import { OwnerInsights } from '../components/OwnerInsights'
+import { OccupancyPressureChart } from '../components/OccupancyPressureChart'
 
 function currentMonth(): string {
   const now = new Date()
@@ -86,6 +83,7 @@ export default function Dashboard() {
 
   const year = thaiYear(month)
   const prevYear = String(Number(year) - 1)
+  const isCurrentMonth = month === currentMonth()
 
   return (
     <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-6">
@@ -98,16 +96,18 @@ export default function Dashboard() {
         <MonthSelector month={month} onChange={setMonth} />
       </div>
 
-      {/* 1. Today's Action Panel — first thing the owner sees */}
-      <div className="mb-4">
-        {isLoading ? (
-          <ActionPanelSkeleton />
-        ) : data ? (
-          <TodayActionPanel data={data.today_actions} />
-        ) : null}
-      </div>
+      {/* 1. Today's Action Panel — only for current month */}
+      {isCurrentMonth && (
+        <div className="mb-4">
+          {isLoading ? (
+            <ActionPanelSkeleton />
+          ) : data ? (
+            <TodayActionPanel data={data.today_actions} />
+          ) : null}
+        </div>
+      )}
 
-      {/* 2. KPI Row */}
+      {/* 2. KPI Row (4 cards + booking pace integrated) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
         {isLoading ? (
           <>
@@ -186,9 +186,9 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
-            {/* Outstanding */}
+            {/* Outstanding / Booking Pace */}
             {data.kpi.outstanding_count > 0 ? (
-              <Link to="/bookings" className="block">
+              <Link to="/bookings?view=outstanding" className="block">
                 <Card className="h-full cursor-pointer hover:border-warning/50 transition-colors">
                   <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
                     <div className="flex items-start justify-between gap-2">
@@ -210,89 +210,74 @@ export default function Dashboard() {
                 </Card>
               </Link>
             ) : (
-              <KPICard
-                title="ยอดค้างชำระ"
-                value="-"
-                subtitle="ไม่มียอดค้าง"
-                icon={AlertTriangle}
-                iconClassName="bg-success-muted text-success-muted-foreground"
-              />
+              <Card>
+                <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-muted-foreground font-medium">Booking Pace</p>
+                      {data.kpi.booking_pace_week > 0 ? (
+                        <>
+                          <p className="mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
+                            {data.kpi.booking_pace_week} <span className="text-sm font-normal text-muted-foreground">รายการ</span>
+                          </p>
+                          <div className="mt-2">
+                            {data.kpi.booking_pace_prev > 0 ? (() => {
+                              const diff = data.kpi.booking_pace_week - data.kpi.booking_pace_prev
+                              const pct = Math.round((diff / data.kpi.booking_pace_prev) * 100)
+                              return (
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-md ${
+                                    diff > 0 ? 'text-success bg-success/10' :
+                                    diff < 0 ? 'text-destructive bg-destructive/10' :
+                                    'text-muted-foreground bg-muted'
+                                  }`}>
+                                    {diff > 0 ? <TrendingUp className="w-3 h-3" /> :
+                                     diff < 0 ? <TrendingDown className="w-3 h-3" /> : null}
+                                    {diff > 0 ? '+' : ''}{pct}%
+                                  </span>
+                                  <span className="text-[11px] text-muted-foreground">vs สัปดาห์ก่อน</span>
+                                </div>
+                              )
+                            })() : (
+                              <p className="text-xs text-muted-foreground">จอง 7 วันล่าสุด</p>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="mt-1.5 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight text-muted-foreground/50 leading-none">
+                            -
+                          </p>
+                          <p className="mt-2 text-xs text-muted-foreground">ไม่มียอดค้าง</p>
+                        </>
+                      )}
+                    </div>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-accent text-accent-foreground">
+                      <CalendarPlus className="w-4 h-4" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </>
         ) : null}
       </div>
 
-      {/* Booking Pace indicator */}
-      {!isLoading && data && data.kpi.booking_pace_week > 0 && (() => {
-        const prev = data.kpi.booking_pace_prev
-        const diff = data.kpi.booking_pace_week - prev
-        const pct = prev > 0 ? Math.round((diff / prev) * 100) : 0
-        return (
-          <div className="flex items-center gap-2 mb-4 px-1">
-            <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              จำนวนจอง 7 วัน:
-            </span>
-            <span className="text-xs font-semibold tabular-nums text-foreground">
-              {data.kpi.booking_pace_week} รายการ
-            </span>
-            {prev > 0 ? (
-              <>
-                <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-md ${
-                  diff > 0 ? 'text-success bg-success/10' :
-                  diff < 0 ? 'text-destructive bg-destructive/10' :
-                  'text-muted-foreground bg-muted'
-                }`}>
-                  {diff > 0 ? <TrendingUp className="w-3 h-3" /> :
-                   diff < 0 ? <TrendingDown className="w-3 h-3" /> : null}
-                  {diff > 0 ? '+' : ''}{diff} ({pct > 0 ? '+' : ''}{pct}%)
-                </span>
-                <span className="text-[11px] text-muted-foreground">
-                  vs สัปดาห์ก่อน {prev}
-                </span>
-              </>
-            ) : (
-              <span className="text-[11px] text-muted-foreground">(ไม่มีข้อมูลสัปดาห์ก่อน)</span>
-            )}
-          </div>
-        )
-      })()}
-
-      {/* 3. Performance Trends: Revenue 14d + Occupancy & ADR 14d */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
-        <div>
-          {isLoading ? (
-            <ChartSkeleton />
-          ) : data?.revenue_trend && data.revenue_trend.length > 0 ? (
-            <RevenueTrend14Chart data={data.revenue_trend} />
-          ) : null}
-        </div>
-        <div>
-          {isLoading ? (
-            <ChartSkeleton />
-          ) : data?.occupancy_trend && data.occupancy_trend.length > 0 ? (
-            <OccupancyTrendChart data={data.occupancy_trend} totalRooms={data.kpi.total_rooms} />
-          ) : null}
-        </div>
+      {/* 3. Occupancy Pressure */}
+      <div className="mb-3 sm:mb-4">
+        {isLoading ? (
+          <ChartSkeleton />
+        ) : data?.occupancy_pressure && data.occupancy_pressure.length > 0 ? (
+          <OccupancyPressureChart data={data.occupancy_pressure} />
+        ) : null}
       </div>
 
-      {/* 4. Forecast: Revenue + Check-ins (2 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
-        <div>
-          {isLoading ? (
-            <ChartSkeleton />
-          ) : data ? (
-            <ForecastRevenueChart data={data.forecast_revenue} />
-          ) : null}
+      {/* 4. Owner Insights (moved up) */}
+      {!isLoading && data && data.insights && data.insights.length > 0 && (
+        <div className="mb-3 sm:mb-4">
+          <OwnerInsights data={data.insights} />
         </div>
-        <div>
-          {isLoading ? (
-            <ChartSkeleton />
-          ) : data ? (
-            <UpcomingCheckinsChart data={data.upcoming_checkins} totalRooms={data.kpi.total_rooms} />
-          ) : null}
-        </div>
-      </div>
+      )}
 
       {/* 5. Heatmap + Payment + Outstanding (3 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
@@ -323,14 +308,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 6. Owner Insights */}
-      {!isLoading && data && data.insights && data.insights.length > 0 && (
-        <div className="mb-3 sm:mb-4">
-          <OwnerInsights data={data.insights} />
-        </div>
-      )}
-
-      {/* 7. Monthly Revenue YoY (lower prominence) */}
+      {/* 6. Monthly Revenue YoY */}
       <div className="mb-3 sm:mb-4">
         {isLoading ? (
           <ChartSkeleton />

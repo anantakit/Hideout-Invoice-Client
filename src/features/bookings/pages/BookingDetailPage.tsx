@@ -290,7 +290,7 @@ export default function BookingDetailPage() {
           variant="ghost"
           size="sm"
           className="-ml-2 text-muted-foreground"
-          onClick={() => navigate('/bookings')}
+          onClick={() => navigate(-1)}
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           รายการจอง

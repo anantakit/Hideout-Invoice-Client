@@ -40,7 +40,7 @@ function buildActionItems(data: TodayActions): ActionItem[] {
   if (data.departures_today > 0 || data.departures_owing > 0) {
     items.push({
       key: 'departures',
-      to: '/bookings?status=CHECKED_IN',
+      to: '/bookings?view=departures_today',
       icon: LogOut,
       count: data.departures_today,
       label: 'เช็คเอาท์',
@@ -57,7 +57,7 @@ function buildActionItems(data: TodayActions): ActionItem[] {
   if (data.arrivals_total > 0 || data.arrivals_unassigned > 0) {
     items.push({
       key: 'arrivals',
-      to: '/timeline',
+      to: '/bookings?view=arrivals_today',
       icon: LogIn,
       count: data.arrivals_total,
       label: 'เช็คอิน',
@@ -226,7 +226,7 @@ export function TodayActionPanel({ data }: Props) {
               </div>
               {remaining > 0 && (
                 <Link
-                  to="/bookings?status=CHECKED_IN"
+                  to="/bookings?view=departures_today_owing"
                   className="block text-center text-[11px] text-primary hover:text-primary/80 font-medium mt-1.5 transition-colors"
                 >
                   ดูเพิ่มเติมอีก {remaining} รายการ

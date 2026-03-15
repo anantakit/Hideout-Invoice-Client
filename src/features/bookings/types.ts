@@ -190,6 +190,8 @@ export interface BookingQueryParams {
   /** YYYY-MM-DD — filter by stay overlap; both required or neither sent */
   start_date?: string
   end_date?: string
+  /** Pre-defined view filter: arrivals_today, departures_today, outstanding */
+  view?: string
 }
 
 // ─── API request payload ───────────────────────────────────────────────────────
