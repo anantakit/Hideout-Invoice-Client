@@ -41,6 +41,73 @@ async function downloadReceipt(id: string, number: string) {
   }
 }
 
+/** Download button with loading spinner. */
+function DownloadButton({
+  receiptId,
+  invoiceNumber,
+  downloadingId,
+  onDownload,
+}: {
+  receiptId: string
+  invoiceNumber: string
+  downloadingId: string | null
+  onDownload: (id: string, number: string) => void
+}) {
+  const isLoading = downloadingId === receiptId
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="w-8 h-8"
+      onClick={() => onDownload(receiptId, invoiceNumber)}
+      disabled={isLoading}
+      title="ดาวน์โหลด PDF"
+    >
+      {isLoading ? (
+        <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      ) : (
+        <Download className="w-4 h-4" />
+      )}
+    </Button>
+  )
+}
+
+/** Confirm-delete dialog for a receipt. */
+function DeleteReceiptDialog({
+  invoiceNumber,
+  onConfirm,
+}: {
+  invoiceNumber: string
+  onConfirm: () => void
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
+          title="ลบ"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>ลบใบเสร็จ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            ลบใบเสร็จ {invoiceNumber}? การกระทำนี้ไม่สามารถย้อนกลับได้
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>ลบ</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
 export default function ReceiptHistory() {
   const queryClient = useQueryClient()
 
@@ -215,44 +282,16 @@ export default function ReceiptHistory() {
                           <Button variant="ghost" size="icon" className="w-8 h-8" asChild title="ดูรายละเอียด">
                             <Link to={`/receipts/${receipt.id}`}><Eye className="w-4 h-4" /></Link>
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-8 h-8"
-                            onClick={() => handleDownload(receipt.id, receipt.invoice_number)}
-                            disabled={downloadingId === receipt.id}
-                            title="ดาวน์โหลด PDF"
-                          >
-                            {downloadingId === receipt.id ? (
-                              <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                            ) : (
-                              <Download className="w-4 h-4" />
-                            )}
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
-                                title="ลบ"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>ลบใบเสร็จ?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  ลบใบเสร็จ {receipt.invoice_number}? การกระทำนี้ไม่สามารถย้อนกลับได้
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMutation.mutate(receipt.id)}>ลบ</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <DownloadButton
+                            receiptId={receipt.id}
+                            invoiceNumber={receipt.invoice_number}
+                            downloadingId={downloadingId}
+                            onDownload={handleDownload}
+                          />
+                          <DeleteReceiptDialog
+                            invoiceNumber={receipt.invoice_number}
+                            onConfirm={() => deleteMutation.mutate(receipt.id)}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
@@ -273,42 +312,16 @@ export default function ReceiptHistory() {
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <span className="font-bold text-foreground text-sm">{formatTHB(receipt.total)}</span>
                     <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-8 h-8"
-                        onClick={() => handleDownload(receipt.id, receipt.invoice_number)}
-                        disabled={downloadingId === receipt.id}
-                      >
-                        {downloadingId === receipt.id ? (
-                          <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                        ) : (
-                          <Download className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>ลบใบเสร็จ?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              ลบใบเสร็จ {receipt.invoice_number}? การกระทำนี้ไม่สามารถย้อนกลับได้
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteMutation.mutate(receipt.id)}>ลบ</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <DownloadButton
+                        receiptId={receipt.id}
+                        invoiceNumber={receipt.invoice_number}
+                        downloadingId={downloadingId}
+                        onDownload={handleDownload}
+                      />
+                      <DeleteReceiptDialog
+                        invoiceNumber={receipt.invoice_number}
+                        onConfirm={() => deleteMutation.mutate(receipt.id)}
+                      />
                     </div>
                   </div>
                 </div>

@@ -287,31 +287,23 @@ export default function TimelinePage() {
     [availRoomTypes],
   )
 
-  const roomTypeIdByRoomId = useMemo(() => {
-    const map: Record<string, string> = {}
+  const { roomTypeIdByRoomId, roomTypeNameByRoomId, priceByRoomTypeId } = useMemo(() => {
+    const idMap: Record<string, string> = {}
+    const nameMap: Record<string, string> = {}
+    const priceMap: Record<string, number> = {}
     for (const rt of availRoomTypes) {
-      for (const r of rt.rooms) map[r.room_id] = rt.room_type_id
+      priceMap[rt.room_type_id] = rt.price_per_night
+      for (const r of rt.rooms) {
+        idMap[r.room_id] = rt.room_type_id
+        nameMap[r.room_id] = rt.room_type_name
+      }
     }
-    return map
+    return { roomTypeIdByRoomId: idMap, roomTypeNameByRoomId: nameMap, priceByRoomTypeId: priceMap }
   }, [availRoomTypes])
   const roomTypeIdByRoomIdRef = useRef(roomTypeIdByRoomId)
   roomTypeIdByRoomIdRef.current = roomTypeIdByRoomId
-
-  const roomTypeNameByRoomId = useMemo(() => {
-    const map: Record<string, string> = {}
-    for (const rt of availRoomTypes) {
-      for (const r of rt.rooms) map[r.room_id] = rt.room_type_name
-    }
-    return map
-  }, [availRoomTypes])
   const roomTypeNameByRoomIdRef = useRef(roomTypeNameByRoomId)
   roomTypeNameByRoomIdRef.current = roomTypeNameByRoomId
-
-  const priceByRoomTypeId = useMemo(() => {
-    const map: Record<string, number> = {}
-    for (const rt of availRoomTypes) map[rt.room_type_id] = rt.price_per_night
-    return map
-  }, [availRoomTypes])
   const priceByRoomTypeIdRef = useRef(priceByRoomTypeId)
   priceByRoomTypeIdRef.current = priceByRoomTypeId
 

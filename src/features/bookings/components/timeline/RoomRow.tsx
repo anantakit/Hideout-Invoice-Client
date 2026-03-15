@@ -104,7 +104,7 @@ const RoomRow = React.memo(function RoomRow({
 }: RoomRowProps) {
   const windowDays = windowDaysProp ?? TIMELINE_WINDOW_DAYS
   const todayStr = useMemo(() => todayISO(), [])
-  const displayStatus = deriveDisplayStatus(room, todayStr)
+  const displayStatus = useMemo(() => deriveDisplayStatus(room, todayStr), [room, todayStr])
   const isEmpty = room.bookings.length === 0
   const today = startOfDay(new Date())
 

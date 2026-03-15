@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react'
+import React, { useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import {
   LogIn,
@@ -157,16 +157,19 @@ const BookingContextMenu = React.memo(function BookingContextMenu({
     }
   }, [])
 
-  // Only allow check-in on or after the stay's check-in date (not early).
-  const today = startOfDay(new Date())
-  const stayCheckIn = startOfDay(parseISO(booking.check_in))
-  const stayCheckOut = startOfDay(parseISO(booking.check_out))
-  const canCheckIn = (status === 'RESERVED' || status === 'ASSIGNED') && stayCheckIn <= today
-  const canCheckOut = status === 'CHECKED_IN'
-  const canEarlyCheckout = status === 'CHECKED_IN' && today < stayCheckOut
-  const canTransfer = status === 'CHECKED_IN' || status === 'ASSIGNED'
-  const canCancel = status === 'RESERVED' || status === 'ASSIGNED' || status === 'CHECKED_IN'
-  const isTerminal = status === 'CHECKED_OUT' || status === 'CANCELLED'
+  const { canCheckIn, canCheckOut, canEarlyCheckout, canTransfer, canCancel, isTerminal } = useMemo(() => {
+    const today = startOfDay(new Date())
+    const stayCheckIn = startOfDay(parseISO(booking.check_in))
+    const stayCheckOut = startOfDay(parseISO(booking.check_out))
+    return {
+      canCheckIn: (status === 'RESERVED' || status === 'ASSIGNED') && stayCheckIn <= today,
+      canCheckOut: status === 'CHECKED_IN',
+      canEarlyCheckout: status === 'CHECKED_IN' && today < stayCheckOut,
+      canTransfer: status === 'CHECKED_IN' || status === 'ASSIGNED',
+      canCancel: status === 'RESERVED' || status === 'ASSIGNED' || status === 'CHECKED_IN',
+      isTerminal: status === 'CHECKED_OUT' || status === 'CANCELLED',
+    }
+  }, [booking.check_in, booking.check_out, status])
 
   return createPortal(
     <div

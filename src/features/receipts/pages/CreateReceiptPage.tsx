@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import { useForm, useFieldArray, Controller, type UseFormRegister } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -45,6 +45,92 @@ const receiptSchema = z.object({
 type ReceiptFormValues = z.infer<typeof receiptSchema>
 
 const METHOD_MAP: Record<string, string> = { CASH: 'เงินสด', TRANSFER: 'โอนเงิน' }
+
+interface ReceiptItemRowProps {
+  fieldId: string
+  index: number
+  register: UseFormRegister<ReceiptFormValues>
+  errors: any
+  watchedItem: { quantity?: number; unit_price?: number }
+  onRemove: (index: number) => void
+  canRemove: boolean
+}
+
+const ReceiptItemRow = React.memo(function ReceiptItemRow({
+  fieldId,
+  index,
+  register,
+  errors,
+  watchedItem,
+  onRemove,
+  canRemove,
+}: ReceiptItemRowProps) {
+  const qty = Number(watchedItem?.quantity) || 0
+  const price = Number(watchedItem?.unit_price) || 0
+  const lineTotal = qty * price
+  const itemErrors = errors?.items?.[index]
+
+  return (
+    <div
+      key={fieldId}
+      className="grid grid-cols-1 md:grid-cols-[1fr_100px_130px_100px_40px] gap-3 items-start p-4 bg-background rounded-lg border border-border"
+    >
+      <div>
+        <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">ห้อง / รายละเอียด</label>
+        <Input
+          placeholder="เช่น ห้อง 101"
+          className={itemErrors?.description ? 'border-destructive' : ''}
+          {...register(`items.${index}.description`)}
+        />
+        {itemErrors?.description && (
+          <p className="text-xs font-medium text-destructive mt-1">{itemErrors.description.message}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">จำนวนคืน</label>
+        <Input
+          type="number"
+          step="1"
+          min="1"
+          placeholder="1"
+          className={`text-center ${itemErrors?.quantity ? 'border-destructive' : ''}`}
+          {...register(`items.${index}.quantity`)}
+        />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">ราคาต่อคืน (บาท)</label>
+        <Input
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="0.00"
+          className={`text-right ${itemErrors?.unit_price ? 'border-destructive' : ''}`}
+          {...register(`items.${index}.unit_price`)}
+        />
+      </div>
+
+      <div className="flex items-center justify-end">
+        <span className="text-sm font-medium text-foreground text-right">{formatTHB(lineTotal)}</span>
+      </div>
+
+      <div className="flex items-center justify-center">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
+          onClick={() => onRemove(index)}
+          disabled={!canRemove}
+          title="ลบห้อง"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  )
+})
 
 export default function CreateReceipt() {
   const navigate = useNavigate()
@@ -317,72 +403,18 @@ export default function CreateReceipt() {
                   </div>
 
                   <div className="space-y-2">
-                    {fields.map((field, index) => {
-                      const qty = Number(watchedItems[index]?.quantity) || 0
-                      const price = Number(watchedItems[index]?.unit_price) || 0
-                      const lineTotal = qty * price
-
-                      return (
-                        <div
-                          key={field.id}
-                          className="grid grid-cols-1 md:grid-cols-[1fr_100px_130px_100px_40px] gap-3 items-start p-4 bg-background rounded-lg border border-border"
-                        >
-                          <div>
-                            <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">ห้อง / รายละเอียด</label>
-                            <Input
-                              placeholder="เช่น ห้อง 101"
-                              className={form.formState.errors.items?.[index]?.description ? 'border-destructive' : ''}
-                              {...form.register(`items.${index}.description`)}
-                            />
-                            {form.formState.errors.items?.[index]?.description && (
-                              <p className="text-xs font-medium text-destructive mt-1">{form.formState.errors.items[index]!.description!.message}</p>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">จำนวนคืน</label>
-                            <Input
-                              type="number"
-                              step="1"
-                              min="1"
-                              placeholder="1"
-                              className={`text-center ${form.formState.errors.items?.[index]?.quantity ? 'border-destructive' : ''}`}
-                              {...form.register(`items.${index}.quantity`)}
-                            />
-                          </div>
-
-                          <div>
-                            <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">ราคาต่อคืน (บาท)</label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              className={`text-right ${form.formState.errors.items?.[index]?.unit_price ? 'border-destructive' : ''}`}
-                              {...form.register(`items.${index}.unit_price`)}
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-end">
-                            <span className="text-sm font-medium text-foreground text-right">{formatTHB(lineTotal)}</span>
-                          </div>
-
-                          <div className="flex items-center justify-center">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
-                              onClick={() => remove(index)}
-                              disabled={fields.length === 1}
-                              title="ลบห้อง"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                    })}
+                    {fields.map((field, index) => (
+                      <ReceiptItemRow
+                        key={field.id}
+                        fieldId={field.id}
+                        index={index}
+                        register={form.register}
+                        errors={form.formState.errors}
+                        watchedItem={watchedItems[index]}
+                        onRemove={remove}
+                        canRemove={fields.length > 1}
+                      />
+                    ))}
                   </div>
 
                   {form.formState.errors.items?.root && (
