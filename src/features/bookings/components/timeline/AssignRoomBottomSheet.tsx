@@ -31,22 +31,10 @@ import {
   useTransferRoom,
 } from '../../hooks'
 import type { RoomStayResponse } from '../../types'
-import { cn, todayISO } from '@/shared/utils'
+import { cn, todayISO, fmtShortISO } from '@/shared/utils'
 import { useNavigate } from 'react-router-dom'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
-function fmtShortISO(iso: string): string {
-  try {
-    const d = parseISO(iso)
-    return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-  } catch { return iso }
-}
 
 const UNDO_TIMEOUT_MS = 4000
 

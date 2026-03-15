@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
+import { formatCompactNumber } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import type { OccupancyPressureEntry } from '../types'
 
@@ -64,10 +65,7 @@ const ACTION_TYPE_ICON: Record<string, { symbol: string; label: string }> = {
 }
 
 function formatKPI(n: number): string {
-  return new Intl.NumberFormat('th-TH', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n)
+  return formatCompactNumber(n)
 }
 
 function MomentumBadge({ momentum, pickup }: { momentum: string; pickup: number }) {

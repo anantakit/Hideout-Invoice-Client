@@ -1,12 +1,6 @@
 import React, { useMemo } from 'react'
 import { isToday, isSaturday, isSunday } from 'date-fns'
-import { cn } from '@/shared/utils'
-
-const THAI_DAYS_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
+import { cn, THAI_MONTHS_SHORT, THAI_DAYS as THAI_DAYS_SHORT } from '@/shared/utils'
 
 interface MonthSpan {
   key: string

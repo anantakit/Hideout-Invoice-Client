@@ -4,7 +4,7 @@ import { differenceInDays, isToday, isBefore, startOfDay, parseISO, format, addD
 import { ArrowLeft, CheckCircle2, X, Loader2, Phone, User, CalendarClock, Receipt, FileText, Clock, ArrowRightLeft, CreditCard, DoorOpen, LogIn, LogOut, Ban, Timer, Wand2, Repeat, Pencil } from 'lucide-react'
 import { Skeleton } from '@/shared/ui/skeleton'
 import toast from 'react-hot-toast'
-import { cn } from '@/shared/utils'
+import { cn, fmtShortISO } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Badge } from '../../../shared/ui/badge'
@@ -65,11 +65,6 @@ function stayStatusVariant(status: string): BadgeVariant {
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
 function calcNights(checkIn: string, checkOut: string): number {
   try {
     return Math.max(0, differenceInDays(parseISO(checkOut), parseISO(checkIn)))
@@ -92,13 +87,6 @@ function isCheckInOverdue(checkIn: string): boolean {
   } catch {
     return false
   }
-}
-
-function fmtShortISO(iso: string): string {
-  try {
-    const d = parseISO(iso)
-    return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-  } catch { return iso }
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

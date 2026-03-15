@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react'
-import { parseISO, isToday, differenceInDays, format, addDays } from 'date-fns'
+import { parseISO, isToday, differenceInDays } from 'date-fns'
 import { ChevronDown, BedDouble, LogIn, LogOut, Loader2, Wand2, CheckCircle2, KeyRound } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { cn } from '@/shared/utils'
+import { cn, todayISO, addDaysISO, fmtShort, fmtShortISO, THAI_MONTHS_SHORT } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import {
@@ -15,30 +15,13 @@ import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import type { TimelineRoom, TimelineBooking, UnassignedStay, RoomStayResponse } from '../../types'
 import { useBooking, useAvailabilityGrouped, useAssignRooms, useCheckInRooms } from '../../hooks'
 import { bookingsApi } from '../../api'
-import { todayISO } from '@/shared/utils'
 import { StayAvailabilityCard } from '../availability/StayAvailabilityCard'
 import type { DateRange } from '../DateRangePicker'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
 function toDateStr(s: string): string {
   return s.slice(0, 10)
-}
-
-function fmtShort(d: Date): string {
-  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-}
-
-function fmtShortISO(iso: string): string {
-  try {
-    const d = parseISO(iso)
-    return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-  } catch { return iso }
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -52,6 +35,10 @@ interface CheckinBooking {
   unassignedCount: number
   totalStays: number
   booking?: TimelineBooking
+  /** For single-room: the room_stay_id from timeline (avoids N+1 useBooking fetch) */
+  roomStayId?: string
+  /** For single-room: the physical room UUID */
+  roomId?: string
 }
 
 interface CheckoutStay {
@@ -93,11 +80,10 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
 }: DesktopOperationsPanelProps) {
   const [expandedCheckinId, setExpandedCheckinId] = useState<string | null>(null)
   const [expandedCheckoutId, setExpandedCheckoutId] = useState<string | null>(null)
-  const [stayRange, setStayRange] = useState<DateRange>(() => {
-    const t = format(new Date(), 'yyyy-MM-dd')
-    const tm = format(addDays(new Date(), 1), 'yyyy-MM-dd')
-    return { checkIn: t, checkOut: tm }
-  })
+  const [stayRange, setStayRange] = useState<DateRange>(() => ({
+    checkIn: todayISO(),
+    checkOut: addDaysISO(1),
+  }))
 
   const selectedDate = parseISO(selectedDateStr)
   const viewingToday = isToday(selectedDate)
@@ -228,6 +214,8 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
               unassignedCount: 0,
               totalStays: 1,
               booking: b,
+              roomStayId: b.room_stay_id,
+              roomId: room.id,
             })
           }
         }
@@ -682,7 +670,7 @@ function PendingAssignmentsSection({
   const qc = useQueryClient()
   const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null)
   const [autoAssignDate, setAutoAssignDate] = useState<string | null>(null)
-  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const todayStr = todayISO()
 
   const autoAssign = useMutation({
     mutationFn: (date: string) => bookingsApi.autoAssignRooms(date),
@@ -708,10 +696,10 @@ function PendingAssignmentsSection({
     },
   })
 
-  const handleAutoAssign = useCallback((date: string) => {
+  const handleAutoAssign = (date: string) => {
     setAutoAssignDate(date)
     autoAssign.mutate(date)
-  }, [autoAssign])
+  }
 
   // Group by booking — exclude today (already shown in check-in section)
   const grouped = useMemo(() => {
@@ -760,7 +748,7 @@ function PendingAssignmentsSection({
         const d = parseISO(dateStr)
         const label =
           dateStr === todayStr ? 'วันนี้' :
-          dateStr === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'พรุ่งนี้' :
+          dateStr === addDaysISO(1) ? 'พรุ่งนี้' :
           `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
         const isUrgent = dateStr <= todayStr
         const stayCount = bookings.reduce((sum, b) => sum + b.totalRooms, 0)
@@ -1087,23 +1075,16 @@ function InlineRoomPicker({
 
 function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
   const checkInMutation = useCheckInRooms(ci.bookingId)
-  const { data: booking, isLoading } = useBooking(ci.bookingId)
   const today = todayISO()
 
-  const targetStay = useMemo(() => {
-    if (!booking) return null
-    return booking.room_stays.find(
-      (s) => (s.status === 'RESERVED' || s.status === 'ASSIGNED') && s.room_id,
-    ) ?? null
-  }, [booking])
-
-  const ciDate = targetStay?.check_in?.slice(0, 10) ?? ''
+  // Use pre-populated roomStayId/roomId from timeline data (avoids N+1 useBooking fetch)
+  const ciDate = ci.booking?.check_in?.slice(0, 10) ?? ''
   const isCheckInDay = ciDate <= today
 
   const handleCheckIn = async () => {
-    if (!targetStay?.room_id) return
+    if (!ci.roomStayId || !ci.roomId) return
     try {
-      await checkInMutation.mutateAsync([{ room_stay_id: targetStay.id, room_id: targetStay.room_id }])
+      await checkInMutation.mutateAsync([{ room_stay_id: ci.roomStayId, room_id: ci.roomId }])
       toast.success('เช็คอินสำเร็จ')
     } catch (err) {
       toast.error((err as Error).message || 'เกิดข้อผิดพลาด')
@@ -1112,10 +1093,10 @@ function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
 
   const hasRoom = ci.assignedRooms.length > 0
   const needsAssign = ci.unassignedCount > 0
-  const canCheckIn = hasRoom && isCheckInDay && !needsAssign
+  const canCheckIn = hasRoom && isCheckInDay && !needsAssign && Boolean(ci.roomStayId && ci.roomId)
 
   // Status indicator shown on the right when cannot check in
-  const statusIndicator = !canCheckIn && !isLoading ? (
+  const statusIndicator = !canCheckIn ? (
     <div className="shrink-0">
       {needsAssign
         ? <span className="text-helper text-warning">รอกำหนดห้อง</span>
@@ -1126,8 +1107,8 @@ function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
   return (
     <>
       <ConfirmActionCard
-        disabled={!canCheckIn || checkInMutation.isPending || isLoading}
-        loading={isLoading || checkInMutation.isPending}
+        disabled={!canCheckIn || checkInMutation.isPending}
+        loading={checkInMutation.isPending}
         loader={<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
         icon={<LogIn className="w-4 h-4 text-primary" />}
         confirmTitle="ยืนยันเช็คอิน"

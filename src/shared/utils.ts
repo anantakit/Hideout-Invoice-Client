@@ -6,14 +6,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Hoisted formatter — avoids re-creating Intl.NumberFormat on every call
+const thbFormatter = new Intl.NumberFormat('th-TH', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
 // Thai Baht formatting — matches backend locale.FormatTHB convention
 export function formatTHB(amount: number): string {
-  return (
-    new Intl.NumberFormat('th-TH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount) + ' บาท'
-  )
+  return thbFormatter.format(amount) + ' บาท'
 }
 
 // Kept as alias so existing call-sites still compile
@@ -59,6 +60,59 @@ export function todayISO(): string {
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
   return `${yyyy}-${mm}-${dd}`
+}
+
+// ─── Short Thai date helpers (shared across many components) ──────────────
+
+export const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+]
+
+export const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
+
+/** Format a Date object as short Thai date: "15 มี.ค." */
+export function fmtShort(d: Date): string {
+  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
+}
+
+/** Format an ISO string as short Thai date: "15 มี.ค." */
+export function fmtShortISO(iso: string): string {
+  try {
+    const d = parseISO(iso)
+    return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
+  } catch { return iso }
+}
+
+/** Format an ISO string as Thai day + short date: "จ. 15 มี.ค." */
+export function fmtThaiDate(iso: string): string {
+  try {
+    const d = parseISO(iso)
+    return `${THAI_DAYS[d.getDay()]} ${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
+  } catch { return iso }
+}
+
+// Hoisted currency formatter for the OperationsDrawer/DesktopPanel (style: currency)
+const thbCurrencyFormatter = new Intl.NumberFormat('th-TH', {
+  style: 'currency',
+  currency: 'THB',
+  minimumFractionDigits: 2,
+})
+
+/** Format as ฿1,234.00 (currency symbol, no "บาท" suffix) */
+export function formatTHBCurrency(amount: number): string {
+  return thbCurrencyFormatter.format(amount)
+}
+
+// Hoisted compact number formatter (no decimals, no currency symbol)
+const compactFormatter = new Intl.NumberFormat('th-TH', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+})
+
+/** Format number with Thai locale grouping, no decimals: "1,234" */
+export function formatCompactNumber(n: number): string {
+  return compactFormatter.format(n)
 }
 
 export function addDaysISO(days: number): string {

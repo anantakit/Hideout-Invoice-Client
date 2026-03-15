@@ -1,32 +1,15 @@
 import React, { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { parseISO } from 'date-fns'
 import { ChevronDown, ChevronUp, BedDouble, ArrowRight, Wand2, Loader2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { cn } from '@/shared/utils'
+import { cn, fmtShortISO } from '@/shared/utils'
 import { Card } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { ROUTES } from '@/app/routes'
 import { bookingsApi } from '../../api'
 import type { UnassignedStay } from '../../types'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
-function fmtThaiShort(iso: string): string {
-  try {
-    const d = parseISO(iso)
-    return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-  } catch {
-    return iso
-  }
-}
 
 // ─── PendingAssignmentsPanel ──────────────────────────────────────────────────
 
@@ -160,9 +143,9 @@ export const PendingAssignmentsPanel = React.memo(function PendingAssignmentsPan
 
               {/* Date range */}
               <span className="shrink-0 flex items-center gap-1 text-helper tabular-nums">
-                {fmtThaiShort(stay.check_in)}
+                {fmtShortISO(stay.check_in)}
                 <ArrowRight className="w-3 h-3" />
-                {fmtThaiShort(stay.check_out)}
+                {fmtShortISO(stay.check_out)}
               </span>
 
               {/* Chevron hint on hover */}

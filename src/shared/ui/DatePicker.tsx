@@ -3,14 +3,9 @@ import { isValid } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { Calendar } from './calendar'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from './sheet'
-import { cn } from '@/shared/utils'
+import { cn, THAI_MONTHS_SHORT } from '@/shared/utils'
 
 // ─── Thai display helpers ─────────────────────────────────────────────────────
-
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
 
 /** Parse a YYYY-MM-DD string as a local date (no timezone shift). */
 function parseISO(iso: string): Date | null {

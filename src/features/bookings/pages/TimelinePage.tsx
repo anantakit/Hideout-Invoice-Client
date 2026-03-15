@@ -8,7 +8,7 @@ import { Button } from '@/shared/ui/button'
 import { TooltipProvider } from '@/shared/ui/tooltip'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/dialog'
 import toast from 'react-hot-toast'
-import { cn } from '@/shared/utils'
+import { cn, THAI_MONTHS_SHORT, THAI_DAYS as THAI_DAYS_SHORT } from '@/shared/utils'
 import ErrorPanel from '@/shared/components/ErrorPanel'
 import TimelineSkeleton from '../components/timeline/TimelineSkeleton'
 import { useTimeline, useAvailabilityGrouped, useMoveStay } from '../hooks'
@@ -82,13 +82,6 @@ function getStatusColorClass(status: string): string {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
-const THAI_DAYS_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
 
 const MOBILE_STRIP_DAYS = 21
 const MOBILE_CENTER = 10 // anchor is at index 10

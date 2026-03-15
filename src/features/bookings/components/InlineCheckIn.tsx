@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { LogIn, Loader2, Key } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { fmtShortISO } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import {
   Select,
@@ -37,20 +38,6 @@ interface AvailableRoom {
   room_id: string
   room_number: string
   available: boolean
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
-function fmtShort(iso: string): string {
-  try {
-    const d = parseISO(iso)
-    return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-  } catch { return iso }
 }
 
 // ─── InlineCheckIn ───────────────────────────────────────────────────────────
@@ -225,7 +212,7 @@ export function InlineCheckIn({ bookingId, pendingStays, compact }: InlineCheckI
                     </div>
                   )}
                   <p className="text-[11px] text-muted-foreground mt-0.5 pl-5.5">
-                    {fmtShort(stay.check_in)} → {fmtShort(stay.check_out)} · {nights} คืน
+                    {fmtShortISO(stay.check_in)} → {fmtShortISO(stay.check_out)} · {nights} คืน
                   </p>
               </ConfirmActionCard>
             ) : (

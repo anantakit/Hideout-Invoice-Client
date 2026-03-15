@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { parseISO, isToday, differenceInDays, format, addDays } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, ChevronDown, BedDouble, CheckCircle2, LogOut, Phone, ExternalLink } from 'lucide-react'
-import { cn } from '@/shared/utils'
+import { cn, fmtShort, fmtShortISO } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import {
@@ -18,24 +18,8 @@ import CheckInBottomSheet from './AssignRoomBottomSheet'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
 function toDateStr(s: string): string {
   return s.slice(0, 10)
-}
-
-function fmtShort(d: Date): string {
-  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-}
-
-function fmtShortISO(iso: string): string {
-  try {
-    const d = parseISO(iso)
-    return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-  } catch { return iso }
 }
 
 function overlapsRange(stay: { check_in: string; check_out: string }, rangeStart: string, rangeEnd: string): boolean {

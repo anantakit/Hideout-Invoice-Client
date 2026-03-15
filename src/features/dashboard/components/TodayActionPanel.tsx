@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { LogIn, LogOut, SprayCan, ChevronRight, AlertCircle, Wallet, CheckCircle2 } from 'lucide-react'
+import { formatCompactNumber } from '@/shared/utils'
 import { Card, CardContent } from '../../../shared/ui/card'
 import type { TodayActions } from '../types'
 
@@ -9,10 +10,7 @@ interface Props {
 
 function formatCompact(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  return new Intl.NumberFormat('th-TH', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n)
+  return formatCompactNumber(n)
 }
 
 // ── Action item definition for urgency-based rendering ──

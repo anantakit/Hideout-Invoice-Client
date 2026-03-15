@@ -24,18 +24,10 @@ import {
   isSameDay, isBefore,
 } from 'date-fns'
 import { X } from 'lucide-react'
-import { cn } from '../../../shared/utils'
+import { cn, THAI_MONTHS_SHORT } from '../../../shared/utils'
 import { Button } from '../../../shared/ui/button'
 import { Sheet, SheetContent } from '../../../shared/ui/sheet'
 import { Calendar } from '../../../shared/ui/calendar'
-
-// ─── Thai month abbreviations (range preview text) ────────────────────────────
-
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
-  'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
-  'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

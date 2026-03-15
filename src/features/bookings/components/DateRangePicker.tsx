@@ -4,14 +4,9 @@ import { isValid, isBefore, isSameDay, differenceInDays } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { Calendar } from '../../../shared/ui/calendar'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../../../shared/ui/sheet'
-import { cn } from '@/shared/utils'
+import { cn, THAI_MONTHS_SHORT } from '@/shared/utils'
 
 // ─── Thai display helpers ─────────────────────────────────────────────────────
-
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
 
 function parseISO(iso: string): Date | null {
   if (!iso) return null

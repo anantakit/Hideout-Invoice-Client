@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
+import { fmtThaiDate, formatTHBCurrency } from '@/shared/utils'
 import { type TimelineBooking, getStatusLabel } from '../../types'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -30,19 +31,6 @@ interface BookingBottomSheetProps {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
-function fmtThaiDate(iso: string): string {
-  try {
-    const d = parseISO(iso)
-    return `${THAI_DAYS[d.getDay()]} ${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-  } catch { return iso }
-}
-
 function statusVariant(status: string): 'default' | 'amber' | 'green' | 'gray' | 'red' | 'blue' {
   switch (status) {
     case 'CONFIRMED':             return 'blue'
@@ -52,14 +40,6 @@ function statusVariant(status: string): 'default' | 'amber' | 'green' | 'gray' |
     case 'CANCELLED':             return 'red'
     default:                      return 'default'
   }
-}
-
-function formatTHB(amount: number): string {
-  return new Intl.NumberFormat('th-TH', {
-    style: 'currency',
-    currency: 'THB',
-    minimumFractionDigits: 2,
-  }).format(amount)
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -136,7 +116,7 @@ const BookingBottomSheet = React.memo(function BookingBottomSheet({
           {hasBalance ? (
             <span className="flex items-center gap-1 text-sm font-semibold text-warning">
               <CircleAlert className="w-3.5 h-3.5" />
-              {formatTHB(Number(booking.balance_amount))}
+              {formatTHBCurrency(Number(booking.balance_amount))}
             </span>
           ) : (
             <span className="flex items-center gap-1 text-sm font-semibold text-success">

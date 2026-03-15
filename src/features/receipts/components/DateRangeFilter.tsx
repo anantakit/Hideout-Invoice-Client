@@ -12,7 +12,7 @@ import {
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Sheet, SheetContent } from '../../../shared/ui/sheet'
 import { Button } from '../../../shared/ui/button'
-import { cn } from '../../../shared/utils'
+import { cn, THAI_MONTHS_SHORT } from '../../../shared/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -20,11 +20,6 @@ const THAI_MONTHS_FULL = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
   'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
   'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-]
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
-  'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
-  'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
 ]
 const DAY_LABELS = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']
 

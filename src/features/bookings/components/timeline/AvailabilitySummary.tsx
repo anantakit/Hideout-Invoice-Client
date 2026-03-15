@@ -1,6 +1,6 @@
 import React from 'react'
 import { Loader2 } from 'lucide-react'
-import { cn } from '@/shared/utils'
+import { cn, fmtShort } from '@/shared/utils'
 import { Card, CardContent } from '@/shared/ui/card'
 import { Separator } from '@/shared/ui/separator'
 
@@ -21,17 +21,6 @@ interface AvailabilitySummaryProps {
   selectedRoomTypeId: string | null
   onSelect: (id: string | null) => void
   isLoading: boolean
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
-function fmtThaiShort(d: Date): string {
-  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
 }
 
 // ─── AvailabilitySummary ──────────────────────────────────────────────────────
@@ -64,7 +53,7 @@ export const AvailabilitySummary = React.memo(function AvailabilitySummary({
       {/* Section header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          ห้องว่าง — {fmtThaiShort(date)}
+          ห้องว่าง — {fmtShort(date)}
         </p>
         {isLoading && roomTypes.length > 0 && (
           <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />

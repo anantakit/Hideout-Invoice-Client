@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts'
+import { formatCompactNumber } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import type { DailyOccupancyEntry } from '../types'
 
@@ -26,10 +27,7 @@ function formatCompact(n: number): string {
 }
 
 function formatKPI(n: number): string {
-  return new Intl.NumberFormat('th-TH', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n)
+  return formatCompactNumber(n)
 }
 
 function isToday(dateStr: string): boolean {

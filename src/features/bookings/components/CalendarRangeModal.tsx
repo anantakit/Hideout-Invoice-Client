@@ -22,7 +22,7 @@ import {
 } from 'date-fns'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { cn } from '@/shared/utils'
+import { cn, THAI_MONTHS_SHORT } from '@/shared/utils'
 import { Button } from '../../../shared/ui/button'
 import { Dialog, DialogPortal, DialogOverlay } from '../../../shared/ui/dialog'
 import { Sheet, SheetPortal, SheetOverlay } from '../../../shared/ui/sheet'
@@ -97,11 +97,6 @@ const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
   'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
   'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-]
-
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
 ]
 
 const DAY_HEADERS = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']

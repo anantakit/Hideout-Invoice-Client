@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, ChevronRight, CalendarX, X } from 'lucide-react'
-import { formatThaiDate } from '../../../shared/utils'
+import { formatThaiDate, THAI_MONTHS_SHORT } from '../../../shared/utils'
 import ErrorPanel from '../../../shared/components/ErrorPanel'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import { useBookings } from '../hooks'
@@ -51,11 +51,6 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ─── Date display helper ───────────────────────────────────────────────────────
-
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
 
 function formatDateShort(iso: string): string {
   if (!iso) return ''

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { differenceInDays, format, parseISO } from 'date-fns'
+import { differenceInDays, parseISO } from 'date-fns'
 import toast from 'react-hot-toast'
 import {
   X,
@@ -15,7 +15,7 @@ import {
   Plus,
   ChevronDown,
 } from 'lucide-react'
-import { cn } from '@/shared/utils'
+import { cn, fmtThaiDate, formatTHBCurrency, todayISO } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -76,27 +76,6 @@ interface OperationsDrawerProps {
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
-
-const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
-function fmtThaiDate(iso: string): string {
-  try {
-    const d = parseISO(iso)
-    return `${THAI_DAYS[d.getDay()]} ${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-  } catch { return iso }
-}
-
-function formatTHB(amount: number): string {
-  return new Intl.NumberFormat('th-TH', {
-    style: 'currency',
-    currency: 'THB',
-    minimumFractionDigits: 2,
-  }).format(amount)
-}
 
 function statusVariant(status: string): 'default' | 'amber' | 'green' | 'gray' | 'red' | 'blue' {
   switch (status) {
@@ -188,7 +167,7 @@ function BookingDetailContent({
   const needsFullBooking = canCheckIn || canCheckOut
   const { data: fullBooking } = useBooking(needsFullBooking ? booking.booking_id : '')
 
-  const todayDate = format(new Date(), 'yyyy-MM-dd')
+  const todayDate = todayISO()
   const pendingStays = useMemo(() => {
     if (!fullBooking) return []
     return fullBooking.room_stays.filter(
@@ -283,7 +262,7 @@ function BookingDetailContent({
           {hasBalance ? (
             <span className="flex items-center gap-1 text-sm font-semibold text-warning">
               <CircleAlert className="w-3.5 h-3.5" />
-              {formatTHB(Number(booking.balance_amount))}
+              {formatTHBCurrency(Number(booking.balance_amount))}
             </span>
           ) : (
             <span className="flex items-center gap-1 text-sm font-semibold text-success">
@@ -413,7 +392,7 @@ function CreateBookingContent({
   onClose: () => void
   onBookingCreated?: (bookingId: string) => void
 }) {
-  const todayDate = format(new Date(), 'yyyy-MM-dd')
+  const todayDate = todayISO()
   const isToday = prefill.checkIn === todayDate
 
   const [source, setSource] = useState<'advance' | 'walk_in'>(isToday ? 'walk_in' : 'advance')
@@ -555,7 +534,7 @@ function CreateBookingContent({
                 <span>{room.roomNumber}</span>
                 <span className="text-muted-foreground">{room.roomTypeName}</span>
                 {room.pricePerNight > 0 && (
-                  <span className="text-muted-foreground/70">{formatTHB(room.pricePerNight)}</span>
+                  <span className="text-muted-foreground/70">{formatTHBCurrency(room.pricePerNight)}</span>
                 )}
                 {selectedRooms.length > 1 && (
                   <X size={10} className="ml-0.5 text-muted-foreground" />
@@ -584,7 +563,7 @@ function CreateBookingContent({
                 return (
                   <div key={rt.room_type_id} className="space-y-1.5">
                     <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                      {rt.room_type_name} · {formatTHB(rt.price_per_night)}/คืน
+                      {rt.room_type_name} · {formatTHBCurrency(rt.price_per_night)}/คืน
                     </p>
                     <div className="flex flex-wrap gap-1">
                       {availableRooms.map((room) => {
@@ -761,20 +740,20 @@ function CreateBookingContent({
               {selectedRooms.length > 1 && selectedRooms.map((r) => (
                 <div key={r.roomId} className="flex justify-between text-xs text-muted-foreground">
                   <span>ห้อง {r.roomNumber} ({nights} คืน)</span>
-                  <span>{formatTHB(nights * r.pricePerNight)}</span>
+                  <span>{formatTHBCurrency(nights * r.pricePerNight)}</span>
                 </div>
               ))}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   ยอดรวม {selectedRooms.length > 1 ? `(${selectedRooms.length} ห้อง)` : ''}
                 </span>
-                <span className="font-semibold">{formatTHB(totalAmount)}</span>
+                <span className="font-semibold">{formatTHBCurrency(totalAmount)}</span>
               </div>
               {paymentMode !== 'reserve' && paymentAmount && (
                 <>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">ชำระ</span>
-                    <span className="font-medium text-success">{formatTHB(Number(paymentAmount))}</span>
+                    <span className="font-medium text-success">{formatTHBCurrency(Number(paymentAmount))}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">คงเหลือ</span>
@@ -782,7 +761,7 @@ function CreateBookingContent({
                       'font-semibold',
                       totalAmount - Number(paymentAmount) > 0 ? 'text-warning' : 'text-success',
                     )}>
-                      {formatTHB(Math.max(0, totalAmount - Number(paymentAmount)))}
+                      {formatTHBCurrency(Math.max(0, totalAmount - Number(paymentAmount)))}
                     </span>
                   </div>
                 </>
