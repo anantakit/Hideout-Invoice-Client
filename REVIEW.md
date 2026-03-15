@@ -19,15 +19,15 @@
 | DesktopOperationsPanel.tsx | 1548 | 1 | 2 | 2 | ✅ |
 | OperationsDrawer.tsx | 896 | 0 | 1 | 3 | ✅ |
 | BookingDetailPage.tsx | 1353 | 2 | 3 | 3 | ✅ |
-| TimelinePage.tsx | 1077 | ~~4~~ ~~3~~ 1 | 5 | ~~4~~ 3 | ⬜ P2 partial |
+| TimelinePage.tsx | 1077 | ~~4~~ ~~3~~ 1 | 5 | ~~4~~ ~~3~~ 2 | ⬜ P3 partial |
 | MobileTimelineList.tsx | 1271 | ~~1~~ 0 | 3 | ~~5~~ 4 | ⬜ P1 partial |
 | useTimelineDrag.ts | 729 | ~~3~~ 0 | ~~4~~ 3 | 4 | ⬜ P2 partial |
 | useTimelineDraw.ts | 258 | ~~1~~ 0 | ~~1~~ 0 | ~~1~~ 0 | ✅ |
 | BookingBlock.tsx | 493 | ~~1~~ 0 | 0 | 1 | ⬜ P1 partial |
-| RoomRow.tsx | 295 | 0 | ~~2~~ ~~1~~ 0 | 1 | ⬜ P1 partial |
-| BookingContextMenu.tsx | 267 | 0 | 1 | 1 | ⬜ |
+| RoomRow.tsx | 295 | 0 | 0 | 1 | ⬜ P3 partial |
+| BookingContextMenu.tsx | 267 | 0 | ~~1~~ 0 | 1 | ⬜ P3 partial |
 | CreateBookingPage.tsx | 444 | ~~1~~ 0 | 0 | ~~3~~ ~~1~~ 0 | ⬜ P1 partial |
-| CreateReceiptPage.tsx | 492 | ~~2~~ 1 | ~~4~~ ~~3~~ 2 | 4 | ⬜ P2 partial |
+| CreateReceiptPage.tsx | 492 | ~~2~~ 1 | ~~4~~ ~~3~~ ~~2~~ 1 | 4 | ⬜ P3 partial |
 | CalendarRangeModal.tsx | 683 | 0 | 0 | ~~3~~ ~~2~~ 1 | ⬜ P1 partial |
 | AssignRoomBottomSheet.tsx | 649 | 0 | 1 | 3 | ⬜ |
 | RoomTypeBookingBuilder.tsx | 613 | 0 | 1 | ~~4~~ ~~3~~ 2 | ⬜ P1 partial |
@@ -35,7 +35,7 @@
 | DateRangeFilter.tsx | 543 | 0 | ~~2~~ ~~1~~ 0 | 0 | ⬜ P1 done (High ✅) |
 | ReceiptDateFilter.tsx | 460 | 0 | 1 | 1 | ⬜ |
 | TimelineToolbar.tsx | 496 | 0 | ~~1~~ 0 | 1 | ⬜ P1 done (High ✅) |
-| ReceiptHistoryPage.tsx | 342 | 0 | 2 | 1 | ⬜ |
+| ReceiptHistoryPage.tsx | 342 | 0 | ~~2~~ 0 | 1 | ⬜ P3 partial |
 | SearchableComboBox.tsx | 336 | 0 | 1 | 3 | ⬜ |
 | DashboardPage.tsx | 335 | 0 | 0 | ~~4~~ ~~3~~ 2 | ⬜ P1 partial |
 | InlineCheckIn.tsx | 334 | 0 | ~~2~~ ~~1~~ 0 | 2 | ⬜ P1 partial |
@@ -118,7 +118,7 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| T10 | 288–314 | ⬜ สร้าง 3 maps แยกกัน ใน 3 useMemo | รวมเป็น useMemo เดียว |
+| T10 | 288–314 | ✅ สร้าง 3 maps แยกกัน ใน 3 useMemo | รวมเป็น useMemo เดียว |
 | T11 | 109–150 | ⬜ MobileDateStrip ไม่ memo แต่ละปุ่มวัน (21 ปุ่ม re-render) | Extract DateButton + React.memo |
 | T12 | 364–367 | ⬜ `mobileDays` array reference เปลี่ยนทุก render | Memoize mobileDays derivation |
 | T13 | 400 | ✅ ไม่ใช้ `todayISO()` utility (ซ้ำกับ utils) | Import `todayISO()` |
@@ -228,7 +228,7 @@
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
 | RR1 | 61 | ✅ `format(startOfDay(new Date()))` ใน `deriveDisplayStatus()` ทุก render | ย้าย todayStr เข้า useMemo |
-| RR2 | 106 | ⬜ `displayStatus` ไม่ memo | Wrap ใน `useMemo([room])` |
+| RR2 | 106 | ✅ `displayStatus` ไม่ memo | Wrap ใน `useMemo([room, todayStr])` |
 
 #### MEDIUM
 
@@ -244,7 +244,7 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| CM1 | 161–163 | ⬜ Date parsing/normalization ทุก render (startOfDay, parseISO ×3) | Memoize flags ใน `useMemo([booking])` |
+| CM1 | 161–163 | ✅ Date parsing/normalization ทุก render (startOfDay, parseISO ×3) | Memoize flags ใน `useMemo([booking])` |
 
 #### MEDIUM
 
@@ -284,7 +284,7 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| R3 | 319–384 | ⬜ Field array items re-render เมื่อ sibling เปลี่ยน | Extract memoized ReceiptItemRow |
+| R3 | 319–384 | ✅ Field array items re-render เมื่อ sibling เปลี่ยน | Extract memoized ReceiptItemRow |
 | R4 | 98–99 | ✅ `methodMap` สร้างใหม่ใน effect | Hoist module-level constant |
 | R5 | 117–122 | ⬜ Customer fetch waterfall — no abort | ใช้ separate useQuery |
 | R6 | 152–160 | ⬜ `useCallback` deps อาจไม่ stable | ตรวจสอบ form stability |
@@ -414,8 +414,8 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| RH1 | 232–255, 289–311 | ⬜ AlertDialog markup ซ้ำ 2 ที่ (desktop + mobile) | Extract `DeleteReceiptDialog` |
-| RH2 | 215–230, 276–287 | ⬜ Download button + spinner ซ้ำ 2 ที่ | Extract `ReceiptActionButtons` |
+| RH1 | 232–255, 289–311 | ✅ AlertDialog markup ซ้ำ 2 ที่ (desktop + mobile) | Extract `DeleteReceiptDialog` |
+| RH2 | 215–230, 276–287 | ✅ Download button + spinner ซ้ำ 2 ที่ | Extract `DownloadButton` |
 
 #### MEDIUM
 
@@ -633,13 +633,13 @@
 19. ✅ **SB1** — Memoize RBAC filter in Sidebar
 20. ✅ **PA1** — Fix useCallback deps on mutation
 
-### Phase 3: Component Extraction + memoization
-21. **R3** — Extract memoized ReceiptItemRow
-22. **M3** — Extract memoized CheckInCard
-23. **RH1, RH2** — Extract shared dialog/buttons in ReceiptHistory
-24. **T10** — Combine 3 map-building useMemos
-25. **D5, D6** — Stabilize drag state + RAF loop
-26. **CM1, RR2** — Memoize date flags in context menu + RoomRow
+### Phase 3: Component Extraction + memoization (5/6 done)
+21. ✅ **R3** — Extract memoized ReceiptItemRow
+22. ⬜ **M3** — Extract memoized CheckInCard (deferred — MobileTimelineList complex)
+23. ✅ **RH1, RH2** — Extract DownloadButton + DeleteReceiptDialog
+24. ✅ **T10** — Combine 3 map-building useMemos into single pass
+25. ⬜ **D5, D6** — Stabilize drag state + RAF loop (deferred — partially fixed by Phase 2)
+26. ✅ **CM1, RR2** — Memoize date flags in context menu + RoomRow
 
 ### Phase 4: Architecture
 27. **T3** — Cache `computeRoomLayout` per room
