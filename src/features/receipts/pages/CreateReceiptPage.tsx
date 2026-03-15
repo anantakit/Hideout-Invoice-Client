@@ -121,7 +121,7 @@ export default function CreateReceipt() {
         form.setValue('customer_id', customer.id, { shouldValidate: true })
       }).catch(() => {})
     }
-  }, [prefill, prefilled, form])
+  }, [prefill, prefilled, form, selectedCustomer])
 
   const createMutation = useMutation({
     mutationFn: receiptsApi.create,

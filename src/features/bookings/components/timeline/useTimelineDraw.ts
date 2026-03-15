@@ -68,6 +68,14 @@ export function useTimelineDraw({
     touchHoldMet: boolean
   } | null>(null)
 
+  const roomMapRef = useRef<Map<string, TimelineRoom>>(new Map())
+
+  useEffect(() => {
+    const map = new Map<string, TimelineRoom>()
+    rooms.forEach((r) => map.set(r.id, r))
+    roomMapRef.current = map
+  }, [rooms])
+
   // ── Snap helper ─────────────────────────────────────────────────────────
 
   const getDayIndex = useCallback(
@@ -84,7 +92,7 @@ export function useTimelineDraw({
   // Check if a cell is empty (no booking covers it)
   const isCellEmpty = useCallback(
     (roomId: string, checkIn: string, checkOut: string): boolean => {
-      const room = rooms.find((r) => r.id === roomId)
+      const room = roomMapRef.current.get(roomId)
       if (!room) return false
       return !room.bookings.some(
         (b) =>
@@ -94,7 +102,7 @@ export function useTimelineDraw({
           b.check_out.slice(0, 10) > checkIn,
       )
     },
-    [rooms],
+    [],
   )
 
   // ── Handlers ────────────────────────────────────────────────────────────

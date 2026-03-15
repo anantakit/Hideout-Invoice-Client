@@ -19,15 +19,15 @@
 | DesktopOperationsPanel.tsx | 1548 | 1 | 2 | 2 | ✅ |
 | OperationsDrawer.tsx | 896 | 0 | 1 | 3 | ✅ |
 | BookingDetailPage.tsx | 1353 | 2 | 3 | 3 | ✅ |
-| TimelinePage.tsx | 1077 | ~~4~~ 3 | 5 | ~~4~~ 3 | ⬜ P1 partial |
+| TimelinePage.tsx | 1077 | ~~4~~ ~~3~~ 1 | 5 | ~~4~~ 3 | ⬜ P2 partial |
 | MobileTimelineList.tsx | 1271 | ~~1~~ 0 | 3 | ~~5~~ 4 | ⬜ P1 partial |
-| useTimelineDrag.ts | 729 | 3 | 4 | 4 | ⬜ |
-| useTimelineDraw.ts | 258 | ~~1~~ 0 | 1 | 1 | ⬜ P1 partial |
+| useTimelineDrag.ts | 729 | ~~3~~ 0 | ~~4~~ 3 | 4 | ⬜ P2 partial |
+| useTimelineDraw.ts | 258 | ~~1~~ 0 | ~~1~~ 0 | ~~1~~ 0 | ✅ |
 | BookingBlock.tsx | 493 | ~~1~~ 0 | 0 | 1 | ⬜ P1 partial |
 | RoomRow.tsx | 295 | 0 | ~~2~~ ~~1~~ 0 | 1 | ⬜ P1 partial |
 | BookingContextMenu.tsx | 267 | 0 | 1 | 1 | ⬜ |
 | CreateBookingPage.tsx | 444 | ~~1~~ 0 | 0 | ~~3~~ ~~1~~ 0 | ⬜ P1 partial |
-| CreateReceiptPage.tsx | 492 | 2 | ~~4~~ ~~3~~ 2 | 4 | ⬜ P1 partial |
+| CreateReceiptPage.tsx | 492 | ~~2~~ 1 | ~~4~~ ~~3~~ 2 | 4 | ⬜ P2 partial |
 | CalendarRangeModal.tsx | 683 | 0 | 0 | ~~3~~ ~~2~~ 1 | ⬜ P1 partial |
 | AssignRoomBottomSheet.tsx | 649 | 0 | 1 | 3 | ⬜ |
 | RoomTypeBookingBuilder.tsx | 613 | 0 | 1 | ~~4~~ ~~3~~ 2 | ⬜ P1 partial |
@@ -44,9 +44,9 @@
 | OccupancyTrendChart.tsx | 194 | 0 | 0 | ~~2~~ ~~1~~ 0 | ⬜ P1 done (Medium ✅) |
 | TodayActionPanel.tsx | 239 | 0 | ~~1~~ 0 | ~~1~~ 0 | ✅ P1 done |
 | PaymentPanel.tsx | 267 | 0 | 0 | 2 | ⬜ |
-| Sidebar.tsx | 276 | 0 | 1 | 0 | ⬜ |
+| Sidebar.tsx | 276 | 0 | ~~1~~ 0 | 0 | ✅ |
 | CustomerModal.tsx | 229 | 0 | 2 | 0 | ⬜ |
-| PendingAssignmentsPanel.tsx | 161 | 0 | 1 | 0 | ⬜ |
+| PendingAssignmentsPanel.tsx | 161 | 0 | ~~1~~ 0 | 0 | ✅ |
 | AvailabilitySummary.tsx | 195 | 0 | 0 | 1 | ⬜ |
 | AdminUsersPage.tsx | 247 | 0 | 0 | 1 | ⬜ |
 | CustomersPage.tsx | 224 | 0 | 0 | 1 | ⬜ |
@@ -100,9 +100,9 @@
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
 | T1 | 400 | ✅ `todayStr` memoized with `[]` — ใช้ `format(startOfDay(new Date()))` แทน `todayISO()` และ stale หลังเที่ยงคืน | ใช้ `todayISO()` แทน |
-| T2 | 632–640 | ⬜ `getRoomTop` วน loop O(n) จาก index 0 ทุกครั้งที่ drag | Precompute cumulative heights array ใน useMemo |
+| T2 | 632–640 | ✅ `getRoomTop` วน loop O(n) จาก index 0 ทุกครั้งที่ drag | Precompute cumulative heights array ใน useMemo |
 | T3 | 346–357 | ⬜ `roomLayerCountMap` เรียก `computeRoomLayout` ทุก room ทุกครั้งที่ window shift | Cache by `(roomId, fromStr, toStr)` |
-| T4 | 255–268 | ⬜ Effect ปิด `exhaustive-deps` แต่อ่าน `selectedBooking` — stale closure risk | เพิ่ม `selectedBooking` ใน deps |
+| T4 | 255–268 | ✅ Effect ปิด `exhaustive-deps` แต่อ่าน `selectedBooking` — stale closure risk | ใช้ functional setState updater |
 
 #### HIGH
 
@@ -159,9 +159,9 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| D1 | 199–208 | ⬜ Room search O(n) ทุก pointermove (60+ ครั้ง/วินาที) | Cache Y-coordinate lookup ใน ref |
-| D2 | 246 | ⬜ `snapToGrid` dependency chain — สร้างใหม่ทุกครั้งที่ rooms เปลี่ยน | ใช้ ref สำหรับ rooms |
-| D3 | 147 | ⬜ `checkConflict` O(n×m) rooms×bookings search ทุก snap | Build lookup map `{roomId → intervals}` |
+| D1 | 199–208 | ✅ Room search O(n) ทุก pointermove (60+ ครั้ง/วินาที) | ใช้ `getRoomAtY` binary search O(log n) |
+| D2 | 246 | ✅ `snapToGrid` dependency chain — สร้างใหม่ทุกครั้งที่ rooms เปลี่ยน | ใช้ roomMapRef + stable callbacks |
+| D3 | 147 | ✅ `checkConflict` O(n×m) rooms×bookings search ทุก snap | ใช้ roomMapRef.get() O(1) lookup |
 
 #### HIGH
 
@@ -170,7 +170,7 @@
 | D4 | 326, 503 | ⬜ String allocation สำหรับ `snapKey` ทุก pointermove | Compare fields directly |
 | D5 | 331–338, 507–517 | ⬜ Object spread สร้าง DragState ใหม่ 60+ ครั้ง/วินาที | ใช้ refs แทน state |
 | D6 | 347 | ⬜ `runAutoScroll` dependency on `snapToGrid` — RAF restart | Extract stable function |
-| D7 | 163 | ⬜ `isMaintenanceRoom` linear search ทุก conflict check | Batch กับ room lookup |
+| D7 | 163 | ✅ `isMaintenanceRoom` linear search ทุก conflict check | ใช้ roomMapRef.get() O(1) |
 
 #### MEDIUM
 
@@ -195,13 +195,13 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| DR2 | 79–87 | ⬜ `rooms.find()` + booking scan per move — N+1 pattern | Room lookup map + booking index |
+| DR2 | 79–87 | ✅ `rooms.find()` + booking scan per move — N+1 pattern | roomMapRef.get() O(1) lookup |
 
 #### MEDIUM
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| DR3 | 77 | ⬜ `isCellEmpty` callback re-creation on rooms change | Ensure stable rooms ref |
+| DR3 | 77 | ✅ `isCellEmpty` callback re-creation on rooms change | Stable via roomMapRef (empty deps) |
 
 ---
 
@@ -277,7 +277,7 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| R1 | 123 | ⬜ Missing `selectedCustomer` ใน effect deps — stale closure | เพิ่มใน dependency array |
+| R1 | 123 | ✅ Missing `selectedCustomer` ใน effect deps — stale closure | เพิ่มใน dependency array |
 | R2 | 139, 146 | ⬜ `new Date(values.issue_date).toISOString()` sync parse | String concat |
 
 #### HIGH
@@ -548,7 +548,7 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| SB1 | 223–225 | ⬜ `section.items.filter()` RBAC ทุก render | Wrap ใน useMemo keyed on `user?.role` |
+| SB1 | 223–225 | ✅ `section.items.filter()` RBAC ทุก render | Memoize `visibleSections` keyed on `user?.role` |
 
 ---
 
@@ -569,7 +569,7 @@
 
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
-| PA1 | 68 | ⬜ `handleAutoAssign` useCallback has `autoAssign` mutation in deps | Empty deps `[]` — mutate is stable |
+| PA1 | 68 | ✅ `handleAutoAssign` useCallback has `autoAssign` mutation in deps | ใช้ `[autoAssign.mutate]` (stable ref) |
 
 ---
 
@@ -623,15 +623,15 @@
 11. ✅ **IC1, IC2** — Remove duplicate room lookup IIFE
 12. ✅ **TA1** — `.sort()` → `[...items].sort()`
 
-### Phase 2: High-Impact Fixes — hot paths + stale closures
-13. **D1, D2, D3** — useTimelineDrag room lookup cache + conflict map
-14. **DR2** — useTimelineDraw room lookup map
-15. **T2** — Precompute cumulative row heights
-16. **T4** — Fix stale closure selectedBooking effect
-17. **R1** — Fix prefill effect missing dependency
-18. **B1, RB1** — Move useWatch() to leaf components
-19. **SB1** — Memoize RBAC filter in Sidebar
-20. **PA1** — Fix useCallback deps on mutation
+### Phase 2: High-Impact Fixes — hot paths + stale closures (7/8 done)
+13. ✅ **D1, D2, D3** — useTimelineDrag: roomMapRef O(1) + getRoomAtY binary search + stable callbacks
+14. ✅ **DR2** — useTimelineDraw: roomMapRef O(1) + stable isCellEmpty
+15. ✅ **T2** — Precompute cumulative row heights (O(1) getRoomTop)
+16. ✅ **T4** — Fix stale closure via functional setState updater
+17. ✅ **R1** — Fix prefill effect missing selectedCustomer dependency
+18. ⬜ **B1, RB1** — Move useWatch() to leaf components (deferred — needs form restructure)
+19. ✅ **SB1** — Memoize RBAC filter in Sidebar
+20. ✅ **PA1** — Fix useCallback deps on mutation
 
 ### Phase 3: Component Extraction + memoization
 21. **R3** — Extract memoized ReceiptItemRow

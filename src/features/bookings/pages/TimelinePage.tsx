@@ -253,19 +253,21 @@ export default function TimelinePage() {
   // Sync selectedBooking with fresh timeline data after mutations (e.g. move/extend).
   // Without this, the detail panel shows stale balance_amount until manual refresh.
   useEffect(() => {
-    if (!selectedBooking) return
-    const stayId = selectedBooking.booking.room_stay_id
-    for (const room of allRooms) {
-      const fresh = room.bookings.find((b) => b.room_stay_id === stayId)
-      if (fresh) {
-        const rooms = allRooms
-          .filter((r) => r.bookings.some((bk) => bk.booking_id === fresh.booking_id))
-          .map((r) => r.room_number)
-        setSelectedBooking({ booking: { ...fresh }, roomNumbers: rooms })
-        return
+    setSelectedBooking((prev) => {
+      if (!prev) return prev
+      const stayId = prev.booking.room_stay_id
+      for (const room of allRooms) {
+        const fresh = room.bookings.find((b) => b.room_stay_id === stayId)
+        if (fresh) {
+          const roomNumbers = allRooms
+            .filter((r) => r.bookings.some((bk) => bk.booking_id === fresh.booking_id))
+            .map((r) => r.room_number)
+          return { booking: { ...fresh }, roomNumbers }
+        }
       }
-    }
-  }, [allRooms]) // eslint-disable-line react-hooks/exhaustive-deps
+      return prev
+    })
+  }, [allRooms])
 
   const roomAvailability = useMemo<RoomAvailability[]>(
     () =>
@@ -629,15 +631,26 @@ export default function TimelinePage() {
   // ── Room position helpers for drag ────────────────────────────────────
   const gridContainerRef = useRef<HTMLDivElement>(null)
 
+  // Precompute cumulative heights for O(1) getRoomTop and O(log n) getRoomAtY
+  const { cumulativeHeights, roomIdxMap } = useMemo(() => {
+    const heights: number[] = [0]
+    const idxMap = new Map<string, number>()
+    for (let i = 0; i < filteredRooms.length; i++) {
+      idxMap.set(filteredRooms[i].id, i)
+      const room = filteredRooms[i]
+      const layers = roomLayerCountMap[room.id] ?? 1
+      heights.push(heights[i] + computeRowHeight(layers))
+    }
+    return { cumulativeHeights: heights, roomIdxMap: idxMap }
+  }, [filteredRooms, roomLayerCountMap])
+
   const getRoomTop = useCallback(
     (roomId: string): number | undefined => {
-      const idx = filteredRooms.findIndex((r) => r.id === roomId)
-      if (idx === -1) return undefined
-      let top = 0
-      for (let i = 0; i < idx; i++) top += getRowHeight(i)
-      return top
+      const idx = roomIdxMap.get(roomId)
+      if (idx === undefined) return undefined
+      return cumulativeHeights[idx]
     },
-    [filteredRooms, getRowHeight],
+    [roomIdxMap, cumulativeHeights],
   )
 
   const getRoomHeight = useCallback(
@@ -646,6 +659,24 @@ export default function TimelinePage() {
       return computeRowHeight(layers)
     },
     [roomLayerCountMap],
+  )
+
+  /** Binary search: given a Y coordinate in virtualizer space, find which room it falls in. */
+  const getRoomAtY = useCallback(
+    (y: number): string | undefined => {
+      let lo = 0
+      let hi = filteredRooms.length - 1
+      while (lo <= hi) {
+        const mid = (lo + hi) >>> 1
+        const top = cumulativeHeights[mid]
+        const bottom = cumulativeHeights[mid + 1]
+        if (y < top) hi = mid - 1
+        else if (y >= bottom) lo = mid + 1
+        else return filteredRooms[mid].id
+      }
+      return undefined
+    },
+    [filteredRooms, cumulativeHeights],
   )
 
   // ── Drag and drop ──────────────────────────────────────────────────────
@@ -720,6 +751,7 @@ export default function TimelinePage() {
     onMoveStay: handleMoveStay,
     getRoomTop,
     getRoomHeight,
+    getRoomAtY,
   })
 
   // ── Draw to create ──────────────────────────────────────────────────────

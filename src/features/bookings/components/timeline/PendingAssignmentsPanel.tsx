@@ -65,7 +65,7 @@ export const PendingAssignmentsPanel = React.memo(function PendingAssignmentsPan
       e.stopPropagation()
       autoAssign.mutate()
     },
-    [autoAssign],
+    [autoAssign.mutate],
   )
 
   if (stays.length === 0) return null

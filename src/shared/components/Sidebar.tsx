@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
@@ -195,6 +196,17 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
     navigate('/login', { replace: true })
   }
 
+  const visibleSections = useMemo(
+    () =>
+      NAV_SECTIONS.map((section) => ({
+        ...section,
+        items: section.items.filter(
+          (item) => !item.requireAdmin || user?.role === 'admin',
+        ),
+      })).filter((section) => section.items.length > 0),
+    [user?.role],
+  )
+
   return (
     <div className="flex flex-col h-full">
 
@@ -220,29 +232,21 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
 
       {/* ── Navigation ───────────────────────────────────────────────────── */}
       <nav className="flex-1 px-2 py-2 overflow-y-auto" aria-label="Main navigation">
-        {NAV_SECTIONS.map((section, index) => {
-          const visibleItems = section.items.filter(
-            (item) => !item.requireAdmin || user?.role === 'admin',
-          )
-
-          if (visibleItems.length === 0) return null
-
-          return (
-            <div key={section.id}>
-              {index > 0 && (
-                <div className="py-2 md:hidden xl:block">
-                  <Separator />
-                </div>
-              )}
-              <SectionTitle>{section.label}</SectionTitle>
-              <div className="space-y-0.5">
-                {visibleItems.map((item) => (
-                  <NavItem key={item.to} {...item} onClose={onClose} />
-                ))}
+        {visibleSections.map((section, index) => (
+          <div key={section.id}>
+            {index > 0 && (
+              <div className="py-2 md:hidden xl:block">
+                <Separator />
               </div>
+            )}
+            <SectionTitle>{section.label}</SectionTitle>
+            <div className="space-y-0.5">
+              {section.items.map((item) => (
+                <NavItem key={item.to} {...item} onClose={onClose} />
+              ))}
             </div>
-          )
-        })}
+          </div>
+        ))}
       </nav>
 
       {/* ── Theme toggle ───────────────────────────────────────────────── */}

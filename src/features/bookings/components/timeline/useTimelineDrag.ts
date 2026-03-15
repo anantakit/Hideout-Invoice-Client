@@ -77,6 +77,8 @@ interface UseTimelineDragOptions {
   getRoomTop: (roomId: string) => number | undefined
   /** Returns the height of a room row. */
   getRoomHeight: (roomId: string) => number
+  /** Binary search to find room ID at a given Y coordinate (virtualizer space). */
+  getRoomAtY: (y: number) => string | undefined
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -90,6 +92,7 @@ export function useTimelineDrag({
   onMoveStay,
   getRoomTop,
   getRoomHeight,
+  getRoomAtY,
 }: UseTimelineDragOptions) {
   const [dragState, setDragState] = useState<DragState | null>(null)
   const [previewPos, setPreviewPos] = useState<DragPreviewPosition | null>(null)
@@ -128,23 +131,29 @@ export function useTimelineDrag({
   // Track the last snapped position to skip redundant state updates
   const lastSnapRef = useRef<string>('')
 
+  const roomMapRef = useRef<Map<string, TimelineRoom>>(new Map())
   const roomIndexMap = useRef<Map<string, number>>(new Map())
 
   // Auto-scroll animation frame ID
   const autoScrollRaf = useRef<number>(0)
 
-  // Keep room index map fresh
+  // Keep room maps fresh
   useEffect(() => {
-    const map = new Map<string, number>()
-    rooms.forEach((r, i) => map.set(r.id, i))
-    roomIndexMap.current = map
+    const rMap = new Map<string, TimelineRoom>()
+    const iMap = new Map<string, number>()
+    rooms.forEach((r, i) => {
+      rMap.set(r.id, r)
+      iMap.set(r.id, i)
+    })
+    roomMapRef.current = rMap
+    roomIndexMap.current = iMap
   }, [rooms])
 
   // ── Conflict detection ──────────────────────────────────────────────────
 
   const checkConflict = useCallback(
     (targetRoomId: string, checkIn: string, checkOut: string, excludeStayId: string): boolean => {
-      const room = rooms.find((r) => r.id === targetRoomId)
+      const room = roomMapRef.current.get(targetRoomId)
       if (!room) return true
       return room.bookings.some(
         (b) =>
@@ -155,15 +164,15 @@ export function useTimelineDrag({
           b.check_out.slice(0, 10) > checkIn,
       )
     },
-    [rooms],
+    [],
   )
 
   const isMaintenanceRoom = useCallback(
     (roomId: string): boolean => {
-      const room = rooms.find((r) => r.id === roomId)
+      const room = roomMapRef.current.get(roomId)
       return room?.status === 'MAINTENANCE'
     },
-    [rooms],
+    [],
   )
 
   // ── Snap pointer position to grid ───────────────────────────────────────
@@ -194,18 +203,8 @@ export function useTimelineDrag({
       // Snap day index — floor so the booking lands in the column the pointer is in
       const dayIndex = Math.floor(relX / getCellWidthPx())
 
-      // Find target room by Y coordinate
-      let targetRoomId = sourceRoomId
-      for (const room of rooms) {
-        const roomTop = getRoomTop(room.id)
-        if (roomTop !== undefined) {
-          const h = getRoomHeight(room.id)
-          if (relY >= roomTop && relY < roomTop + h) {
-            targetRoomId = room.id
-            break
-          }
-        }
-      }
+      // Find target room by Y coordinate — O(log n) binary search
+      const targetRoomId = getRoomAtY(relY) ?? sourceRoomId
 
       let newCheckIn: Date
       let newCheckOut: Date
@@ -243,7 +242,7 @@ export function useTimelineDrag({
         isMaintenanceRoom: maintenance,
       }
     },
-    [scrollContainerRef, gridContainerRef, rooms, windowStart, windowDays, checkConflict, isMaintenanceRoom, getRoomTop, getRoomHeight],
+    [scrollContainerRef, gridContainerRef, windowStart, windowDays, checkConflict, isMaintenanceRoom, getRoomTop, getRoomHeight, getRoomAtY],
   )
 
   // ── Update preview position ─────────────────────────────────────────────
