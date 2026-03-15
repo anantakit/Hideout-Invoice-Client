@@ -20,7 +20,7 @@
 | OperationsDrawer.tsx | 896 | 0 | 1 | 3 | ✅ |
 | BookingDetailPage.tsx | 1353 | 2 | 3 | 3 | ✅ |
 | TimelinePage.tsx | 1077 | ~~4~~ ~~3~~ 1 | 5 | ~~4~~ ~~3~~ 2 | ⬜ P3 partial |
-| MobileTimelineList.tsx | 1271 | ~~1~~ 0 | 3 | ~~5~~ 4 | ⬜ P1 partial |
+| MobileTimelineList.tsx | 1271 | ~~1~~ 0 | ~~3~~ 2 | ~~5~~ 4 | ⬜ P3 partial |
 | useTimelineDrag.ts | 729 | ~~3~~ 0 | ~~4~~ ~~3~~ 1 | 4 | ⬜ P4 partial |
 | useTimelineDraw.ts | 258 | ~~1~~ 0 | ~~1~~ 0 | ~~1~~ 0 | ✅ |
 | BookingBlock.tsx | 493 | ~~1~~ 0 | 0 | 1 | ⬜ P1 partial |
@@ -138,7 +138,7 @@
 | # | Line(s) | ปัญหา | แก้ไข |
 |---|---------|-------|-------|
 | M2 | 811–812 | ⬜ `pendingStays`/`doneStays` filter ใน checkout map ทุก render | ย้ายเข้า useMemo |
-| M3 | 698–788 | ⬜ Check-in cards ไม่มี React.memo | Extract memoized CheckInCard |
+| M3 | 698–788 | ✅ Check-in cards ไม่มี React.memo | Extracted PendingCheckinCard + DoneCheckinCard with React.memo |
 | M4 | 1121–1141 | ⬜ Filter chip list สร้างใหม่ทุก render | Memoize `chipList` + `chipCounts` |
 
 #### MEDIUM
@@ -636,7 +636,7 @@
 
 ### Phase 3: Component Extraction + memoization (5/6 done)
 21. ✅ **R3** — Extract memoized ReceiptItemRow
-22. ⬜ **M3** — Extract memoized CheckInCard (deferred — MobileTimelineList complex)
+22. ✅ **M3** — Extract memoized PendingCheckinCard + DoneCheckinCard
 23. ✅ **RH1, RH2** — Extract DownloadButton + DeleteReceiptDialog
 24. ✅ **T10** — Combine 3 map-building useMemos into single pass
 25. ✅ **D5, D6** — Stabilize drag state + RAF loop (ref-based callbacks, no RAF restart)
