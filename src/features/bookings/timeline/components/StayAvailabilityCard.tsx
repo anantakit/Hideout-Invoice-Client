@@ -79,7 +79,6 @@ export function StayAvailabilityCard({ range, onRangeChange }: StayAvailabilityC
 
             {totalAvailable > 0 && (
               <Button
-                variant="outline"
                 size="sm"
                 className="w-full"
                 onClick={() => navigate(`${ROUTES.bookings.new}?check_in=${currentRange.checkIn}&check_out=${currentRange.checkOut}`)}

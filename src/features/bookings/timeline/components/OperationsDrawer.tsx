@@ -10,10 +10,16 @@ import {
   ChevronRight,
   LogOut,
   Banknote,
+  KeyRound,
+  CreditCard,
+  Clock,
   FileText,
   Loader2,
   Plus,
   ChevronDown,
+  CalendarDays,
+  User,
+  Footprints,
 } from 'lucide-react'
 import { cn, fmtThaiDate, formatTHBCurrency, todayISO } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
@@ -398,7 +404,7 @@ function CreateBookingContent({
   const [source, setSource] = useState<'advance' | 'walk_in'>(isToday ? 'walk_in' : 'advance')
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
-  const [paymentMode, setPaymentMode] = useState<'reserve' | 'partial' | 'full'>('reserve')
+  const [paymentMode, setPaymentMode] = useState<'full' | 'full_deposit' | 'partial' | 'reserve'>('full')
   const [paymentAmount, setPaymentAmount] = useState<string>('')
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'TRANSFER'>('CASH')
   const [showRoomPicker, setShowRoomPicker] = useState(false)
@@ -437,6 +443,9 @@ function CreateBookingContent({
     })
   }
 
+  const KEY_DEPOSIT_PER_ROOM = 200
+  const depositAmount = KEY_DEPOSIT_PER_ROOM * selectedRooms.length
+
   const hasGuest = guestName.trim().length > 0 && guestPhone.trim().length === 10
   const hasPayment = paymentMode === 'reserve' || (paymentAmount !== '' && Number(paymentAmount) > 0)
   const canSubmit = hasGuest && hasPayment && !createBooking.isPending
@@ -450,6 +459,8 @@ function CreateBookingContent({
   const handleSubmit = () => {
     if (!canSubmit) return
 
+    const keyDeposit = paymentMode === 'full_deposit' ? depositAmount : 0
+
     const payment =
       paymentMode !== 'reserve' && paymentAmount
         ? { amount: Number(paymentAmount), method: paymentMethod }
@@ -460,6 +471,7 @@ function CreateBookingContent({
         source,
         guest_name: guestName.trim(),
         guest_phone: guestPhone.trim(),
+        key_deposit_amount: keyDeposit,
         stays: selectedRooms.map((r) => ({
           room_type_id: r.roomTypeId,
           room_id: r.roomId,
@@ -484,172 +496,180 @@ function CreateBookingContent({
     )
   }
 
-  // Update payment amount when switching to 'full' if total changed
-  const handlePaymentModeChange = (mode: 'reserve' | 'partial' | 'full') => {
+  const handlePaymentModeChange = (mode: 'full' | 'full_deposit' | 'partial' | 'reserve') => {
     setPaymentMode(mode)
     if (mode === 'full') setPaymentAmount(totalAmount.toString())
+    else if (mode === 'full_deposit') setPaymentAmount((totalAmount + depositAmount).toString())
     else if (mode === 'reserve') setPaymentAmount('')
+    // partial: let user type
   }
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b border-border-soft">
-        <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-          <Plus size={14} />
-          สร้างการจอง
-          {selectedRooms.length > 1 && (
-            <Badge variant="blue" className="text-[10px] px-1.5 py-0">
-              {selectedRooms.length} ห้อง
-            </Badge>
-          )}
-        </span>
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 shrink-0" aria-label="ปิด">
-          <X size={14} />
-        </Button>
-      </div>
-
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Date range info */}
-        <div className="text-xs text-muted-foreground">
+      {/* ── Header ─────────────────────────────────────────────────── */}
+      <div className="shrink-0 px-4 py-3 border-b border-border-soft">
+        <div className="flex items-center justify-between">
+          <span className="text-base font-semibold text-foreground flex items-center gap-1.5">
+            <Plus size={16} />
+            สร้างการจอง
+            {selectedRooms.length > 1 && (
+              <Badge variant="blue" className="text-xs px-1.5 py-0">
+                {selectedRooms.length} ห้อง
+              </Badge>
+            )}
+          </span>
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 shrink-0" aria-label="ปิด">
+            <X size={16} />
+          </Button>
+        </div>
+        <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+          <CalendarDays size={12} className="shrink-0" />
           {fmtThaiDate(prefill.checkIn)} → {fmtThaiDate(prefill.checkOut)} · {nights} คืน
         </div>
+      </div>
 
-        {/* Selected rooms chips */}
-        <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">ห้องพัก</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {selectedRooms.map((room) => (
-              <button
-                key={room.roomId}
-                type="button"
-                onClick={() => toggleRoom(room)}
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
-                  'border-primary/30 bg-primary/10 text-foreground',
-                  selectedRooms.length > 1 && 'hover:border-destructive/50 hover:bg-destructive/10',
-                )}
-              >
-                <span>{room.roomNumber}</span>
-                <span className="text-muted-foreground">{room.roomTypeName}</span>
-                {room.pricePerNight > 0 && (
-                  <span className="text-muted-foreground/70">{formatTHBCurrency(room.pricePerNight)}</span>
-                )}
-                {selectedRooms.length > 1 && (
-                  <X size={10} className="ml-0.5 text-muted-foreground" />
-                )}
-              </button>
-            ))}
-          </div>
+      {/* ── Scrollable content ─────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
 
-          {/* Add room toggle */}
-          <button
-            type="button"
-            onClick={() => setShowRoomPicker((v) => !v)}
-            className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
-          >
-            <Plus size={12} />
-            เพิ่มห้อง
-            <ChevronDown size={12} className={cn('transition-transform', showRoomPicker && 'rotate-180')} />
-          </button>
-
-          {/* Room picker grid */}
-          {showRoomPicker && (
-            <div className="rounded-lg border border-border-soft bg-sidebar/50 p-3 space-y-3 max-h-48 overflow-y-auto">
-              {availData?.room_types.map((rt) => {
-                const availableRooms = rt.rooms.filter((r) => r.available)
-                if (availableRooms.length === 0) return null
-                return (
-                  <div key={rt.room_type_id} className="space-y-1.5">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                      {rt.room_type_name} · {formatTHBCurrency(rt.price_per_night)}/คืน
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {availableRooms.map((room) => {
-                        const isSelected = selectedRoomIds.has(room.room_id)
-                        return (
-                          <button
-                            key={room.room_id}
-                            type="button"
-                            onClick={() => toggleRoom({
-                              roomId: room.room_id,
-                              roomNumber: room.room_number,
-                              roomTypeId: rt.room_type_id,
-                              roomTypeName: rt.room_type_name,
-                              pricePerNight: rt.price_per_night,
-                            })}
-                            className={cn(
-                              'min-w-[40px] rounded border px-2 py-1 text-xs font-medium tabular-nums transition-colors cursor-pointer',
-                              isSelected
-                                ? 'border-primary bg-primary/20 text-primary'
-                                : 'border-border text-muted-foreground hover:border-muted-foreground/50',
-                            )}
-                          >
-                            {room.room_number}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-              {!availData && (
-                <div className="flex items-center justify-center py-3">
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                </div>
-              )}
-              {availData && availData.room_types.every((rt) => rt.rooms.filter((r) => r.available).length === 0) && (
-                <p className="text-xs text-muted-foreground text-center py-2">ไม่มีห้องว่าง</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Source toggle */}
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">ประเภท</Label>
-          <div className="grid grid-cols-2 gap-1.5">
-            {([
-              { value: 'advance' as const, label: 'จองล่วงหน้า' },
-              { value: 'walk_in' as const, label: 'วอล์คอิน' },
-            ]).map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setSource(opt.value)}
-                className={cn(
-                  'rounded-md border px-2 py-2 text-xs font-medium transition-colors cursor-pointer',
-                  source === opt.value
-                    ? 'border-primary bg-primary/15 text-primary'
-                    : 'border-border text-muted-foreground hover:border-muted-foreground/50',
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Guest info */}
-        <div className="space-y-3">
-          <Label className="text-xs text-muted-foreground">ผู้เข้าพัก</Label>
+        {/* Section 1: Room & Source */}
+        <div className="rounded-lg bg-muted/50 p-3 space-y-3">
+          {/* Room chips */}
           <div className="space-y-2">
-            <div>
-              <Label htmlFor="drawer-guest-name" className="text-xs font-medium">ชื่อ</Label>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">ห้องพัก</p>
+            <div className="flex flex-wrap gap-1.5">
+              {selectedRooms.map((room) => (
+                <button
+                  key={room.roomId}
+                  type="button"
+                  onClick={() => toggleRoom(room)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm transition-colors cursor-pointer',
+                    'border-primary/30 bg-primary/10 text-foreground',
+                    selectedRooms.length > 1 && 'hover:border-destructive/50 hover:bg-destructive/10',
+                  )}
+                >
+                  <span className="font-semibold tabular-nums">{room.roomNumber}</span>
+                  <span className="text-muted-foreground text-xs">{room.roomTypeName}</span>
+                  {room.pricePerNight > 0 && (
+                    <span className="text-muted-foreground/60 text-xs">{formatTHBCurrency(room.pricePerNight)}</span>
+                  )}
+                  {selectedRooms.length > 1 && (
+                    <X size={12} className="text-muted-foreground/50" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Add room toggle */}
+            <button
+              type="button"
+              onClick={() => setShowRoomPicker((v) => !v)}
+              className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+            >
+              <Plus size={12} />
+              เพิ่มห้อง
+              <ChevronDown size={12} className={cn('transition-transform', showRoomPicker && 'rotate-180')} />
+            </button>
+
+            {/* Room picker grid */}
+            {showRoomPicker && (
+              <div className="rounded-md border border-border-soft bg-background/60 p-2.5 space-y-2.5 max-h-44 overflow-y-auto">
+                {availData?.room_types.map((rt) => {
+                  const availableRooms = rt.rooms.filter((r) => r.available)
+                  if (availableRooms.length === 0) return null
+                  return (
+                    <div key={rt.room_type_id} className="space-y-1.5">
+                      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                        {rt.room_type_name} · {formatTHBCurrency(rt.price_per_night)}/คืน
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {availableRooms.map((room) => {
+                          const isSelected = selectedRoomIds.has(room.room_id)
+                          return (
+                            <button
+                              key={room.room_id}
+                              type="button"
+                              onClick={() => toggleRoom({
+                                roomId: room.room_id,
+                                roomNumber: room.room_number,
+                                roomTypeId: rt.room_type_id,
+                                roomTypeName: rt.room_type_name,
+                                pricePerNight: rt.price_per_night,
+                              })}
+                              className={cn(
+                                'min-w-[40px] rounded border px-2 py-1 text-xs font-medium tabular-nums transition-colors cursor-pointer',
+                                isSelected
+                                  ? 'border-primary bg-primary/20 text-primary'
+                                  : 'border-border text-muted-foreground hover:border-muted-foreground/50',
+                              )}
+                            >
+                              {room.room_number}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+                {!availData && (
+                  <div className="flex items-center justify-center py-2">
+                    <Loader2 className="icon-sm animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {availData && availData.room_types.every((rt) => rt.rooms.filter((r) => r.available).length === 0) && (
+                  <p className="text-xs text-muted-foreground text-center py-1.5">ไม่มีห้องว่าง</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Source toggle — compact inline pills */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">ประเภท</p>
+            <div className="flex gap-2">
+              {([
+                { value: 'advance' as const, label: 'จองล่วงหน้า', Icon: CalendarDays },
+                { value: 'walk_in' as const, label: 'วอล์คอิน', Icon: Footprints },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setSource(opt.value)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors cursor-pointer',
+                    source === opt.value
+                      ? 'border-primary/40 bg-primary/15 text-primary'
+                      : 'border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground',
+                  )}
+                >
+                  <opt.Icon size={14} />
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Section 2: Guest info */}
+        <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <User size={12} />
+            ผู้เข้าพัก
+          </p>
+          <div className="grid grid-cols-5 gap-2">
+            <div className="col-span-3">
+              <Label htmlFor="drawer-guest-name" className="text-xs text-muted-foreground">ชื่อ</Label>
               <Input
                 id="drawer-guest-name"
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
-                placeholder="เช่น สมชาย ใจดี"
-                className="mt-1"
+                placeholder="สมชาย ใจดี"
+                className="mt-0.5 h-9 text-sm"
                 autoFocus
               />
             </div>
-            <div>
-              <Label htmlFor="drawer-guest-phone" className="text-xs font-medium">เบอร์โทร</Label>
+            <div className="col-span-2">
+              <Label htmlFor="drawer-guest-phone" className="text-xs text-muted-foreground">เบอร์โทร</Label>
               <Input
                 id="drawer-guest-phone"
                 value={guestPhone}
@@ -657,69 +677,79 @@ function CreateBookingContent({
                 inputMode="numeric"
                 maxLength={10}
                 placeholder="0812345678"
-                className="mt-1"
+                className="mt-0.5 h-9 text-sm"
               />
-              {guestPhone.length > 0 && guestPhone.length !== 10 && (
-                <p className="text-[10px] text-destructive mt-0.5">เบอร์โทรศัพท์ต้องมี 10 หลัก</p>
-              )}
             </div>
           </div>
+          {guestPhone.length > 0 && guestPhone.length !== 10 && (
+            <p className="text-xs text-destructive">เบอร์โทรศัพท์ต้องมี 10 หลัก</p>
+          )}
         </div>
 
-        <Separator />
-
-        {/* Payment section */}
-        <div className="space-y-3">
-          <Label className="text-xs text-muted-foreground">การชำระเงิน</Label>
-          <div className="grid grid-cols-3 gap-1.5">
+        {/* Section 3: Payment */}
+        <div className="rounded-lg bg-muted/50 p-3 space-y-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Banknote size={12} />
+            การชำระเงิน
+          </p>
+          <div className="grid grid-cols-2 gap-2">
             {([
-              { value: 'reserve' as const, label: 'จองก่อน' },
-              { value: 'partial' as const, label: 'บางส่วน' },
-              { value: 'full' as const,    label: 'เต็มจำนวน' },
+              { value: 'full' as const, label: 'ค่าห้อง', desc: 'เต็มจำนวน', Icon: Banknote },
+              { value: 'full_deposit' as const, label: 'ค่าห้อง + ประกัน', desc: 'รวมเงินประกัน', Icon: KeyRound },
+              { value: 'partial' as const, label: 'บางส่วน', desc: 'กรอกจำนวนเอง', Icon: CreditCard },
+              { value: 'reserve' as const, label: 'ภายหลัง', desc: 'ยังไม่ชำระ', Icon: Clock },
             ]).map((opt) => (
               <button
                 key={opt.value}
                 type="button"
                 onClick={() => handlePaymentModeChange(opt.value)}
                 className={cn(
-                  'rounded-md border px-2 py-2 text-xs font-medium transition-colors cursor-pointer',
+                  'flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left transition-colors cursor-pointer',
                   paymentMode === opt.value
-                    ? 'border-primary bg-primary/15 text-primary'
-                    : 'border-border text-muted-foreground hover:border-muted-foreground/50',
+                    ? 'border-primary/40 bg-primary/10 text-primary ring-1 ring-primary/20'
+                    : 'border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground',
                 )}
               >
-                {opt.label}
+                <opt.Icon size={16} className="shrink-0 opacity-70" />
+                <div className="min-w-0">
+                  <span className="text-sm font-semibold block leading-tight">{opt.label}</span>
+                  <span className="text-xs leading-tight block opacity-60">{opt.desc}</span>
+                </div>
               </button>
             ))}
           </div>
 
           {paymentMode !== 'reserve' && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 pt-0.5">
               <div>
-                <Label htmlFor="drawer-pay-amount" className="text-xs font-medium">ยอดชำระ (฿)</Label>
+                <Label htmlFor="drawer-pay-amount" className="text-xs text-muted-foreground">ยอดชำระ (฿)</Label>
                 <Input
                   id="drawer-pay-amount"
                   type="number"
                   min={0}
                   step={0.01}
+                  readOnly={paymentMode === 'full' || paymentMode === 'full_deposit'}
+                  className={cn(
+                    'mt-0.5 h-9 text-sm tabular-nums',
+                    (paymentMode === 'full' || paymentMode === 'full_deposit') && 'bg-muted cursor-default',
+                  )}
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder={totalAmount > 0 ? totalAmount.toLocaleString() : 'เช่น 1500'}
-                  className="mt-1"
+                  placeholder={totalAmount > 0 ? totalAmount.toLocaleString() : '0'}
                 />
               </div>
               <div>
-                <Label className="text-xs font-medium">วิธีชำระ</Label>
-                <div className="grid grid-cols-2 gap-1.5 mt-1">
+                <Label className="text-xs text-muted-foreground">วิธีชำระ</Label>
+                <div className="flex gap-1.5 mt-0.5">
                   {(['CASH', 'TRANSFER'] as const).map((m) => (
                     <button
                       key={m}
                       type="button"
                       onClick={() => setPaymentMethod(m)}
                       className={cn(
-                        'rounded-md border px-2 py-2 text-xs font-medium transition-colors cursor-pointer',
+                        'flex-1 rounded-md border h-9 text-sm font-medium transition-colors cursor-pointer',
                         paymentMethod === m
-                          ? 'border-primary bg-primary/15 text-primary'
+                          ? 'border-primary/40 bg-primary/10 text-primary'
                           : 'border-border text-muted-foreground hover:border-muted-foreground/50',
                       )}
                     >
@@ -732,51 +762,56 @@ function CreateBookingContent({
           )}
         </div>
 
-        {/* Summary */}
+        {/* Summary card */}
         {totalAmount > 0 && (
-          <>
-            <Separator />
-            <div className="rounded-lg bg-sidebar/50 p-3 space-y-1.5 text-sm">
-              {selectedRooms.length > 1 && selectedRooms.map((r) => (
-                <div key={r.roomId} className="flex justify-between text-xs text-muted-foreground">
-                  <span>ห้อง {r.roomNumber} ({nights} คืน)</span>
-                  <span>{formatTHBCurrency(nights * r.pricePerNight)}</span>
-                </div>
-              ))}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  ยอดรวม {selectedRooms.length > 1 ? `(${selectedRooms.length} ห้อง)` : ''}
-                </span>
-                <span className="font-semibold">{formatTHBCurrency(totalAmount)}</span>
+          <div className="rounded-lg border border-border-soft bg-card p-3 pl-3.5 border-l-2 border-l-primary/50 space-y-1.5 text-sm">
+            {selectedRooms.length > 1 && selectedRooms.map((r) => (
+              <div key={r.roomId} className="flex justify-between text-xs text-muted-foreground">
+                <span>ห้อง {r.roomNumber} ({nights} คืน)</span>
+                <span className="tabular-nums">{formatTHBCurrency(nights * r.pricePerNight)}</span>
               </div>
-              {paymentMode !== 'reserve' && paymentAmount && (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">ชำระ</span>
-                    <span className="font-medium text-success">{formatTHBCurrency(Number(paymentAmount))}</span>
-                  </div>
+            ))}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                ค่าห้อง{selectedRooms.length > 1 ? ` (${selectedRooms.length} ห้อง)` : ''}
+              </span>
+              <span className="font-semibold tabular-nums">{formatTHBCurrency(totalAmount)}</span>
+            </div>
+            {paymentMode === 'full_deposit' && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>ประกันกุญแจ ({selectedRooms.length} × ฿{KEY_DEPOSIT_PER_ROOM})</span>
+                <span className="tabular-nums">{formatTHBCurrency(depositAmount)}</span>
+              </div>
+            )}
+            {paymentMode !== 'reserve' && paymentAmount && (
+              <>
+                <div className="border-t border-border-soft my-1" />
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">ชำระ</span>
+                  <span className="font-medium text-success tabular-nums">{formatTHBCurrency(Number(paymentAmount))}</span>
+                </div>
+                {totalAmount - Number(paymentAmount) > 0 && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">คงเหลือ</span>
-                    <span className={cn(
-                      'font-semibold',
-                      totalAmount - Number(paymentAmount) > 0 ? 'text-warning' : 'text-success',
-                    )}>
-                      {formatTHBCurrency(Math.max(0, totalAmount - Number(paymentAmount)))}
+                    <span className="font-semibold text-warning tabular-nums">
+                      {formatTHBCurrency(totalAmount - Number(paymentAmount))}
                     </span>
                   </div>
-                </>
-              )}
-            </div>
-          </>
+                )}
+              </>
+            )}
+          </div>
         )}
+      </div>
 
-        {/* Submit */}
+      {/* ── Sticky footer ──────────────────────────────────────────── */}
+      <div className="shrink-0 p-3 border-t border-border-soft">
         <Button
           className="w-full gap-1.5"
           disabled={!canSubmit}
           onClick={handleSubmit}
         >
-          {createBooking.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+          {createBooking.isPending && <Loader2 className="icon-sm animate-spin" />}
           {submitLabel}
         </Button>
       </div>
