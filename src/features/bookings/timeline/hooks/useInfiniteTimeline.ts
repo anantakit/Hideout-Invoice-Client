@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useLayoutEffect, useEffect, useMemo } from 'react'
 import { addDays, subDays, startOfDay, format } from 'date-fns'
-import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from './tokens'
+import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from '../utils/tokens'
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 

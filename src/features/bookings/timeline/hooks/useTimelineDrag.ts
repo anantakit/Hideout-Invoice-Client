@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { addDays, differenceInDays, format, parseISO, startOfDay } from 'date-fns'
 import toast from 'react-hot-toast'
 import type { TimelineRoom, TimelineBooking } from '../../types'
-import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from './tokens'
+import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from '../utils/tokens'
 
 /** Parse a date string that may be YYYY-MM-DD or a full ISO timestamp. */
 function toDate(s: string): Date {

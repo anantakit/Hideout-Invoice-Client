@@ -90,6 +90,8 @@ export default {
         'kpi-arr': 'hsl(var(--kpi-arr))',
         'kpi-dep': 'hsl(var(--kpi-dep))',
         'kpi-avl': 'hsl(var(--kpi-avl))',
+        'kpi-pending': 'hsl(var(--kpi-pending))',
+        'kpi-pending-muted': 'hsl(var(--kpi-pending-muted))',
       },
       width: {
         'timeline-cell': 'var(--timeline-cell-width)',

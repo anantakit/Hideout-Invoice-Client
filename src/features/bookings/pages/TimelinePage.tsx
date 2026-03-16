@@ -3,17 +3,16 @@ import { addDays, subDays, format, startOfDay } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { CalendarPlus, Keyboard } from 'lucide-react'
+import { CalendarPlus } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { TooltipProvider } from '@/shared/ui/tooltip'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/dialog'
 import toast from 'react-hot-toast'
-import { cn, THAI_MONTHS_SHORT, THAI_DAYS as THAI_DAYS_SHORT, todayISO } from '@/shared/utils'
+import { todayISO } from '@/shared/utils'
 import ErrorPanel from '@/shared/components/ErrorPanel'
 import TimelineSkeleton from '../timeline/components/TimelineSkeleton'
 import { useTimeline, useAvailabilityGrouped, useMoveStay } from '../hooks'
 import type { TimelineBooking } from '../types'
-import { computeDateKPI } from '../timeline/components/computeDateKPI'
+import { computeDateKPI } from '../timeline/utils/computeDateKPI'
 import TimelineHeader from '../timeline/components/TimelineHeader'
 import RoomRow from '../timeline/components/RoomRow'
 import BookingBottomSheet from '../timeline/components/BookingBottomSheet'
@@ -21,7 +20,7 @@ import type { SelectedBookingContext } from '../timeline/components/BookingBotto
 import DragPreview from '../timeline/components/DragPreview'
 import type { RoomAvailability } from '../timeline/components/AvailabilitySummary'
 import TimelineToolbar from '../timeline/components/TimelineToolbar'
-import { ZOOM_CONFIG, type ZoomLevel } from '../timeline/components/timelineConstants'
+import { ZOOM_CONFIG, type ZoomLevel } from '../timeline/utils/timelineConstants'
 import { OperationsDrawer, type DrawerMode, type CreateBookingPrefill } from '../timeline/components/OperationsDrawer'
 import { MobileTimelineList } from '../timeline/components/MobileTimelineList'
 import {
@@ -29,23 +28,21 @@ import {
   TIMELINE_OVERSCAN_ROWS,
   computeRowHeight,
   getCellWidthPx,
-} from '../timeline/components/tokens'
-import { computeRoomLayout } from '../timeline/components/bookingLayout'
-import { useInfiniteTimeline } from '../timeline/components/useInfiniteTimeline'
-import { useTimelineDrag } from '../timeline/components/useTimelineDrag'
-import { useTimelineDraw } from '../timeline/components/useTimelineDraw'
-import { useTimelineActions } from '../timeline/components/useTimelineActions'
+} from '../timeline/utils/tokens'
+import { computeRoomLayout } from '../timeline/utils/bookingLayout'
+import { useInfiniteTimeline } from '../timeline/hooks/useInfiniteTimeline'
+import { useTimelineDrag } from '../timeline/hooks/useTimelineDrag'
+import { useTimelineDraw } from '../timeline/hooks/useTimelineDraw'
+import { useTimelineActions } from '../timeline/hooks/useTimelineActions'
 import BookingContextMenu, { type ContextMenuState } from '../timeline/components/BookingContextMenu'
+import { getStatusColorClass } from '../timeline/utils/statusColors'
+import { MobileDateStrip } from '../timeline/components/MobileDateStrip'
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from '@/shared/ui/alert-dialog'
+  KeyboardHelpDialog,
+  CancelConfirmDialog,
+  CheckInConfirmDialog,
+  CheckOutConfirmDialog,
+} from '../timeline/components/TimelineConfirmDialogs'
 
 // ─── MobileOnly — renders children only below md (768px) ─────────────────────
 
@@ -64,95 +61,10 @@ function MobileOnly({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-// ─── Status-based booking colors ──────────────────────────────────────────────
-
-const STATUS_COLOR_MAP: Record<string, string> = {
-  CONFIRMED:             'bg-bk-reserved text-bk-reserved-foreground',
-  RESERVED:              'bg-bk-reserved text-bk-reserved-foreground',
-  ASSIGNED:              'bg-bk-reserved text-bk-reserved-foreground',
-  PARTIALLY_CHECKED_IN:  'bg-bk-reserved text-bk-reserved-foreground',
-  CHECKED_IN:            'bg-bk-checked-in text-bk-checked-in-foreground',
-  CHECKED_OUT:           'bg-bk-checked-out text-bk-checked-out-foreground',
-  NO_SHOW:               'bg-bk-no-show text-bk-no-show-foreground',
-  CANCELLED:             'bg-bk-cancelled/30 text-bk-cancelled-foreground',
-}
-
-const FALLBACK_STATUS_COLOR = 'bg-secondary text-secondary-foreground'
-
-function getStatusColorClass(status: string): string {
-  return STATUS_COLOR_MAP[status] ?? FALLBACK_STATUS_COLOR
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const MOBILE_STRIP_DAYS = 21
 const MOBILE_CENTER = 10 // anchor is at index 10
-
-// ─── MobileDateStrip ──────────────────────────────────────────────────────────
-
-const MobileDateStrip = React.memo(function MobileDateStrip({
-  days,
-  selectedIndex,
-  todayStr,
-  stripRef,
-  onSelectDay,
-}: {
-  days: Date[]
-  selectedIndex: number
-  todayStr: string
-  stripRef: React.RefObject<HTMLDivElement>
-  onSelectDay: (index: number) => void
-}) {
-  return (
-    <div
-      ref={stripRef}
-      className="shrink-0 flex border-b border-border-soft bg-sidebar overflow-x-auto scrollbar-hide snap-x snap-mandatory"
-    >
-      {days.map((day, i) => {
-        const isActive = i === selectedIndex
-        const isToday = format(day, 'yyyy-MM-dd') === todayStr
-        const dayOfWeek = day.getDay()
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
-        return (
-          <button
-            key={day.toISOString()}
-            type="button"
-            onClick={() => onSelectDay(i)}
-            className={cn(
-              'flex-shrink-0 w-12 snap-center flex flex-col items-center py-1.5 gap-0.5 text-center transition-colors',
-              isActive
-                ? 'bg-primary/15 text-foreground'
-                : isWeekend
-                  ? 'text-muted-foreground/70'
-                  : 'text-muted-foreground hover:bg-muted',
-            )}
-          >
-            <span className={cn(
-              'text-[10px] font-medium leading-none',
-              isActive && 'text-primary',
-            )}>
-              {THAI_DAYS_SHORT[dayOfWeek]}
-            </span>
-            <span className={cn(
-              'text-sm font-semibold leading-none',
-              isActive && 'text-primary',
-            )}>
-              {day.getDate()}
-            </span>
-            {isToday && (
-              <span className="w-1 h-1 rounded-full bg-primary" />
-            )}
-            {day.getDate() === 1 && (
-              <span className="text-[8px] text-muted-foreground/60 leading-none">
-                {THAI_MONTHS_SHORT[day.getMonth()]}
-              </span>
-            )}
-          </button>
-        )
-      })}
-    </div>
-  )
-})
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -991,95 +903,10 @@ export default function TimelinePage() {
           />
         )}
 
-        {/* Keyboard shortcuts help dialog */}
-        <Dialog open={showKeyboardHelp} onOpenChange={setShowKeyboardHelp}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Keyboard className="w-5 h-5" />
-                คีย์ลัด Timeline
-              </DialogTitle>
-              <DialogDescription>ใช้คีย์ลัดเพื่อจัดการ booking บน timeline ได้เร็วขึ้น</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3 text-sm">
-              <div className="space-y-2">
-                <p className="text-label text-muted-foreground">การเลือก</p>
-                <div className="flex justify-between"><span>เปิดรายละเอียด</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">Enter</kbd></div>
-                <div className="flex justify-between"><span>เมนูคลิกขวา</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">Shift + F10</kbd></div>
-              </div>
-              <div className="border-t border-border-soft" />
-              <div className="space-y-2">
-                <p className="text-label text-muted-foreground">ย้าย Booking</p>
-                <div className="flex justify-between"><span>ย้ายซ้าย/ขวา (±1 วัน)</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">← →</kbd></div>
-                <div className="flex justify-between"><span>ย้ายห้อง (ขึ้น/ลง)</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">↑ ↓</kbd></div>
-              </div>
-              <div className="border-t border-border-soft" />
-              <div className="space-y-2">
-                <p className="text-label text-muted-foreground">ปรับระยะเวลา</p>
-                <div className="flex justify-between"><span>ขยาย check-out +1 วัน</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">Shift + →</kbd></div>
-                <div className="flex justify-between"><span>ลด check-out -1 วัน</span><kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">Shift + ←</kbd></div>
-              </div>
-              <div className="border-t border-border-soft" />
-              <p className="text-helper text-center">กด <kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">?</kbd> เพื่อเปิด/ปิดหน้าต่างนี้</p>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Cancel confirmation dialog */}
-        <AlertDialog open={cancelTarget !== null} onOpenChange={(open) => !open && setCancelTarget(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>ยืนยันการยกเลิก</AlertDialogTitle>
-              <AlertDialogDescription>
-                ต้องการยกเลิกการจองของ <strong>{cancelTarget?.guest_name}</strong>{' '}
-                ({cancelTarget?.check_in} → {cancelTarget?.check_out}) ใช่หรือไม่?
-                การดำเนินการนี้ไม่สามารถย้อนกลับได้
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmCancel}>
-                ยืนยัน ยกเลิกการจอง
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Check-in confirmation dialog */}
-        <AlertDialog open={checkInTarget !== null} onOpenChange={(open) => !open && setCheckInTarget(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>ยืนยันเช็คอิน</AlertDialogTitle>
-              <AlertDialogDescription>
-                เช็คอิน {checkInTarget?.booking.guest_name} ?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmCheckIn}>
-                เช็คอิน
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Check-out confirmation dialog */}
-        <AlertDialog open={checkOutTarget !== null} onOpenChange={(open) => !open && setCheckOutTarget(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>ยืนยันเช็คเอาท์</AlertDialogTitle>
-              <AlertDialogDescription>
-                เช็คเอาท์ {checkOutTarget?.guest_name} ?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmCheckOut}>
-                เช็คเอาท์
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <KeyboardHelpDialog open={showKeyboardHelp} onOpenChange={setShowKeyboardHelp} />
+        <CancelConfirmDialog target={cancelTarget} onClose={() => setCancelTarget(null)} onConfirm={handleConfirmCancel} />
+        <CheckInConfirmDialog target={checkInTarget} onClose={() => setCheckInTarget(null)} onConfirm={handleConfirmCheckIn} />
+        <CheckOutConfirmDialog target={checkOutTarget} onClose={() => setCheckOutTarget(null)} onConfirm={handleConfirmCheckOut} />
       </div>
     </TooltipProvider>
   )

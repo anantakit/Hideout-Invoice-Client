@@ -3,9 +3,9 @@ import { addDays, differenceInDays, format, isToday, isSaturday, isSunday, parse
 import { cn, todayISO } from '@/shared/utils'
 import type { TimelineRoom, TimelineBooking } from '../../types'
 import BookingBlock from './BookingBlock'
-import { getCellWidthPx, TIMELINE_WINDOW_DAYS } from './tokens'
-import { computeRoomLayout } from './bookingLayout'
-import type { DragMode, DragState } from './useTimelineDrag'
+import { getCellWidthPx, TIMELINE_WINDOW_DAYS } from '../utils/tokens'
+import { computeRoomLayout } from '../utils/bookingLayout'
+import type { DragMode, DragState } from '../hooks/useTimelineDrag'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

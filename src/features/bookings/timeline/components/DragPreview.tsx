@@ -1,7 +1,7 @@
 import React from 'react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { cn } from '@/shared/utils'
-import type { DragState, DragPreviewPosition } from './useTimelineDrag'
+import type { DragState, DragPreviewPosition } from '../hooks/useTimelineDrag'
 
 interface DragPreviewProps {
   dragState: DragState

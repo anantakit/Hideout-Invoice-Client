@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Calendar } from '@/shared/ui/calendar'
 import { cn, THAI_MONTHS_FULL, todayISO } from '@/shared/utils'
 import type { RoomAvailability } from './AvailabilitySummary'
-import { ZOOM_CONFIG, type ZoomLevel } from './timelineConstants'
+import { ZOOM_CONFIG, type ZoomLevel } from '../utils/timelineConstants'
 
 const noop = () => {}
 
@@ -379,12 +379,12 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
           </div>
 
           {kpiTotals.unassigned > 0 && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-2.5 py-1.5">
-              <Clock size={13} className="text-amber-400" />
-              <span className="text-sm font-bold tabular-nums leading-none text-amber-400">
+            <div className="flex items-center gap-1.5 rounded-lg bg-kpi-pending-muted px-2.5 py-1.5">
+              <Clock size={13} className="text-kpi-pending" />
+              <span className="text-sm font-bold tabular-nums leading-none text-kpi-pending">
                 {kpiTotals.unassigned}
               </span>
-              <span className="text-xs text-amber-400/70 leading-none">รอกำหนด</span>
+              <span className="text-xs text-kpi-pending/70 leading-none">รอกำหนด</span>
             </div>
           )}
 

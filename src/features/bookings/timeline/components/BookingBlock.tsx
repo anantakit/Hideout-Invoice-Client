@@ -5,14 +5,14 @@ import {
   TIMELINE_BLOCK_HEIGHT_PX,
   TIMELINE_BLOCK_GAP_PX,
   TIMELINE_BLOCK_PADDING_PX,
-} from './tokens'
+} from '../utils/tokens'
 import { cn, todayISO } from '@/shared/utils'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/shared/ui/tooltip'
 import { Badge } from '@/shared/ui/badge'
 import { Separator } from '@/shared/ui/separator'
 import { type TimelineBooking, getStatusLabel } from '../../types'
 import { useHoveredBookingId, useBookingHoverHandlers } from './HoverContext'
-import type { DragMode, DragState } from './useTimelineDrag'
+import type { DragMode, DragState } from '../hooks/useTimelineDrag'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

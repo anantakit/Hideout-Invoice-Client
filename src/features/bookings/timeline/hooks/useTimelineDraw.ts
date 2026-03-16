@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { addDays } from 'date-fns'
 import type { TimelineRoom } from '../../types'
-import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from './tokens'
+import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from '../utils/tokens'
 
 /** Fast ISO date formatter — avoids date-fns format() overhead on every pointermove. */
 function formatDateISO(d: Date): string {

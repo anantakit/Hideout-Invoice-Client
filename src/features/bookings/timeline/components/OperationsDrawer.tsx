@@ -854,7 +854,7 @@ export const OperationsDrawer = React.memo(function OperationsDrawer({
   return (
     <div
       className={cn(
-        'shrink-0 h-full border-l border-border-soft bg-card overflow-hidden transition-[width] duration-220 ease-[cubic-bezier(0.4,0,0.2,1)]',
+        'shrink-0 h-full border-l border-border-soft bg-card overflow-hidden transition-[width] duration-220 ease-in-out',
       )}
       style={{ width: isOpen ? DRAWER_WIDTH : 0 }}
     >

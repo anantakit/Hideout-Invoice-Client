@@ -250,6 +250,8 @@
     --kpi-arr: 200 70% 55%;         /* muted sky */
     --kpi-dep: 38 70% 52%;          /* muted amber */
     --kpi-avl: 263 60% 70%;         /* muted purple */
+    --kpi-pending: 25 95% 60%;      /* vivid orange — 4.6:1 on #1B1F2A */
+    --kpi-pending-muted: 25 70% 16%; /* bg tint */
   }
 
   /* ══════════════════════════════════════════════════════════════════
@@ -347,6 +349,8 @@
     --kpi-arr: 200 80% 38%;              /* matches info */
     --kpi-dep: 32 85% 35%;               /* matches warning */
     --kpi-avl: 263 55% 45%;              /* darker purple — 5.1:1 */
+    --kpi-pending: 25 90% 42%;           /* burnt orange — 5.3:1 on white */
+    --kpi-pending-muted: 30 80% 93%;     /* light orange tint */
   }
 
   * {

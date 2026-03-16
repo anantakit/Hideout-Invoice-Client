@@ -21,7 +21,6 @@ const CreateBooking     = lazy(() => import('../features/bookings/pages/CreateBo
 const BookingList       = lazy(() => import('../features/bookings/pages/BookingListPage'))
 const BookingDetail     = lazy(() => import('../features/bookings/pages/BookingDetailPage'))
 const Timeline          = lazy(() => import('../features/bookings/pages/TimelinePage'))
-const TodayBoard        = lazy(() => import('../features/operations/pages/TodayBoardPage'))
 
 function PageLoader() {
   return (
@@ -72,7 +71,6 @@ export default function App() {
                 <Route path="/bookings/new" element={<CreateBooking />} />
                 <Route path="/timeline" element={<Timeline />} />
                 <Route path="/bookings/:id" element={<BookingDetail />} />
-                <Route path="/operations/today" element={<TodayBoard />} />
                 <Route
                   path="/admin/users"
                   element={

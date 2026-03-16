@@ -15,10 +15,6 @@ export const ROUTES = {
     detail: (id: string) => `/bookings/${id}`,
   },
 
-  operations: {
-    today: '/operations/today',
-  },
-
   admin: {
     users: '/admin/users',
     rooms: '/admin/rooms',
