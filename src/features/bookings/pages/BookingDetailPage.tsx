@@ -260,6 +260,11 @@ export default function BookingDetailPage() {
                   <Badge variant="outline" className="text-micro">
                     {booking.source === 'walk_in' ? 'วอล์คอิน' : booking.source === 'online' ? 'ออนไลน์' : 'จองล่วงหน้า'}
                   </Badge>
+                  {booking.key_deposit_amount > 0 && (
+                    <Badge variant="amber" className="text-micro">
+                      ประกันกุญแจ: {formatTHB(booking.key_deposit_amount)}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-helper mt-1">
                   สร้างเมื่อ {formatThaiDate(booking.created_at)}

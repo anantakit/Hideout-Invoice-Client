@@ -7,6 +7,8 @@ import { Separator } from '@/shared/ui/separator'
 import { useRoomTypes } from '../hooks'
 import type { CreateBookingFormValues } from '../createBookingSchema'
 
+const KEY_DEPOSIT_PER_ROOM = 200
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function calcNights(checkIn: string, checkOut: string): number {
@@ -78,7 +80,9 @@ export function BookingSummary() {
       }[]
   }, [items, priceMap, nameMap])
 
-  const total = useMemo(() => lines.reduce((s, l) => s + l.subtotal, 0), [lines])
+  const roomTotal = useMemo(() => lines.reduce((s, l) => s + l.subtotal, 0), [lines])
+  const totalRooms = items.reduce((s, i) => s + Math.max(1, i.quantity ?? 1), 0)
+  const depositAmount = paymentMode === 'full_deposit' ? KEY_DEPOSIT_PER_ROOM * totalRooms : 0
 
   if (lines.length === 0) return null
 
@@ -100,12 +104,23 @@ export function BookingSummary() {
           </div>
         ))}
 
-        {lines.length > 1 && (
+        {depositAmount > 0 && (
+          <div className="flex justify-between text-body">
+            <span className="text-muted-foreground">
+              ประกันกุญแจ ({totalRooms} ห้อง × ฿{KEY_DEPOSIT_PER_ROOM})
+            </span>
+            <span className="font-medium text-foreground tabular-nums">
+              {formatTHB(depositAmount)}
+            </span>
+          </div>
+        )}
+
+        {(lines.length > 1 || depositAmount > 0) && (
           <>
             <Separator />
             <div className="flex justify-between text-body font-semibold">
-              <span>รวมทั้งหมด</span>
-              <span className="tabular-nums">{formatTHB(total)}</span>
+              <span>{depositAmount > 0 ? 'รวมทั้งหมด (ค่าห้อง + ประกัน)' : 'รวมทั้งหมด'}</span>
+              <span className="tabular-nums">{formatTHB(roomTotal + depositAmount)}</span>
             </div>
           </>
         )}

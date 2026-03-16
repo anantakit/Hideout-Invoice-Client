@@ -76,6 +76,7 @@ export interface BookingResponse {
   discount_amount: number
   paid_amount: number
   balance_amount: number
+  key_deposit_amount: number
   room_stays: RoomStayResponse[]
   payments: PaymentResponse[]
   invoices: InvoiceResponseShort[]
@@ -215,6 +216,7 @@ export interface CreateBookingPayload {
   guest_name: string
   guest_phone: string
   customer_id?: string
+  key_deposit_amount?: number
   stays: RoomStayPayload[]
   payment?: CreateBookingPaymentPayload
 }

@@ -19,7 +19,8 @@ import BookingBottomSheet from '../components/timeline/BookingBottomSheet'
 import type { SelectedBookingContext } from '../components/timeline/BookingBottomSheet'
 import DragPreview from '../components/timeline/DragPreview'
 import type { RoomAvailability } from '../components/timeline/AvailabilitySummary'
-import TimelineToolbar, { type ZoomLevel, ZOOM_CONFIG } from '../components/timeline/TimelineToolbar'
+import TimelineToolbar from '../components/timeline/TimelineToolbar'
+import { ZOOM_CONFIG, type ZoomLevel } from '../components/timeline/timelineConstants'
 import { OperationsDrawer, type DrawerMode, type CreateBookingPrefill } from '../components/timeline/OperationsDrawer'
 import { MobileTimelineList } from '../components/timeline/MobileTimelineList'
 import {
@@ -426,13 +427,30 @@ export default function TimelinePage() {
   }, [unassignedStays, allRooms, todayStr])
 
   // ── KPI totals (memoized) ──────────────────────────────────────────────
+  // Use timeline data (allRooms) to compute occupancy:
+  //   total    = rooms excluding MAINTENANCE
+  //   occupied = rooms with an overlapping stay (CHECKED_IN / RESERVED / ASSIGNED)
   const kpiTotals = useMemo(() => {
-    const total     = roomAvailability.reduce((s, r) => s + r.total_rooms, 0)
-    const occupied  = roomAvailability.reduce((s, r) => s + r.occupied_rooms, 0)
-    const available = roomAvailability.reduce((s, r) => s + r.available_rooms, 0)
+    const activeRooms = allRooms.filter((r) => r.status !== 'MAINTENANCE')
+    const total = activeRooms.length
+    let occupied = 0
+    for (const room of activeRooms) {
+      const hasStay = room.bookings.some((b) => {
+        if (b.status === 'CANCELLED' || b.status === 'CHECKED_OUT') return false
+        return b.check_in.slice(0, 10) <= availFrom && b.check_out.slice(0, 10) > availFrom
+      })
+      if (hasStay) occupied++
+    }
+    // Unassigned stays (no room yet) that overlap the center date
+    const unassigned = (timelineData?.unassigned_stays ?? []).filter((s) => {
+      if (s.status === 'CANCELLED' || s.status === 'CHECKED_OUT') return false
+      return s.check_in.slice(0, 10) <= availFrom && s.check_out.slice(0, 10) > availFrom
+    }).length
+    // available = rooms bookable for new guests (physically empty minus unassigned)
+    const available = Math.max(0, total - occupied - unassigned)
     const occupancyPct = total > 0 ? Math.round((occupied / total) * 100) : 0
-    return { total, occupied, available, occupancyPct }
-  }, [roomAvailability])
+    return { total, occupied, unassigned, available, occupancyPct }
+  }, [allRooms, timelineData, availFrom])
 
   // ── KPI: Arrivals / Departures for visible center date ────────────────────
   const centerDateStr = availFrom
@@ -808,7 +826,6 @@ export default function TimelinePage() {
           kpiTotals={kpiTotals}
           arrivalsDepartures={arrivalsDepartures}
           availLoading={availLoading}
-          onNewBooking={() => navigate(ROUTES.bookings.new)}
           onToggleOpsDrawer={handleToggleOpsDrawer}
           drawerMode={drawerMode}
           todayPendingCheckinCount={todayPendingCheckinCount}

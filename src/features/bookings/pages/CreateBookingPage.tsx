@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFormContext, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Banknote, KeyRound, CreditCard, Clock } from 'lucide-react'
 import { cn, todayISO, addDaysISO, formatCompactNumber } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { BottomBar } from '@/shared/ui/BottomBar'
@@ -29,6 +29,8 @@ import { ROUTES } from '@/app/routes'
 import { customersApi } from '../../customers/api'
 import CustomerModal from '../../customers/components/CustomerModal'
 import type { Customer } from '../../customers/types'
+
+const KEY_DEPOSIT_PER_ROOM = 200
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
@@ -64,9 +66,10 @@ export default function CreateBookingPage() {
           assigned_room_ids: urlRoomId ? [urlRoomId] : [],
         },
       ],
-      payment_mode: 'reserve',
+      payment_mode: 'full',
       payment_amount: undefined,
       payment_method: 'CASH',
+      key_deposit_amount: undefined,
     },
   })
 
@@ -107,6 +110,11 @@ export default function CreateBookingPage() {
     // Expand grouped items into individual stay payloads.
     const stays = expandGroupedStays(values.items)
 
+    const totalRooms = values.items.reduce((s, i) => s + Math.max(1, i.quantity ?? 1), 0)
+    const depositAmount = values.payment_mode === 'full_deposit'
+      ? (values.key_deposit_amount ?? KEY_DEPOSIT_PER_ROOM * totalRooms)
+      : 0
+
     const payment =
       values.payment_mode !== 'reserve' && values.payment_amount
         ? { amount: values.payment_amount, method: values.payment_method }
@@ -118,6 +126,7 @@ export default function CreateBookingPage() {
         guest_name: values.guest_name,
         guest_phone: values.guest_phone,
         customer_id: values.customer_id || undefined,
+        key_deposit_amount: depositAmount,
         stays,
         payment,
       },
@@ -292,39 +301,7 @@ export default function CreateBookingPage() {
                 <CardTitle className="text-base">การชำระเงิน</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 pt-0">
-                <FormField
-                  control={form.control}
-                  name="payment_mode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="grid grid-cols-3 gap-2">
-                        {(
-                          [
-                            { value: 'reserve', label: 'จองล่วงหน้า',   desc: 'ชำระภายหลัง' },
-                            { value: 'partial', label: 'ชำระบางส่วน',   desc: 'มัดจำ / บางส่วน' },
-                            { value: 'full',    label: 'ชำระเต็มจำนวน', desc: 'ชำระครบ' },
-                          ] as const
-                        ).map((opt) => (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => field.onChange(opt.value)}
-                            className={cn(
-                              'flex flex-col items-center gap-0.5 radius-card border px-2 py-3 text-center transition-colors',
-                              field.value === opt.value
-                                ? 'border-primary bg-primary/15 text-primary'
-                                : 'border-border text-muted-foreground hover:border-muted-foreground/50',
-                            )}
-                          >
-                            <span className="text-xs font-semibold">{opt.label}</span>
-                            <span className="text-[10px] leading-tight">{opt.desc}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
+                <PaymentModeSelector />
                 {paymentMode !== 'reserve' && <PaymentFields />}
               </CardContent>
             </Card>
@@ -365,6 +342,95 @@ export default function CreateBookingPage() {
   )
 }
 
+// ─── PaymentModeSelector ──────────────────────────────────────────────────────
+
+const PAYMENT_OPTIONS = [
+  {
+    value: 'full' as const,
+    label: 'ค่าห้อง',
+    desc: 'ชำระเต็มจำนวน',
+    Icon: Banknote,
+  },
+  {
+    value: 'full_deposit' as const,
+    label: 'ค่าห้อง + ประกันกุญแจ',
+    desc: 'ชำระเต็ม + เงินประกัน',
+    Icon: KeyRound,
+  },
+  {
+    value: 'partial' as const,
+    label: 'ชำระบางส่วน',
+    desc: 'กรอกจำนวนเอง',
+    Icon: CreditCard,
+  },
+  {
+    value: 'reserve' as const,
+    label: 'ชำระภายหลัง',
+    desc: 'ไม่ชำระตอนจอง',
+    Icon: Clock,
+  },
+]
+
+function PaymentModeSelector() {
+  const form = useFormContext<CreateBookingFormValues>()
+  const totalAmount = useTotalAmount()
+  const items = useWatch({ control: form.control, name: 'items' })
+  const paymentMode = useWatch({ control: form.control, name: 'payment_mode' })
+
+  const totalRooms = items.reduce((s, i) => s + Math.max(1, i.quantity ?? 1), 0)
+  const depositAmount = KEY_DEPOSIT_PER_ROOM * totalRooms
+
+  // Auto-fill payment_amount when mode changes
+  useEffect(() => {
+    if (paymentMode === 'full') {
+      form.setValue('payment_amount', totalAmount)
+      form.setValue('key_deposit_amount', undefined)
+    } else if (paymentMode === 'full_deposit') {
+      form.setValue('payment_amount', totalAmount + depositAmount)
+      form.setValue('key_deposit_amount', depositAmount)
+    } else if (paymentMode === 'partial') {
+      // Don't auto-fill for partial — let user type
+      form.setValue('key_deposit_amount', undefined)
+    } else {
+      // reserve
+      form.setValue('payment_amount', undefined)
+      form.setValue('key_deposit_amount', undefined)
+    }
+  }, [paymentMode, totalAmount, depositAmount, form])
+
+  return (
+    <FormField
+      control={form.control}
+      name="payment_mode"
+      render={({ field }) => (
+        <FormItem>
+          <div className="grid grid-cols-2 gap-2">
+            {PAYMENT_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => field.onChange(opt.value)}
+                className={cn(
+                  'flex items-center gap-2.5 radius-card border px-3 py-3 text-left transition-colors',
+                  field.value === opt.value
+                    ? 'border-primary bg-primary/15 text-primary'
+                    : 'border-border text-muted-foreground hover:border-muted-foreground/50',
+                )}
+              >
+                <opt.Icon className="w-4 h-4 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-xs font-semibold block leading-tight">{opt.label}</span>
+                  <span className="text-[10px] leading-tight block">{opt.desc}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </FormItem>
+      )}
+    />
+  )
+}
+
 // ─── PaymentFields ─────────────────────────────────────────────────────────────
 
 /** Amount + method inputs, shown when payment_mode !== 'reserve'. */
@@ -372,6 +438,7 @@ function PaymentFields() {
   const form        = useFormContext<CreateBookingFormValues>()
   const paymentMode = useWatch({ control: form.control, name: 'payment_mode' })
   const totalAmount = useTotalAmount()
+  const isReadOnly  = paymentMode === 'full' || paymentMode === 'full_deposit'
 
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -386,8 +453,10 @@ function PaymentFields() {
                 type="number"
                 min={0}
                 step={0.01}
+                readOnly={isReadOnly}
+                className={cn(isReadOnly && 'bg-muted cursor-default')}
                 placeholder={
-                  paymentMode === 'full' && totalAmount > 0
+                  paymentMode === 'partial' && totalAmount > 0
                     ? formatCompactNumber(totalAmount)
                     : 'เช่น 1500'
                 }

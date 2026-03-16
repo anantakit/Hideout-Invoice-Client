@@ -43,9 +43,10 @@ export const createBookingSchema = z
     items: z
       .array(roomTypeBookingItemSchema)
       .min(1, 'กรุณาเพิ่มรายการห้องพักอย่างน้อย 1 รายการ'),
-    payment_mode: z.enum(['reserve', 'partial', 'full']),
+    payment_mode: z.enum(['full', 'full_deposit', 'partial', 'reserve']),
     payment_amount: z.number().optional(),
     payment_method: z.enum(['CASH', 'TRANSFER']),
+    key_deposit_amount: z.number().optional(),
   })
   .refine(
     (d) =>

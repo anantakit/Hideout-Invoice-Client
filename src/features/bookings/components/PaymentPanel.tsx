@@ -99,6 +99,16 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
             value={formatTHB(Math.max(0, booking.balance_amount))}
             className={cn('font-semibold', hasBalance ? 'text-destructive' : 'text-green-600')}
           />
+          {booking.key_deposit_amount > 0 && (
+            <>
+              <Separator />
+              <SummaryRow
+                label="ประกันกุญแจ"
+                value={formatTHB(booking.key_deposit_amount)}
+                className="text-amber-500"
+              />
+            </>
+          )}
         </div>
 
         {/* ── Payment history ─────────────────────────────────────────────── */}

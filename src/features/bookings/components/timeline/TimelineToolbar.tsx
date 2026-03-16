@@ -4,12 +4,11 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarIcon,
-  CalendarPlus,
   PanelRight,
   LogIn,
   LogOut,
+  Clock,
 } from 'lucide-react'
-import { Button } from '@/shared/ui/button'
 import {
   Select,
   SelectContent,
@@ -21,19 +20,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Calendar } from '@/shared/ui/calendar'
 import { cn, THAI_MONTHS_FULL, todayISO } from '@/shared/utils'
 import type { RoomAvailability } from './AvailabilitySummary'
-
-// ─── Zoom ────────────────────────────────────────────────────────────────────
-
-export type ZoomLevel = '3d' | '7d' | '14d'
-
-export const ZOOM_CONFIG: Record<
-  ZoomLevel,
-  { label: string; cssWidth: string; pxWidth: number }
-> = {
-  '3d':  { label: '3D',  cssWidth: '16.25rem', pxWidth: 260 },
-  '7d':  { label: '7D',  cssWidth: '7.5rem',   pxWidth: 120 },
-  '14d': { label: '14D', cssWidth: '4.375rem',  pxWidth: 70 },
-}
+import { ZOOM_CONFIG, type ZoomLevel } from './timelineConstants'
 
 const noop = () => {}
 
@@ -133,12 +120,11 @@ interface TimelineToolbarProps {
   roomAvailability: RoomAvailability[]
 
   /** KPI data */
-  kpiTotals: { total: number; occupied: number; available: number; occupancyPct: number }
+  kpiTotals: { total: number; occupied: number; unassigned: number; available: number; occupancyPct: number }
   arrivalsDepartures: { arrivals: number; departures: number }
   availLoading: boolean
 
   /** Actions */
-  onNewBooking: () => void
   onToggleOpsDrawer: () => void
   drawerMode: string | null
 
@@ -167,7 +153,6 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
   kpiTotals,
   arrivalsDepartures,
   availLoading,
-  onNewBooking,
   onToggleOpsDrawer,
   drawerMode,
   todayPendingCheckinCount = 0,
@@ -243,7 +228,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
     <div className="tl-toolbar h-16 shrink-0 flex items-center border-b border-tl-border bg-tl-header">
 
       {/* ═══════ LEFT: Nav ═══════════════════════════════════════════════ */}
-      <div className="flex items-center gap-2 md:gap-4 pl-4 md:pl-6 shrink-0">
+      <div className="flex items-center gap-2 md:gap-4 pl-4 md:pl-6 min-w-0 flex-1">
 
         {/* Today pill */}
         <button
@@ -353,7 +338,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
           value={selectedRoomTypeId ?? '__all__'}
           onValueChange={(v) => onRoomTypeSelect(v === '__all__' ? null : v)}
         >
-          <SelectTrigger className="h-9 w-[140px] text-sm bg-transparent border-tl-border text-tl-text-dim hover:text-tl-text">
+          <SelectTrigger className="h-8 w-auto min-w-[7rem] text-sm rounded-lg bg-accent/40 border-0 shadow-none px-3 py-1 text-tl-text-dim hover:text-tl-text focus:ring-0 focus:ring-offset-0">
             <SelectValue placeholder="ทุกประเภท" />
           </SelectTrigger>
           <SelectContent>
@@ -370,12 +355,12 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
       {/* ═══════ RIGHT: KPIs (compact inline) + Actions ═══════════════ */}
       <div className="hidden lg:flex items-center gap-2 pr-4 shrink-0 h-full pl-3">
 
-        {/* KPI pills — compact horizontal row */}
+        {/* KPI pills — grouped: occupancy | operations */}
         <div className="flex items-center gap-1.5 mr-2">
 
-          {/* Occupancy — mini bar + fraction */}
+          {/* ─ Group 1: Occupancy ─ */}
           <div className="flex items-center gap-2 rounded-lg bg-accent/40 px-3 py-1.5">
-            <div className="w-12 h-2 rounded-full bg-tl-border overflow-hidden">
+            <div className="w-10 h-1.5 rounded-full bg-tl-border overflow-hidden">
               <div
                 className={cn(
                   'h-full rounded-full transition-all duration-300',
@@ -393,26 +378,17 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
             <span className="text-xs text-tl-text-dim leading-none">เข้าพัก</span>
           </div>
 
-          {/* Arrivals */}
-          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-3 py-1.5">
-            <LogIn size={14} className="text-kpi-arr" />
-            <span className="text-sm font-bold tabular-nums leading-none text-kpi-arr">
-              {arrivalsDepartures.arrivals}
-            </span>
-            <span className="text-xs text-tl-text-dim leading-none">เข้า</span>
-          </div>
+          {kpiTotals.unassigned > 0 && (
+            <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-2.5 py-1.5">
+              <Clock size={13} className="text-amber-400" />
+              <span className="text-sm font-bold tabular-nums leading-none text-amber-400">
+                {kpiTotals.unassigned}
+              </span>
+              <span className="text-xs text-amber-400/70 leading-none">รอกำหนด</span>
+            </div>
+          )}
 
-          {/* Departures */}
-          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-3 py-1.5">
-            <LogOut size={14} className="text-kpi-dep" />
-            <span className="text-sm font-bold tabular-nums leading-none text-kpi-dep">
-              {arrivalsDepartures.departures}
-            </span>
-            <span className="text-xs text-tl-text-dim leading-none">ออก</span>
-          </div>
-
-          {/* Available */}
-          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-3 py-1.5">
+          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-2.5 py-1.5">
             <span className={cn(
               'text-sm font-bold tabular-nums leading-none',
               kpiTotals.available === 0 ? 'text-destructive' : 'text-kpi-avl',
@@ -421,18 +397,27 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
             </span>
             <span className="text-xs text-tl-text-dim leading-none">ว่าง</span>
           </div>
-        </div>
 
-        {/* Action buttons */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onNewBooking}
-          className="h-9 px-3 text-sm gap-1.5 border-tl-border text-tl-text-dim hover:text-tl-text bg-transparent"
-        >
-          <CalendarPlus size={15} />
-          <span className="hidden xl:inline">จอง</span>
-        </Button>
+          {/* Divider */}
+          <div className="w-px h-5 bg-tl-border mx-0.5" />
+
+          {/* ─ Group 2: Operations ─ */}
+          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-2.5 py-1.5">
+            <LogIn size={13} className="text-kpi-arr" />
+            <span className="text-sm font-bold tabular-nums leading-none text-kpi-arr">
+              {arrivalsDepartures.arrivals}
+            </span>
+            <span className="text-xs text-tl-text-dim leading-none">เข้า</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-2.5 py-1.5">
+            <LogOut size={13} className="text-kpi-dep" />
+            <span className="text-sm font-bold tabular-nums leading-none text-kpi-dep">
+              {arrivalsDepartures.departures}
+            </span>
+            <span className="text-xs text-tl-text-dim leading-none">ออก</span>
+          </div>
+        </div>
 
         <button
           type="button"
@@ -456,15 +441,6 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
 
       {/* ═══════ SM/MD fallback: actions when KPIs are hidden ═══════════ */}
       <div className="flex lg:hidden items-center gap-1.5 pr-4 shrink-0">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onNewBooking}
-          className="h-9 px-3 text-sm gap-1.5 border-tl-border text-tl-text-dim bg-transparent hidden sm:flex"
-        >
-          <CalendarPlus size={15} />
-          จอง
-        </Button>
         <button
           type="button"
           onClick={onToggleOpsDrawer}

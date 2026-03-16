@@ -454,8 +454,14 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
       }
     }
 
+    // occupiedCount = rooms with assigned stays (total minus physically available)
+    const activeCount = classification.entries.filter((e) => e.room.status !== 'MAINTENANCE').length
+    const occupiedCount = activeCount - availableCount
+    // bookableCount = physically available minus unassigned reservations
+    const bookableCount = Math.max(0, availableCount - unassignedReserved)
     return {
-      availableCount: availableCount - unassignedReserved,
+      occupiedCount,
+      availableCount: bookableCount,
       unassignedReserved,
       byType: Array.from(byType.entries()).map(([name, v]) => ({
         name,
@@ -467,8 +473,8 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     }
   }, [rooms, selectedDateStr, roomTypeNameMap, unassignedStays])
 
-  const availablePct = totalActiveRooms > 0
-    ? Math.round((Math.max(0, dateKPI.availableCount) / totalActiveRooms) * 100)
+  const occPct = totalActiveRooms > 0
+    ? Math.round((dateKPI.occupiedCount / totalActiveRooms) * 100)
     : 0
   const checkinPct = dateKPI.checkinTotal > 0
     ? Math.round((dateKPI.checkinDone / dateKPI.checkinTotal) * 100)
@@ -709,26 +715,53 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           SECTION 1: สถานะโรงแรม — compact
           ════════════════════════════════════════════════════════════════════ */}
       <div className="px-4 pt-3 pb-1 space-y-2">
-        {/* Available rooms — compact row */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-baseline space-inline flex-1 min-w-0">
-            <span className="text-helper">ห้องว่าง</span>
+        {/* Hotel overview — equal-weight metric cards */}
+        <div className={cn(
+          'grid gap-2',
+          dateKPI.unassignedReserved > 0 ? 'grid-cols-3' : 'grid-cols-2',
+        )}>
+          {/* Occupied */}
+          <div className="radius-card border border-border bg-card px-3 py-2 flex flex-col items-center">
+            <span className="text-helper leading-none mb-1">เข้าพัก</span>
             <span className={cn(
-              'text-section tabular-nums leading-none',
+              'text-lg font-bold tabular-nums leading-none',
+              occPct >= 90 ? 'text-destructive' : occPct >= 70 ? 'text-amber-400' : 'text-foreground',
+            )}>
+              {dateKPI.occupiedCount}<span className="text-xs font-normal text-muted-foreground">/{totalActiveRooms}</span>
+            </span>
+            <div className="w-full h-1 rounded-full bg-muted overflow-hidden mt-1.5">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all duration-300',
+                  occPct >= 90 ? 'bg-destructive' : occPct >= 70 ? 'bg-amber-400' : 'bg-primary',
+                )}
+                style={{ width: `${occPct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Unassigned — only when > 0 */}
+          {dateKPI.unassignedReserved > 0 && (
+            <div className="radius-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 flex flex-col items-center">
+              <span className="text-helper text-amber-400 leading-none mb-1">รอกำหนด</span>
+              <span className="text-lg font-bold tabular-nums leading-none text-amber-400">
+                {dateKPI.unassignedReserved}
+              </span>
+            </div>
+          )}
+
+          {/* Available */}
+          <div className="radius-card border border-border bg-card px-3 py-2 flex flex-col items-center">
+            <span className="text-helper leading-none mb-1">ว่าง</span>
+            <span className={cn(
+              'text-lg font-bold tabular-nums leading-none',
               dateKPI.availableCount <= 0 ? 'text-destructive' : 'text-success',
             )}>
-              {Math.max(0, dateKPI.availableCount)}
+              {dateKPI.availableCount}
             </span>
-            <span className="text-helper">/ {totalActiveRooms}</span>
             {dateKPI.availableCount <= 0 && totalActiveRooms > 0 && (
-              <Badge variant="red" className="text-micro radius-badge px-1.5 py-0">เต็ม</Badge>
+              <Badge variant="red" className="text-micro radius-badge px-1.5 py-0 mt-1">เต็ม</Badge>
             )}
-          </div>
-          <div className="flex-1 h-1.5 radius-badge bg-muted overflow-hidden max-w-[6rem]">
-            <div
-              className="h-full radius-badge bg-success transition-all duration-300"
-              style={{ width: `${availablePct}%` }}
-            />
           </div>
         </div>
 
@@ -742,11 +775,6 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                 <span className="text-helper text-muted-foreground/50">/{t.total}</span>
               </div>
             ))}
-            {dateKPI.unassignedReserved > 0 && (
-              <span className="text-helper tabular-nums">
-                รอกำหนดห้อง {dateKPI.unassignedReserved}
-              </span>
-            )}
           </div>
         )}
 

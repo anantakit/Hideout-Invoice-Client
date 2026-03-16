@@ -172,7 +172,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
     }
 
     return {
-      availableCount: available - unassignedReserved,
+      availableCount: Math.max(0, available - unassignedReserved),
       unassignedReserved,
       byType: Array.from(byType.entries()).map(([name, v]) => ({
         name,
