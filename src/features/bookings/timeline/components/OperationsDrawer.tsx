@@ -26,7 +26,6 @@ import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { Separator } from '@/shared/ui/separator'
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
   AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
@@ -111,17 +110,18 @@ function CheckoutAllButton({
   return (
     <>
       <Button
-        className="w-full gap-1.5"
         variant="ghost"
+        size="sm"
+        className="gap-1 text-xs h-auto py-1 px-2 text-primary hover:text-primary/80"
         disabled={checkoutMutation.isPending}
         onClick={() => setOpen(true)}
       >
         {checkoutMutation.isPending ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 size={12} className="animate-spin" />
         ) : (
-          <LogOut className="w-4 h-4" />
+          <LogOut size={12} />
         )}
-        เช็คเอาท์ทั้งหมด ({stays.length} ห้อง)
+        เช็คเอาท์ทั้งหมด
       </Button>
 
       <AlertDialog open={open} onOpenChange={(v) => !v && setOpen(false)}>
@@ -203,50 +203,49 @@ function BookingDetailContent({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b border-border-soft">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-semibold text-foreground truncate">
-            {booking.guest_name}
-          </span>
-          <Badge variant={statusVariant(booking.status)} className="shrink-0">
-            {getStatusLabel(booking.status)}
-          </Badge>
+      {/* ── Header ─────────────────────────────────────────────────── */}
+      <div className="shrink-0 px-4 py-3 border-b border-border-soft">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-base font-semibold text-foreground truncate">
+              {booking.guest_name}
+            </span>
+            <Badge variant={statusVariant(booking.status)} className="shrink-0">
+              {getStatusLabel(booking.status)}
+            </Badge>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 shrink-0" aria-label="ปิด">
+            <X size={16} />
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="h-7 w-7 shrink-0"
-          aria-label="ปิด"
-        >
-          <X size={14} />
-        </Button>
+        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+          <CalendarDays size={12} className="shrink-0" />
+          {fmtThaiDate(booking.check_in)} → {fmtThaiDate(booking.check_out)}
+          <span>· {nights} คืน</span>
+          {booking.source && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-auto">
+              {booking.source === 'walk_in' ? 'วอล์คอิน' : 'จองล่วงหน้า'}
+            </Badge>
+          )}
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Dates */}
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">วันที่เข้าพัก</p>
-          <p className="text-sm font-medium">
-            {fmtThaiDate(booking.check_in)} → {fmtThaiDate(booking.check_out)}
-            <span className="ml-1.5 text-muted-foreground font-normal">({nights} คืน)</span>
-          </p>
-        </div>
+      {/* ── Scrollable content ─────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
 
-        <Separator />
-
-        {/* Rooms */}
+        {/* Section 1: Rooms */}
         {roomNumbers.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <DoorOpen className="w-3.5 h-3.5" />
+          <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <DoorOpen size={12} />
               ห้องพัก
+              {roomNumbers.length > 1 && (
+                <span className="normal-case tracking-normal font-normal">· จองกลุ่ม {roomNumbers.length} ห้อง</span>
+              )}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {roomNumbers.map((rn) => (
-                <Badge key={rn} variant="outline" className="text-xs px-2 py-0.5">
+                <Badge key={rn} variant="outline" className="text-sm px-2.5 py-0.5 font-semibold tabular-nums">
                   {rn}
                 </Badge>
               ))}
@@ -254,83 +253,40 @@ function BookingDetailContent({
           </div>
         )}
 
-        {roomNumbers.length > 1 && (
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            จองกลุ่ม {roomNumbers.length} ห้อง
-          </p>
-        )}
-
-        <Separator />
-
-        {/* Balance */}
-        <div className="flex items-center justify-between">
+        {/* Section 2: Balance — prominent when outstanding */}
+        <div className={cn(
+          'rounded-lg p-3 flex items-center justify-between',
+          hasBalance
+            ? 'bg-warning/10 border border-warning/30'
+            : 'bg-muted/50',
+        )}>
           <span className="text-sm text-muted-foreground">ยอดค้างชำระ</span>
           {hasBalance ? (
-            <span className="flex items-center gap-1 text-sm font-semibold text-warning">
-              <CircleAlert className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-warning">
+              <CircleAlert size={14} />
               {formatTHBCurrency(Number(booking.balance_amount))}
             </span>
           ) : (
-            <span className="flex items-center gap-1 text-sm font-semibold text-success">
-              <CheckCircle2 className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1.5 text-sm font-medium text-success">
+              <CheckCircle2 size={14} />
               ชำระแล้ว
             </span>
           )}
         </div>
 
-        {/* Booking source */}
-        {booking.source && (
-          <>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">ช่องทาง</span>
-              <span className="text-sm font-medium text-foreground capitalize">
-                {booking.source === 'walk_in' ? 'วอล์คอิน' : 'จองล่วงหน้า'}
-              </span>
-            </div>
-          </>
-        )}
-
         {/* Inline check-in */}
         {pendingStays.length > 0 && (
-          <>
-            <Separator />
-            <InlineCheckIn bookingId={booking.booking_id} pendingStays={pendingStays} compact />
-          </>
+          <InlineCheckIn bookingId={booking.booking_id} pendingStays={pendingStays} compact />
         )}
 
-        {/* Actions — inline after content */}
-        <Separator />
-        <div className="space-y-2 pt-1">
-          {canCheckOut && checkedInStays.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <LogOut className="w-3.5 h-3.5" />
-                เช็คเอาท์ {checkedInStays.length > 1 ? `${checkedInStays.length} ห้อง` : ''}
+        {/* Checkout section */}
+        {canCheckOut && checkedInStays.length > 0 && (
+          <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <LogOut size={12} />
+                เช็คเอาท์{checkedInStays.length > 1 ? ` ${checkedInStays.length} ห้อง` : ''}
               </p>
-              {checkedInStays.map((stay) => (
-                <ConfirmActionCard
-                  key={stay.id}
-                  disabled={checkoutMutation.isPending}
-                  loading={checkoutMutation.isPending}
-                  loader={<Loader2 size={14} className="animate-spin text-muted-foreground" />}
-                  icon={<LogOut size={14} className="text-warning" />}
-                  confirmTitle="ยืนยันเช็คเอาท์"
-                  confirmDescription={`เช็คเอาท์ ${booking.guest_name} ห้อง ${stay.room_number} ?`}
-                  confirmLabel="เช็คเอาท์"
-                  onConfirm={() => {
-                    checkoutMutation.mutate([stay.id], {
-                      onSuccess: () => toast.success(`เช็คเอาท์ ห้อง ${stay.room_number} สำเร็จ`),
-                      onError: (err: Error) => toast.error(err.message || 'เกิดข้อผิดพลาด'),
-                    })
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold">ห้อง {stay.room_number}</span>
-                    <span className="text-xs text-muted-foreground">{stay.room_type_name}</span>
-                  </div>
-                </ConfirmActionCard>
-              ))}
               {checkedInStays.length > 1 && (
                 <CheckoutAllButton
                   guestName={booking.guest_name}
@@ -339,41 +295,53 @@ function BookingDetailContent({
                 />
               )}
             </div>
-          )}
+            {checkedInStays.map((stay) => (
+              <ConfirmActionCard
+                key={stay.id}
+                disabled={checkoutMutation.isPending}
+                loading={checkoutMutation.isPending}
+                loader={<Loader2 size={14} className="animate-spin text-muted-foreground" />}
+                icon={<LogOut size={14} className="text-warning" />}
+                confirmTitle="ยืนยันเช็คเอาท์"
+                confirmDescription={`เช็คเอาท์ ${booking.guest_name} ห้อง ${stay.room_number} ?`}
+                confirmLabel="เช็คเอาท์"
+                onConfirm={() => {
+                  checkoutMutation.mutate([stay.id], {
+                    onSuccess: () => toast.success(`เช็คเอาท์ ห้อง ${stay.room_number} สำเร็จ`),
+                    onError: (err: Error) => toast.error(err.message || 'เกิดข้อผิดพลาด'),
+                  })
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">ห้อง {stay.room_number}</span>
+                  <span className="text-xs text-muted-foreground">{stay.room_type_name}</span>
+                </div>
+              </ConfirmActionCard>
+            ))}
+          </div>
+        )}
+      </div>
 
-          {isTerminal && (
-            <Button
-              className="w-full gap-1.5"
-              variant="outline"
-              onClick={handleOpenDetail}
-            >
-              <FileText size={14} />
-              ดูใบเสร็จ
-            </Button>
-          )}
-
-          {/* Open detail page */}
-          <Button
-            className="w-full gap-1.5"
-            variant="outline"
-            onClick={handleOpenDetail}
-          >
-            เปิดรายละเอียด
-            <ChevronRight size={14} />
+      {/* ── Sticky footer ──────────────────────────────────────────── */}
+      <div className="shrink-0 p-3 border-t border-border-soft space-y-2">
+        {/* Primary CTA: payment if balance, receipt if terminal */}
+        {hasBalance && !isTerminal && (
+          <Button className="w-full gap-1.5" onClick={handleOpenDetail}>
+            <Banknote size={16} />
+            รับชำระเงิน
           </Button>
-
-          {/* Payment shortcut if balance > 0 */}
-          {hasBalance && !isTerminal && (
-            <Button
-              className="w-full gap-1.5"
-              variant="ghost"
-              onClick={handleOpenDetail}
-            >
-              <Banknote size={14} />
-              รับชำระเงิน
-            </Button>
-          )}
-        </div>
+        )}
+        {isTerminal && (
+          <Button className="w-full gap-1.5" onClick={handleOpenDetail}>
+            <FileText size={16} />
+            ดูใบเสร็จ
+          </Button>
+        )}
+        {/* Secondary: detail page */}
+        <Button className="w-full gap-1.5" variant="outline" onClick={handleOpenDetail}>
+          เปิดรายละเอียด
+          <ChevronRight size={14} />
+        </Button>
       </div>
     </div>
   )

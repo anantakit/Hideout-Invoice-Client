@@ -93,12 +93,13 @@ export function CheckOutAllButton({
   return (
     <>
       <Button
-        className="w-full h-9 text-sm font-semibold"
         variant="ghost"
+        size="sm"
+        className="gap-1 text-xs h-auto py-1 px-2 text-primary hover:text-primary/80"
         onClick={() => setOpen(true)}
       >
-        <LogOut className="w-3.5 h-3.5 mr-1.5" />
-        เช็คเอาท์ทั้งหมด ({pendingStays.length} ห้อง)
+        <LogOut size={12} />
+        เช็คเอาท์ทั้งหมด
       </Button>
 
       <AlertDialog open={open} onOpenChange={(v) => !v && setOpen(false)}>

@@ -421,20 +421,33 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
 
                 {isExpanded && (
                   <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-2">
-                    {/* Progress */}
+                    {/* Progress + checkout all inline */}
                     <div className="flex items-center justify-between">
-                      <span className="text-helper font-medium">
-                        เช็คเอาท์ {doneStays.length}/{co.stays.length} ห้อง
-                      </span>
-                      <div className="flex-1 max-w-[6rem] ml-3 h-1.5 radius-badge bg-muted overflow-hidden">
-                        <div
-                          className={cn(
-                            'h-full radius-badge transition-all duration-300',
-                            doneStays.length === co.stays.length ? 'bg-success' : 'bg-warning',
-                          )}
-                          style={{ width: `${Math.round((doneStays.length / co.stays.length) * 100)}%` }}
-                        />
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-helper font-medium shrink-0">
+                          เช็คเอาท์ {doneStays.length}/{co.stays.length} ห้อง
+                        </span>
+                        <div className="flex-1 max-w-[6rem] h-1.5 radius-badge bg-muted overflow-hidden">
+                          <div
+                            className={cn(
+                              'h-full radius-badge transition-all duration-300',
+                              doneStays.length === co.stays.length ? 'bg-success' : 'bg-warning',
+                            )}
+                            style={{ width: `${Math.round((doneStays.length / co.stays.length) * 100)}%` }}
+                          />
+                        </div>
                       </div>
+                      {pendingStays.length > 1 && onQuickCheckOut && (
+                        <CheckOutAllButton
+                          guestName={co.guestName}
+                          pendingStays={pendingStays}
+                          onCheckOutAll={() => {
+                            for (const stay of pendingStays) {
+                              onQuickCheckOut(stay.booking)
+                            }
+                          }}
+                        />
+                      )}
                     </div>
 
                     {/* Pending stays */}
@@ -447,19 +460,6 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                         onCheckOut={() => onQuickCheckOut?.(stay.booking)}
                       />
                     ))}
-
-                    {/* Checkout all button */}
-                    {pendingStays.length > 1 && onQuickCheckOut && (
-                      <CheckOutAllButton
-                        guestName={co.guestName}
-                        pendingStays={pendingStays}
-                        onCheckOutAll={() => {
-                          for (const stay of pendingStays) {
-                            onQuickCheckOut(stay.booking)
-                          }
-                        }}
-                      />
-                    )}
 
                     {/* Done stays */}
                     {doneStays.map((stay) => (

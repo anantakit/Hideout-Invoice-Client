@@ -128,21 +128,59 @@ export function InlineCheckInPanel({
         </div>
       ) : (
         <>
-          {/* Progress header — only for multi-room */}
+          {/* Progress header + check-in all inline — only for multi-room */}
           {totalActive > 1 && (
             <div className="flex items-center justify-between">
-              <span className="text-helper font-medium">
-                เช็คอิน {checkedInStays.length}/{totalActive} ห้อง
-              </span>
-              <div className="flex-1 max-w-[6rem] ml-3 h-1.5 radius-badge bg-muted overflow-hidden">
-                <div
-                  className={cn(
-                    'h-full radius-badge transition-all duration-300',
-                    checkedInStays.length === totalActive ? 'bg-success' : 'bg-primary',
-                  )}
-                  style={{ width: `${Math.round((checkedInStays.length / totalActive) * 100)}%` }}
-                />
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-helper font-medium shrink-0">
+                  เช็คอิน {checkedInStays.length}/{totalActive} ห้อง
+                </span>
+                <div className="flex-1 max-w-[6rem] h-1.5 radius-badge bg-muted overflow-hidden">
+                  <div
+                    className={cn(
+                      'h-full radius-badge transition-all duration-300',
+                      checkedInStays.length === totalActive ? 'bg-success' : 'bg-primary',
+                    )}
+                    style={{ width: `${Math.round((checkedInStays.length / totalActive) * 100)}%` }}
+                  />
+                </div>
               </div>
+              {isCheckInDay && assignedStays.length > 1 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1 text-xs h-auto py-1 px-2 text-primary hover:text-primary/80"
+                      disabled={isBusy}
+                    >
+                      {checkingInAll ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <LogIn size={12} />
+                      )}
+                      เช็คอินทั้งหมด
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>ยืนยันเช็คอินทั้งหมด</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        เช็คอินห้อง {assignedStays.map((s) => s.room_number).join(', ')} ({assignedStays.length} ห้อง) พร้อมกัน
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleCheckInAll}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        เช็คอินทั้งหมด
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
           )}
 
@@ -249,42 +287,7 @@ export function InlineCheckInPanel({
             </p>
           )}
 
-          {/* Check-in all button with confirmation */}
-          {isCheckInDay && assignedStays.length > 1 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  className="w-full h-9 text-sm font-semibold"
-                  variant="ghost"
-                  disabled={isBusy}
-                >
-                  {checkingInAll ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                  ) : (
-                    <LogIn className="w-3.5 h-3.5 mr-1.5" />
-                  )}
-                  เช็คอินทั้งหมด ({assignedStays.length} ห้อง)
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>ยืนยันเช็คอินทั้งหมด</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    เช็คอินห้อง {assignedStays.map((s) => s.room_number).join(', ')} ({assignedStays.length} ห้อง) พร้อมกัน
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleCheckInAll}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    เช็คอินทั้งหมด
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+          {/* Check-in all is now inline with progress header above */}
 
           {/* All done */}
           {totalActive > 0 && unassignedStays.length === 0 && assignedStays.length === 0 && (
