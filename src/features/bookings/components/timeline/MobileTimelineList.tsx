@@ -12,6 +12,7 @@ import {
 } from '@/shared/ui/alert-dialog'
 import { ROUTES } from '@/app/routes'
 import type { TimelineRoom, TimelineBooking, UnassignedStay } from '../../types'
+import { computeDateKPI } from './computeDateKPI'
 import { StayAvailabilityCard } from '../availability/StayAvailabilityCard'
 import type { DateRange } from '../DateRangePicker'
 import CheckInBottomSheet from './AssignRoomBottomSheet'
@@ -386,92 +387,22 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   // KPI — follows selectedDate
   // ══════════════════════════════════════════════════════════════════════════
 
-  const totalActiveRooms = useMemo(
-    () => rooms.filter((r) => r.status !== 'MAINTENANCE').length,
-    [rooms],
+  const kpi = useMemo(
+    () => computeDateKPI(rooms, unassignedStays, selectedDateStr, roomTypeNameMap),
+    [rooms, unassignedStays, selectedDateStr, roomTypeNameMap],
   )
-
-  const dateKPI = useMemo(() => {
-    const classification = classifyRooms(rooms, selectedDateStr, roomTypeNameMap)
-    const tc = classification.counts
-    // Completed checkouts (guest already left) count as available for KPI
-    let availableCount = tc.available
-
-    // Availability by room type
-    const byType = new Map<string, { total: number; available: number }>()
-    for (const e of classification.entries) {
-      if (e.room.status === 'MAINTENANCE') continue
-      const t = byType.get(e.typeName) ?? { total: 0, available: 0 }
-      t.total++
-      const isAvailable = e.status === 'available'
-        || (e.status === 'checkout_today' && e.booking?.status === 'CHECKED_OUT')
-      if (isAvailable) { t.available++; if (e.status !== 'available') availableCount++ }
-      byType.set(e.typeName, t)
-    }
-
-    // Check-in/check-out progress (per-stay, not per-room)
-    let checkinTotal = 0
-    let checkinDone = 0
-    let checkoutTotal = 0
-    let checkoutDone = 0
-
-    for (const room of rooms) {
-      if (room.status === 'MAINTENANCE') continue
-      for (const b of room.bookings) {
-        if (b.status === 'CANCELLED') continue
-        if (toDateStr(b.check_in) === selectedDateStr && b.status !== 'CHECKED_OUT') {
-          checkinTotal++
-          if (b.status === 'CHECKED_IN') checkinDone++
-        }
-        // Use actual checkout date for CHECKED_OUT stays
-        const coDate = b.status === 'CHECKED_OUT' && b.checked_out_at
-          ? toDateStr(b.checked_out_at)
-          : toDateStr(b.check_out)
-        if (coDate === selectedDateStr) {
-          checkoutTotal++
-          if (b.status === 'CHECKED_OUT') checkoutDone++
-        }
-      }
-    }
-
-    // Unassigned stays checking in on selectedDate
-    for (const s of unassignedStays) {
-      if (toDateStr(s.check_in) === selectedDateStr) {
-        checkinTotal++
-        if (s.status === 'CHECKED_IN' || s.status === 'CHECKED_OUT') checkinDone++
-      }
-    }
-
-    // Unassigned stays that consume inventory — count per room type
-    let unassignedReserved = 0
-    const unassignedByType = new Map<string, number>()
-    for (const s of unassignedStays) {
-      const ci = toDateStr(s.check_in)
-      const co = toDateStr(s.check_out)
-      if (ci <= selectedDateStr && co > selectedDateStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT') {
-        unassignedReserved++
-        unassignedByType.set(s.room_type_name, (unassignedByType.get(s.room_type_name) ?? 0) + 1)
-      }
-    }
-
-    // occupiedCount = rooms with assigned stays (total minus physically available)
-    const activeCount = classification.entries.filter((e) => e.room.status !== 'MAINTENANCE').length
-    const occupiedCount = activeCount - availableCount
-    // bookableCount = physically available minus unassigned reservations
-    const bookableCount = Math.max(0, availableCount - unassignedReserved)
-    return {
-      occupiedCount,
-      availableCount: bookableCount,
-      unassignedReserved,
-      byType: Array.from(byType.entries()).map(([name, v]) => ({
-        name,
-        total: v.total,
-        available: Math.max(0, v.available - (unassignedByType.get(name) ?? 0)),
-      })),
-      checkinTotal, checkinDone,
-      checkoutTotal, checkoutDone,
-    }
-  }, [rooms, selectedDateStr, roomTypeNameMap, unassignedStays])
+  const totalActiveRooms = kpi.total
+  // Alias to keep existing UI references working
+  const dateKPI = useMemo(() => ({
+    occupiedCount: kpi.occupied,
+    availableCount: kpi.available,
+    unassignedReserved: kpi.unassigned,
+    byType: kpi.byType,
+    checkinTotal: kpi.checkinTotal,
+    checkinDone: kpi.checkinDone,
+    checkoutTotal: kpi.checkoutTotal,
+    checkoutDone: kpi.checkoutDone,
+  }), [kpi])
 
   const occPct = totalActiveRooms > 0
     ? Math.round((dateKPI.occupiedCount / totalActiveRooms) * 100)

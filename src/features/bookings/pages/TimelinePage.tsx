@@ -13,6 +13,7 @@ import ErrorPanel from '@/shared/components/ErrorPanel'
 import TimelineSkeleton from '../components/timeline/TimelineSkeleton'
 import { useTimeline, useAvailabilityGrouped, useMoveStay } from '../hooks'
 import type { TimelineBooking } from '../types'
+import { computeDateKPI } from '../components/timeline/computeDateKPI'
 import TimelineHeader from '../components/timeline/TimelineHeader'
 import RoomRow from '../components/timeline/RoomRow'
 import BookingBottomSheet from '../components/timeline/BookingBottomSheet'
@@ -427,48 +428,15 @@ export default function TimelinePage() {
   }, [unassignedStays, allRooms, todayStr])
 
   // ── KPI totals (memoized) ──────────────────────────────────────────────
-  // Use timeline data (allRooms) to compute occupancy:
-  //   total    = rooms excluding MAINTENANCE
-  //   occupied = rooms with an overlapping stay (CHECKED_IN / RESERVED / ASSIGNED)
-  const kpiTotals = useMemo(() => {
-    const activeRooms = allRooms.filter((r) => r.status !== 'MAINTENANCE')
-    const total = activeRooms.length
-    let occupied = 0
-    for (const room of activeRooms) {
-      const hasStay = room.bookings.some((b) => {
-        if (b.status === 'CANCELLED' || b.status === 'CHECKED_OUT') return false
-        return b.check_in.slice(0, 10) <= availFrom && b.check_out.slice(0, 10) > availFrom
-      })
-      if (hasStay) occupied++
-    }
-    // Unassigned stays (no room yet) that overlap the center date
-    const unassigned = (timelineData?.unassigned_stays ?? []).filter((s) => {
-      if (s.status === 'CANCELLED' || s.status === 'CHECKED_OUT') return false
-      return s.check_in.slice(0, 10) <= availFrom && s.check_out.slice(0, 10) > availFrom
-    }).length
-    // available = rooms bookable for new guests (physically empty minus unassigned)
-    const available = Math.max(0, total - occupied - unassigned)
-    const occupancyPct = total > 0 ? Math.round((occupied / total) * 100) : 0
-    return { total, occupied, unassigned, available, occupancyPct }
-  }, [allRooms, timelineData, availFrom])
+  const kpiTotals = useMemo(
+    () => computeDateKPI(allRooms, timelineData?.unassigned_stays ?? [], availFrom, roomTypeNameByRoomId),
+    [allRooms, timelineData, availFrom, roomTypeNameByRoomId],
+  )
 
-  // ── KPI: Arrivals / Departures for visible center date ────────────────────
-  const centerDateStr = availFrom
-  const arrivalsDepartures = useMemo(() => {
-    let arrivals = 0
-    let departures = 0
-    for (const room of allRooms) {
-      for (const b of room.bookings) {
-        if (b.status === 'CANCELLED') continue
-        if (b.check_in.slice(0, 10) === centerDateStr && b.status !== 'CHECKED_OUT') arrivals++
-        const coDate = b.status === 'CHECKED_OUT' && b.checked_out_at
-          ? b.checked_out_at.slice(0, 10)
-          : b.check_out.slice(0, 10)
-        if (coDate === centerDateStr) departures++
-      }
-    }
-    return { arrivals, departures }
-  }, [allRooms, centerDateStr])
+  const arrivalsDepartures = useMemo(
+    () => ({ arrivals: kpiTotals.checkinTotal, departures: kpiTotals.checkoutTotal }),
+    [kpiTotals],
+  )
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handlePrev  = useCallback(() => {

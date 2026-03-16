@@ -17,6 +17,7 @@ import { useBooking, useAvailabilityGrouped, useAssignRooms, useCheckInRooms } f
 import { bookingsApi } from '../../api'
 import { StayAvailabilityCard } from '../availability/StayAvailabilityCard'
 import type { DateRange } from '../DateRangePicker'
+import { computeDateKPI } from './computeDateKPI'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -88,104 +89,24 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
   const selectedDate = parseISO(selectedDateStr)
   const viewingToday = isToday(selectedDate)
 
-  const totalActiveRooms = useMemo(
-    () => rooms.filter((r) => r.status !== 'MAINTENANCE').length,
-    [rooms],
-  )
-
   // ── KPI ──────────────────────────────────────────────────────────────────
-  const dateKPI = useMemo(() => {
-    let available = 0
-    let checkinTotal = 0
-    let checkinDone = 0
-    let checkoutTotal = 0
-    let checkoutDone = 0
+  const kpi = useMemo(
+    () => computeDateKPI(rooms, unassignedStays, selectedDateStr, roomTypeNameMap),
+    [rooms, unassignedStays, selectedDateStr, roomTypeNameMap],
+  )
+  // Alias to keep existing UI references working
+  const dateKPI = useMemo(() => ({
+    availableCount: kpi.available,
+    unassignedReserved: kpi.unassigned,
+    byType: kpi.byType,
+    checkinTotal: kpi.checkinTotal,
+    checkinDone: kpi.checkinDone,
+    checkoutTotal: kpi.checkoutTotal,
+    checkoutDone: kpi.checkoutDone,
+  }), [kpi])
 
-    const byType = new Map<string, { total: number; available: number }>()
-
-    for (const room of rooms) {
-      if (room.status === 'MAINTENANCE') continue
-      const typeName = roomTypeNameMap[room.id] ?? ''
-      const t = byType.get(typeName) ?? { total: 0, available: 0 }
-      t.total++
-
-      const activeBookings = room.bookings.filter(
-        (b) => b.status !== 'CHECKED_OUT' && b.status !== 'CANCELLED',
-      )
-      const nonCancelled = room.bookings.filter((b) => b.status !== 'CANCELLED')
-
-      const coStay = nonCancelled.find((b) => {
-        const coDate = b.status === 'CHECKED_OUT' && b.checked_out_at
-          ? toDateStr(b.checked_out_at)
-          : toDateStr(b.check_out)
-        return coDate === selectedDateStr
-      })
-      const ciStay = activeBookings.find((b) => toDateStr(b.check_in) === selectedDateStr)
-      const activeOverlapping = activeBookings.find((b) => {
-        const ci = toDateStr(b.check_in)
-        const co = toDateStr(b.check_out)
-        return ci <= selectedDateStr && co > selectedDateStr
-      })
-
-      // Classify — for KPI "ว่าง", a completed checkout (guest already left) counts
-      // as available since the room is bookable.
-      if (coStay && coStay.status !== 'CHECKED_OUT' && ciStay && coStay.booking_id !== ciStay.booking_id) { /* turnover */ }
-      else if (coStay && !activeOverlapping) {
-        if (coStay.status === 'CHECKED_OUT') { available++; t.available++ }
-      }
-      else if (activeOverlapping) { /* occupied/reserved */ }
-      else { available++; t.available++ }
-
-      byType.set(typeName, t)
-
-      // Check-in / check-out counting
-      for (const b of room.bookings) {
-        if (b.status === 'CANCELLED') continue
-        if (toDateStr(b.check_in) === selectedDateStr && b.status !== 'CHECKED_OUT') {
-          checkinTotal++
-          if (b.status === 'CHECKED_IN') checkinDone++
-        }
-        const coDate = b.status === 'CHECKED_OUT' && b.checked_out_at
-          ? toDateStr(b.checked_out_at)
-          : toDateStr(b.check_out)
-        if (coDate === selectedDateStr) {
-          checkoutTotal++
-          if (b.status === 'CHECKED_OUT') checkoutDone++
-        }
-      }
-    }
-
-    // Unassigned stays — count per room type so byType breakdown is accurate
-    let unassignedReserved = 0
-    const unassignedByType = new Map<string, number>()
-    for (const s of unassignedStays) {
-      if (toDateStr(s.check_in) === selectedDateStr) {
-        checkinTotal++
-        if (s.status === 'CHECKED_IN' || s.status === 'CHECKED_OUT') checkinDone++
-      }
-      const ci = toDateStr(s.check_in)
-      const co = toDateStr(s.check_out)
-      if (ci <= selectedDateStr && co > selectedDateStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT') {
-        unassignedReserved++
-        unassignedByType.set(s.room_type_name, (unassignedByType.get(s.room_type_name) ?? 0) + 1)
-      }
-    }
-
-    return {
-      availableCount: Math.max(0, available - unassignedReserved),
-      unassignedReserved,
-      byType: Array.from(byType.entries()).map(([name, v]) => ({
-        name,
-        total: v.total,
-        available: Math.max(0, v.available - (unassignedByType.get(name) ?? 0)),
-      })),
-      checkinTotal, checkinDone,
-      checkoutTotal, checkoutDone,
-    }
-  }, [rooms, selectedDateStr, roomTypeNameMap, unassignedStays])
-
-  const availablePct = totalActiveRooms > 0
-    ? Math.round((Math.max(0, dateKPI.availableCount) / totalActiveRooms) * 100)
+  const availablePct = kpi.total > 0
+    ? Math.round((Math.max(0, dateKPI.availableCount) / kpi.total) * 100)
     : 0
 
   // ── Operations ───────────────────────────────────────────────────────────
@@ -318,8 +239,8 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
               )}>
                 {Math.max(0, dateKPI.availableCount)}
               </span>
-              <span className="text-body text-muted-foreground">/ {totalActiveRooms}</span>
-              {dateKPI.availableCount <= 0 && totalActiveRooms > 0 && (
+              <span className="text-body text-muted-foreground">/ {kpi.total}</span>
+              {dateKPI.availableCount <= 0 && kpi.total > 0 && (
                 <Badge variant="red" className="text-micro radius-badge px-1.5 py-0 ml-1">เต็ม</Badge>
               )}
             </div>
