@@ -28,7 +28,7 @@ import {
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import { type TimelineBooking, type TimelineRoom, type UnassignedStay, getStatusLabel } from '../../types'
 import { useBooking, useCreateBooking, useAvailabilityGrouped, useCheckoutRooms } from '../../hooks'
-import { InlineCheckIn } from '../InlineCheckIn'
+import { InlineCheckIn } from '../../shared/components/InlineCheckIn'
 import { DesktopOperationsPanel } from './DesktopOperationsPanel'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────

@@ -19,11 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
-import { useRoomTypes, useAvailabilityGrouped } from '../hooks'
-import { DateRangePicker } from './DateRangePicker'
-import type { DateRange } from './DateRangePicker'
-import type { CreateBookingFormValues } from '../createBookingSchema'
-import type { RoomTypeResponse, AvailabilityGroupedRoom, AvailabilityGroupedResponse } from '../types'
+import { useRoomTypes, useAvailabilityGrouped } from '../../hooks'
+import { DateRangePicker } from '../../shared/components/DateRangePicker'
+import type { DateRange } from '../../shared/components/DateRangePicker'
+import type { CreateBookingFormValues } from '../utils/createBookingSchema'
+import type { RoomTypeResponse, AvailabilityGroupedRoom, AvailabilityGroupedResponse } from '../../types'
 
 // ─── Proximity Auto-Assign ──────────────────────────────────────────────────
 

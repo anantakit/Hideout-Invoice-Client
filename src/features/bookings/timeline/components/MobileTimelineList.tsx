@@ -14,7 +14,7 @@ import { ROUTES } from '@/app/routes'
 import type { TimelineRoom, TimelineBooking, UnassignedStay } from '../../types'
 import { computeDateKPI } from './computeDateKPI'
 import { StayAvailabilityCard } from '../availability/StayAvailabilityCard'
-import type { DateRange } from '../DateRangePicker'
+import type { DateRange } from '../../shared/components/DateRangePicker'
 import CheckInBottomSheet from './AssignRoomBottomSheet'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

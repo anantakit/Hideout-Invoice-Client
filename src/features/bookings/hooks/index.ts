@@ -300,7 +300,7 @@ export function useTimeline(from: string, to: string) {
     queryFn: async () => {
       if (useMock) {
         const { generateMockTimeline } = await import(
-          '../components/timeline/__fixtures__/mockTimelineData'
+          '../timeline/components/__fixtures__/mockTimelineData'
         )
         return generateMockTimeline(from, to)
       }

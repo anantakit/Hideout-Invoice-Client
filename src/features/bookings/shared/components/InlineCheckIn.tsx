@@ -22,8 +22,8 @@ import {
   AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
-import { useCheckInRooms, useAvailabilityGrouped } from '../hooks'
-import type { RoomStayResponse } from '../types'
+import { useCheckInRooms, useAvailabilityGrouped } from '../../hooks'
+import type { RoomStayResponse } from '../../types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

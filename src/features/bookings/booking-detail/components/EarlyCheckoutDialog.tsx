@@ -12,8 +12,8 @@ import {
   AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
 import { formatThaiDate, formatTHB, addDaysISO } from '@/shared/utils'
-import { useEarlyCheckout } from '../hooks'
-import type { RoomStayResponse, BookingResponse } from '../types'
+import { useEarlyCheckout } from '../../hooks'
+import type { RoomStayResponse, BookingResponse } from '../../types'
 
 interface EarlyCheckoutDialogProps {
   open: boolean

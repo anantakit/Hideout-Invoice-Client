@@ -16,7 +16,7 @@ import type { TimelineRoom, TimelineBooking, UnassignedStay, RoomStayResponse } 
 import { useBooking, useAvailabilityGrouped, useAssignRooms, useCheckInRooms } from '../../hooks'
 import { bookingsApi } from '../../api'
 import { StayAvailabilityCard } from '../availability/StayAvailabilityCard'
-import type { DateRange } from '../DateRangePicker'
+import type { DateRange } from '../../shared/components/DateRangePicker'
 import { computeDateKPI } from './computeDateKPI'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

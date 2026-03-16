@@ -7,8 +7,8 @@ import { Separator } from '@/shared/ui/separator'
 import { ROUTES } from '@/app/routes'
 import { useStayAvailability } from '../../hooks/useStayAvailability'
 import { RoomTypeAvailabilityRow } from './RoomTypeAvailabilityRow'
-import { DateRangePicker } from '../DateRangePicker'
-import type { DateRange } from '../DateRangePicker'
+import { DateRangePicker } from '../../shared/components/DateRangePicker'
+import type { DateRange } from '../../shared/components/DateRangePicker'
 
 interface StayAvailabilityCardProps {
   /** Controlled range — parent owns the state for free-room toggle. */

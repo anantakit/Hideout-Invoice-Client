@@ -5,11 +5,11 @@ import { z } from 'zod'
 import { Banknote, CreditCard, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
-import { formatTHB, formatThaiDate } from '../../../shared/utils'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
-import { Button } from '../../../shared/ui/button'
-import { Input } from '../../../shared/ui/input'
-import { Separator } from '../../../shared/ui/separator'
+import { formatTHB, formatThaiDate } from '../../../../shared/utils'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../shared/ui/card'
+import { Button } from '../../../../shared/ui/button'
+import { Input } from '../../../../shared/ui/input'
+import { Separator } from '../../../../shared/ui/separator'
 import {
   Form,
   FormField,
@@ -17,16 +17,16 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from '../../../shared/ui/form'
+} from '../../../../shared/ui/form'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../shared/ui/select'
-import { useCreatePayment } from '../hooks'
-import type { BookingResponse } from '../types'
+} from '../../../../shared/ui/select'
+import { useCreatePayment } from '../../hooks'
+import type { BookingResponse } from '../../types'
 
 // ─── Schema ────────────────────────────────────────────────────────────────────
 

@@ -4,8 +4,8 @@ import { differenceInDays, isValid } from 'date-fns'
 import { formatTHB } from '@/shared/utils'
 import { Card, CardContent } from '@/shared/ui/card'
 import { Separator } from '@/shared/ui/separator'
-import { useRoomTypes } from '../hooks'
-import type { CreateBookingFormValues } from '../createBookingSchema'
+import { useRoomTypes } from '../../hooks'
+import type { CreateBookingFormValues } from '../utils/createBookingSchema'
 
 const KEY_DEPOSIT_PER_ROOM = 200
 

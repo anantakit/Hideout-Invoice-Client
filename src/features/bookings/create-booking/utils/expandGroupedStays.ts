@@ -1,5 +1,5 @@
 import type { RoomTypeBookingItemForm } from './createBookingSchema'
-import type { RoomStayPayload } from './types'
+import type { RoomStayPayload } from '../../types'
 
 /**
  * Converts grouped booking items (room-type + quantity) into a flat list of
