@@ -185,11 +185,13 @@ function BookingDetailContent({
     )
   }, [fullBooking, todayDate])
 
-  // Per-stay checkout
+  // Per-stay checkout — only show stays whose scheduled checkout is today or past
   const checkedInStays = useMemo(() => {
     if (!fullBooking) return []
-    return fullBooking.room_stays.filter((s) => s.status === 'CHECKED_IN')
-  }, [fullBooking])
+    return fullBooking.room_stays.filter(
+      (s) => s.status === 'CHECKED_IN' && s.check_out.slice(0, 10) <= todayDate,
+    )
+  }, [fullBooking, todayDate])
 
   const checkoutMutation = useCheckoutRooms(booking.booking_id)
 
@@ -237,32 +239,29 @@ function BookingDetailContent({
 
         {/* Section 1: Rooms */}
         {roomNumbers.length > 0 && (
-          <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <DoorOpen size={12} />
-                ห้องพัก
-                {roomNumbers.length > 1 && (
-                  <span className="normal-case tracking-normal font-normal">· จองกลุ่ม {roomNumbers.length} ห้อง</span>
-                )}
+              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <DoorOpen size={14} />
+                {roomNumbers.length > 1 ? `${roomNumbers.length} ห้อง` : 'ห้องพัก'}
               </p>
               {keyDeposit > 0 ? (
-                <Badge variant="green" className="text-[10px] px-1.5 py-0 flex items-center gap-1">
-                  <ShieldCheck size={10} />
+                <span className="text-xs text-success flex items-center gap-1">
+                  <ShieldCheck size={12} />
                   ประกัน {formatTHBCurrency(keyDeposit)}
-                </Badge>
+                </span>
               ) : pendingStays.length > 0 && (
-                <Badge variant="amber" className="text-[10px] px-1.5 py-0 flex items-center gap-1">
-                  <ShieldAlert size={10} />
+                <span className="text-xs text-warning flex items-center gap-1">
+                  <ShieldAlert size={12} />
                   เก็บประกัน {formatTHBCurrency(roomNumbers.length * 200)}
-                </Badge>
+                </span>
               )}
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {roomNumbers.map((rn) => (
-                <Badge key={rn} variant="outline" className="text-sm px-2.5 py-0.5 font-semibold tabular-nums">
+                <div key={rn} className="radius-card border border-border bg-card px-3 py-1.5 text-sm font-bold tabular-nums text-center min-w-12">
                   {rn}
-                </Badge>
+                </div>
               ))}
             </div>
           </div>
@@ -355,8 +354,12 @@ function BookingDetailContent({
             ดูใบเสร็จ
           </Button>
         )}
-        {/* Secondary: detail page */}
-        <Button className="w-full gap-1.5" variant="outline" onClick={handleOpenDetail}>
+        {/* Detail — primary when no other CTA above, outline otherwise */}
+        <Button
+          className="w-full gap-1.5"
+          variant={hasBalance || isTerminal ? 'outline' : 'default'}
+          onClick={handleOpenDetail}
+        >
           เปิดรายละเอียด
           <ChevronRight size={14} />
         </Button>

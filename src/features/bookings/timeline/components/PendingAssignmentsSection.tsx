@@ -393,29 +393,32 @@ function InlineRoomPicker({
           )}
 
           {roomsByType.map((rt) => (
-            <div key={rt.typeId} className="space-list">
+            <div key={rt.typeId} className="space-y-1.5">
               {roomsByType.length > 1 && (
                 <p className="text-xs text-muted-foreground">{rt.typeName}</p>
               )}
-              <div className="flex flex-wrap space-inline">
+              <div className="flex flex-wrap gap-1.5">
                 {rt.rooms.map((room) => {
                   const stayForType = unassignedStays.find((s) => s.room_type_id === rt.typeId)
                   const isBusyRoom = busyStayId === stayForType?.id
                   return (
-                    <Button
+                    <button
                       key={room.room_id}
-                      variant="outline"
-                      size="sm"
+                      type="button"
                       disabled={isBusy}
                       onClick={() => handleAssign(rt.typeId, room.room_id, room.room_number)}
-                      className="min-w-14 px-3 text-body font-bold tabular-nums"
+                      className={cn(
+                        'radius-card border border-border bg-card px-3 py-2 min-w-14 text-center',
+                        'text-sm font-bold tabular-nums transition-colors cursor-pointer',
+                        isBusy ? 'opacity-50' : 'hover:border-primary hover:bg-primary/5 active:bg-primary/10',
+                      )}
                     >
                       {isBusyRoom && isBusy ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" />
                       ) : (
                         room.room_number
                       )}
-                    </Button>
+                    </button>
                   )
                 })}
               </div>
