@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { differenceInDays, parseISO } from 'date-fns'
-import { LogIn, Loader2, Key } from 'lucide-react'
+import { LogIn, Loader2, Key, ShieldCheck, ShieldAlert } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { fmtShortISO } from '@/shared/utils'
+import { fmtShortISO, formatTHBCurrency } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import {
   Select,
@@ -32,6 +32,8 @@ interface InlineCheckInProps {
   pendingStays: RoomStayResponse[]
   /** When true, renders without Card wrapper (for use inside drawer/panel). */
   compact?: boolean
+  /** Key deposit amount from booking — 0 or undefined = not collected. */
+  keyDepositAmount?: number
 }
 
 interface AvailableRoom {
@@ -42,7 +44,7 @@ interface AvailableRoom {
 
 // ─── InlineCheckIn ───────────────────────────────────────────────────────────
 
-export function InlineCheckIn({ bookingId, pendingStays, compact }: InlineCheckInProps) {
+export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmount = 0 }: InlineCheckInProps) {
   const checkIn = useCheckInRooms(bookingId)
 
   // stayId → roomId (for unassigned stays that need room selection)
@@ -166,6 +168,29 @@ export function InlineCheckIn({ bookingId, pendingStays, compact }: InlineCheckI
     const room = rooms.find((r) => r.room_id === roomId)
     return room ? `ห้อง ${room.room_number}` : `ห้อง ${roomId.slice(0, 6)}`
   }
+
+  // ── Key deposit banner ──────────────────────────────────────────────────
+
+  const expectedDeposit = pendingStays.length * 200
+  const depositLine = (
+    <div className="flex items-center gap-1.5">
+      {keyDepositAmount > 0 ? (
+        <>
+          <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
+          <span className="text-xs font-medium text-success">
+            ประกัน {formatTHBCurrency(keyDepositAmount)}
+          </span>
+        </>
+      ) : (
+        <>
+          <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
+          <span className="text-xs font-medium text-warning">
+            เก็บประกัน {formatTHBCurrency(expectedDeposit)}
+          </span>
+        </>
+      )}
+    </div>
+  )
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -322,6 +347,7 @@ export function InlineCheckIn({ bookingId, pendingStays, compact }: InlineCheckI
           {pendingStays.length} ห้อง
         </span>
       </h2>
+      {depositLine}
       {stayRows}
       {batchButton}
       {confirmDialogs}

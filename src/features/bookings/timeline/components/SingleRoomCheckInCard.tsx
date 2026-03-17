@@ -1,12 +1,14 @@
-import { LogIn, Loader2 } from 'lucide-react'
+import { LogIn, Loader2, ShieldCheck, ShieldAlert } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { todayISO } from '@/shared/utils'
+import { todayISO, formatTHBCurrency } from '@/shared/utils'
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
-import { useCheckInRooms } from '../../hooks'
+import { useCheckInRooms, useBooking } from '../../hooks'
 import type { CheckinBooking } from '../utils/operationTypes'
 
 export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
   const checkInMutation = useCheckInRooms(ci.bookingId)
+  const { data: fullBooking } = useBooking(ci.bookingId)
+  const keyDeposit = fullBooking?.key_deposit_amount ?? 0
   const today = todayISO()
 
   const ciDate = ci.booking?.check_in?.slice(0, 10) ?? ''
@@ -65,6 +67,26 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
           </div>
           {statusIndicator}
         </div>
+        {/* Key deposit status */}
+        {fullBooking && (
+          <div className="flex items-center gap-1.5 mt-1.5">
+            {keyDeposit > 0 ? (
+              <>
+                <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
+                <span className="text-xs font-medium text-success">
+                  ประกัน {formatTHBCurrency(keyDeposit)}
+                </span>
+              </>
+            ) : (
+              <>
+                <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
+                <span className="text-xs font-medium text-warning">
+                  เก็บประกัน {formatTHBCurrency(ci.totalStays * 200)}
+                </span>
+              </>
+            )}
+          </div>
+        )}
       </ConfirmActionCard>
     </>
   )

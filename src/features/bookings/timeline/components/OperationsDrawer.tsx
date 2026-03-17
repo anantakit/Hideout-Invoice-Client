@@ -20,10 +20,13 @@ import {
   CalendarDays,
   User,
   Footprints,
+  ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react'
 import { cn, fmtThaiDate, formatTHBCurrency, todayISO } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
+import { CardButton } from '@/shared/ui/card-button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import {
@@ -167,11 +170,10 @@ function BookingDetailContent({
   const nights = differenceInDays(parseISO(booking.check_out), parseISO(booking.check_in))
   const status = booking.status
 
-  // Fetch full booking data for inline check-in & per-stay checkout
-  const canCheckIn = status === 'RESERVED' || status === 'ASSIGNED' || status === 'CONFIRMED'
+  // Always fetch full booking for deposit info, check-in & checkout actions
   const canCheckOut = status === 'CHECKED_IN' || status === 'PARTIALLY_CHECKED_IN'
-  const needsFullBooking = canCheckIn || canCheckOut
-  const { data: fullBooking } = useBooking(needsFullBooking ? booking.booking_id : '')
+  const { data: fullBooking } = useBooking(booking.booking_id)
+  const keyDeposit = fullBooking?.key_deposit_amount ?? 0
 
   const todayDate = todayISO()
   const pendingStays = useMemo(() => {
@@ -236,13 +238,26 @@ function BookingDetailContent({
         {/* Section 1: Rooms */}
         {roomNumbers.length > 0 && (
           <div className="rounded-lg bg-muted/50 p-3 space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <DoorOpen size={12} />
-              ห้องพัก
-              {roomNumbers.length > 1 && (
-                <span className="normal-case tracking-normal font-normal">· จองกลุ่ม {roomNumbers.length} ห้อง</span>
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <DoorOpen size={12} />
+                ห้องพัก
+                {roomNumbers.length > 1 && (
+                  <span className="normal-case tracking-normal font-normal">· จองกลุ่ม {roomNumbers.length} ห้อง</span>
+                )}
+              </p>
+              {keyDeposit > 0 ? (
+                <Badge variant="green" className="text-[10px] px-1.5 py-0 flex items-center gap-1">
+                  <ShieldCheck size={10} />
+                  ประกัน {formatTHBCurrency(keyDeposit)}
+                </Badge>
+              ) : pendingStays.length > 0 && (
+                <Badge variant="amber" className="text-[10px] px-1.5 py-0 flex items-center gap-1">
+                  <ShieldAlert size={10} />
+                  เก็บประกัน {formatTHBCurrency(roomNumbers.length * 200)}
+                </Badge>
               )}
-            </p>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {roomNumbers.map((rn) => (
                 <Badge key={rn} variant="outline" className="text-sm px-2.5 py-0.5 font-semibold tabular-nums">
@@ -276,7 +291,7 @@ function BookingDetailContent({
 
         {/* Inline check-in */}
         {pendingStays.length > 0 && (
-          <InlineCheckIn bookingId={booking.booking_id} pendingStays={pendingStays} compact />
+          <InlineCheckIn bookingId={booking.booking_id} pendingStays={pendingStays} compact keyDepositAmount={keyDeposit} />
         )}
 
         {/* Checkout section */}
@@ -506,12 +521,12 @@ function CreateBookingContent({
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">ห้องพัก</p>
             <div className="flex flex-wrap gap-1.5">
               {selectedRooms.map((room) => (
-                <button
+                <Button
                   key={room.roomId}
-                  type="button"
+                  variant="ghost"
                   onClick={() => toggleRoom(room)}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm transition-colors cursor-pointer',
+                    'h-auto gap-1.5 rounded-md border px-2.5 py-1.5 text-sm',
                     'border-primary/30 bg-primary/10 text-foreground',
                     selectedRooms.length > 1 && 'hover:border-destructive/50 hover:bg-destructive/10',
                   )}
@@ -524,20 +539,21 @@ function CreateBookingContent({
                   {selectedRooms.length > 1 && (
                     <X size={12} className="text-muted-foreground/50" />
                   )}
-                </button>
+                </Button>
               ))}
             </div>
 
             {/* Add room toggle */}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowRoomPicker((v) => !v)}
-              className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+              className="gap-1 h-auto p-0 text-xs text-primary hover:text-primary/80"
             >
               <Plus size={12} />
               เพิ่มห้อง
               <ChevronDown size={12} className={cn('transition-transform', showRoomPicker && 'rotate-180')} />
-            </button>
+            </Button>
 
             {/* Room picker grid */}
             {showRoomPicker && (
@@ -554,9 +570,10 @@ function CreateBookingContent({
                         {availableRooms.map((room) => {
                           const isSelected = selectedRoomIds.has(room.room_id)
                           return (
-                            <button
+                            <Button
                               key={room.room_id}
-                              type="button"
+                              variant={isSelected ? 'default' : 'outline'}
+                              size="sm"
                               onClick={() => toggleRoom({
                                 roomId: room.room_id,
                                 roomNumber: room.room_number,
@@ -565,14 +582,14 @@ function CreateBookingContent({
                                 pricePerNight: rt.price_per_night,
                               })}
                               className={cn(
-                                'min-w-[40px] rounded border px-2 py-1 text-xs font-medium tabular-nums transition-colors cursor-pointer',
+                                'min-w-10 h-7 px-2 text-xs font-medium tabular-nums',
                                 isSelected
-                                  ? 'border-primary bg-primary/20 text-primary'
-                                  : 'border-border text-muted-foreground hover:border-muted-foreground/50',
+                                  ? 'bg-primary/20 text-primary hover:bg-primary/30'
+                                  : 'text-muted-foreground',
                               )}
                             >
                               {room.room_number}
-                            </button>
+                            </Button>
                           )
                         })}
                       </div>
@@ -599,12 +616,12 @@ function CreateBookingContent({
                 { value: 'advance' as const, label: 'จองล่วงหน้า', Icon: CalendarDays },
                 { value: 'walk_in' as const, label: 'วอล์คอิน', Icon: Footprints },
               ] as const).map((opt) => (
-                <button
+                <Button
                   key={opt.value}
-                  type="button"
+                  variant="ghost"
                   onClick={() => setSource(opt.value)}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors cursor-pointer',
+                    'h-auto gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium',
                     source === opt.value
                       ? 'border-primary/40 bg-primary/15 text-primary'
                       : 'border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground',
@@ -612,7 +629,7 @@ function CreateBookingContent({
                 >
                   <opt.Icon size={14} />
                   {opt.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -667,12 +684,13 @@ function CreateBookingContent({
               { value: 'partial' as const, label: 'บางส่วน', desc: 'กรอกจำนวนเอง', Icon: CreditCard },
               { value: 'reserve' as const, label: 'ภายหลัง', desc: 'ยังไม่ชำระ', Icon: Clock },
             ]).map((opt) => (
-              <button
+              <CardButton
                 key={opt.value}
-                type="button"
+                variant="ghost"
+                padding="default"
                 onClick={() => handlePaymentModeChange(opt.value)}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left transition-colors cursor-pointer',
+                  'flex-row gap-2 rounded-lg border',
                   paymentMode === opt.value
                     ? 'border-primary/40 bg-primary/10 text-primary ring-1 ring-primary/20'
                     : 'border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground',
@@ -683,7 +701,7 @@ function CreateBookingContent({
                   <span className="text-sm font-semibold block leading-tight">{opt.label}</span>
                   <span className="text-xs leading-tight block opacity-60">{opt.desc}</span>
                 </div>
-              </button>
+              </CardButton>
             ))}
           </div>
 
@@ -710,19 +728,19 @@ function CreateBookingContent({
                 <Label className="text-xs text-muted-foreground">วิธีชำระ</Label>
                 <div className="flex gap-1.5 mt-0.5">
                   {(['CASH', 'TRANSFER'] as const).map((m) => (
-                    <button
+                    <Button
                       key={m}
-                      type="button"
+                      variant="outline"
                       onClick={() => setPaymentMethod(m)}
                       className={cn(
-                        'flex-1 rounded-md border h-9 text-sm font-medium transition-colors cursor-pointer',
+                        'flex-1 h-9 text-sm font-medium',
                         paymentMethod === m
-                          ? 'border-primary/40 bg-primary/10 text-primary'
-                          : 'border-border text-muted-foreground hover:border-muted-foreground/50',
+                          ? 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/15'
+                          : 'text-muted-foreground',
                       )}
                     >
                       {m === 'CASH' ? 'เงินสด' : 'โอนเงิน'}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>

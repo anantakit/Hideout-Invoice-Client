@@ -5,6 +5,7 @@ import { ChevronRight, ChevronDown, BedDouble, CheckCircle2, LogOut, Phone, Exte
 import { cn, fmtShort, fmtShortISO, formatTHBCurrency, todayISO as todayISOUtil, addDaysISO } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
+import { CardButton } from '@/shared/ui/card-button'
 import {
   AlertDialog, AlertDialogTrigger, AlertDialogContent,
   AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
@@ -498,9 +499,9 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                                 <Phone className="w-3 h-3" />{co.booking.guest_phone}
                               </a>
                             )}
-                            <button type="button" onClick={() => navigate(`/bookings/${co.bookingId}`)} className="flex items-center gap-1 text-helper text-muted-foreground active:text-foreground">
+                            <Button variant="ghost" size="sm" onClick={() => navigate(`/bookings/${co.bookingId}`)} className="gap-1 h-auto p-0 text-helper text-muted-foreground hover:text-foreground">
                               <ExternalLink className="w-3 h-3" />รายละเอียด
-                            </button>
+                            </Button>
                           </div>
                         </div>
                         {onQuickCheckOut && stay.status === 'CHECKED_IN' && (
@@ -540,11 +541,11 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                 // Multi-room: expandable
                 return (
                   <div key={co.bookingId}>
-                    <button
-                      type="button"
+                    <CardButton
                       onClick={() => setExpandedCheckoutId(isExpanded ? null : co.bookingId)}
+                      padding="card"
                       className={cn(
-                        'w-full radius-card border space-card text-left transition-colors',
+                        'border',
                         isExpanded
                           ? 'border-border bg-card'
                           : 'border-border bg-card active:bg-accent/10',
@@ -577,7 +578,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                           ค้าง {formatTHBCurrency(co.balance)}
                         </p>
                       )}
-                    </button>
+                    </CardButton>
 
                     {isExpanded && (
                       <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-2">
@@ -586,7 +587,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                           <span className="text-helper font-medium">
                             เช็คเอาท์ {doneStays.length}/{co.stays.length} ห้อง
                           </span>
-                          <div className="flex-1 max-w-[6rem] ml-3 h-1.5 radius-badge bg-muted overflow-hidden">
+                          <div className="flex-1 max-w-24 ml-3 h-1.5 radius-badge bg-muted overflow-hidden">
                             <div
                               className={cn(
                                 'h-full radius-badge transition-all duration-300',
@@ -671,9 +672,9 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                         <Phone className="w-3 h-3" />{co.booking.guest_phone}
                       </a>
                     )}
-                    <button type="button" onClick={() => navigate(`/bookings/${co.bookingId}`)} className="flex items-center gap-1 text-helper text-muted-foreground active:text-foreground">
+                    <Button variant="ghost" size="sm" onClick={() => navigate(`/bookings/${co.bookingId}`)} className="gap-1 h-auto p-0 text-helper text-muted-foreground hover:text-foreground">
                       <ExternalLink className="w-3 h-3" />รายละเอียด
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -692,11 +693,10 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
             <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">{pendingTotalStays}</Badge>
           </div>
           {pendingBookings.map((booking) => (
-            <button
+            <CardButton
               key={booking.bookingId}
-              type="button"
               onClick={() => setAssignSheetBookingId(booking.bookingId)}
-              className="w-full radius-card border border-border bg-card px-3 py-2.5 text-left active:bg-muted/50 transition-colors"
+              className="active:bg-muted/50"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-body font-semibold truncate">{booking.guestName}</span>
@@ -708,7 +708,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                 <span className="text-helper">{booking.roomTypeNames.join(', ')}</span>
                 <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
               </div>
-            </button>
+            </CardButton>
           ))}
         </div>
       )}
@@ -717,17 +717,18 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           SECTION 3: ตรวจสอบห้องว่าง — collapsible
           ════════════════════════════════════════════════════════════════════ */}
       <div className="px-4 space-section">
-        <button
-          type="button"
+        <CardButton
+          variant="ghost"
           onClick={() => setAvailCheckerOpen((v) => !v)}
-          className="w-full flex items-center justify-between py-2"
+          padding="none"
+          className="flex-row items-center justify-between py-2"
         >
           <span className="text-label text-muted-foreground">ตรวจสอบห้องว่าง</span>
           <ChevronDown className={cn(
             'w-4 h-4 text-muted-foreground/50 transition-transform',
             availCheckerOpen && 'rotate-180',
           )} />
-        </button>
+        </CardButton>
         {availCheckerOpen && (
           <StayAvailabilityCard range={stayRange} onRangeChange={setStayRange} />
         )}
@@ -747,24 +748,26 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
 
             {/* Toggle: วันที่เลือก / ช่วงเข้าพัก */}
             <div className="flex radius-button border border-border overflow-hidden">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => { setFreeRoomMode('selected'); setFilter('all') }}
                 className={cn(
-                  'px-2.5 py-1 text-caption transition-colors',
+                  'h-auto px-2.5 py-1 text-caption rounded-none',
                   freeRoomMode === 'selected'
                     ? 'date-selected'
                     : 'bg-card text-muted-foreground date-hover',
                 )}
               >
                 วันที่เลือก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => { setFreeRoomMode('range'); setFilter('all') }}
                 disabled={!stayRangeValid}
                 className={cn(
-                  'px-2.5 py-1 text-caption transition-colors',
+                  'h-auto px-2.5 py-1 text-caption rounded-none',
                   freeRoomMode === 'range'
                     ? 'date-selected'
                     : 'bg-card text-muted-foreground date-hover',
@@ -772,7 +775,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                 )}
               >
                 ช่วงเข้าพัก
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -787,12 +790,13 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                     const count = value === 'all' ? total : (chipCounts as Record<string, number>)[value] ?? 0
                     const isZero = count === 0 && value !== 'all'
                     return (
-                      <button
+                      <Button
                         key={value}
-                        type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setFilter(value)}
                         className={cn(
-                          'shrink-0 h-8 px-3 radius-badge text-caption transition-colors',
+                          'shrink-0 h-8 px-3 radius-badge text-caption',
                           filter === value
                             ? 'date-selected'
                             : isZero
@@ -801,7 +805,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
                         )}
                       >
                         {label} {count}
-                      </button>
+                      </Button>
                     )
                   })}
                 </div>

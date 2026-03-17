@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { parseISO, differenceInDays } from 'date-fns'
 import { ChevronDown, BedDouble, Loader2, Wand2 } from 'lucide-react'
+import { Button } from '@/shared/ui/button'
+import { CardButton } from '@/shared/ui/card-button'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { cn, todayISO, addDaysISO, THAI_MONTHS_SHORT } from '@/shared/utils'
@@ -153,10 +155,11 @@ export function PendingAssignmentsSection({
 
       {futureSections.length > 0 && (
         <div className="space-y-3">
-          <button
-            type="button"
+          <CardButton
+            variant="ghost"
+            padding="none"
             onClick={() => setShowFuture(!showFuture)}
-            className="flex items-center justify-between w-full text-left py-1.5"
+            className="flex-row items-center justify-between py-1.5"
           >
             <span className="text-helper text-muted-foreground/60 flex items-center space-inline">
               ล่วงหน้า
@@ -166,7 +169,7 @@ export function PendingAssignmentsSection({
               'w-3.5 h-3.5 text-muted-foreground/40 transition-transform',
               showFuture && 'rotate-180',
             )} />
-          </button>
+          </CardButton>
 
           {showFuture && futureSections.map((section) => (
             <DateSection
@@ -218,13 +221,11 @@ function DateSection({
         {section.stayCount > 1 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 disabled={autoAssign.isPending}
-                className={cn(
-                  'flex items-center space-inline text-micro text-muted-foreground/60 transition-colors',
-                  'hover:text-primary disabled:opacity-50',
-                )}
+                className="gap-1.5 h-auto p-0 text-micro text-muted-foreground/60 hover:text-primary"
               >
                 {autoAssign.isPending && autoAssignDate === section.dateStr ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -232,7 +233,7 @@ function DateSection({
                   <Wand2 className="w-3 h-3" />
                 )}
                 อัตโนมัติ
-              </button>
+              </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -259,11 +260,11 @@ function DateSection({
         const isExpanded = expandedBookingId === booking.bookingId
         return (
           <div key={booking.bookingId}>
-            <button
-              type="button"
+            <CardButton
               onClick={() => setExpandedBookingId(isExpanded ? null : booking.bookingId)}
+              padding="compact"
               className={cn(
-                'w-full radius-card border px-3 py-2 text-left transition-colors',
+                'border',
                 isExpanded
                   ? 'border-border bg-card'
                   : section.isUrgent
@@ -288,7 +289,7 @@ function DateSection({
                   isExpanded && 'rotate-180',
                 )} />
               </div>
-            </button>
+            </CardButton>
 
             {isExpanded && (
               <InlineRoomPicker
@@ -396,23 +397,20 @@ function InlineRoomPicker({
                   const stayForType = unassignedStays.find((s) => s.room_type_id === rt.typeId)
                   const isBusyRoom = busyStayId === stayForType?.id
                   return (
-                    <button
+                    <Button
                       key={room.room_id}
-                      type="button"
+                      variant="outline"
+                      size="sm"
                       disabled={isBusy}
                       onClick={() => handleAssign(rt.typeId, room.room_id, room.room_number)}
-                      className={cn(
-                        'h-9 min-w-[3.5rem] px-3 radius-button border text-body font-bold tabular-nums transition-colors',
-                        'border-border bg-card hover:bg-accent/10',
-                        'disabled:opacity-50',
-                      )}
+                      className="min-w-14 px-3 text-body font-bold tabular-nums"
                     >
                       {isBusyRoom && isBusy ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" />
                       ) : (
                         room.room_number
                       )}
-                    </button>
+                    </Button>
                   )
                 })}
               </div>

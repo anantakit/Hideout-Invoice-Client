@@ -289,7 +289,7 @@ export default function BookingDetailPage() {
 
       {/* ── 2. Inline Check-In (conditional) ────────────────────────── */}
       {checkInPendingStays.length > 0 && (
-        <InlineCheckIn bookingId={id} pendingStays={checkInPendingStays} />
+        <InlineCheckIn bookingId={id} pendingStays={checkInPendingStays} keyDepositAmount={booking.key_deposit_amount} />
       )}
 
       {/* ── 3. Room Stays ──────────────────────────────────────────────── */}

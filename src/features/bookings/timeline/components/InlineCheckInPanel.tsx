@@ -135,7 +135,7 @@ export function InlineCheckInPanel({
                 <span className="text-helper font-medium shrink-0">
                   เช็คอิน {checkedInStays.length}/{totalActive} ห้อง
                 </span>
-                <div className="flex-1 max-w-[6rem] h-1.5 radius-badge bg-muted overflow-hidden">
+                <div className="flex-1 max-w-24 h-1.5 radius-badge bg-muted overflow-hidden">
                   <div
                     className={cn(
                       'h-full radius-badge transition-all duration-300',
@@ -254,23 +254,20 @@ export function InlineCheckInPanel({
                         const stayForType = unassignedStays.find((s) => s.room_type_id === rt.typeId)
                         const isBusyRoom = busyStayId === stayForType?.id
                         return (
-                          <button
+                          <Button
                             key={room.room_id}
-                            type="button"
+                            variant="outline"
+                            size="sm"
                             disabled={isBusy}
                             onClick={() => handleAssign(rt.typeId, room.room_id, room.room_number)}
-                            className={cn(
-                              'h-9 min-w-[3.5rem] px-3 radius-button border text-body font-bold tabular-nums transition-colors',
-                              'border-border bg-card hover:bg-accent/10',
-                              'disabled:opacity-50',
-                            )}
+                            className="min-w-14 px-3 text-body font-bold tabular-nums"
                           >
                             {isBusyRoom && isBusy ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" />
                             ) : (
                               room.room_number
                             )}
-                          </button>
+                          </Button>
                         )
                       })}
                     </div>

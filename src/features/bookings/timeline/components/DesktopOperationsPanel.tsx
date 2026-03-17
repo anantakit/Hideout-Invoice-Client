@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { parseISO, isToday, differenceInDays } from 'date-fns'
 import { ChevronDown, BedDouble, LogIn, LogOut, CheckCircle2 } from 'lucide-react'
 import { cn, todayISO, addDaysISO, fmtShort } from '@/shared/utils'
+import { CardButton } from '@/shared/ui/card-button'
 import { Badge } from '@/shared/ui/badge'
 import type { TimelineRoom, TimelineBooking, UnassignedStay } from '../../types'
 import type { DateRange } from '../../shared/components/DateRangePicker'
@@ -9,8 +10,8 @@ import { StayAvailabilityCard } from './StayAvailabilityCard'
 import { computeDateKPI } from '../utils/computeDateKPI'
 import { toDateStr, type CheckinBooking, type CheckoutBooking, type CheckoutStay } from '../utils/operationTypes'
 import { SingleRoomCheckInCard } from './SingleRoomCheckInCard'
+import { MultiRoomCheckInCard } from './MultiRoomCheckInCard'
 import { SingleRoomCheckOutCard, MultiRoomCheckOutRow, CheckOutAllButton } from './CheckOutCards'
-import { InlineCheckInPanel } from './InlineCheckInPanel'
 import { PendingAssignmentsSection } from './PendingAssignmentsSection'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -32,7 +33,6 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
   unassignedStays,
   onQuickCheckOut,
 }: DesktopOperationsPanelProps) {
-  const [expandedCheckinId, setExpandedCheckinId] = useState<string | null>(null)
   const [expandedCheckoutId, setExpandedCheckoutId] = useState<string | null>(null)
   const [stayRange, setStayRange] = useState<DateRange>(() => ({
     checkIn: todayISO(),
@@ -279,7 +279,6 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
 
           {dateOps.checkins.map((ci) => {
             const isSingleRoom = ci.totalStays === 1
-            const isExpanded = expandedCheckinId === ci.bookingId
 
             if (isSingleRoom) {
               return (
@@ -291,46 +290,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
             }
 
             return (
-              <div key={ci.bookingId}>
-                <button
-                  type="button"
-                  onClick={() => setExpandedCheckinId(isExpanded ? null : ci.bookingId)}
-                  className={cn(
-                    'w-full radius-card border space-card text-left transition-colors',
-                    isExpanded
-                      ? 'border-border bg-card'
-                      : 'border-border bg-card hover:bg-accent/10',
-                    isExpanded && 'rounded-b-none',
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-body font-semibold truncate">{ci.guestName}</span>
-                    <span className="text-helper shrink-0">{ci.totalStays} ห้อง · {ci.nights} คืน</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="flex items-center space-inline text-helper">
-                      <span>{ci.typeName}</span>
-                      {ci.assignedRooms.length > 0 && (
-                        <>
-                          <span>·</span>
-                          <span className="font-medium text-foreground/70">ห้อง {ci.assignedRooms.join(', ')}</span>
-                        </>
-                      )}
-                    </div>
-                    <ChevronDown className={cn(
-                      'w-3.5 h-3.5 text-muted-foreground/50 transition-transform shrink-0',
-                      isExpanded && 'rotate-180',
-                    )} />
-                  </div>
-                </button>
-
-                {isExpanded && (
-                  <InlineCheckInPanel
-                    bookingId={ci.bookingId}
-                    onDone={() => setExpandedCheckinId(null)}
-                  />
-                )}
-              </div>
+              <MultiRoomCheckInCard key={ci.bookingId} ci={ci} />
             )
           })}
 
@@ -390,11 +350,11 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
 
             return (
               <div key={co.bookingId}>
-                <button
-                  type="button"
+                <CardButton
                   onClick={() => setExpandedCheckoutId(isExpanded ? null : co.bookingId)}
+                  padding="card"
                   className={cn(
-                    'w-full radius-card border space-card text-left transition-colors',
+                    'border',
                     isExpanded
                       ? 'border-border bg-card'
                       : 'border-border bg-card hover:bg-accent/10',
@@ -417,7 +377,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                       ค้าง ฿{co.balance.toLocaleString()}
                     </p>
                   )}
-                </button>
+                </CardButton>
 
                 {isExpanded && (
                   <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-2">
@@ -427,7 +387,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                         <span className="text-helper font-medium shrink-0">
                           เช็คเอาท์ {doneStays.length}/{co.stays.length} ห้อง
                         </span>
-                        <div className="flex-1 max-w-[6rem] h-1.5 radius-badge bg-muted overflow-hidden">
+                        <div className="flex-1 max-w-24 h-1.5 radius-badge bg-muted overflow-hidden">
                           <div
                             className={cn(
                               'h-full radius-badge transition-all duration-300',

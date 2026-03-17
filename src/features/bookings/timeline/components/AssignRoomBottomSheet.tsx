@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react'
 import { parseISO, differenceInDays } from 'date-fns'
-import { Loader2, Check, CheckCircle2, ArrowRightLeft, Phone, ExternalLink } from 'lucide-react'
+import { Loader2, Check, CheckCircle2, ArrowRightLeft, Phone, ExternalLink, ShieldCheck, ShieldAlert, LogIn } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   Sheet,
@@ -9,9 +9,10 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/shared/ui/sheet'
-import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
+import { CardButton } from '@/shared/ui/card-button'
 import { Separator } from '@/shared/ui/separator'
+import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -31,7 +32,7 @@ import {
   useTransferRoom,
 } from '../../hooks'
 import type { RoomStayResponse } from '../../types'
-import { cn, todayISO, fmtShortISO } from '@/shared/utils'
+import { cn, todayISO, fmtShortISO, formatTHBCurrency } from '@/shared/utils'
 import { useNavigate } from 'react-router-dom'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -63,7 +64,6 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
   const [busyStayId, setBusyStayId] = useState<string | null>(null)
   const [checkingInAll, setCheckingInAll] = useState(false)
   const [transferringStay, setTransferringStay] = useState<RoomStayResponse | null>(null)
-  const [confirmCheckInStay, setConfirmCheckInStay] = useState<RoomStayResponse | null>(null)
   const [confirmCheckInAll, setConfirmCheckInAll] = useState(false)
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -278,20 +278,21 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                     {booking.guest_phone}
                   </a>
                 )}
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-body text-muted-foreground active:text-foreground"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 h-auto p-0 text-body text-muted-foreground hover:text-foreground"
                   onClick={() => { onClose(); navigate(`/bookings/${safeId}`) }}
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   รายละเอียด
-                </button>
+                </Button>
               </div>
             </div>
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-5 pt-4 pb-8 space-y-4">
+        <div className="flex-1 overflow-y-auto px-5 pt-3 pb-8 space-y-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -299,45 +300,55 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
           ) : (
             <>
               {/* ═══════════════════════════════════════════════════════
-                  Compact Summary — assigned badges + progress
+                  Compact Summary — progress + deposit + check-in all
                   ═══════════════════════════════════════════════════════ */}
-              <div className="space-y-3">
-                {/* Assigned rooms as compact badges */}
-                {(assignedStays.length > 0 || checkedInStays.length > 0) && (
-                  <div className="space-y-1.5">
-                    <p className="text-label text-muted-foreground">
-                      กำหนดห้องแล้ว
-                    </p>
-                    <div className="flex flex-wrap space-inline">
-                      {assignedStays.map((stay) => (
-                        <Badge key={stay.id} variant="green" className="text-helper px-2.5 py-1">
-                          ห้อง {stay.room_number}
-                        </Badge>
-                      ))}
-                      {checkedInStays.map((stay) => (
-                        <Badge key={stay.id} variant="blue" className="text-helper px-2.5 py-1">
-                          ห้อง {stay.room_number} · เข้าพัก
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Progress bar */}
+              <div className="space-y-2">
+                {/* Row 1: Progress bar + count */}
                 <div className="flex items-center gap-2.5">
-                  <div className="flex-1 h-2 radius-badge bg-muted overflow-hidden">
+                  <div className="flex-1 h-1.5 radius-badge bg-muted overflow-hidden">
                     <div
                       className="h-full radius-badge bg-success transition-all duration-300"
                       style={{ width: `${progressPct}%` }}
                     />
                   </div>
-                  <span className="text-label tabular-nums text-muted-foreground shrink-0">
-                    {totalAssigned} / {totalActive}
+                  <span className="text-helper tabular-nums shrink-0">
+                    {totalAssigned}/{totalActive}
                   </span>
                 </div>
-              </div>
 
-              <Separator />
+                {/* Row 2: Deposit status + check-in-all on same row */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    {(booking?.key_deposit_amount ?? 0) > 0 ? (
+                      <>
+                        <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
+                        <span className="text-xs font-medium text-success">ประกัน {formatTHBCurrency(booking!.key_deposit_amount)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
+                        <span className="text-xs font-medium text-warning">เก็บประกัน {formatTHBCurrency(totalActive * 200)}</span>
+                      </>
+                    )}
+                  </div>
+                  {isCheckInDay && assignedStays.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1 text-xs h-auto py-1 px-2 text-primary hover:text-primary/80 shrink-0"
+                      disabled={isBusy}
+                      onClick={() => setConfirmCheckInAll(true)}
+                    >
+                      {checkingInAll ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={12} />
+                      )}
+                      เช็คอินทั้งหมด
+                    </Button>
+                  )}
+                </div>
+              </div>
 
               {/* ═══════════════════════════════════════════════════════
                   Transfer room picker
@@ -390,13 +401,13 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                               </div>
                               <div className="space-list">
                                 {group.rooms.map((room) => (
-                                  <button
+                                  <CardButton
                                     key={room.room_id}
-                                    type="button"
                                     disabled={isBusy}
                                     onClick={() => handleTransferPick(room.room_id, room.room_number)}
+                                    padding="card"
                                     className={cn(
-                                      'w-full flex items-center justify-between radius-card border px-4 py-3 min-h-[44px] text-left transition-colors disabled:opacity-50',
+                                      'flex-row items-center justify-between border',
                                       group.isSameType
                                         ? 'border-primary/30 bg-primary/5 active:bg-primary/10'
                                         : 'border-border-soft bg-card active:bg-accent/10',
@@ -404,7 +415,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                                   >
                                     <p className="text-body font-bold tabular-nums">ห้อง {room.room_number}</p>
                                     <span className="text-caption text-primary shrink-0">เลือก</span>
-                                  </button>
+                                  </CardButton>
                                 ))}
                               </div>
                             </div>
@@ -453,19 +464,19 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                               </p>
                             )}
                             {rooms.map((room) => (
-                              <button
+                              <CardButton
                                 key={room.room_id}
-                                type="button"
                                 disabled={isBusy}
                                 onClick={() => handleAssign(typeId, room.room_id, room.room_number)}
-                                className="w-full flex items-center justify-between radius-card border border-border bg-card px-4 py-3 min-h-[44px] text-left active:bg-accent/10 transition-colors disabled:opacity-50"
+                                padding="card"
+                                className="flex-row items-center justify-between active:bg-accent/10"
                               >
                                 <div>
                                   <p className="text-body font-bold tabular-nums">ห้อง {room.room_number}</p>
                                   <p className="text-micro text-muted-foreground">{room.room_type_name}</p>
                                 </div>
                                 <span className="text-caption text-primary shrink-0">เลือก</span>
-                              </button>
+                              </CardButton>
                             ))}
                           </div>
                         )
@@ -484,78 +495,68 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                   ═══════════════════════════════════════════════════════ */}
               {(assignedStays.length > 0 || checkedInStays.length > 0) && (
                 <div className="space-y-1.5">
-                  {/* Assigned stays */}
+                  {/* Assigned stays — tappable row for check-in */}
                   {assignedStays.map((stay) => (
-                    <div
-                      key={stay.id}
-                      className="flex items-center justify-between radius-card border border-success/30 bg-success/5 px-4 py-3 min-h-[44px]"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <Check className="w-4 h-4 text-success shrink-0" />
-                        <div>
-                          <p className="text-body font-bold tabular-nums">ห้อง {stay.room_number}</p>
-                          <p className="text-micro text-muted-foreground">{stay.room_type_name} · กำหนดแล้ว</p>
+                    <div key={stay.id} className="flex items-center gap-1">
+                      <ConfirmActionCard
+                        disabled={!isCheckInDay || isBusy}
+                        loading={busyStayId === stay.id && checkInMutation.isPending}
+                        loader={<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                        icon={isCheckInDay ? <LogIn className="w-4 h-4 text-primary" /> : undefined}
+                        confirmTitle="ยืนยันเช็คอิน"
+                        confirmDescription={`เช็คอิน ห้อง ${stay.room_number} ?`}
+                        confirmLabel="เช็คอิน"
+                        onConfirm={() => handleCheckInOne(stay)}
+                        className="flex-1"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Check className="w-4 h-4 text-success shrink-0" />
+                          <span className="text-body font-bold tabular-nums">ห้อง {stay.room_number}</span>
+                          <span className="text-helper">{stay.room_type_name}</span>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground"
-                          disabled={isBusy}
-                          onClick={() => handleReassign(stay)}
-                        >
-                          {busyStayId === stay.id && unassignMutation.isPending ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            'เปลี่ยนห้อง'
-                          )}
-                        </Button>
-                        {isCheckInDay && (
-                          <Button
-                            size="sm"
-                            className="h-9 px-3 text-sm font-semibold"
-                            disabled={isBusy}
-                            onClick={() => setConfirmCheckInStay(stay)}
-                          >
-                            {busyStayId === stay.id && checkInMutation.isPending ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              'เช็คอิน'
-                            )}
-                          </Button>
-                        )}
-                      </div>
+                      </ConfirmActionCard>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={isBusy}
+                        onClick={() => handleReassign(stay)}
+                        className="shrink-0 text-muted-foreground/60"
+                        title="เปลี่ยนห้อง"
+                      >
+                        {busyStayId === stay.id && unassignMutation.isPending
+                          ? <Loader2 className="w-4 h-4 animate-spin" />
+                          : <ArrowRightLeft className="w-4 h-4" />}
+                      </Button>
                     </div>
                   ))}
 
-                  {/* Checked-in stays */}
+                  {/* Checked-in stays — compact with transfer icon */}
                   {checkedInStays.map((stay) => {
                     const isTransferring = transferringStay?.id === stay.id
                     return (
                       <div
                         key={stay.id}
-                        className={`flex items-center justify-between radius-card border px-4 py-3 min-h-[44px] ${
+                        className={cn(
+                          'flex items-center justify-between radius-card border px-3 py-2.5',
                           isTransferring
                             ? 'border-primary/40 bg-primary/5'
-                            : 'border-border bg-card'
-                        }`}
+                            : 'border-border bg-card',
+                        )}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
                           <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
-                          <div>
-                            <p className="text-body font-bold tabular-nums">ห้อง {stay.room_number}</p>
-                            <p className="text-micro text-muted-foreground">{stay.room_type_name} · เข้าพักแล้ว</p>
-                          </div>
+                          <span className="text-body font-bold tabular-nums">ห้อง {stay.room_number}</span>
+                          <span className="text-helper text-success/80">เข้าพัก</span>
                         </div>
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground shrink-0"
+                          size="icon"
                           disabled={isBusy}
                           onClick={() => setTransferringStay(isTransferring ? null : stay)}
+                          className="shrink-0 text-muted-foreground/60"
+                          title="ย้ายห้อง"
                         >
-                          เปลี่ยนห้อง
+                          <ArrowRightLeft className="w-4 h-4" />
                         </Button>
                       </div>
                     )
@@ -574,20 +575,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                 </div>
               )}
 
-              {isCheckInDay && assignedStays.length > 1 && (
-                <Button
-                  className="w-full h-11 font-semibold"
-                  disabled={isBusy}
-                  onClick={() => setConfirmCheckInAll(true)}
-                >
-                  {checkingInAll ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                  )}
-                  เช็คอินทั้งหมด ({assignedStays.length} ห้อง)
-                </Button>
-              )}
+              {/* Check-in all is now inline with progress header above */}
 
               {/* All done */}
               {allAssigned && checkedInStays.length === 0 && assignedStays.length === 0 && (
@@ -599,27 +587,6 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
             </>
           )}
         </div>
-
-        {/* Single check-in confirmation */}
-        <AlertDialog open={confirmCheckInStay !== null} onOpenChange={(open) => !open && setConfirmCheckInStay(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>ยืนยันเช็คอิน</AlertDialogTitle>
-              <AlertDialogDescription>
-                เช็คอิน ห้อง {confirmCheckInStay?.room_number} ?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-              <AlertDialogAction onClick={() => {
-                if (confirmCheckInStay) handleCheckInOne(confirmCheckInStay)
-                setConfirmCheckInStay(null)
-              }}>
-                เช็คอิน
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
 
         {/* Batch check-in confirmation */}
         <AlertDialog open={confirmCheckInAll} onOpenChange={(open) => !open && setConfirmCheckInAll(false)}>

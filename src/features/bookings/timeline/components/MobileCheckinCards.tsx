@@ -1,6 +1,8 @@
 import React from 'react'
 import { ChevronRight, CheckCircle2, Phone, ExternalLink } from 'lucide-react'
 import { cn } from '@/shared/utils'
+import { Button } from '@/shared/ui/button'
+import { CardButton } from '@/shared/ui/card-button'
 import type { CheckinBooking } from '../utils/operationTypes'
 
 export const PendingCheckinCard = React.memo(function PendingCheckinCard({
@@ -16,11 +18,11 @@ export const PendingCheckinCard = React.memo(function PendingCheckinCard({
   const progressPct = ci.totalStays > 0 ? (assignedCount / ci.totalStays) * 100 : 0
 
   return (
-    <button
+    <CardButton
       key={ci.bookingId}
-      type="button"
+      variant="ghost"
       onClick={() => onAssign(ci.bookingId)}
-      className="w-full radius-card border border-primary/20 bg-accent/5 px-3 py-2.5 text-left active:bg-accent/10 transition-colors"
+      className="border border-primary/20 bg-accent/5 active:bg-accent/10"
     >
       {/* Row 1: name + info */}
       <div className="flex items-center justify-between gap-2">
@@ -68,7 +70,7 @@ export const PendingCheckinCard = React.memo(function PendingCheckinCard({
           </span>
         </div>
       )}
-    </button>
+    </CardButton>
   )
 })
 
@@ -99,9 +101,9 @@ export const DoneCheckinCard = React.memo(function DoneCheckinCard({
             <Phone className="w-3 h-3" />{ci.booking.guest_phone}
           </a>
         )}
-        <button type="button" onClick={() => onNavigate(ci.bookingId)} className="flex items-center gap-1 text-helper text-muted-foreground active:text-foreground">
+        <Button variant="ghost" size="sm" onClick={() => onNavigate(ci.bookingId)} className="gap-1 h-auto p-0 text-helper text-muted-foreground hover:text-foreground">
           <ExternalLink className="w-3 h-3" />รายละเอียด
-        </button>
+        </Button>
       </div>
     </div>
   )
