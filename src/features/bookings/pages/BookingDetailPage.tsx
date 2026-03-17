@@ -20,6 +20,7 @@ import { PaymentPanel } from '../booking-detail/components/PaymentPanel'
 import { StayCardOperational } from '../booking-detail/components/StayCardOperational'
 import { ReceiptSection } from '../booking-detail/components/ReceiptSection'
 import { EventTimeline } from '../booking-detail/components/EventTimeline'
+import { AddStayPanel } from '../booking-detail/components/AddStayPanel'
 import { bookingStatusVariant } from '../booking-detail/utils/bookingStatusHelpers'
 import { getStatusLabel } from '../types'
 
@@ -303,6 +304,9 @@ export default function BookingDetailPage() {
         {booking.room_stays.map((stay) => (
           <StayCardOperational key={stay.id} bookingId={booking.id} stay={stay} booking={booking} />
         ))}
+        {booking.status !== 'CANCELLED' && booking.status !== 'CHECKED_OUT' && (
+          <AddStayPanel bookingId={id} />
+        )}
       </div>
 
       {/* ── 6. Payment ─────────────────────────────────────────────────── */}

@@ -9,6 +9,7 @@ import type {
   BookingListResponse,
   BookingQueryParams,
   CreateBookingPayload,
+  AddStaysPayload,
   CreatePaymentPayload,
   ExtendStayPayload,
   ExtendStayConflictData,
@@ -59,6 +60,14 @@ export const bookingsApi = {
 
   create: async (payload: CreateBookingPayload): Promise<BookingResponse> => {
     const { data } = await apiClient.post<ApiResponse<BookingResponse>>('/bookings', payload)
+    return data.data
+  },
+
+  addStays: async (bookingId: string, payload: AddStaysPayload): Promise<BookingResponse> => {
+    const { data } = await apiClient.post<ApiResponse<BookingResponse>>(
+      `/bookings/${bookingId}/stays`,
+      payload,
+    )
     return data.data
   },
 

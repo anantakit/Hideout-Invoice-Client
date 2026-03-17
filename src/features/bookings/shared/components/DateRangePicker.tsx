@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { isValid, isBefore, isSameDay, differenceInDays } from 'date-fns'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, ArrowRight, Moon } from 'lucide-react'
 import { Calendar } from '../../../../shared/ui/calendar'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../../../../shared/ui/sheet'
 import { cn, THAI_MONTHS_SHORT } from '@/shared/utils'
@@ -29,6 +29,16 @@ function formatThai(iso: string): string {
   return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]} ${(d.getFullYear() + 543) % 100}`
 }
 
+function formatThaiLong(iso: string): string {
+  const d = parseISO(iso)
+  if (!d) return ''
+  const MONTHS_LONG = [
+    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+  ]
+  return `${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear() + 543}`
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface DateRange {
@@ -42,7 +52,6 @@ export interface DateRangePickerProps {
   disabled?: boolean
   placeholder?: string
   className?: string
-  // Future calendar integration props (wired but not yet implemented)
   onOpenCalendar?: () => void
   onMonthChange?: (date: Date) => void
   blockedDates?: Date[]
@@ -55,7 +64,7 @@ export function DateRangePicker({
   value,
   onChange,
   disabled = false,
-  placeholder = 'วันเช็คอิน → เช็คเอาท์',
+  placeholder = 'เลือกวันเข้าพัก',
   className,
   onOpenCalendar,
 }: DateRangePickerProps) {
@@ -67,7 +76,7 @@ export function DateRangePicker({
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
-  const [panelPos, setPanelPos] = useState({ top: 0, left: 0, openUp: false })
+  const [panelPos, setPanelPos] = useState({ top: 0, left: 0, width: 0, openUp: false })
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -78,7 +87,7 @@ export function DateRangePicker({
   }, [])
 
   // Position the desktop calendar panel via portal
-  const PANEL_H = 420 // approximate calendar panel height
+  const PANEL_H = 400
   useLayoutEffect(() => {
     if (!open || isMobile || !triggerRef.current) return
     const rect = triggerRef.current.getBoundingClientRect()
@@ -87,6 +96,7 @@ export function DateRangePicker({
     setPanelPos({
       top: openUp ? rect.top - 8 : rect.bottom + 8,
       left: rect.left,
+      width: Math.max(rect.width, 320),
       openUp,
     })
   }, [open, isMobile, phase])
@@ -122,7 +132,6 @@ export function DateRangePicker({
 
   const handleDayClick = (day: Date) => {
     if (phase === 'idle') {
-      // First click: anchor the start.
       setSelectionStart(day)
       setPhase('selecting-end')
     } else {
@@ -131,11 +140,9 @@ export function DateRangePicker({
         return
       }
       if (isSameDay(day, selectionStart) || isBefore(day, selectionStart)) {
-        // Invalid end: restart from this day.
         setSelectionStart(day)
         return
       }
-      // Valid: complete the range.
       onChange({ checkIn: toISO(selectionStart), checkOut: toISO(day) })
       handleClose()
     }
@@ -151,21 +158,25 @@ export function DateRangePicker({
   const calHoveredDate  = phase === 'selecting-end' ? hoveredDate : null
   const calInitialView  = parsedCheckIn ?? undefined
 
-  // ── Trigger label ────────────────────────────────────────────────────────────
+  // ── Computed values ────────────────────────────────────────────────────────
 
   const hasRange = Boolean(value.checkIn && value.checkOut)
 
-  // Compute nights for the hint
-  const nights = hasRange && parsedCheckIn && parsedCheckOut
-    ? differenceInDays(parsedCheckOut, parsedCheckIn)
-    : null
+  const nights = useMemo(() => {
+    if (!hasRange || !parsedCheckIn || !parsedCheckOut) return null
+    return differenceInDays(parsedCheckOut, parsedCheckIn)
+  }, [hasRange, parsedCheckIn, parsedCheckOut])
 
-  let displayLabel: string | undefined
-  if (phase === 'selecting-end' && selectionStart) {
-    displayLabel = `${formatThai(toISO(selectionStart))} → เลือกวันออก…`
-  } else if (hasRange) {
-    displayLabel = `${formatThai(value.checkIn)} → ${formatThai(value.checkOut)}`
-  }
+  // Hover preview nights
+  const previewNights = useMemo(() => {
+    if (phase !== 'selecting-end' || !selectionStart || !hoveredDate) return null
+    if (isBefore(hoveredDate, selectionStart) || isSameDay(hoveredDate, selectionStart)) return null
+    return differenceInDays(hoveredDate, selectionStart)
+  }, [phase, selectionStart, hoveredDate])
+
+  const phaseLabel = phase === 'selecting-end' ? 'เลือกวันเช็คเอาท์' : 'เลือกวันเช็คอิน'
+
+  // ── Trigger ────────────────────────────────────────────────────────────────
 
   const triggerEl = (
     <button
@@ -174,26 +185,79 @@ export function DateRangePicker({
       disabled={disabled}
       onClick={() => (open ? handleClose() : handleOpen())}
       className={cn(
-        'flex h-11 w-full items-center gap-2 radius-button border border-input bg-background px-3 text-body',
-        'text-left transition-colors hover:border-ring/50',
+        'flex w-full items-center radius-button border border-input bg-background',
+        'text-left transition-all duration-150',
+        'hover:border-primary/40',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        open && 'ring-2 ring-ring ring-offset-2',
-        !displayLabel && 'text-muted-foreground',
+        open && 'border-primary ring-1 ring-primary/20',
         disabled && 'opacity-50 pointer-events-none',
         className,
       )}
     >
-      <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-      <span className="flex-1 truncate">{displayLabel ?? placeholder}</span>
-      {phase === 'selecting-end' && (
-        <span className="text-xs text-primary font-medium shrink-0">เลือกวันออก</span>
-      )}
-      {nights != null && nights > 0 && phase === 'idle' && (
-        <span className="text-xs text-muted-foreground font-medium shrink-0">
-          {nights} คืน
-        </span>
+      {hasRange ? (
+        // ── Filled state — structured layout ──
+        <div className="flex items-center w-full px-3 py-2 gap-2">
+          <CalendarIcon className="w-4 h-4 text-primary shrink-0" />
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <span className="text-body font-medium text-foreground truncate">
+              {formatThai(value.checkIn)}
+            </span>
+            <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
+            <span className="text-body font-medium text-foreground truncate">
+              {formatThai(value.checkOut)}
+            </span>
+          </div>
+          {nights != null && nights > 0 && (
+            <span className="flex items-center gap-1 text-caption text-muted-foreground shrink-0 tabular-nums">
+              <Moon className="w-3 h-3" />
+              {nights}
+            </span>
+          )}
+        </div>
+      ) : (
+        // ── Empty state ──
+        <div className="flex items-center w-full px-3 h-10 gap-2">
+          <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="text-body text-muted-foreground flex-1">{placeholder}</span>
+        </div>
       )}
     </button>
+  )
+
+  // ── Phase indicator chip ───────────────────────────────────────────────────
+
+  const phaseChip = (
+    <div className="flex items-center gap-2 px-1">
+      {/* Check-in */}
+      <div className={cn(
+        'flex-1 text-center py-1.5 rounded-md transition-colors text-caption',
+        phase === 'idle'
+          ? 'bg-primary/10 text-primary font-semibold'
+          : 'text-muted-foreground',
+      )}>
+        {selectionStart && phase === 'selecting-end'
+          ? formatThaiLong(toISO(selectionStart))
+          : hasRange ? formatThaiLong(value.checkIn) : 'วันเช็คอิน'
+        }
+      </div>
+
+      <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+
+      {/* Check-out */}
+      <div className={cn(
+        'flex-1 text-center py-1.5 rounded-md transition-colors text-caption',
+        phase === 'selecting-end'
+          ? 'bg-primary/10 text-primary font-semibold'
+          : 'text-muted-foreground',
+      )}>
+        {previewNights != null
+          ? `${previewNights} คืน`
+          : hasRange && phase === 'idle'
+            ? formatThaiLong(value.checkOut)
+            : 'วันเช็คเอาท์'
+        }
+      </div>
+    </div>
   )
 
   const calendarEl = (
@@ -215,15 +279,21 @@ export function DateRangePicker({
         {triggerEl}
         <Sheet open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
           <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-0 flex flex-col max-h-[85vh]">
-            <SheetHeader className="px-5 pt-5 pb-3 pr-14 border-b border-border shrink-0">
-              <SheetTitle className="text-base font-semibold tracking-tight text-left">
-                {phase === 'selecting-end' ? 'เลือกวันเช็คเอาท์' : 'เลือกวันเช็คอิน'}
+            <SheetHeader className="px-5 pt-4 pb-0 shrink-0">
+              <SheetTitle className="text-body font-semibold tracking-tight text-left">
+                {phaseLabel}
               </SheetTitle>
               <SheetDescription className="sr-only">
                 เลือกช่วงวันเข้าพักจากปฏิทิน
               </SheetDescription>
             </SheetHeader>
-            <div className="flex-1 overflow-y-auto px-4 pt-4 pb-8">
+
+            {/* Phase indicator */}
+            <div className="px-5 pt-2 pb-3 border-b border-border shrink-0">
+              {phaseChip}
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-8">
               {calendarEl}
             </div>
           </SheetContent>
@@ -241,18 +311,27 @@ export function DateRangePicker({
         createPortal(
           <div
             ref={panelRef}
-            className="fixed z-[9999] w-80 bg-card border border-border rounded-2xl shadow-popover p-4"
+            className={cn(
+              'fixed z-[9999] bg-card border border-border radius-card shadow-popover',
+              'animate-in fade-in-0 zoom-in-[0.98] duration-150',
+            )}
             style={{
               left: panelPos.left,
+              width: panelPos.width,
               ...(panelPos.openUp
                 ? { bottom: window.innerHeight - panelPos.top }
                 : { top: panelPos.top }),
             }}
           >
-            <p className="text-xs font-medium text-muted-foreground mb-3">
-              {phase === 'selecting-end' ? 'เลือกวันเช็คเอาท์' : 'เลือกวันเช็คอิน'}
-            </p>
-            {calendarEl}
+            {/* Phase indicator */}
+            <div className="px-4 pt-3 pb-2 border-b border-border-soft">
+              {phaseChip}
+            </div>
+
+            {/* Calendar */}
+            <div className="p-4">
+              {calendarEl}
+            </div>
           </div>,
           document.body,
         )}

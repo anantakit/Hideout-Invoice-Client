@@ -221,6 +221,10 @@ export interface CreateBookingPayload {
   payment?: CreateBookingPaymentPayload
 }
 
+export interface AddStaysPayload {
+  stays: RoomStayPayload[]
+}
+
 export interface CreatePaymentPayload {
   amount: number
   method: 'CASH' | 'TRANSFER'

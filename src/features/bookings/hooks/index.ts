@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingsApi } from '../api'
-import type { CreateBookingPayload, BookingQueryParams, CreatePaymentPayload, ExtendStayPayload, MoveStayPayload, EarlyCheckoutPayload } from '../types'
+import type { CreateBookingPayload, BookingQueryParams, CreatePaymentPayload, ExtendStayPayload, MoveStayPayload, EarlyCheckoutPayload, AddStaysPayload } from '../types'
 
 export const AVAILABILITY_GROUPED_KEY = (checkIn: string, checkOut: string, excludeBookingId?: string) =>
   ['availability-grouped', checkIn, checkOut, excludeBookingId ?? ''] as const
@@ -110,6 +110,20 @@ export function useCancelStay(bookingId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (stayId: string) => bookingsApi.cancelStay(bookingId, stayId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
+      queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['availability-grouped'] })
+      queryClient.invalidateQueries({ queryKey: ['timeline'] })
+    },
+  })
+}
+
+/** Add new room stays to an existing booking. */
+export function useAddStays(bookingId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: AddStaysPayload) => bookingsApi.addStays(bookingId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
       queryClient.invalidateQueries({ queryKey: ['availability'] })

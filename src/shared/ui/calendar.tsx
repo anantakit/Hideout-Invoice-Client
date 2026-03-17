@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import {
   format,
   startOfMonth, endOfMonth,
@@ -72,6 +72,9 @@ export function Calendar({
   const [viewDate, setViewDate] = useState(() => initialViewDate ?? new Date())
   const weeks = buildWeeks(viewDate)
 
+  const prevMonth = useCallback(() => setViewDate(v => subMonths(v, 1)), [])
+  const nextMonth = useCallback(() => setViewDate(v => addMonths(v, 1)), [])
+
   // While user has only clicked start, preview the range to hover target
   const previewEnd =
     pendingEnd ??
@@ -87,27 +90,31 @@ export function Calendar({
     <div className={cn('select-none w-full', className)}>
 
       {/* ── Month navigation ─────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <button
           type="button"
           aria-label="เดือนก่อนหน้า"
-          onClick={() => setViewDate(v => subMonths(v, 1))}
-          className="p-2 radius-badge hover:bg-muted transition-colors duration-150"
+          onClick={prevMonth}
+          className="w-8 h-8 flex items-center justify-center radius-badge
+                     text-muted-foreground hover:text-foreground hover:bg-accent
+                     transition-colors duration-150"
         >
-          <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
-        <span className="text-body font-semibold text-foreground">
+        <span className="text-body font-semibold text-foreground tracking-tight">
           {THAI_MONTHS[viewDate.getMonth()]} {viewDate.getFullYear() + 543}
         </span>
 
         <button
           type="button"
           aria-label="เดือนถัดไป"
-          onClick={() => setViewDate(v => addMonths(v, 1))}
-          className="p-2 radius-badge hover:bg-muted transition-colors duration-150"
+          onClick={nextMonth}
+          className="w-8 h-8 flex items-center justify-center radius-badge
+                     text-muted-foreground hover:text-foreground hover:bg-accent
+                     transition-colors duration-150"
         >
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
@@ -116,7 +123,7 @@ export function Calendar({
         {DAY_HEADERS.map(label => (
           <div
             key={label}
-            className="text-center text-helper font-medium py-1"
+            className="text-center text-[11px] font-medium text-muted-foreground py-1.5"
           >
             {label}
           </div>
@@ -146,7 +153,7 @@ export function Calendar({
                 className={cn(
                   'relative flex items-center justify-center',
                   // Range band background — stretches full cell width
-                  showBand && !selected && 'bg-primary/10',
+                  showBand && !selected && 'bg-primary/8',
                   // Start: only right half has band
                   showBand && isStart && !isEnd && 'bg-transparent',
                   // End: only left half has band
@@ -157,10 +164,10 @@ export function Calendar({
               >
                 {/* Half-fill pseudo band for start/end */}
                 {showBand && isStart && !isEnd && (
-                  <div className="absolute inset-y-0 right-0 w-1/2 bg-primary/10" />
+                  <div className="absolute inset-y-0 right-0 w-1/2 bg-primary/8" />
                 )}
                 {showBand && isEnd && !isStart && (
-                  <div className="absolute inset-y-0 left-0 w-1/2 bg-primary/10" />
+                  <div className="absolute inset-y-0 left-0 w-1/2 bg-primary/8" />
                 )}
 
                 <button
@@ -171,19 +178,21 @@ export function Calendar({
                   onMouseLeave={() => onDayHover(null)}
                   className={cn(
                     // Base
-                    'relative z-10 min-h-[40px] w-full flex items-center justify-center text-sm transition-colors rounded-full',
+                    'relative z-10 w-9 h-9 flex items-center justify-center text-sm rounded-full',
+                    'transition-all duration-100',
                     // Out-of-month
-                    !inMonth && 'opacity-40 pointer-events-none text-foreground',
+                    !inMonth && 'opacity-0 pointer-events-none',
                     // In-month defaults
                     inMonth && !selected && 'text-foreground',
-                    // Today ring (only when not selected)
-                    inMonth && !selected && dayToday && 'ring-2 ring-ring',
+                    // Today indicator (not selected)
+                    inMonth && !selected && dayToday &&
+                      'font-semibold text-primary ring-1 ring-primary/40',
                     // In-range text
                     inRange && !selected && 'text-foreground',
                     // Hover (not selected, not in-range)
-                    inMonth && !selected && !inRange && 'hover:bg-muted',
+                    inMonth && !selected && !inRange && 'hover:bg-accent',
                     // Selected circle
-                    selected && 'date-selected',
+                    selected && 'date-selected font-semibold',
                   )}
                 >
                   {format(day, 'd')}
