@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useEffect, useMemo } from 'react'
 import { isValid, isBefore, isSameDay, differenceInDays } from 'date-fns'
 import { CalendarIcon, ArrowRight, Moon } from 'lucide-react'
-import { Calendar } from '../../../../shared/ui/calendar'
+import { Calendar, ScrollableCalendar } from '../../../../shared/ui/calendar'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../../../../shared/ui/sheet'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../../shared/ui/dialog'
 import { cn, THAI_MONTHS_SHORT } from '@/shared/utils'
 
 // ─── Thai display helpers ─────────────────────────────────────────────────────
@@ -73,10 +73,6 @@ export function DateRangePicker({
   const [selectionStart, setSelectionStart] = useState<Date | null>(null)
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null)
   const [isMobile, setIsMobile] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
-  const [panelPos, setPanelPos] = useState({ top: 0, left: 0, width: 0, openUp: false })
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -85,37 +81,6 @@ export function DateRangePicker({
     mq.addEventListener('change', check)
     return () => mq.removeEventListener('change', check)
   }, [])
-
-  // Position the desktop calendar panel via portal
-  const PANEL_H = 400
-  useLayoutEffect(() => {
-    if (!open || isMobile || !triggerRef.current) return
-    const rect = triggerRef.current.getBoundingClientRect()
-    const spaceBelow = window.innerHeight - rect.bottom - 8
-    const openUp = spaceBelow < PANEL_H && rect.top > spaceBelow
-    setPanelPos({
-      top: openUp ? rect.top - 8 : rect.bottom + 8,
-      left: rect.left,
-      width: Math.max(rect.width, 320),
-      openUp,
-    })
-  }, [open, isMobile, phase])
-
-  // Close desktop panel on outside click.
-  useEffect(() => {
-    if (!open || isMobile) return
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node
-      if (
-        containerRef.current && !containerRef.current.contains(target) &&
-        panelRef.current && !panelRef.current.contains(target)
-      ) {
-        handleClose()
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open, isMobile])
 
   const handleOpen = () => {
     if (disabled) return
@@ -180,7 +145,6 @@ export function DateRangePicker({
 
   const triggerEl = (
     <button
-      ref={triggerRef}
       type="button"
       disabled={disabled}
       onClick={() => (open ? handleClose() : handleOpen())}
@@ -260,18 +224,7 @@ export function DateRangePicker({
     </div>
   )
 
-  const calendarEl = (
-    <Calendar
-      pendingStart={calPendingStart}
-      pendingEnd={calPendingEnd}
-      hoveredDate={calHoveredDate}
-      onDayClick={handleDayClick}
-      onDayHover={setHoveredDate}
-      initialViewDate={calInitialView}
-    />
-  )
-
-  // ── Mobile: bottom Sheet ─────────────────────────────────────────────────────
+  // ── Mobile: bottom Sheet with scrollable months ────────────────────────────
 
   if (isMobile) {
     return (
@@ -293,8 +246,15 @@ export function DateRangePicker({
               {phaseChip}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-8">
-              {calendarEl}
+            <div className="flex-1 overflow-y-auto px-5 pb-8">
+              <ScrollableCalendar
+                pendingStart={calPendingStart}
+                pendingEnd={calPendingEnd}
+                hoveredDate={calHoveredDate}
+                onDayClick={handleDayClick}
+                onDayHover={setHoveredDate}
+                initialViewDate={calInitialView}
+              />
             </div>
           </SheetContent>
         </Sheet>
@@ -302,39 +262,44 @@ export function DateRangePicker({
     )
   }
 
-  // ── Desktop: portal dropdown ─────────────────────────────────────────────────
+  // ── Desktop: centered Dialog with dual-month calendar ──────────────────────
 
   return (
-    <div ref={containerRef}>
+    <div>
       {triggerEl}
-      {open &&
-        createPortal(
-          <div
-            ref={panelRef}
-            className={cn(
-              'fixed z-[9999] bg-card border border-border radius-card shadow-popover',
-              'animate-in fade-in-0 zoom-in-[0.98] duration-150',
-            )}
-            style={{
-              left: panelPos.left,
-              width: panelPos.width,
-              ...(panelPos.openUp
-                ? { bottom: window.innerHeight - panelPos.top }
-                : { top: panelPos.top }),
-            }}
-          >
-            {/* Phase indicator */}
-            <div className="px-4 pt-3 pb-2 border-b border-border-soft">
-              {phaseChip}
-            </div>
+      <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
+        <DialogContent
+          className="max-w-fit p-0 gap-0"
+          aria-describedby="date-range-dialog-desc"
+        >
+          <DialogHeader className="px-6 pt-5 pb-0">
+            <DialogTitle className="text-body font-semibold tracking-tight">
+              {phaseLabel}
+            </DialogTitle>
+            <DialogDescription id="date-range-dialog-desc" className="sr-only">
+              เลือกช่วงวันเข้าพักจากปฏิทิน
+            </DialogDescription>
+          </DialogHeader>
 
-            {/* Calendar */}
-            <div className="p-4">
-              {calendarEl}
-            </div>
-          </div>,
-          document.body,
-        )}
+          {/* Phase indicator */}
+          <div className="px-6 pt-2 pb-3 border-b border-border-soft">
+            {phaseChip}
+          </div>
+
+          {/* Dual-month calendar */}
+          <div className="px-6 pt-4 pb-5">
+            <Calendar
+              pendingStart={calPendingStart}
+              pendingEnd={calPendingEnd}
+              hoveredDate={calHoveredDate}
+              onDayClick={handleDayClick}
+              onDayHover={setHoveredDate}
+              initialViewDate={calInitialView}
+              numberOfMonths={2}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -7,7 +7,6 @@ import toast from 'react-hot-toast'
 import { ArrowLeft, Loader2, Banknote, KeyRound, CreditCard, Clock } from 'lucide-react'
 import { cn, todayISO, addDaysISO, formatCompactNumber } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
-import { BottomBar } from '@/shared/ui/BottomBar'
 import { Button } from '@/shared/ui/button'
 import {
   Form,
@@ -148,7 +147,7 @@ export default function CreateBookingPage() {
 
   return (
     <>
-      <div className="max-w-2xl mx-auto px-4 pt-6 pb-32 md:pb-10 space-y-5">
+      <div className="max-w-2xl mx-auto px-4 pt-6 pb-10 space-y-5">
 
         {/* ── Header ──────────────────────────────────────────────────── */}
         <div>
@@ -309,9 +308,9 @@ export default function CreateBookingPage() {
             {/* ── 5. Summary ──────────────────────────────────────────── */}
             <BookingSummary />
 
-            {/* Desktop submit */}
-            <div className="hidden md:flex md:justify-end md:pt-2">
-              <Button type="submit" disabled={!canSubmit} className="min-w-36">
+            {/* Submit */}
+            <div className="pt-2">
+              <Button type="submit" disabled={!canSubmit} className="w-full md:w-auto md:min-w-36 md:float-right">
                 {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {submitLabel}
               </Button>
@@ -319,19 +318,6 @@ export default function CreateBookingPage() {
           </form>
         </Form>
       </div>
-
-      {/* Mobile sticky bar */}
-      <BottomBar>
-        <Button
-          type="button"
-          disabled={!canSubmit}
-          className="w-full"
-          onClick={onSubmit}
-        >
-          {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          {submitLabel}
-        </Button>
-      </BottomBar>
 
       <CustomerModal
         open={customerModalOpen}

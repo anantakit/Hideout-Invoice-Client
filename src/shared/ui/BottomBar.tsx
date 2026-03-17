@@ -15,7 +15,7 @@ export function BottomBar({ children, className }: BottomBarProps) {
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 right-0',
+        'fixed bottom-0 left-0 right-0 z-40',
         'bg-background/95 backdrop-blur border-t border-border',
         'px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]',
         'md:hidden',
