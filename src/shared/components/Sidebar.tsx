@@ -12,7 +12,6 @@ import {
   Sun,
   UserCog,
   Users,
-  X,
 } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { useAuth } from '@/app/providers/AuthProvider'
@@ -217,17 +216,6 @@ export function SidebarContent({ onClose }: { onClose?: () => void }) {
           <p className="text-sm font-bold text-foreground whitespace-nowrap">Hideout Resort</p>
           <p className="text-helper whitespace-nowrap">Hotel Operations</p>
         </div>
-        {onClose && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="ml-auto shrink-0 xl:hidden"
-            aria-label="ปิดเมนู"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        )}
       </div>
 
       {/* ── Navigation ───────────────────────────────────────────────────── */}

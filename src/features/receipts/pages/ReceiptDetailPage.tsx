@@ -8,7 +8,6 @@ import { receiptsApi } from '../api'
 import ErrorPage from '@/shared/components/ErrorPage'
 import { formatTHB, formatThaiDate } from '../../../shared/utils'
 import { Card, CardContent, CardHeader } from '../../../shared/ui/card'
-import { BottomBar } from '../../../shared/ui/BottomBar'
 import { Button } from '../../../shared/ui/button'
 import {
   Table,
@@ -56,9 +55,9 @@ export default function ReceiptDetail() {
     if (!receipt) return
     setDownloading(true)
     try {
-      await receiptsApi.download(receipt.id, `${receipt.invoice_number}.pdf`)
+      await receiptsApi.download(receipt)
     } catch {
-      toast.error('ดาวน์โหลดไม่สำเร็จ')
+      toast.error('ดาวน์โหลด PDF ไม่สำเร็จ')
     } finally {
       setDownloading(false)
     }
@@ -91,8 +90,7 @@ export default function ReceiptDetail() {
   const hasStayInfo = receipt.check_in_date || receipt.payment_method
 
   return (
-    <>
-    <div className="px-4 py-6 sm:px-8 max-w-4xl mx-auto pb-24">
+    <div className="px-4 py-6 sm:px-8 max-w-4xl mx-auto pb-10">
 
       {/* ── Header ── */}
       <div className="mb-8">
@@ -108,8 +106,6 @@ export default function ReceiptDetail() {
 
         {/* Identity + actions — column on mobile, row on desktop */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-
-          {/* Identity */}
           <div>
             <h1 className="text-section">
               {receipt.invoice_number}
@@ -119,12 +115,11 @@ export default function ReceiptDetail() {
             </p>
           </div>
 
-          {/* Actions — desktop only; mobile uses sticky bottom bar */}
+          {/* Desktop only */}
           <div className="hidden md:flex md:flex-row gap-3">
             <Button
               onClick={handleDownload}
               disabled={downloading}
-              className="w-full md:w-auto h-10 radius-card text-sm font-medium bg-primary/90 hover:bg-primary transition-all duration-150 ease-out hover:scale-[1.01] active:scale-[0.99]"
             >
               {downloading
                 ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -135,11 +130,7 @@ export default function ReceiptDetail() {
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  disabled={deleteMutation.isPending}
-                  className="w-full md:w-auto h-10 radius-card text-sm font-medium bg-destructive/90 hover:bg-destructive transition-all duration-150 ease-out hover:scale-[1.01] active:scale-[0.99]"
-                >
+                <Button variant="destructive" disabled={deleteMutation.isPending}>
                   <Trash2 className="h-4 w-4" />
                   ลบใบเสร็จ
                 </Button>
@@ -158,7 +149,6 @@ export default function ReceiptDetail() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
-
         </div>
       </div>
 
@@ -167,33 +157,6 @@ export default function ReceiptDetail() {
 
         {/* Meta */}
         <Card className="transition-shadow duration-200 md:hover:shadow-md">
-          {/* Trash icon — mobile only; desktop uses header action buttons */}
-          <CardHeader className="py-2 px-5 md:px-8 flex flex-row items-center justify-end md:hidden">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 radius-button text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
-                  disabled={deleteMutation.isPending}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>ลบใบเสร็จ?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    ลบใบเสร็จ {receipt.invoice_number}? การกระทำนี้ไม่สามารถย้อนกลับได้
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => deleteMutation.mutate()}>ลบ</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardHeader>
           <CardContent className="p-5 md:p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-helper uppercase tracking-wide mb-1">เลขที่ใบเสร็จ</p>
@@ -304,22 +267,22 @@ export default function ReceiptDetail() {
           </Card>
         )}
 
+        {/* Download — mobile only, bottom of content like CreateBookingPage */}
+        <div className="pt-2 md:hidden">
+          <Button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="w-full min-h-[44px]"
+          >
+            {downloading
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <Download className="h-4 w-4" />
+            }
+            ดาวน์โหลด PDF
+          </Button>
+        </div>
+
       </div>
     </div>
-
-    <BottomBar>
-      <Button
-        onClick={handleDownload}
-        disabled={downloading}
-        className="w-full min-h-[52px] radius-card font-medium transition-transform duration-150 active:scale-[0.98]"
-      >
-        {downloading
-          ? <Loader2 className="h-4 w-4 animate-spin" />
-          : <Download className="h-4 w-4" />
-        }
-        ดาวน์โหลด PDF
-      </Button>
-    </BottomBar>
-    </>
   )
 }

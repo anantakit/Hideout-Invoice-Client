@@ -82,6 +82,7 @@ interface MonthGridProps {
   hasRange: boolean
   onDayClick: (date: Date) => void
   onDayHover: (date: Date | null) => void
+  maxDate?: Date | null
 }
 
 const MonthGrid = memo(function MonthGrid({
@@ -91,6 +92,7 @@ const MonthGrid = memo(function MonthGrid({
   hasRange,
   onDayClick,
   onDayHover,
+  maxDate,
 }: MonthGridProps) {
   const weeks = buildWeeks(viewDate)
 
@@ -100,6 +102,7 @@ const MonthGrid = memo(function MonthGrid({
         <div key={wi} className="grid grid-cols-7">
           {week.map((day, di) => {
             const inMonth  = isSameMonth(day, viewDate)
+            const beyondMax = !!(maxDate && isAfter(day, maxDate))
             const isStart  = pendingStart ? isSameDay(day, pendingStart) : false
             const isEnd    = previewEnd   ? isSameDay(day, previewEnd)   : false
             const inRange  =
@@ -133,7 +136,7 @@ const MonthGrid = memo(function MonthGrid({
 
                 <button
                   type="button"
-                  disabled={!inMonth}
+                  disabled={!inMonth || beyondMax}
                   onClick={() => onDayClick(day)}
                   onMouseEnter={() => onDayHover(day)}
                   onMouseLeave={() => onDayHover(null)}
@@ -141,7 +144,8 @@ const MonthGrid = memo(function MonthGrid({
                     'relative z-10 w-9 h-9 flex items-center justify-center text-sm rounded-full',
                     'transition-all duration-100',
                     !inMonth && 'opacity-0 pointer-events-none',
-                    inMonth && !selected && 'text-foreground',
+                    beyondMax && inMonth && 'opacity-30 cursor-not-allowed',
+                    inMonth && !beyondMax && !selected && 'text-foreground',
                     inMonth && !selected && dayToday &&
                       'font-semibold text-primary ring-1 ring-primary/40',
                     inRange && !selected && 'text-foreground',
@@ -171,6 +175,8 @@ export interface CalendarProps {
   initialViewDate?: Date
   /** Number of months to display (1 = single, 2 = side-by-side). Default 1. */
   numberOfMonths?: number
+  /** Disable all dates after this date. */
+  maxDate?: Date | null
   className?: string
 }
 
@@ -184,6 +190,7 @@ export function Calendar({
   onDayHover,
   initialViewDate,
   numberOfMonths = 1,
+  maxDate,
   className,
 }: CalendarProps) {
   const [viewDate, setViewDate] = useState(() => initialViewDate ?? new Date())
@@ -258,6 +265,7 @@ export function Calendar({
                   hasRange={hasRange}
                   onDayClick={onDayClick}
                   onDayHover={onDayHover}
+                  maxDate={maxDate}
                 />
               </div>
             ))}
@@ -302,6 +310,7 @@ export function Calendar({
             hasRange={hasRange}
             onDayClick={onDayClick}
             onDayHover={onDayHover}
+            maxDate={maxDate}
           />
         </>
       )}

@@ -29,6 +29,8 @@ export interface DatePickerProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  /** Disable all dates after this date. */
+  maxDate?: Date | null
   className?: string
 }
 
@@ -36,6 +38,7 @@ export function DatePicker({
   value,
   onChange,
   placeholder = 'เลือกวันที่',
+  maxDate,
   className,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false)
@@ -112,6 +115,7 @@ export function DatePicker({
                 onDayClick={handleDayClick}
                 onDayHover={() => {}}
                 initialViewDate={selectedDate ?? undefined}
+                maxDate={maxDate}
               />
             </div>
           </SheetContent>

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Plus, Search, Eye, Download, Trash2 } from 'lucide-react'
 import { receiptsApi, type ReceiptQueryParams } from '../api'
+import type { Receipt } from '../types'
 import { formatTHB, formatThaiDate } from '../../../shared/utils'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import Pagination from '../../../shared/ui/Pagination'
@@ -33,33 +34,31 @@ import { ReceiptDateFilter } from '../components/ReceiptDateFilter'
 import { BottomBar } from '../../../shared/ui/BottomBar'
 import { Skeleton } from '../../../shared/ui/skeleton'
 
-async function downloadReceipt(id: string, number: string) {
+async function downloadReceipt(receipt: Receipt) {
   try {
-    await receiptsApi.download(id, `${number}.pdf`)
+    await receiptsApi.download(receipt)
   } catch {
-    toast.error('ดาวน์โหลดไม่สำเร็จ')
+    toast.error('ดาวน์โหลด PDF ไม่สำเร็จ')
   }
 }
 
 /** Download button with loading spinner. */
 function DownloadButton({
-  receiptId,
-  invoiceNumber,
+  receipt,
   downloadingId,
   onDownload,
 }: {
-  receiptId: string
-  invoiceNumber: string
+  receipt: Receipt
   downloadingId: string | null
-  onDownload: (id: string, number: string) => void
+  onDownload: (receipt: Receipt) => void
 }) {
-  const isLoading = downloadingId === receiptId
+  const isLoading = downloadingId === receipt.id
   return (
     <Button
       variant="ghost"
       size="icon"
       className="w-8 h-8"
-      onClick={() => onDownload(receiptId, invoiceNumber)}
+      onClick={() => onDownload(receipt)}
       disabled={isLoading}
       title="ดาวน์โหลด PDF"
     >
@@ -118,9 +117,9 @@ export default function ReceiptHistory() {
   const [endDate, setEndDate] = useState('')
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
-  const handleDownload = async (id: string, number: string) => {
-    setDownloadingId(id)
-    await downloadReceipt(id, number)
+  const handleDownload = async (receipt: Receipt) => {
+    setDownloadingId(receipt.id)
+    await downloadReceipt(receipt)
     setDownloadingId(null)
   }
 
@@ -283,8 +282,7 @@ export default function ReceiptHistory() {
                             <Link to={`/receipts/${receipt.id}`}><Eye className="w-4 h-4" /></Link>
                           </Button>
                           <DownloadButton
-                            receiptId={receipt.id}
-                            invoiceNumber={receipt.invoice_number}
+                            receipt={receipt}
                             downloadingId={downloadingId}
                             onDownload={handleDownload}
                           />
@@ -313,8 +311,7 @@ export default function ReceiptHistory() {
                     <span className="font-bold text-foreground text-sm">{formatTHB(receipt.total)}</span>
                     <div className="flex gap-1">
                       <DownloadButton
-                        receiptId={receipt.id}
-                        invoiceNumber={receipt.invoice_number}
+                        receipt={receipt}
                         downloadingId={downloadingId}
                         onDownload={handleDownload}
                       />

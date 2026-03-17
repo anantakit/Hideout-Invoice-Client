@@ -10,11 +10,25 @@ export interface ReceiptItem {
   total: number
 }
 
+export interface CoveredStay {
+  stay_id: string
+  date_from: string
+  date_to: string
+}
+
+export interface CompanyInfo {
+  name: string
+  address: string
+  phone: string
+  tax_id: string
+}
+
 export interface Receipt {
   id: string
   invoice_number: string
   booking_id?: string
   customer: Customer
+  company: CompanyInfo
   issue_date: string
   total: number
   notes: string
@@ -25,6 +39,9 @@ export interface Receipt {
   room_number?: string
   payment_method?: string
   items: ReceiptItem[]
+  covered_stays?: CoveredStay[]
+  created_by?: string
+  creator_name?: string
   created_at: string
   updated_at: string
 }
