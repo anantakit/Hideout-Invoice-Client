@@ -4,9 +4,9 @@ import { CalendarIcon, ArrowRight, Moon } from 'lucide-react'
 import { Calendar, ScrollableCalendar } from '../../../../shared/ui/calendar'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../../../../shared/ui/sheet'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../../shared/ui/dialog'
-import { cn, THAI_MONTHS_SHORT } from '@/shared/utils'
+import { cn, fmtShortBE, fmtLongBE } from '@/shared/utils'
 
-// ─── Thai display helpers ─────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseISO(iso: string): Date | null {
   if (!iso) return null
@@ -21,22 +21,6 @@ function toISO(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
-}
-
-function formatThai(iso: string): string {
-  const d = parseISO(iso)
-  if (!d) return ''
-  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]} ${(d.getFullYear() + 543) % 100}`
-}
-
-function formatThaiLong(iso: string): string {
-  const d = parseISO(iso)
-  if (!d) return ''
-  const MONTHS_LONG = [
-    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-  ]
-  return `${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear() + 543}`
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -146,6 +130,7 @@ export function DateRangePicker({
   const triggerEl = (
     <button
       type="button"
+      aria-label={placeholder}
       disabled={disabled}
       onClick={() => (open ? handleClose() : handleOpen())}
       className={cn(
@@ -164,11 +149,11 @@ export function DateRangePicker({
           <CalendarIcon className="w-4 h-4 text-primary shrink-0" />
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <span className="text-body font-medium text-foreground truncate">
-              {formatThai(value.checkIn)}
+              {fmtShortBE(value.checkIn)}
             </span>
             <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
             <span className="text-body font-medium text-foreground truncate">
-              {formatThai(value.checkOut)}
+              {fmtShortBE(value.checkOut)}
             </span>
           </div>
           {nights != null && nights > 0 && (
@@ -200,8 +185,8 @@ export function DateRangePicker({
           : 'text-muted-foreground',
       )}>
         {selectionStart && phase === 'selecting-end'
-          ? formatThaiLong(toISO(selectionStart))
-          : hasRange ? formatThaiLong(value.checkIn) : 'วันเช็คอิน'
+          ? fmtLongBE(toISO(selectionStart))
+          : hasRange ? fmtLongBE(value.checkIn) : 'วันเช็คอิน'
         }
       </div>
 
@@ -217,7 +202,7 @@ export function DateRangePicker({
         {previewNights != null
           ? `${previewNights} คืน`
           : hasRange && phase === 'idle'
-            ? formatThaiLong(value.checkOut)
+            ? fmtLongBE(value.checkOut)
             : 'วันเช็คเอาท์'
         }
       </div>

@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ChevronRight, CalendarX } from 'lucide-react'
-import { formatThaiDate } from '../../../shared/utils'
+import { Plus, Search, ChevronRight, CalendarX, ArrowRight } from 'lucide-react'
+import { formatTHB, fmtShortISO } from '../../../shared/utils'
 import ErrorPanel from '../../../shared/components/ErrorPanel'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import { useBookings } from '../hooks'
@@ -21,6 +21,23 @@ import Pagination from '../../../shared/ui/Pagination'
 import { Skeleton } from '../../../shared/ui/skeleton'
 import { type BookingResponse, getStatusLabel } from '../types'
 import { FilterChipBar, type FilterChip as FilterChipType } from '../../../shared/ui/FilterChipBar'
+import { DateRangePicker } from '../shared/components/DateRangePicker'
+import type { DateRange } from '../shared/components/DateRangePicker'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Extract earliest check_in and latest check_out from a booking's stays. */
+function getStayRange(booking: BookingResponse): { checkIn: string; checkOut: string } | null {
+  const stays = booking.room_stays
+  if (!stays || stays.length === 0) return null
+  let earliest = stays[0].check_in
+  let latest = stays[0].check_out
+  for (let i = 1; i < stays.length; i++) {
+    if (stays[i].check_in < earliest) earliest = stays[i].check_in
+    if (stays[i].check_out > latest) latest = stays[i].check_out
+  }
+  return { checkIn: earliest, checkOut: latest }
+}
 
 // ─── Status display maps ───────────────────────────────────────────────────────
 
@@ -45,7 +62,7 @@ function StatusBadge({ status }: { status: string }) {
 
 // ─── Quick filter chips ─────────────────────────────────────────────────────────
 
-type BookingFilter = 'all' | 'checked_in' | 'arrivals' | 'departures' | 'outstanding' | 'history'
+type BookingFilter = 'active' | 'checked_in' | 'arrivals' | 'departures' | 'outstanding' | 'history'
 
 interface BookingFilterDef extends FilterChipType<BookingFilter> {
   status: string
@@ -53,7 +70,7 @@ interface BookingFilterDef extends FilterChipType<BookingFilter> {
 }
 
 const FILTER_CHIPS: BookingFilterDef[] = [
-  { key: 'all',         label: 'ทั้งหมด',       status: '',            view: '' },
+  { key: 'active',      label: 'กำลังดำเนินการ', status: '',            view: 'active' },
   { key: 'checked_in',  label: 'เข้าพักอยู่',    status: 'CHECKED_IN',  view: '' },
   { key: 'arrivals',    label: 'เช็คอินวันนี้',   status: '',            view: 'arrivals_today' },
   { key: 'departures',  label: 'เช็คเอาท์วันนี้', status: '',            view: 'departures_today' },
@@ -61,9 +78,11 @@ const FILTER_CHIPS: BookingFilterDef[] = [
   { key: 'history',     label: 'ประวัติ',        status: 'CHECKED_OUT', view: '' },
 ]
 
+const DEFAULT_CHIP: BookingFilter = 'active'
+
 function getActiveChipKey(status: string, view: string): BookingFilter {
   const match = FILTER_CHIPS.find((c) => c.status === status && c.view === view)
-  return match?.key ?? 'all'
+  return match?.key ?? DEFAULT_CHIP
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -73,10 +92,15 @@ export default function BookingListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
 
   // ── URL-backed filter state ─────────────────────────────────────────────────
-  const statusParam = searchParams.get('status') ?? ''
-  const viewParam   = searchParams.get('view') ?? ''
+  const statusParam    = searchParams.get('status') ?? ''
+  const viewParam      = searchParams.get('view') ?? ''
+  const startDateParam = searchParams.get('start_date') ?? ''
+  const endDateParam   = searchParams.get('end_date') ?? ''
 
-  const activeChip = getActiveChipKey(statusParam, viewParam)
+  // Default: when no status/view in URL, apply the "active" view
+  const effectiveView = (!statusParam && !viewParam) ? 'active' : viewParam
+
+  const activeChip = getActiveChipKey(statusParam, effectiveView)
 
   function handleChipSelect(key: BookingFilter) {
     const chip = FILTER_CHIPS.find((c) => c.key === key)!
@@ -91,6 +115,27 @@ export default function BookingListPage() {
     setPage(1)
   }
 
+  function handleDateRangeChange(range: DateRange) {
+    const next = new URLSearchParams(searchParams)
+    if (range.checkIn && range.checkOut) {
+      next.set('start_date', range.checkIn)
+      next.set('end_date', range.checkOut)
+    } else {
+      next.delete('start_date')
+      next.delete('end_date')
+    }
+    setSearchParams(next, { replace: true })
+    setPage(1)
+  }
+
+  function clearDateRange() {
+    const next = new URLSearchParams(searchParams)
+    next.delete('start_date')
+    next.delete('end_date')
+    setSearchParams(next, { replace: true })
+    setPage(1)
+  }
+
   // ── Pagination + search (local state, debounced) ────────────────────────────
   const { page, limit, searchInput, params, setPage, setLimit, setSearchInput } =
     usePaginatedQuery({ defaultLimit: 20 })
@@ -98,8 +143,9 @@ export default function BookingListPage() {
   // ── Data fetch ──────────────────────────────────────────────────────────────
   const { data, isLoading, isError, refetch, isFetching } = useBookings({
     ...params,
-    ...(statusParam && { status: statusParam }),
-    ...(viewParam   && { view:   viewParam }),
+    ...(statusParam    && { status: statusParam }),
+    ...(effectiveView  && { view:   effectiveView }),
+    ...(startDateParam && endDateParam && { start_date: startDateParam, end_date: endDateParam }),
   })
 
   const bookings   = data?.data ?? []
@@ -113,7 +159,7 @@ export default function BookingListPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
-  const hasFilters = Boolean(searchInput || statusParam || viewParam)
+  const hasFilters = Boolean(searchInput || statusParam || viewParam || startDateParam)
 
   return (
     <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-5xl mx-auto">
@@ -133,7 +179,7 @@ export default function BookingListPage() {
         </Button>
       </div>
 
-      {/* Search + Filter chips */}
+      {/* Search + Filter chips + Date range */}
       <div className="bg-card radius-card border border-border p-3 sm:p-4 mb-6 space-y-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -150,6 +196,21 @@ export default function BookingListPage() {
           activeKey={activeChip}
           onSelect={handleChipSelect}
         />
+
+        {/* Date range filter */}
+        <div className="flex items-center gap-2">
+          <DateRangePicker
+            value={{ checkIn: startDateParam, checkOut: endDateParam }}
+            onChange={handleDateRangeChange}
+            placeholder="กรองตามช่วงวันเข้าพัก"
+            className="w-auto"
+          />
+          {startDateParam && endDateParam && (
+            <Button variant="ghost" size="sm" onClick={clearDateRange} className="shrink-0 text-muted-foreground">
+              ล้าง
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -166,8 +227,9 @@ export default function BookingListPage() {
                   <TableHead>ผู้เข้าพัก</TableHead>
                   <TableHead>สถานะ</TableHead>
                   <TableHead className="text-center">ห้อง</TableHead>
-                  <TableHead>วันที่จอง</TableHead>
-                  <TableHead className="text-right">จัดการ</TableHead>
+                  <TableHead>วันเข้าพัก</TableHead>
+                  <TableHead className="text-right">ยอดค้าง</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -223,6 +285,9 @@ function DesktopRow({
   booking: BookingResponse
   onView: () => void
 }) {
+  const range = getStayRange(booking)
+  const balance = booking.balance_amount
+
   return (
     <TableRow className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={onView}>
       <TableCell>
@@ -235,13 +300,24 @@ function DesktopRow({
       <TableCell className="text-center text-body text-muted-foreground">
         {booking.room_stays.length} ห้อง
       </TableCell>
-      <TableCell className="text-body text-muted-foreground">
-        {formatThaiDate(booking.created_at)}
+      <TableCell className="text-body text-muted-foreground whitespace-nowrap">
+        {range ? (
+          <span className="inline-flex items-center gap-1">
+            {fmtShortISO(range.checkIn)}
+            <ArrowRight className="w-3 h-3" />
+            {fmtShortISO(range.checkOut)}
+          </span>
+        ) : '—'}
       </TableCell>
-      <TableCell className="text-right">
-        <Button variant="ghost" size="sm" onClick={onView}>
-          ดูรายละเอียด
-        </Button>
+      <TableCell className="text-right text-body tabular-nums">
+        {balance > 0 ? (
+          <span className="text-warning font-medium">{formatTHB(balance)}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <ChevronRight className="w-4 h-4 text-muted-foreground" />
       </TableCell>
     </TableRow>
   )
@@ -256,6 +332,9 @@ function MobileCard({
   booking: BookingResponse
   onClick: () => void
 }) {
+  const range = getStayRange(booking)
+  const balance = booking.balance_amount
+
   return (
     <button
       type="button"
@@ -277,10 +356,23 @@ function MobileCard({
             <span className="text-helper">
               {booking.room_stays.length} ห้อง
             </span>
-            <span className="text-helper ml-auto">
-              {formatThaiDate(booking.created_at)}
-            </span>
+            {range && (
+              <span className="text-helper ml-auto inline-flex items-center gap-1">
+                {fmtShortISO(range.checkIn)}
+                <ArrowRight className="w-3 h-3" />
+                {fmtShortISO(range.checkOut)}
+              </span>
+            )}
           </div>
+
+          {balance > 0 && (
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+              <span className="text-helper">ค้างชำระ</span>
+              <span className="text-caption font-medium text-warning tabular-nums">
+                {formatTHB(balance)}
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
     </button>

@@ -5,7 +5,7 @@ import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { cn, todayISO, addDaysISO, fmtShortISO, THAI_MONTHS_SHORT } from '@/shared/utils'
+import { cn, todayISO, addDaysISO, fmtShortISO, fmtShort } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import {
   AlertDialog, AlertDialogTrigger, AlertDialogContent,
@@ -115,7 +115,7 @@ export function PendingAssignmentsSection({
         const label =
           dateStr === todayStr ? 'วันนี้' :
           dateStr === addDaysISO(1) ? 'พรุ่งนี้' :
-          `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
+          fmtShort(d)
         const isUrgent = dateStr <= todayStr
         const stayCount = bookings.reduce((sum, b) => sum + b.totalRooms, 0)
         return { dateStr, label, isUrgent, bookings, stayCount }

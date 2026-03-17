@@ -12,7 +12,7 @@ import {
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Sheet, SheetContent } from '../../../shared/ui/sheet'
 import { Button } from '../../../shared/ui/button'
-import { cn, THAI_MONTHS_SHORT, THAI_MONTHS_FULL } from '../../../shared/utils'
+import { cn, THAI_MONTHS_FULL, fmtShortWithYear } from '../../../shared/utils'
 const DAY_LABELS = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -27,9 +27,7 @@ function fromApiDate(s: string): Date | null {
   return new Date(y, m - 1, d)
 }
 
-function formatDisplayDate(date: Date): string {
-  return `${date.getDate()} ${THAI_MONTHS_SHORT[date.getMonth()]} ${date.getFullYear() + 543}`
-}
+const formatDisplayDate = fmtShortWithYear
 
 function getCalendarWeeks(viewDate: Date): Date[][] {
   const monthStart = startOfMonth(viewDate)

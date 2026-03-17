@@ -3,11 +3,10 @@ import { isValid } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { Calendar } from './calendar'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from './sheet'
-import { cn, THAI_MONTHS_SHORT } from '@/shared/utils'
+import { cn, fmtLongBE } from '@/shared/utils'
 
-// ─── Thai display helpers ─────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Parse a YYYY-MM-DD string as a local date (no timezone shift). */
 function parseISO(iso: string): Date | null {
   if (!iso) return null
   const [y, m, d] = iso.split('-').map(Number)
@@ -16,19 +15,11 @@ function parseISO(iso: string): Date | null {
   return isValid(date) ? date : null
 }
 
-/** Serialise a Date back to YYYY-MM-DD. */
 function toISO(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
-}
-
-/** Format a YYYY-MM-DD string for display in Thai Buddhist Era. */
-function formatThai(iso: string): string {
-  const d = parseISO(iso)
-  if (!d) return ''
-  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -92,7 +83,7 @@ export function DatePicker({
     >
       <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
       <span className="flex-1 truncate">
-        {value ? formatThai(value) : placeholder}
+        {value ? fmtLongBE(value) : placeholder}
       </span>
     </button>
   )

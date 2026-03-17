@@ -79,6 +79,11 @@ export function fmtShort(d: Date): string {
   return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
 }
 
+/** Format a Date object as short Thai + 4-digit BE year: "15 มี.ค. 2569" */
+export function fmtShortWithYear(d: Date): string {
+  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`
+}
+
 /** Format an ISO string as short Thai date: "15 มี.ค." */
 export function fmtShortISO(iso: string): string {
   try {
@@ -92,6 +97,22 @@ export function fmtThaiDate(iso: string): string {
   try {
     const d = parseISO(iso)
     return `${THAI_DAYS[d.getDay()]} ${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
+  } catch { return iso }
+}
+
+/** Format ISO/YYYY-MM-DD as short Thai + 2-digit BE year: "16 มี.ค. 69" */
+export function fmtShortBE(iso: string): string {
+  try {
+    const d = parseISO(iso)
+    return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]} ${(d.getFullYear() + 543) % 100}`
+  } catch { return iso }
+}
+
+/** Format ISO/YYYY-MM-DD as short Thai + 4-digit BE year: "16 มี.ค. 2569" */
+export function fmtLongBE(iso: string): string {
+  try {
+    const d = parseISO(iso)
+    return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`
   } catch { return iso }
 }
 

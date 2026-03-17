@@ -22,7 +22,7 @@ import {
 } from 'date-fns'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { cn, THAI_MONTHS_SHORT, THAI_MONTHS_FULL } from '@/shared/utils'
+import { cn, THAI_MONTHS_FULL, fmtShortISO } from '@/shared/utils'
 import { Button } from '../../../../shared/ui/button'
 import { Dialog, DialogPortal, DialogOverlay } from '../../../../shared/ui/dialog'
 import { Sheet, SheetPortal, SheetOverlay } from '../../../../shared/ui/sheet'
@@ -112,11 +112,7 @@ function parseISO(iso: string): Date | null {
   return isValid(date) ? date : null
 }
 
-function formatShort(iso: string): string {
-  const d = parseISO(iso)
-  if (!d) return ''
-  return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}`
-}
+const formatShort = fmtShortISO
 
 function buildWeeks(viewDate: Date): Date[][] {
   const monthStart = startOfMonth(viewDate)

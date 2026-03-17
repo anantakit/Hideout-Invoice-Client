@@ -24,7 +24,7 @@ import {
   isSameDay, isBefore,
 } from 'date-fns'
 import { X } from 'lucide-react'
-import { cn, THAI_MONTHS_SHORT } from '../../../shared/utils'
+import { cn, fmtShortWithYear } from '../../../shared/utils'
 import { FilterChipBar } from '../../../shared/ui/FilterChipBar'
 import { Button } from '../../../shared/ui/button'
 import { Sheet, SheetContent } from '../../../shared/ui/sheet'
@@ -42,15 +42,10 @@ function fromApiDate(s: string): Date | null {
   return new Date(y, m - 1, d)
 }
 
-/** "12 ก.พ. 2569" */
-function formatShort(date: Date): string {
-  return `${date.getDate()} ${THAI_MONTHS_SHORT[date.getMonth()]} ${date.getFullYear() + 543}`
-}
-
 /** "12 ก.พ. 2569 – 15 ก.พ. 2569" or just "12 ก.พ. 2569" for single-day */
 function formatRange(start: Date, end: Date | null): string {
-  if (!end || isSameDay(start, end)) return formatShort(start)
-  return `${formatShort(start)} – ${formatShort(end)}`
+  if (!end || isSameDay(start, end)) return fmtShortWithYear(start)
+  return `${fmtShortWithYear(start)} – ${fmtShortWithYear(end)}`
 }
 
 // ─── Quick presets ────────────────────────────────────────────────────────────
