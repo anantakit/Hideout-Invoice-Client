@@ -18,7 +18,7 @@ import {
 } from '@/shared/ui/select'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/ui/sheet'
 import { Calendar } from '@/shared/ui/calendar'
-import { cn, THAI_MONTHS_FULL, todayISO } from '@/shared/utils'
+import { cn, THAI_MONTHS_SHORT, todayISO } from '@/shared/utils'
 import type { RoomAvailability } from './AvailabilitySummary'
 import { ZOOM_CONFIG, type ZoomLevel } from '../utils/timelineConstants'
 
@@ -45,18 +45,14 @@ function DatePickerContent({
   mobile,
 }: {
   displayDate: Date
-  monthOptions: { label: string; value: string }[]
+  monthOptions: { label: string; value: string; isCurrent: boolean }[]
   onDayClick: (date: Date) => void
   onMonthJump: (value: string) => void
   mobile?: boolean
 }) {
   const labelCls = mobile
-    ? 'text-[11px] text-muted-foreground mb-2 uppercase tracking-wider font-medium'
-    : 'text-[11px] text-tl-text-dim mb-1.5 uppercase tracking-wider font-medium'
-  const btnCls = mobile
-    ? 'text-[11px] px-2 py-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors text-center truncate'
-    : 'text-[11px] px-1.5 py-1 rounded hover:bg-accent text-tl-text-dim hover:text-tl-text transition-colors text-center truncate'
-  const gridCls = mobile ? 'grid grid-cols-3 gap-1.5' : 'grid grid-cols-3 gap-1'
+    ? 'text-caption text-muted-foreground mb-2 uppercase tracking-wider'
+    : 'text-caption text-tl-text-dim mb-1.5 uppercase tracking-wider'
   const separatorCls = mobile ? 'mt-4 pt-3 border-t border-border' : 'border-t border-tl-border px-3 pb-2.5 pt-2'
 
   // Single delegated handler — no closure per button
@@ -79,13 +75,25 @@ function DatePickerContent({
       </div>
       <div className={separatorCls}>
         <p className={labelCls}>ข้ามไปเดือน</p>
-        <div className={gridCls} onClick={handleMonthClick}>
+        <div className={mobile ? 'grid grid-cols-3 gap-1.5' : 'grid grid-cols-3 gap-1'} onClick={handleMonthClick}>
           {monthOptions.map((opt) => (
             <button
               key={opt.value}
               type="button"
               data-month={opt.value}
-              className={btnCls}
+              className={cn(
+                'text-caption rounded-lg transition-colors text-center',
+                mobile
+                  ? 'px-2 py-2.5 min-h-[44px] hover:bg-accent'
+                  : 'px-1.5 py-1.5 hover:bg-accent',
+                opt.isCurrent
+                  ? mobile
+                    ? 'bg-primary/15 text-primary font-semibold'
+                    : 'bg-tl-accent/15 text-tl-accent font-semibold'
+                  : mobile
+                    ? 'text-muted-foreground hover:text-foreground'
+                    : 'text-tl-text-dim hover:text-tl-text',
+              )}
             >
               {opt.label}
             </button>
@@ -194,12 +202,14 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
   // ── Month jump options ───────────────────────────────────────────────────
   const monthOptions = useMemo(() => {
     const now = new Date()
-    const result: { value: string; label: string }[] = []
+    const currentKey = `${now.getFullYear()}-${now.getMonth()}`
+    const result: { value: string; label: string; isCurrent: boolean }[] = []
     for (let i = -2; i <= 6; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
       result.push({
         value: format(d, 'yyyy-MM-dd'),
-        label: `${THAI_MONTHS_FULL[d.getMonth()]} ${d.getFullYear() + 543}`,
+        label: `${THAI_MONTHS_SHORT[d.getMonth()]} ${(d.getFullYear() + 543) % 100}`,
+        isCurrent: `${d.getFullYear()}-${d.getMonth()}` === currentKey,
       })
     }
     return result
