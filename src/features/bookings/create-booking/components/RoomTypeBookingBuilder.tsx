@@ -566,7 +566,7 @@ function RoomTypeBookingItem({
               render={() => (
                 <FormItem>
                   <FormControl>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       {roomsForType.map((room) => {
                         const isSelected = assignedRoomIds.includes(room.room_id)
                         const isDisabled = !room.available && !isSelected
@@ -579,7 +579,7 @@ function RoomTypeBookingItem({
                             disabled={isDisabled || isFull}
                             onClick={() => toggleRoom(room.room_id)}
                             className={cn(
-                              'w-14 h-10 radius-button border text-xs font-semibold transition-colors',
+                              'h-10 radius-button border text-xs font-semibold transition-colors',
                               isSelected
                                 ? 'border-primary bg-primary text-primary-foreground'
                                 : isDisabled || isFull
