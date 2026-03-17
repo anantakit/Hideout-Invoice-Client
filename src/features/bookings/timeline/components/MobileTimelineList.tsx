@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { parseISO, isToday, differenceInDays, format, addDays } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, ChevronDown, BedDouble, LogOut } from 'lucide-react'
+import { ChevronRight, BedDouble, LogOut } from 'lucide-react'
 import { cn, fmtShort, fmtShortISO, todayISO as todayISOUtil, addDaysISO } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
@@ -53,7 +53,6 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   })
   const [assignSheetBookingId, setAssignSheetBookingId] = useState<string | null>(null)
   const [checkoutSheetBookingId, setCheckoutSheetBookingId] = useState<string | null>(null)
-  const [availCheckerOpen, setAvailCheckerOpen] = useState(false)
 
   const selectedDate = parseISO(selectedDateStr)
   const viewingToday = isToday(selectedDate)
@@ -109,6 +108,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           const existing = checkinMap.get(b.booking_id)
           if (existing) {
             existing.assignedRooms.push(room.room_number)
+            existing.stayStatuses.push(b.status)
             existing.totalStays++
           } else {
             checkinMap.set(b.booking_id, {
@@ -119,6 +119,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
               assignedRooms: [room.room_number],
               unassignedCount: 0,
               totalStays: 1,
+              stayStatuses: [b.status],
               booking: b,
             })
           }
@@ -162,6 +163,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
         const existing = checkinMap.get(s.booking_id)
         if (existing) {
           existing.unassignedCount++
+          existing.stayStatuses.push(s.status)
           existing.totalStays++
         } else {
           checkinMap.set(s.booking_id, {
@@ -172,21 +174,22 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
             assignedRooms: [],
             unassignedCount: 1,
             totalStays: 1,
+            stayStatuses: [s.status],
           })
         }
       }
     }
 
-    // Separate fully-checked-in bookings from pending
+    // Separate fully-checked-in bookings from pending.
+    // A booking is "done" only when ALL its stays are CHECKED_IN or CHECKED_OUT.
+    // Previously this checked a single stay's status which was wrong for multi-room
+    // bookings with mixed statuses (e.g. 1 CHECKED_IN + 2 ASSIGNED).
     const allCheckins = Array.from(checkinMap.values())
-    const pendingCheckins = allCheckins.filter((ci) => {
-      const st = ci.booking?.status
-      return st !== 'CHECKED_IN' && st !== 'CHECKED_OUT'
-    })
-    const doneCheckins = allCheckins.filter((ci) => {
-      const st = ci.booking?.status
-      return st === 'CHECKED_IN' || st === 'CHECKED_OUT'
-    })
+    const isAllCheckedInOrOut = (ci: CheckinBooking) =>
+      ci.stayStatuses.length > 0 &&
+      ci.stayStatuses.every((st) => st === 'CHECKED_IN' || st === 'CHECKED_OUT')
+    const pendingCheckins = allCheckins.filter((ci) => !isAllCheckedInOrOut(ci))
+    const doneCheckins = allCheckins.filter(isAllCheckedInOrOut)
 
     // Sort checkouts: pending (has unchecked-out stays) first, fully done last
     const allCheckouts = Array.from(checkoutMap.values())
@@ -508,24 +511,10 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
       )}
 
       {/* ════════════════════════════════════════════════════════════════════
-          SECTION 3: ตรวจสอบห้องว่าง — collapsible
+          SECTION 3: ตรวจสอบห้องว่าง — collapsible (managed by StayAvailabilityCard)
           ════════════════════════════════════════════════════════════════════ */}
       <div className="px-4 space-section">
-        <CardButton
-          variant="ghost"
-          onClick={() => setAvailCheckerOpen((v) => !v)}
-          padding="none"
-          className="flex-row items-center justify-between py-2"
-        >
-          <span className="text-label text-muted-foreground">ตรวจสอบห้องว่าง</span>
-          <ChevronDown className={cn(
-            'w-4 h-4 text-muted-foreground/50 transition-transform',
-            availCheckerOpen && 'rotate-180',
-          )} />
-        </CardButton>
-        {availCheckerOpen && (
-          <StayAvailabilityCard range={stayRange} onRangeChange={setStayRange} />
-        )}
+        <StayAvailabilityCard range={stayRange} onRangeChange={setStayRange} />
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════

@@ -12,6 +12,8 @@ export interface CheckinBooking {
   assignedRooms: string[]
   unassignedCount: number
   totalStays: number
+  /** Collected stay-level statuses for all stays in this booking (used to derive done/pending). */
+  stayStatuses: string[]
   booking?: TimelineBooking
   /** For single-room: the room_stay_id from timeline (avoids N+1 useBooking fetch) */
   roomStayId?: string

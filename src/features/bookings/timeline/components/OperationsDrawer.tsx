@@ -23,7 +23,7 @@ import {
   ShieldCheck,
   ShieldAlert,
 } from 'lucide-react'
-import { cn, fmtThaiDate, formatTHBCurrency, todayISO } from '@/shared/utils'
+import { cn, fmtThaiDate, fmtShortISO, formatTHBCurrency, todayISO } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
@@ -294,12 +294,12 @@ function BookingDetailContent({
           <InlineCheckIn bookingId={booking.booking_id} pendingStays={pendingStays} compact keyDepositAmount={keyDeposit} />
         )}
 
-        {/* Checkout section */}
+        {/* Checkout section — matches InlineCheckIn compact layout */}
         {canCheckOut && checkedInStays.length > 0 && (
-          <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <LogOut size={12} />
+              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <LogOut className="w-3.5 h-3.5" />
                 เช็คเอาท์{checkedInStays.length > 1 ? ` ${checkedInStays.length} ห้อง` : ''}
               </p>
               {checkedInStays.length > 1 && (
@@ -331,6 +331,9 @@ function BookingDetailContent({
                   <span className="text-sm font-semibold">ห้อง {stay.room_number}</span>
                   <span className="text-xs text-muted-foreground">{stay.room_type_name}</span>
                 </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {fmtShortISO(stay.check_in)} → {fmtShortISO(stay.check_out)} · {differenceInDays(parseISO(stay.check_out), parseISO(stay.check_in))} คืน
+                </p>
               </ConfirmActionCard>
             ))}
           </div>

@@ -5,7 +5,7 @@ import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { cn, todayISO, addDaysISO, THAI_MONTHS_SHORT } from '@/shared/utils'
+import { cn, todayISO, addDaysISO, fmtShortISO, THAI_MONTHS_SHORT } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import {
   AlertDialog, AlertDialogTrigger, AlertDialogContent,
@@ -161,12 +161,12 @@ export function PendingAssignmentsSection({
             onClick={() => setShowFuture(!showFuture)}
             className="flex-row items-center justify-between py-1.5"
           >
-            <span className="text-helper text-muted-foreground/60 flex items-center space-inline">
+            <span className="text-helper flex items-center space-inline">
               ล่วงหน้า
-              <span className="font-normal text-muted-foreground/40">{futureStayCount} ห้อง</span>
+              <span className="font-normal text-muted-foreground/50">{futureStayCount} ห้อง</span>
             </span>
             <ChevronDown className={cn(
-              'w-3.5 h-3.5 text-muted-foreground/40 transition-transform',
+              'w-3.5 h-3.5 text-muted-foreground/50 transition-transform',
               showFuture && 'rotate-180',
             )} />
           </CardButton>
@@ -209,14 +209,14 @@ function DateSection({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <p className={cn(
-          'text-helper flex items-center space-inline',
+          'text-xs flex items-center space-inline',
           section.isUrgent
             ? 'font-semibold text-warning'
-            : 'font-normal text-muted-foreground/60',
+            : 'font-medium text-muted-foreground',
         )}>
           {section.isUrgent && <span className="w-1.5 h-1.5 radius-badge bg-warning" />}
           {section.label}
-          <span className="font-normal text-muted-foreground/40">{section.stayCount} ห้อง</span>
+          <span className="font-normal text-muted-foreground/50">{section.stayCount} ห้อง</span>
         </p>
         {section.stayCount > 1 && (
           <AlertDialog>
@@ -225,7 +225,7 @@ function DateSection({
                 variant="ghost"
                 size="sm"
                 disabled={autoAssign.isPending}
-                className="gap-1.5 h-auto p-0 text-micro text-muted-foreground/60 hover:text-primary"
+                className="gap-1.5 h-auto p-0 text-helper hover:text-primary"
               >
                 {autoAssign.isPending && autoAssignDate === section.dateStr ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -262,33 +262,38 @@ function DateSection({
           <div key={booking.bookingId}>
             <CardButton
               onClick={() => setExpandedBookingId(isExpanded ? null : booking.bookingId)}
-              padding="compact"
+              padding="card"
               className={cn(
                 'border',
                 isExpanded
-                  ? 'border-border bg-card'
+                  ? 'border-border bg-card rounded-b-none'
                   : section.isUrgent
-                    ? 'border-border bg-card hover:bg-muted'
-                    : 'border-border-soft bg-transparent hover:bg-muted/50',
+                    ? 'border-border bg-card hover:bg-accent/10'
+                    : 'border-border-soft bg-card/50 hover:bg-card',
                 isExpanded && 'rounded-b-none',
               )}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className={cn(
-                  'text-body truncate',
-                  section.isUrgent ? 'font-semibold' : 'font-normal text-muted-foreground',
+                  'text-body font-semibold truncate',
+                  !section.isUrgent && 'text-muted-foreground',
                 )}>{booking.guestName}</span>
-                <span className="text-helper shrink-0 tabular-nums">
-                  {booking.totalRooms} ห้อง
-                </span>
+                <span className="text-helper shrink-0">{booking.nights} คืน</span>
               </div>
-              <div className="flex items-center justify-between mt-0.5">
-                <span className="text-helper">{booking.roomTypeNames.join(', ')}</span>
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center space-inline text-helper">
+                  <span>{booking.roomTypeNames.join(', ')}</span>
+                  <span>·</span>
+                  <span className="tabular-nums">{booking.totalRooms} ห้อง</span>
+                </div>
                 <ChevronDown className={cn(
-                  'w-3.5 h-3.5 text-muted-foreground/40 transition-transform shrink-0',
+                  'w-3.5 h-3.5 text-muted-foreground/50 transition-transform shrink-0',
                   isExpanded && 'rotate-180',
                 )} />
               </div>
+              <p className="text-helper text-muted-foreground/50 mt-0.5 tabular-nums">
+                {fmtShortISO(booking.checkIn)} → {fmtShortISO(booking.checkOut)}
+              </p>
             </CardButton>
 
             {isExpanded && (
@@ -378,19 +383,19 @@ function InlineRoomPicker({
           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
         </div>
       ) : roomsByType.length === 0 ? (
-        <p className="text-helper text-destructive text-center py-2">ไม่มีห้องว่างในประเภทนี้</p>
+        <p className="text-xs text-destructive text-center py-2">ไม่มีห้องว่างในประเภทนี้</p>
       ) : (
         <>
           {unassignedStays.length > 0 && (
-            <p className="text-helper text-warning font-medium">
-              เหลืออีก {unassignedStays.length} ห้อง
+            <p className="text-xs text-warning font-medium">
+              รอกำหนด {unassignedStays.length} ห้อง
             </p>
           )}
 
           {roomsByType.map((rt) => (
             <div key={rt.typeId} className="space-list">
               {roomsByType.length > 1 && (
-                <p className="text-helper">{rt.typeName}</p>
+                <p className="text-xs text-muted-foreground">{rt.typeName}</p>
               )}
               <div className="flex flex-wrap space-inline">
                 {rt.rooms.map((room) => {

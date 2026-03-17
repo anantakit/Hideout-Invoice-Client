@@ -279,20 +279,21 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
     </div>
   )
 
-  // Batch check-in button (only when multiple stays and all have rooms)
-  const batchButton = pendingStays.length > 1 && allReady && (
+  // Inline batch check-in button (shown next to progress label)
+  const batchButton = pendingStays.length > 1 && (
     <Button
-      className="w-full gap-1.5"
       variant="ghost"
-      disabled={checkIn.isPending}
+      size="sm"
+      className="gap-1 text-xs h-auto py-1 px-2 text-primary hover:text-primary/80 shrink-0"
+      disabled={checkIn.isPending || !allReady}
       onClick={() => setConfirmAll(true)}
     >
       {checkIn.isPending && checkingInStayId === null ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
+        <Loader2 size={12} className="animate-spin" />
       ) : (
-        <LogIn className="w-4 h-4" />
+        <LogIn size={12} />
       )}
-      เช็คอินทั้งหมด ({pendingStays.length} ห้อง)
+      เช็คอินทั้งหมด
     </Button>
   )
 
@@ -326,12 +327,14 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
   if (compact) {
     return (
       <div className="space-y-3">
-        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-          <LogIn className="w-3.5 h-3.5" />
-          เช็คอิน {pendingStays.length > 1 ? `0/${pendingStays.length} ห้อง` : ''}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+            <LogIn className="w-3.5 h-3.5" />
+            เช็คอิน {pendingStays.length > 1 ? `0/${pendingStays.length} ห้อง` : ''}
+          </p>
+          {batchButton}
+        </div>
         {stayRows}
-        {batchButton}
         {confirmDialogs}
       </div>
     )
@@ -340,16 +343,15 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
   // ── Full mode (BookingDetailPage) — with Card wrapper ──
   return (
     <div className="space-y-3">
-      <h2 className="text-section flex items-center gap-2">
-        <LogIn className="w-4 h-4" />
-        เช็คอินห้องพัก
-        <span className="text-body font-normal text-muted-foreground">
-          {pendingStays.length} ห้อง
-        </span>
-      </h2>
       {depositLine}
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+          <LogIn className="w-3.5 h-3.5" />
+          เช็คอิน {pendingStays.length > 1 ? `0/${pendingStays.length} ห้อง` : ''}
+        </p>
+        {batchButton}
+      </div>
       {stayRows}
-      {batchButton}
       {confirmDialogs}
     </div>
   )

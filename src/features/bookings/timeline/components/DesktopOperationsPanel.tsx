@@ -34,6 +34,8 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
   onQuickCheckOut,
 }: DesktopOperationsPanelProps) {
   const [expandedCheckoutId, setExpandedCheckoutId] = useState<string | null>(null)
+  const [showCheckins, setShowCheckins] = useState(true)
+  const [showCheckouts, setShowCheckouts] = useState(true)
   const [stayRange, setStayRange] = useState<DateRange>(() => ({
     checkIn: todayISO(),
     checkOut: addDaysISO(1),
@@ -76,6 +78,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
           const existing = checkinMap.get(b.booking_id)
           if (existing) {
             existing.assignedRooms.push(room.room_number)
+            existing.stayStatuses.push(b.status)
             existing.totalStays++
           } else {
             checkinMap.set(b.booking_id, {
@@ -86,6 +89,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
               assignedRooms: [room.room_number],
               unassignedCount: 0,
               totalStays: 1,
+              stayStatuses: [b.status],
               booking: b,
               roomStayId: b.room_stay_id,
               roomId: room.id,
@@ -126,6 +130,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
         const existing = checkinMap.get(s.booking_id)
         if (existing) {
           existing.unassignedCount++
+          existing.stayStatuses.push(s.status)
           existing.totalStays++
         } else {
           checkinMap.set(s.booking_id, {
@@ -136,20 +141,18 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
             assignedRooms: [],
             unassignedCount: 1,
             totalStays: 1,
+            stayStatuses: [s.status],
           })
         }
       }
     }
 
     const allCheckins = Array.from(checkinMap.values())
-    const pendingCheckins = allCheckins.filter((ci) => {
-      const st = ci.booking?.status
-      return st !== 'CHECKED_IN' && st !== 'CHECKED_OUT'
-    })
-    const doneCheckins = allCheckins.filter((ci) => {
-      const st = ci.booking?.status
-      return st === 'CHECKED_IN' || st === 'CHECKED_OUT'
-    })
+    const isAllCheckedInOrOut = (ci: CheckinBooking) =>
+      ci.stayStatuses.length > 0 &&
+      ci.stayStatuses.every((st) => st === 'CHECKED_IN' || st === 'CHECKED_OUT')
+    const pendingCheckins = allCheckins.filter((ci) => !isAllCheckedInOrOut(ci))
+    const doneCheckins = allCheckins.filter(isAllCheckedInOrOut)
 
     const allCheckouts = Array.from(checkoutMap.values())
     const pendingCheckouts = allCheckouts
@@ -269,194 +272,210 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
       {/* ── Check-ins (primary action) ──────────────────────────────── */}
       {(dateOps.checkins.length > 0 || dateOps.doneCheckins.length > 0) && (
         <div className="p-4 space-y-2 border-b border-border">
-          <p className="text-label text-primary flex items-center space-inline">
-            <LogIn className="w-3 h-3" />
-            เช็คอิน{viewingToday ? 'วันนี้' : ''}
-            <Badge variant="default" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
-              {dateKPI.checkinDone}/{dateKPI.checkinTotal}
-            </Badge>
-          </p>
+          <button
+            type="button"
+            onClick={() => setShowCheckins((v) => !v)}
+            className="w-full flex items-center justify-between cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <p className="text-label text-primary flex items-center space-inline">
+              <LogIn className="w-3 h-3" />
+              เช็คอิน{viewingToday ? 'วันนี้' : ''}
+              <Badge variant="default" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
+                {dateKPI.checkinDone}/{dateKPI.checkinTotal}
+              </Badge>
+            </p>
+            <ChevronDown className={cn(
+              'w-3.5 h-3.5 text-primary/50 transition-transform',
+              showCheckins && 'rotate-180',
+            )} />
+          </button>
 
-          {dateOps.checkins.map((ci) => {
-            const isSingleRoom = ci.totalStays === 1
+          {showCheckins && (
+            <>
+              {dateOps.checkins.map((ci) => {
+                const isSingleRoom = ci.totalStays === 1
+                if (isSingleRoom) {
+                  return <SingleRoomCheckInCard key={ci.bookingId} ci={ci} />
+                }
+                return <MultiRoomCheckInCard key={ci.bookingId} ci={ci} />
+              })}
 
-            if (isSingleRoom) {
-              return (
-                <SingleRoomCheckInCard
+              {/* Already checked-in bookings — shown inline */}
+              {dateOps.doneCheckins.map((ci) => (
+                <div
                   key={ci.bookingId}
-                  ci={ci}
-                />
-              )
-            }
-
-            return (
-              <MultiRoomCheckInCard key={ci.bookingId} ci={ci} />
-            )
-          })}
-
-          {/* Already checked-in bookings — shown dimmed */}
-          {dateOps.doneCheckins.map((ci) => (
-            <div
-              key={ci.bookingId}
-              className="w-full radius-card border border-success/20 bg-success/5 space-card opacity-60"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center space-inline min-w-0">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-                  <span className="text-body font-semibold truncate">{ci.guestName}</span>
+                  className="w-full radius-card border border-success/20 bg-success/5 space-card opacity-60"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center space-inline min-w-0">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+                      <span className="text-body font-semibold truncate">{ci.guestName}</span>
+                    </div>
+                    <span className="text-helper text-success/80 shrink-0">เข้าพักแล้ว</span>
+                  </div>
+                  {ci.assignedRooms.length > 0 && (
+                    <p className="text-helper mt-1">ห้อง {ci.assignedRooms.join(', ')}</p>
+                  )}
                 </div>
-                <span className="text-helper text-success/80 shrink-0">เข้าพักแล้ว</span>
-              </div>
-              {ci.assignedRooms.length > 0 && (
-                <p className="text-helper mt-1">ห้อง {ci.assignedRooms.join(', ')}</p>
-              )}
-            </div>
-          ))}
+              ))}
+            </>
+          )}
         </div>
       )}
 
       {/* ── Check-outs (secondary) ────────────────────────────────── */}
       {(dateOps.checkouts.length > 0 || dateOps.doneCheckouts.length > 0) && (
         <div className="p-4 space-y-2 border-b border-border">
-          <p className="text-label text-warning flex items-center space-inline">
-            <LogOut className="w-3 h-3" />
-            เช็คเอาท์{viewingToday ? 'วันนี้' : ''}
-            <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
-              {dateKPI.checkoutDone}/{dateKPI.checkoutTotal}
-            </Badge>
-          </p>
+          <button
+            type="button"
+            onClick={() => setShowCheckouts((v) => !v)}
+            className="w-full flex items-center justify-between cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <p className="text-label text-warning flex items-center space-inline">
+              <LogOut className="w-3 h-3" />
+              เช็คเอาท์{viewingToday ? 'วันนี้' : ''}
+              <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
+                {dateKPI.checkoutDone}/{dateKPI.checkoutTotal}
+              </Badge>
+            </p>
+            <ChevronDown className={cn(
+              'w-3.5 h-3.5 text-warning/50 transition-transform',
+              showCheckouts && 'rotate-180',
+            )} />
+          </button>
 
-          {/* Pending checkouts */}
-          {dateOps.checkouts.map((co) => {
-            const hasBalance = co.balance > 0
-            const isSingleRoom = co.stays.length === 1
-            const pendingStays = co.stays.filter((s) => s.status === 'CHECKED_IN')
-            const doneStays = co.stays.filter((s) => s.status === 'CHECKED_OUT')
-            const isExpanded = expandedCheckoutId === co.bookingId
+          {showCheckouts && (
+            <>
+              {/* Pending checkouts */}
+              {dateOps.checkouts.map((co) => {
+                const hasBalance = co.balance > 0
+                const isSingleRoom = co.stays.length === 1
+                const pendingStays = co.stays.filter((s) => s.status === 'CHECKED_IN')
+                const doneStays = co.stays.filter((s) => s.status === 'CHECKED_OUT')
+                const isExpanded = expandedCheckoutId === co.bookingId
 
-            if (isSingleRoom) {
-              const stay = co.stays[0]
-              const canCheckOut = onQuickCheckOut && stay.status === 'CHECKED_IN'
-              return (
-                <SingleRoomCheckOutCard
+                if (isSingleRoom) {
+                  const stay = co.stays[0]
+                  const canCheckOut = onQuickCheckOut && stay.status === 'CHECKED_IN'
+                  return (
+                    <SingleRoomCheckOutCard
+                      key={co.bookingId}
+                      co={co}
+                      stay={stay}
+                      canCheckOut={!!canCheckOut}
+                      onCheckOut={() => canCheckOut && onQuickCheckOut!(stay.booking)}
+                    />
+                  )
+                }
+
+                return (
+                  <div key={co.bookingId}>
+                    <CardButton
+                      onClick={() => setExpandedCheckoutId(isExpanded ? null : co.bookingId)}
+                      padding="card"
+                      className={cn(
+                        'border',
+                        isExpanded
+                          ? 'border-border bg-card'
+                          : 'border-border bg-card hover:bg-accent/10',
+                        isExpanded && 'rounded-b-none',
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-body font-semibold truncate">{co.guestName}</span>
+                        <span className="text-helper shrink-0">{co.stays.length} ห้อง · {co.nights} คืน</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-helper">ห้อง {co.roomNumbers.join(', ')}</span>
+                        <ChevronDown className={cn(
+                          'w-3.5 h-3.5 text-muted-foreground/50 transition-transform shrink-0',
+                          isExpanded && 'rotate-180',
+                        )} />
+                      </div>
+                      {hasBalance && (
+                        <p className="text-helper text-destructive font-medium mt-1">
+                          ค้าง ฿{co.balance.toLocaleString()}
+                        </p>
+                      )}
+                    </CardButton>
+
+                    {isExpanded && (
+                      <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-helper font-medium shrink-0">
+                              เช็คเอาท์ {doneStays.length}/{co.stays.length} ห้อง
+                            </span>
+                            <div className="flex-1 max-w-24 h-1.5 radius-badge bg-muted overflow-hidden">
+                              <div
+                                className={cn(
+                                  'h-full radius-badge transition-all duration-300',
+                                  doneStays.length === co.stays.length ? 'bg-success' : 'bg-warning',
+                                )}
+                                style={{ width: `${Math.round((doneStays.length / co.stays.length) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                          {pendingStays.length > 1 && onQuickCheckOut && (
+                            <CheckOutAllButton
+                              guestName={co.guestName}
+                              pendingStays={pendingStays}
+                              onCheckOutAll={() => {
+                                for (const stay of pendingStays) {
+                                  onQuickCheckOut(stay.booking)
+                                }
+                              }}
+                            />
+                          )}
+                        </div>
+
+                        {pendingStays.map((stay) => (
+                          <MultiRoomCheckOutRow
+                            key={stay.roomStayId}
+                            stay={stay}
+                            guestName={co.guestName}
+                            canCheckOut={!!onQuickCheckOut}
+                            onCheckOut={() => onQuickCheckOut?.(stay.booking)}
+                          />
+                        ))}
+
+                        {doneStays.map((stay) => (
+                          <div
+                            key={stay.roomStayId}
+                            className="flex items-center space-inline radius-button border border-success/20 bg-success/5 px-3 py-2.5 opacity-75"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+                            <span className="text-body font-bold tabular-nums">ห้อง {stay.roomNumber}</span>
+                            <span className="text-helper text-success/80">เช็คเอาท์แล้ว</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Done checkouts — shown inline */}
+              {dateOps.doneCheckouts.map((co) => (
+                <div
                   key={co.bookingId}
-                  co={co}
-                  stay={stay}
-                  canCheckOut={!!canCheckOut}
-                  onCheckOut={() => canCheckOut && onQuickCheckOut!(stay.booking)}
-                />
-              )
-            }
-
-            return (
-              <div key={co.bookingId}>
-                <CardButton
-                  onClick={() => setExpandedCheckoutId(isExpanded ? null : co.bookingId)}
-                  padding="card"
-                  className={cn(
-                    'border',
-                    isExpanded
-                      ? 'border-border bg-card'
-                      : 'border-border bg-card hover:bg-accent/10',
-                    isExpanded && 'rounded-b-none',
-                  )}
+                  className="w-full radius-card border border-success/20 bg-success/5 px-3 py-2.5 opacity-60"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-body font-semibold truncate">{co.guestName}</span>
-                    <span className="text-helper shrink-0">{co.stays.length} ห้อง · {co.nights} คืน</span>
+                    <div className="flex items-center space-inline min-w-0">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+                      <span className="text-body font-semibold truncate">{co.guestName}</span>
+                    </div>
+                    <span className="text-helper shrink-0">ห้อง {co.roomNumbers.join(', ')}</span>
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-helper">ห้อง {co.roomNumbers.join(', ')}</span>
-                    <ChevronDown className={cn(
-                      'w-3.5 h-3.5 text-muted-foreground/50 transition-transform shrink-0',
-                      isExpanded && 'rotate-180',
-                    )} />
+                    <span className="text-helper">{co.nights} คืน</span>
+                    <span className="text-helper text-success/80">เช็คเอาท์แล้ว</span>
                   </div>
-                  {hasBalance && (
-                    <p className="text-helper text-destructive font-medium mt-1">
-                      ค้าง ฿{co.balance.toLocaleString()}
-                    </p>
-                  )}
-                </CardButton>
-
-                {isExpanded && (
-                  <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-2">
-                    {/* Progress + checkout all inline */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-helper font-medium shrink-0">
-                          เช็คเอาท์ {doneStays.length}/{co.stays.length} ห้อง
-                        </span>
-                        <div className="flex-1 max-w-24 h-1.5 radius-badge bg-muted overflow-hidden">
-                          <div
-                            className={cn(
-                              'h-full radius-badge transition-all duration-300',
-                              doneStays.length === co.stays.length ? 'bg-success' : 'bg-warning',
-                            )}
-                            style={{ width: `${Math.round((doneStays.length / co.stays.length) * 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                      {pendingStays.length > 1 && onQuickCheckOut && (
-                        <CheckOutAllButton
-                          guestName={co.guestName}
-                          pendingStays={pendingStays}
-                          onCheckOutAll={() => {
-                            for (const stay of pendingStays) {
-                              onQuickCheckOut(stay.booking)
-                            }
-                          }}
-                        />
-                      )}
-                    </div>
-
-                    {/* Pending stays */}
-                    {pendingStays.map((stay) => (
-                      <MultiRoomCheckOutRow
-                        key={stay.roomStayId}
-                        stay={stay}
-                        guestName={co.guestName}
-                        canCheckOut={!!onQuickCheckOut}
-                        onCheckOut={() => onQuickCheckOut?.(stay.booking)}
-                      />
-                    ))}
-
-                    {/* Done stays */}
-                    {doneStays.map((stay) => (
-                      <div
-                        key={stay.roomStayId}
-                        className="flex items-center space-inline radius-button border border-success/20 bg-success/5 px-3 py-2.5 opacity-75"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-                        <span className="text-body font-bold tabular-nums">ห้อง {stay.roomNumber}</span>
-                        <span className="text-helper text-success/80">เช็คเอาท์แล้ว</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-
-          {/* Fully done checkouts — dimmed */}
-          {dateOps.doneCheckouts.map((co) => (
-            <div
-              key={co.bookingId}
-              className="w-full radius-card border border-success/20 bg-success/5 px-3 py-2.5 opacity-60"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center space-inline min-w-0">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-                  <span className="text-body font-semibold truncate">{co.guestName}</span>
                 </div>
-                <span className="text-helper shrink-0">ห้อง {co.roomNumbers.join(', ')}</span>
-              </div>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-helper">{co.nights} คืน</span>
-                <span className="text-helper text-success/80">เช็คเอาท์แล้ว</span>
-              </div>
-            </div>
-          ))}
+              ))}
+            </>
+          )}
         </div>
       )}
 
