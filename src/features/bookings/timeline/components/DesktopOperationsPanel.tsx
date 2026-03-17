@@ -21,7 +21,8 @@ interface DesktopOperationsPanelProps {
   selectedDateStr: string
   roomTypeNameMap: Record<string, string>
   unassignedStays: UnassignedStay[]
-  onQuickCheckOut?: (booking: TimelineBooking) => void
+  /** Check-out action — calls mutation directly (cards have their own confirm). */
+  onDirectCheckOut?: (booking: TimelineBooking) => void
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -31,7 +32,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
   selectedDateStr,
   roomTypeNameMap,
   unassignedStays,
-  onQuickCheckOut,
+  onDirectCheckOut,
 }: DesktopOperationsPanelProps) {
   const [expandedCheckoutId, setExpandedCheckoutId] = useState<string | null>(null)
   const [showCheckins, setShowCheckins] = useState(true)
@@ -356,14 +357,14 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
 
                 if (isSingleRoom) {
                   const stay = co.stays[0]
-                  const canCheckOut = onQuickCheckOut && stay.status === 'CHECKED_IN'
+                  const canCheckOut = onDirectCheckOut && stay.status === 'CHECKED_IN'
                   return (
                     <SingleRoomCheckOutCard
                       key={co.bookingId}
                       co={co}
                       stay={stay}
                       canCheckOut={!!canCheckOut}
-                      onCheckOut={() => canCheckOut && onQuickCheckOut!(stay.booking)}
+                      onCheckOut={() => canCheckOut && onDirectCheckOut!(stay.booking)}
                     />
                   )
                 }
@@ -416,13 +417,13 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                               />
                             </div>
                           </div>
-                          {pendingStays.length > 1 && onQuickCheckOut && (
+                          {pendingStays.length > 1 && onDirectCheckOut && (
                             <CheckOutAllButton
                               guestName={co.guestName}
                               pendingStays={pendingStays}
                               onCheckOutAll={() => {
                                 for (const stay of pendingStays) {
-                                  onQuickCheckOut(stay.booking)
+                                  onDirectCheckOut(stay.booking)
                                 }
                               }}
                             />
@@ -434,8 +435,8 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                             key={stay.roomStayId}
                             stay={stay}
                             guestName={co.guestName}
-                            canCheckOut={!!onQuickCheckOut}
-                            onCheckOut={() => onQuickCheckOut?.(stay.booking)}
+                            canCheckOut={!!onDirectCheckOut}
+                            onCheckOut={() => onDirectCheckOut?.(stay.booking)}
                           />
                         ))}
 

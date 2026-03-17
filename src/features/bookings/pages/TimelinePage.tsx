@@ -414,9 +414,12 @@ export default function TimelinePage() {
     if (!room) return
     setCheckInTarget({ booking: b, roomId: room.id })
   }, [allRooms])
-  const handleDrawerCheckOut = useCallback((b: TimelineBooking) => {
-    setCheckOutTarget(b)
-  }, [])
+  const handleDirectCheckOut = useCallback((b: TimelineBooking) => {
+    timelineActions.checkOut({
+      bookingId: b.booking_id,
+      roomStayId: b.room_stay_id,
+    })
+  }, [timelineActions])
   const handleDoubleClickBooking = useCallback((b: TimelineBooking) => {
     navigate(ROUTES.bookings.detail(b.booking_id))
   }, [navigate])
@@ -872,7 +875,7 @@ export default function TimelinePage() {
             onClose={handleCloseDrawer}
             selectedBooking={selectedBooking}
             onQuickCheckIn={handleDrawerCheckIn}
-            onQuickCheckOut={handleDrawerCheckOut}
+            onDirectCheckOut={handleDirectCheckOut}
             onOpenDetail={handleDoubleClickBooking}
             createBookingPrefill={createBookingPrefill}
             onBookingCreated={handleBookingCreated}

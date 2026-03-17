@@ -66,8 +66,8 @@ interface OperationsDrawerProps {
   selectedBooking: SelectedBookingContext | null
   /** Quick check-in action from drawer. */
   onQuickCheckIn?: (booking: TimelineBooking, roomId?: string) => void
-  /** Quick check-out action from drawer. */
-  onQuickCheckOut?: (booking: TimelineBooking) => void
+  /** Check-out action — calls mutation directly (cards have their own confirm). */
+  onDirectCheckOut?: (booking: TimelineBooking) => void
   /** Navigate to full detail page. */
   onOpenDetail?: (booking: TimelineBooking) => void
 
@@ -816,14 +816,14 @@ function OpsContent({
   roomTypeNameMap,
   unassignedStays,
   onClose,
-  onQuickCheckOut,
+  onDirectCheckOut,
 }: {
   rooms: TimelineRoom[]
   todayStr: string
   roomTypeNameMap: Record<string, string>
   unassignedStays: UnassignedStay[]
   onClose: () => void
-  onQuickCheckOut?: (booking: TimelineBooking) => void
+  onDirectCheckOut?: (booking: TimelineBooking) => void
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -848,7 +848,7 @@ function OpsContent({
           selectedDateStr={todayStr}
           roomTypeNameMap={roomTypeNameMap}
           unassignedStays={unassignedStays}
-          onQuickCheckOut={onQuickCheckOut}
+          onDirectCheckOut={onDirectCheckOut}
         />
       </div>
     </div>
@@ -864,7 +864,7 @@ export const OperationsDrawer = React.memo(function OperationsDrawer({
   onClose,
   selectedBooking,
   // onQuickCheckIn — no longer used; check-in handled inline via InlineCheckIn
-  onQuickCheckOut,
+  onDirectCheckOut,
   onOpenDetail,
   createBookingPrefill,
   onBookingCreated,
@@ -911,7 +911,7 @@ export const OperationsDrawer = React.memo(function OperationsDrawer({
             roomTypeNameMap={roomTypeNameMap}
             unassignedStays={unassignedStays}
             onClose={onClose}
-            onQuickCheckOut={onQuickCheckOut}
+            onDirectCheckOut={onDirectCheckOut}
           />
         )}
       </div>
