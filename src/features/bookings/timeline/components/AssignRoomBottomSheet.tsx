@@ -292,7 +292,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-5 pt-3 pb-8 space-y-4">
+        <div className="flex-1 overflow-y-auto px-5 pt-0 pb-8 space-y-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
