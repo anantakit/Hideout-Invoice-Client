@@ -729,7 +729,6 @@ export default function TimelinePage() {
               roomTypeNameMap={roomTypeNameByRoomId}
               unassignedStays={unassignedStays}
               onSelectBooking={handleSelectBooking}
-              onQuickCheckOut={handleDrawerCheckOut}
             />
           </div>
         )}
