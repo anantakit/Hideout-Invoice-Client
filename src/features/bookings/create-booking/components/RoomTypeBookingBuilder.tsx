@@ -1,10 +1,9 @@
 import { useEffect, useCallback } from 'react'
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form'
-import { Plus, Minus, Trash2, Loader2, Wand2 } from 'lucide-react'
+import { Plus, Minus, Trash2, Loader2, Wand2, Check } from 'lucide-react'
 import { cn, todayISO, addDaysISO } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import {
   FormControl,
   FormField,
@@ -237,12 +236,14 @@ export function RoomTypeBookingBuilder() {
       {/* "Same dates" toggle — only shown when there is more than one item */}
       {fields.length > 1 && (
         <label className="flex items-center gap-3 cursor-pointer select-none px-1">
-          <input
-            type="checkbox"
-            checked={sameDates}
-            onChange={(e) => {
-              form.setValue('same_dates', e.target.checked)
-              if (e.target.checked && firstCheckIn && firstCheckOut) {
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={sameDates}
+            onClick={() => {
+              const next = !sameDates
+              form.setValue('same_dates', next)
+              if (next && firstCheckIn && firstCheckOut) {
                 fields.forEach((_, i) => {
                   if (i > 0) {
                     form.setValue(`items.${i}.check_in`,  firstCheckIn,  { shouldValidate: false })
@@ -252,16 +253,24 @@ export function RoomTypeBookingBuilder() {
                 })
               }
             }}
-            className="rounded border-border accent-primary"
-          />
+            className={cn(
+              'w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors',
+              sameDates
+                ? 'bg-primary border-primary text-primary-foreground'
+                : 'border-border bg-background hover:border-muted-foreground/50',
+            )}
+          >
+            {sameDates && <Check className="w-3 h-3" />}
+          </button>
           <span className="text-body">ใช้วันที่เดิมสำหรับทุกรายการ</span>
         </label>
       )}
 
       {fields.map((field, index) => (
-        <RoomTypeBookingItemCard
+        <RoomTypeBookingItem
           key={field.id}
           index={index}
+          itemCount={fields.length}
           onRemove={fields.length > 1 ? () => remove(index) : undefined}
           roomTypes={roomTypes}
           hideDates={sameDates && index > 0}
@@ -298,10 +307,11 @@ export function RoomTypeBookingBuilder() {
   )
 }
 
-// ─── RoomTypeBookingItemCard ───────────────────────────────────────────────────
+// ─── RoomTypeBookingItem (flat — no nested Card) ──────────────────────────────
 
-function RoomTypeBookingItemCard({
+function RoomTypeBookingItem({
   index,
+  itemCount,
   onRemove,
   roomTypes,
   hideDates,
@@ -309,9 +319,10 @@ function RoomTypeBookingItemCard({
   sharedCheckOut,
 }: {
   index: number
+  /** Total number of items — hides title when 1. */
+  itemCount: number
   onRemove?: () => void
   roomTypes: RoomTypeResponse[]
-  /** When true, date pickers are hidden; shared dates from item 0 are used. */
   hideDates: boolean
   sharedCheckIn: string
   sharedCheckOut: string
@@ -340,15 +351,12 @@ function RoomTypeBookingItemCard({
   const roomsForType = matchedType?.rooms ?? []
   const unassignedCount = matchedType?.unassigned_count ?? 0
 
-  // Max quantity = number of available rooms for this type (0 if not yet loaded)
   const availableCount = roomsForType.filter((r) => r.available).length
   const maxQuantity    = availableCount > 0 ? availableCount : Infinity
 
   const assignedCount = assignedRoomIds.length
   const canSelectMore = assignedCount < quantity
   const remaining     = quantity - assignedCount
-
-  // ── Handlers ─────────────────────────────────────────────────────────────
 
   function toggleRoom(roomId: string) {
     const current = form.getValues(`items.${index}.assigned_room_ids`) ?? []
@@ -374,15 +382,17 @@ function RoomTypeBookingItemCard({
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <div className={cn(
+      'space-y-4',
+      itemCount > 1 && index > 0 && 'border-t border-border pt-4',
+    )}>
+      {/* Title row — only when multiple items */}
+      {itemCount > 1 && (
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold">
+          <p className="text-caption font-semibold text-muted-foreground">
             รายการที่ {index + 1}
-          </CardTitle>
+          </p>
           {onRemove && (
             <Button
               type="button"
@@ -395,209 +405,201 @@ function RoomTypeBookingItemCard({
             </Button>
           )}
         </div>
-      </CardHeader>
+      )}
 
-      <CardContent className="pt-0 space-y-4">
-        {/* ── Row 1: room type + quantity ─────────────────────────────── */}
-        {/* Mobile: stacked. Desktop: side by side */}
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 sm:items-end">
-          {/* Room type select */}
-          <FormField
-            control={form.control}
-            name={`items.${index}.room_type_id`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>ประเภทห้อง</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={(v) => {
-                    field.onChange(v)
-                    form.setValue(`items.${index}.assigned_room_ids`, [])
-                  }}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="เลือกประเภทห้อง" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent sheetTitle="เลือกประเภทห้อง">
-                    {roomTypes.map((rt) => (
-                      <SelectItem key={rt.id} value={rt.id}>
-                        {rt.name}
-                        {rt.price_per_night != null
-                          ? ` (฿${rt.price_per_night.toLocaleString()}/คืน)`
-                          : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage className="text-xs" />
-              </FormItem>
-            )}
-          />
-
-          {/* Quantity stepper */}
-          <FormField
-            control={form.control}
-            name={`items.${index}.quantity`}
-            render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center justify-between sm:hidden">
-                  <FormLabel>จำนวนห้อง</FormLabel>
-                </div>
-                <FormLabel className="hidden sm:block">จำนวน</FormLabel>
+      {/* ── Room type + quantity ─────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 sm:items-end">
+        <FormField
+          control={form.control}
+          name={`items.${index}.room_type_id`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>ประเภทห้อง</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={(v) => {
+                  field.onChange(v)
+                  form.setValue(`items.${index}.assigned_room_ids`, [])
+                }}
+              >
                 <FormControl>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 shrink-0 sm:h-9 sm:w-9"
-                      disabled={!roomTypeId || field.value <= 1}
-                      onClick={() => {
-                        const next = Math.max(1, field.value - 1)
-                        field.onChange(next)
-                        trimAssignedIfNeeded(next)
-                      }}
-                    >
-                      <Minus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    </Button>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={maxQuantity === Infinity ? undefined : maxQuantity}
-                      className="h-10 w-full sm:w-16 sm:h-9 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      value={field.value}
-                      disabled={!roomTypeId}
-                      onChange={(e) => {
-                        const val = Math.min(maxQuantity, Math.max(1, parseInt(e.target.value) || 1))
-                        field.onChange(val)
-                        trimAssignedIfNeeded(val)
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 shrink-0 sm:h-9 sm:w-9"
-                      disabled={!roomTypeId || field.value >= maxQuantity}
-                      onClick={() => {
-                        const next = Math.min(maxQuantity, field.value + 1)
-                        field.onChange(next)
-                      }}
-                    >
-                      <Plus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    </Button>
-                  </div>
+                  <SelectTrigger>
+                    <SelectValue placeholder="เลือกประเภทห้อง" />
+                  </SelectTrigger>
                 </FormControl>
-                <FormMessage className="text-xs" />
-              </FormItem>
-            )}
+                <SelectContent sheetTitle="เลือกประเภทห้อง">
+                  {roomTypes.map((rt) => (
+                    <SelectItem key={rt.id} value={rt.id}>
+                      {rt.name}
+                      {rt.price_per_night != null
+                        ? ` (฿${rt.price_per_night.toLocaleString()}/คืน)`
+                        : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )}
+        />
+
+        {/* Quantity stepper — fixed width input */}
+        <FormField
+          control={form.control}
+          name={`items.${index}.quantity`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="sm:hidden">จำนวนห้อง</FormLabel>
+              <FormLabel className="hidden sm:block">จำนวน</FormLabel>
+              <FormControl>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0 sm:h-9 sm:w-9"
+                    disabled={!roomTypeId || field.value <= 1}
+                    onClick={() => {
+                      const next = Math.max(1, field.value - 1)
+                      field.onChange(next)
+                      trimAssignedIfNeeded(next)
+                    }}
+                  >
+                    <Minus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={maxQuantity === Infinity ? undefined : maxQuantity}
+                    className="h-10 w-16 sm:w-16 sm:h-9 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    value={field.value}
+                    disabled={!roomTypeId}
+                    onChange={(e) => {
+                      const val = Math.min(maxQuantity, Math.max(1, parseInt(e.target.value) || 1))
+                      field.onChange(val)
+                      trimAssignedIfNeeded(val)
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0 sm:h-9 sm:w-9"
+                    disabled={!roomTypeId || field.value >= maxQuantity}
+                    onClick={() => {
+                      const next = Math.min(maxQuantity, field.value + 1)
+                      field.onChange(next)
+                    }}
+                  >
+                    <Plus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                  </Button>
+                </div>
+              </FormControl>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      {/* Available rooms hint */}
+      {showRoomPicker && availableCount > 0 && (
+        <p className="text-[11px] text-muted-foreground -mt-2">
+          ห้องว่าง {availableCount} ห้อง
+          {unassignedCount > 0 && (
+            <span className="text-warning font-medium ml-1">
+              (จองล่วงหน้า {unassignedCount} ห้องยังไม่มอบหมาย)
+            </span>
+          )}
+          {quantity > availableCount && (
+            <span className="text-destructive font-medium ml-1">
+              (เกินจำนวนห้องว่าง)
+            </span>
+          )}
+        </p>
+      )}
+
+      {/* ── Date range picker (hidden for items 1+ when same_dates) ── */}
+      {!hideDates && (
+        <div>
+          <FormLabel className="mb-1.5 block">วันเช็คอิน → เช็คเอาท์</FormLabel>
+          <DateRangePicker
+            value={{ checkIn: ownCheckIn, checkOut: ownCheckOut }}
+            onChange={(range: DateRange) => {
+              form.setValue(`items.${index}.check_in`, range.checkIn, { shouldValidate: true })
+              form.setValue(`items.${index}.check_out`, range.checkOut, { shouldValidate: true })
+              form.setValue(`items.${index}.assigned_room_ids`, [])
+            }}
           />
         </div>
+      )}
 
-        {/* Available rooms hint */}
-        {showRoomPicker && availableCount > 0 && (
-          <p className="text-[11px] text-muted-foreground -mt-2">
-            ห้องว่าง {availableCount} ห้อง
-            {unassignedCount > 0 && (
-              <span className="text-warning font-medium ml-1">
-                (จองล่วงหน้า {unassignedCount} ห้องยังไม่มอบหมาย)
+      {/* ── Optional physical room picker ────────────────────── */}
+      {showRoomPicker && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              เลือกห้อง (ไม่บังคับ)
+              {' '}—{' '}
+              <span className={cn(assignedCount === quantity ? 'text-primary font-semibold' : '')}>
+                {assignedCount}/{quantity} ห้อง
               </span>
-            )}
-            {quantity > availableCount && (
-              <span className="text-destructive font-medium ml-1">
-                (เกินจำนวนห้องว่าง)
-              </span>
-            )}
-          </p>
-        )}
-
-        {/* ── Row 2: date range picker (hidden for items 1+ when same_dates) ── */}
-        {!hideDates && (
-          <div>
-            <FormLabel className="mb-1.5 block">วันเช็คอิน → เช็คเอาท์</FormLabel>
-            <DateRangePicker
-              value={{ checkIn: ownCheckIn, checkOut: ownCheckOut }}
-              onChange={(range: DateRange) => {
-                form.setValue(`items.${index}.check_in`, range.checkIn, { shouldValidate: true })
-                form.setValue(`items.${index}.check_out`, range.checkOut, { shouldValidate: true })
-                form.setValue(`items.${index}.assigned_room_ids`, [])
-              }}
-            />
-          </div>
-        )}
-
-        {/* ── Row 3: optional physical room picker ────────────────────── */}
-        {showRoomPicker && (
-          <div>
-            {/* Header row: label + auto-assign button */}
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-muted-foreground">
-                เลือกห้อง (ไม่บังคับ)
-                {' '}—{' '}
-                <span className={cn(assignedCount === quantity ? 'text-primary font-semibold' : '')}>
-                  {assignedCount}/{quantity} ห้อง
+              {remaining > 0 && (
+                <span className="ml-1 text-muted-foreground/70">
+                  ({remaining} ห้องยังไม่ได้มอบหมาย)
                 </span>
-                {remaining > 0 && (
-                  <span className="ml-1 text-muted-foreground/70">
-                    ({remaining} ห้องยังไม่ได้มอบหมาย)
-                  </span>
-                )}
-              </p>
-
-            </div>
-
-            {availLoading ? (
-              <div className="flex justify-center py-3">
-                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-              </div>
-            ) : roomsForType.length === 0 ? (
-              <p className="text-xs text-destructive">
-                ไม่พบห้องว่างสำหรับประเภทนี้ในช่วงวันที่เลือก
-              </p>
-            ) : (
-              <FormField
-                control={form.control}
-                name={`items.${index}.assigned_room_ids`}
-                render={() => (
-                  <FormItem>
-                    <FormControl>
-                      <div className="flex flex-wrap gap-2">
-                        {roomsForType.map((room) => {
-                          const isSelected = assignedRoomIds.includes(room.room_id)
-                          const isDisabled = !room.available && !isSelected
-                          const isFull    = !canSelectMore && !isSelected
-
-                          return (
-                            <button
-                              key={room.room_id}
-                              type="button"
-                              disabled={isDisabled || isFull}
-                              onClick={() => toggleRoom(room.room_id)}
-                              className={cn(
-                                'w-14 h-10 radius-button border text-xs font-semibold transition-colors',
-                                isSelected
-                                  ? 'border-primary bg-primary text-primary-foreground'
-                                  : isDisabled || isFull
-                                  ? 'border-border/50 bg-muted/50 text-muted-foreground/50 cursor-not-allowed'
-                                  : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5',
-                              )}
-                            >
-                              {room.room_number}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </FormControl>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-            )}
+              )}
+            </p>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {availLoading ? (
+            <div className="flex justify-center py-3">
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            </div>
+          ) : roomsForType.length === 0 ? (
+            <p className="text-xs text-destructive">
+              ไม่พบห้องว่างสำหรับประเภทนี้ในช่วงวันที่เลือก
+            </p>
+          ) : (
+            <FormField
+              control={form.control}
+              name={`items.${index}.assigned_room_ids`}
+              render={() => (
+                <FormItem>
+                  <FormControl>
+                    <div className="flex flex-wrap gap-2">
+                      {roomsForType.map((room) => {
+                        const isSelected = assignedRoomIds.includes(room.room_id)
+                        const isDisabled = !room.available && !isSelected
+                        const isFull    = !canSelectMore && !isSelected
+
+                        return (
+                          <button
+                            key={room.room_id}
+                            type="button"
+                            disabled={isDisabled || isFull}
+                            onClick={() => toggleRoom(room.room_id)}
+                            className={cn(
+                              'w-14 h-10 radius-button border text-xs font-semibold transition-colors',
+                              isSelected
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : isDisabled || isFull
+                                ? 'border-border/50 bg-muted/50 text-muted-foreground/50 cursor-not-allowed'
+                                : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5',
+                            )}
+                          >
+                            {room.room_number}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
+      )}
+    </div>
   )
 }

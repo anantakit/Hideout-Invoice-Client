@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from '@/shared/ui/form'
 import { Input } from '@/shared/ui/input'
+import { ToggleGroup } from '@/shared/ui/ToggleGroup'
 import SearchableComboBox from '@/shared/ui/SearchableComboBox'
 import { useCreateBooking } from '../hooks'
 import { createBookingSchema } from '../create-booking/utils/createBookingSchema'
@@ -30,6 +31,11 @@ import CustomerModal from '../../customers/components/CustomerModal'
 import type { Customer } from '../../customers/types'
 
 const KEY_DEPOSIT_PER_ROOM = 200
+
+const SOURCE_OPTIONS = [
+  { value: 'advance' as const, label: 'จองล่วงหน้า', desc: 'จองห้องพักล่วงหน้า' },
+  { value: 'walk_in' as const, label: 'วอล์คอิน',     desc: 'เช็คอินทันที' },
+]
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
@@ -169,45 +175,20 @@ export default function CreateBookingPage() {
         <Form {...form}>
           <form onSubmit={onSubmit} className="space-y-5" noValidate>
 
-            {/* ── 1. Source toggle ────────────────────────────────────── */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">ประเภทการจอง</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <FormField
-                  control={form.control}
-                  name="source"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(
-                          [
-                            { value: 'advance', label: 'จองล่วงหน้า', desc: 'จองห้องพักล่วงหน้า' },
-                            { value: 'walk_in', label: 'วอล์คอิน',     desc: 'เช็คอินทันที' },
-                          ] as const
-                        ).map((opt) => (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => field.onChange(opt.value)}
-                            className={cn(
-                              'flex flex-col items-center gap-0.5 radius-card border px-3 py-3 text-center transition-colors',
-                              field.value === opt.value
-                                ? 'border-primary bg-primary/15 text-primary'
-                                : 'border-border text-muted-foreground hover:border-muted-foreground/50',
-                            )}
-                          >
-                            <span className="text-xs font-semibold">{opt.label}</span>
-                            <span className="text-[10px] leading-tight">{opt.desc}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+            {/* ── 1. Source toggle (lightweight — no wrapping card) ────── */}
+            <FormField
+              control={form.control}
+              name="source"
+              render={({ field }) => (
+                <FormItem>
+                  <ToggleGroup
+                    options={SOURCE_OPTIONS}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                </FormItem>
+              )}
+            />
 
             {/* ── 2. Guest info ───────────────────────────────────────── */}
             <Card>
@@ -330,31 +311,16 @@ export default function CreateBookingPage() {
 
 // ─── PaymentModeSelector ──────────────────────────────────────────────────────
 
-const PAYMENT_OPTIONS = [
-  {
-    value: 'full' as const,
-    label: 'ค่าห้อง',
-    desc: 'ชำระเต็มจำนวน',
-    Icon: Banknote,
-  },
-  {
-    value: 'full_deposit' as const,
-    label: 'ค่าห้อง + ประกันกุญแจ',
-    desc: 'ชำระเต็ม + เงินประกัน',
-    Icon: KeyRound,
-  },
-  {
-    value: 'partial' as const,
-    label: 'ชำระบางส่วน',
-    desc: 'กรอกจำนวนเอง',
-    Icon: CreditCard,
-  },
-  {
-    value: 'reserve' as const,
-    label: 'ชำระภายหลัง',
-    desc: 'ไม่ชำระตอนจอง',
-    Icon: Clock,
-  },
+const PAYMENT_MODE_OPTIONS = [
+  { value: 'full' as const,         label: 'ค่าห้อง',              desc: 'ชำระเต็มจำนวน',        Icon: Banknote },
+  { value: 'full_deposit' as const, label: 'ค่าห้อง + ประกันกุญแจ', desc: 'ชำระเต็ม + เงินประกัน', Icon: KeyRound },
+  { value: 'partial' as const,      label: 'ชำระบางส่วน',           desc: 'กรอกจำนวนเอง',         Icon: CreditCard },
+  { value: 'reserve' as const,      label: 'ชำระภายหลัง',           desc: 'ไม่ชำระตอนจอง',         Icon: Clock },
+]
+
+const PAYMENT_METHOD_OPTIONS = [
+  { value: 'CASH' as const,     label: 'เงินสด' },
+  { value: 'TRANSFER' as const, label: 'โอนเงิน' },
 ]
 
 function PaymentModeSelector() {
@@ -375,10 +341,8 @@ function PaymentModeSelector() {
       form.setValue('payment_amount', totalAmount + depositAmount)
       form.setValue('key_deposit_amount', depositAmount)
     } else if (paymentMode === 'partial') {
-      // Don't auto-fill for partial — let user type
       form.setValue('key_deposit_amount', undefined)
     } else {
-      // reserve
       form.setValue('payment_amount', undefined)
       form.setValue('key_deposit_amount', undefined)
     }
@@ -390,27 +354,12 @@ function PaymentModeSelector() {
       name="payment_mode"
       render={({ field }) => (
         <FormItem>
-          <div className="grid grid-cols-2 gap-2">
-            {PAYMENT_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => field.onChange(opt.value)}
-                className={cn(
-                  'flex items-center gap-2.5 radius-card border px-3 py-3 text-left transition-colors',
-                  field.value === opt.value
-                    ? 'border-primary bg-primary/15 text-primary'
-                    : 'border-border text-muted-foreground hover:border-muted-foreground/50',
-                )}
-              >
-                <opt.Icon className="w-4 h-4 shrink-0" />
-                <div className="min-w-0">
-                  <span className="text-xs font-semibold block leading-tight">{opt.label}</span>
-                  <span className="text-[10px] leading-tight block">{opt.desc}</span>
-                </div>
-              </button>
-            ))}
-          </div>
+          <ToggleGroup
+            options={PAYMENT_MODE_OPTIONS}
+            value={field.value}
+            onChange={field.onChange}
+            columns={2}
+          />
         </FormItem>
       )}
     />
@@ -463,23 +412,12 @@ function PaymentFields() {
           <FormItem>
             <FormLabel>วิธีชำระ</FormLabel>
             <FormControl>
-              <div className="grid grid-cols-2 gap-2">
-                {(['CASH', 'TRANSFER'] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => field.onChange(m)}
-                    className={cn(
-                      'radius-button border px-2 py-2 text-xs font-medium transition-colors',
-                      field.value === m
-                        ? 'border-primary bg-primary/15 text-primary'
-                        : 'border-border text-muted-foreground hover:border-muted-foreground/50',
-                    )}
-                  >
-                    {m === 'CASH' ? 'เงินสด' : 'โอนเงิน'}
-                  </button>
-                ))}
-              </div>
+              <ToggleGroup
+                options={PAYMENT_METHOD_OPTIONS}
+                value={field.value}
+                onChange={field.onChange}
+                compact
+              />
             </FormControl>
           </FormItem>
         )}
