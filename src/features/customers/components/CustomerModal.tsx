@@ -167,7 +167,7 @@ export default function CustomerModal({ open, onClose, onCreated, customer }: Pr
                     <FormControl>
                       <Input
                         placeholder="0812345678"
-                        inputMode="numeric"
+                        inputMode="tel"
                         maxLength={10}
                         {...field}
                         onChange={(e) => {
@@ -215,8 +215,8 @@ export default function CustomerModal({ open, onClose, onCreated, customer }: Pr
             </div>
 
             <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>ยกเลิก</Button>
-              <Button type="submit" disabled={form.formState.isSubmitting || isPending || !form.watch('name')?.trim()}>
+              <Button type="button" variant="outline" className="touch-target" onClick={onClose}>ยกเลิก</Button>
+              <Button type="submit" className="touch-target" disabled={form.formState.isSubmitting || isPending || !form.watch('name')?.trim()}>
                 {isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> กำลังบันทึก…</> : isEditing ? 'บันทึก' : 'สร้างลูกค้า'}
               </Button>
             </DialogFooter>

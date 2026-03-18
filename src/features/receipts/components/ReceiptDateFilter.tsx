@@ -6,7 +6,7 @@
  *
  * STEP 2  Custom range picker
  *         Mobile  → bottom sheet with sticky footer
- *         Desktop → portal popover (position: fixed, createPortal)
+ *         Desktop → Radix Popover (auto-positioned, portaled)
  *
  * State rules (filtering logic untouched):
  *  - Preset chip → calls onRangeChange; custom-range button resets to label
@@ -15,8 +15,7 @@
  *  - Clear ×  → calls onRangeChange('', ''); both clear
  */
 
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useEffect } from 'react'
 import {
   format,
   startOfMonth,
@@ -28,6 +27,7 @@ import { cn, fmtShortWithYear } from '../../../shared/utils'
 import { FilterChipBar } from '../../../shared/ui/FilterChipBar'
 import { Button } from '../../../shared/ui/button'
 import { Sheet, SheetContent } from '../../../shared/ui/sheet'
+import { Popover, PopoverContent, PopoverTrigger } from '../../../shared/ui/popover'
 import { Calendar } from '../../../shared/ui/calendar'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -63,64 +63,6 @@ const QUICK_PRESETS: Preset[] = [
   { key: 'this_month', label: 'เดือนนี้', getRange: () => [startOfMonth(new Date()), new Date()] },
 ]
 
-// ─── Desktop portal popover ───────────────────────────────────────────────────
-
-interface DesktopPopoverProps {
-  triggerRef: React.RefObject<HTMLButtonElement>
-  onClose: () => void
-  children: React.ReactNode
-}
-
-function DesktopPopover({ triggerRef, onClose, children }: DesktopPopoverProps) {
-  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
-  const popoverRef = useRef<HTMLDivElement>(null)
-
-  const reposition = useCallback(() => {
-    if (!triggerRef.current) return
-    const r = triggerRef.current.getBoundingClientRect()
-    setCoords({ top: r.bottom + 8, left: r.left })
-  }, [triggerRef])
-
-  useLayoutEffect(() => { reposition() }, [reposition])
-
-  useEffect(() => {
-    window.addEventListener('scroll', reposition, true)
-    window.addEventListener('resize', reposition)
-    return () => {
-      window.removeEventListener('scroll', reposition, true)
-      window.removeEventListener('resize', reposition)
-    }
-  }, [reposition])
-
-  useEffect(() => {
-    const onMouse = (e: MouseEvent) => {
-      if (
-        popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
-        triggerRef.current && !triggerRef.current.contains(e.target as Node)
-      ) onClose()
-    }
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('mousedown', onMouse)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onMouse)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [onClose, triggerRef])
-
-  if (!coords) return null
-
-  return createPortal(
-    <div
-      ref={popoverRef}
-      style={{ position: 'fixed', top: coords.top, left: coords.left, width: 380, zIndex: 50 }}
-      className="bg-card rounded-3xl p-6 shadow-popover border border-border"
-    >
-      {children}
-    </div>,
-    document.body,
-  )
-}
 
 // ─── Picker body (calendar + range preview) ───────────────────────────────────
 // Shared between desktop popover and mobile sheet.
@@ -212,7 +154,6 @@ export function ReceiptDateFilter({ startDate, endDate, onRangeChange }: Receipt
   const [pendingStart, setPendingStart] = useState<Date | null>(null)
   const [pendingEnd,   setPendingEnd]   = useState<Date | null>(null)
   const [hoveredDate,  setHoveredDate]  = useState<Date | null>(null)
-  const customBtnRef = useRef<HTMLButtonElement>(null)
 
   // Track viewport breakpoint
   useEffect(() => {
@@ -329,39 +270,80 @@ export function ReceiptDateFilter({ startDate, endDate, onRangeChange }: Receipt
         }}
       >
         {/* Custom range trigger — rendered after preset chips */}
-        <button
-          ref={customBtnRef}
-          type="button"
-          onClick={openPicker}
-          className={cn(
-            'h-8 px-3.5 rounded-lg text-[13px] font-medium transition-all duration-150 shrink-0 whitespace-nowrap',
-            'inline-flex items-center gap-1.5',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            isCustomActive
-              ? 'bg-primary text-primary-foreground shadow-active-chip'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent/60 active:bg-accent/80',
-          )}
-        >
-          <span>{customBtnLabel ?? 'เลือกช่วงวันที่'}</span>
-
-          {/* Clear × — only when a custom range is applied */}
-          {isCustomActive && (
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label="ล้างช่วงวันที่"
-              onClick={clearCustomRange}
-              onKeyDown={e => e.key === 'Enter' && clearCustomRange(e)}
-              className={cn(
-                'flex items-center justify-center w-4 h-4 radius-badge shrink-0',
-                'bg-primary-foreground/20 hover:bg-primary-foreground/35',
-                'transition-colors duration-150',
-              )}
-            >
-              <X className="w-2.5 h-2.5" />
-            </span>
-          )}
-        </button>
+        {isMobile ? (
+          <button
+            type="button"
+            onClick={openPicker}
+            className={cn(
+              'h-8 px-3.5 rounded-lg text-[13px] font-medium transition-all duration-150 shrink-0 whitespace-nowrap',
+              'inline-flex items-center gap-1.5',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              isCustomActive
+                ? 'bg-primary text-primary-foreground shadow-active-chip'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent/60 active:bg-accent/80',
+            )}
+          >
+            <span>{customBtnLabel ?? 'เลือกช่วงวันที่'}</span>
+            {isCustomActive && (
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label="ล้างช่วงวันที่"
+                onClick={clearCustomRange}
+                onKeyDown={e => e.key === 'Enter' && clearCustomRange(e)}
+                className={cn(
+                  'flex items-center justify-center w-4 h-4 radius-badge shrink-0',
+                  'bg-primary-foreground/20 hover:bg-primary-foreground/35',
+                  'transition-colors duration-150',
+                )}
+              >
+                <X className="w-2.5 h-2.5" />
+              </span>
+            )}
+          </button>
+        ) : (
+          <Popover open={pickerOpen} onOpenChange={(v) => { if (!v) handleCancel() }}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                onClick={openPicker}
+                className={cn(
+                  'h-8 px-3.5 rounded-lg text-[13px] font-medium transition-all duration-150 shrink-0 whitespace-nowrap',
+                  'inline-flex items-center gap-1.5',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  isCustomActive
+                    ? 'bg-primary text-primary-foreground shadow-active-chip'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/60 active:bg-accent/80',
+                )}
+              >
+                <span>{customBtnLabel ?? 'เลือกช่วงวันที่'}</span>
+                {isCustomActive && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label="ล้างช่วงวันที่"
+                    onClick={clearCustomRange}
+                    onKeyDown={e => e.key === 'Enter' && clearCustomRange(e)}
+                    className={cn(
+                      'flex items-center justify-center w-4 h-4 radius-badge shrink-0',
+                      'bg-primary-foreground/20 hover:bg-primary-foreground/35',
+                      'transition-colors duration-150',
+                    )}
+                  >
+                    <X className="w-2.5 h-2.5" />
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[380px] p-6" align="start" sideOffset={8}>
+              <DesktopPicker
+                {...bodyProps}
+                onConfirm={handleConfirm}
+                onCancel={handleCancel}
+              />
+            </PopoverContent>
+          </Popover>
+        )}
       </FilterChipBar>
 
       {/* ── PART 3: Active filter summary ────────────────────────────────────── */}
@@ -370,17 +352,6 @@ export function ReceiptDateFilter({ startDate, endDate, onRangeChange }: Receipt
           กำลังแสดงข้อมูล:{' '}
           <span className="text-foreground font-medium">{activeSummaryLabel}</span>
         </p>
-      )}
-
-      {/* ── STEP 2a: Desktop portal popover ──────────────────────────────────── */}
-      {!isMobile && pickerOpen && (
-        <DesktopPopover triggerRef={customBtnRef} onClose={handleCancel}>
-          <DesktopPicker
-            {...bodyProps}
-            onConfirm={handleConfirm}
-            onCancel={handleCancel}
-          />
-        </DesktopPopover>
       )}
 
       {/* ── STEP 2b: Mobile bottom sheet ─────────────────────────────────────── */}

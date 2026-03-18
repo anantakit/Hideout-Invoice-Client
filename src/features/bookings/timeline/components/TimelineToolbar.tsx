@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { format } from 'date-fns'
 import {
   ChevronLeft,
@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/ui/sheet'
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover'
 import { Calendar } from '@/shared/ui/calendar'
 import { cn, THAI_MONTHS_SHORT, todayISO } from '@/shared/utils'
 import type { RoomAvailability } from './AvailabilitySummary'
@@ -177,19 +178,6 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
 
   // ── Date picker ──────────────────────────────────────────────────────────
   const [datePickerOpen, setDatePickerOpen] = useState(false)
-  const datePickerRef = useRef<HTMLDivElement>(null)
-
-  // Close desktop dropdown on outside click (mobile uses Sheet which handles its own close)
-  useEffect(() => {
-    if (!datePickerOpen || isMobile) return
-    const handler = (e: MouseEvent) => {
-      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
-        setDatePickerOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [datePickerOpen, isMobile])
 
   const handleJumpToDate = useCallback(
     (date: Date) => {
@@ -261,36 +249,23 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
             <ChevronLeft size={18} />
           </button>
 
-          <div className="relative" ref={datePickerRef}>
-            <button
-              type="button"
-              onClick={() => setDatePickerOpen((v) => !v)}
-              className={cn(
-                'h-9 px-3 flex items-center gap-2 radius-button transition-colors',
-                'hover:bg-accent',
-                datePickerOpen && 'bg-accent',
-              )}
-            >
-              <CalendarIcon size={16} className="text-tl-text-dim shrink-0" />
-              <span className="text-lg font-semibold text-tl-text tabular-nums whitespace-nowrap">
-                {fmtHeaderDate(displayDate)}
-              </span>
-            </button>
-
-            {/* Desktop: absolute dropdown */}
-            {datePickerOpen && !isMobile && (
-              <div className="absolute left-0 top-full mt-2 z-50 bg-tl-header border border-tl-border rounded-xl shadow-popover overflow-hidden">
-                <DatePickerContent
-                  displayDate={displayDate}
-                  monthOptions={monthOptions}
-                  onDayClick={handleJumpToDate}
-                  onMonthJump={handleMonthJump}
-                />
-              </div>
-            )}
-
-            {/* Mobile: bottom Sheet */}
-            {isMobile && (
+          {isMobile ? (
+            /* Mobile: trigger opens Sheet */
+            <div>
+              <button
+                type="button"
+                onClick={() => setDatePickerOpen(true)}
+                className={cn(
+                  'h-9 px-3 flex items-center gap-2 radius-button transition-colors',
+                  'hover:bg-accent',
+                  datePickerOpen && 'bg-accent',
+                )}
+              >
+                <CalendarIcon size={16} className="text-tl-text-dim shrink-0" />
+                <span className="text-lg font-semibold text-tl-text tabular-nums whitespace-nowrap">
+                  {fmtHeaderDate(displayDate)}
+                </span>
+              </button>
               <Sheet open={datePickerOpen} onOpenChange={(v) => { if (!v) setDatePickerOpen(false) }}>
                 <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-0 flex flex-col sheet-mobile">
                   <SheetHeader className="px-5 pt-5 pb-3 border-b border-border shrink-0">
@@ -312,8 +287,35 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
                   </div>
                 </SheetContent>
               </Sheet>
-            )}
-          </div>
+            </div>
+          ) : (
+            /* Desktop: Popover */
+            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    'h-9 px-3 flex items-center gap-2 radius-button transition-colors',
+                    'hover:bg-accent',
+                    datePickerOpen && 'bg-accent',
+                  )}
+                >
+                  <CalendarIcon size={16} className="text-tl-text-dim shrink-0" />
+                  <span className="text-lg font-semibold text-tl-text tabular-nums whitespace-nowrap">
+                    {fmtHeaderDate(displayDate)}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
+                <DatePickerContent
+                  displayDate={displayDate}
+                  monthOptions={monthOptions}
+                  onDayClick={handleJumpToDate}
+                  onMonthJump={handleMonthJump}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
 
           <button type="button" onClick={onNext} className={NAV_BTN} aria-label="Next">
             <ChevronRight size={18} />

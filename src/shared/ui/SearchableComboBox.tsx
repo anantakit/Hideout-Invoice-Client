@@ -5,6 +5,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { useDebounce } from '../hooks/useDebounce'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { Input } from './input'
+import { Popover, PopoverAnchor, PopoverContent } from './popover'
 import { cn } from '../utils'
 
 interface FetchParams {
@@ -297,38 +298,45 @@ export default function SearchableComboBox<T extends object>({
     )
   }
 
-  // ── Desktop: inline dropdown ───────────────────────────────────────────────
+  // ── Desktop: Popover dropdown (portals correctly, no overflow clipping) ───
 
   return (
-    <div className="relative">
-      <div className="relative">
-        <Input
-          type="text"
-          value={inputText}
-          onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
-          onBlur={() => setIsOpen(false)}
-          placeholder={placeholder}
-          disabled={disabled}
-          autoComplete="off"
-          role="combobox"
-          aria-expanded={isOpen}
-          aria-autocomplete="list"
-          className={cn('pr-8', error && 'border-destructive focus-visible:ring-destructive')}
-        />
-        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-          <ChevronDown className={cn('w-4 h-4 transition-transform duration-150', isOpen && 'rotate-180')} />
-        </span>
-      </div>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverAnchor asChild>
+        <div className="relative">
+          <Input
+            type="text"
+            value={inputText}
+            onChange={handleInputChange}
+            onFocus={() => setIsOpen(true)}
+            onBlur={() => {
+              // Delay close so click on item registers before blur
+              setTimeout(() => setIsOpen(false), 150)
+            }}
+            placeholder={placeholder}
+            disabled={disabled}
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-autocomplete="list"
+            className={cn('pr-8', error && 'border-destructive focus-visible:ring-destructive')}
+          />
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+            <ChevronDown className={cn('w-4 h-4 transition-transform duration-150', isOpen && 'rotate-180')} />
+          </span>
+        </div>
+      </PopoverAnchor>
 
-      {isOpen && (
-        <div
-          role="listbox"
-          className="absolute z-50 w-full mt-1 bg-card border border-border radius-card shadow-popover max-h-60 overflow-y-auto"
-        >
+      <PopoverContent
+        className="w-[--radix-popover-trigger-width] p-0 max-h-60 overflow-y-auto"
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <div role="listbox">
           {renderItems(false)}
         </div>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   )
 }

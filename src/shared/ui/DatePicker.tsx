@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { isValid } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { Calendar } from './calendar'
+import { Popover, PopoverContent, PopoverTrigger } from './popover'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from './sheet'
 import { cn, fmtLongBE } from '@/shared/utils'
 
@@ -43,7 +44,6 @@ export function DatePicker({
 }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   // Track mobile breakpoint (md = 768px).
   useEffect(() => {
@@ -53,16 +53,6 @@ export function DatePicker({
     mq.addEventListener('change', check)
     return () => mq.removeEventListener('change', check)
   }, [])
-
-  // Close desktop panel on outside click.
-  useEffect(() => {
-    if (!open || isMobile) return
-    const handler = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open, isMobile])
 
   const selectedDate = parseISO(value)
 
@@ -124,13 +114,15 @@ export function DatePicker({
     )
   }
 
-  // ── Desktop: absolute dropdown ─────────────────────────────────────────────
+  // ── Desktop: Popover ─────────────────────────────────────────────────────
 
   return (
-    <div ref={containerRef} className="relative">
-      {triggerEl}
-      {open && (
-        <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-card border border-border radius-card shadow-popover p-4">
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        {triggerEl}
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <div className="px-4 pt-4 pb-4">
           <Calendar
             pendingStart={selectedDate}
             pendingEnd={null}
@@ -138,9 +130,10 @@ export function DatePicker({
             onDayClick={handleDayClick}
             onDayHover={() => {}}
             initialViewDate={selectedDate ?? undefined}
+            maxDate={maxDate}
           />
         </div>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   )
 }

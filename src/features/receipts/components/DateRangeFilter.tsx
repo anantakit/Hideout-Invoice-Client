@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useEffect } from 'react'
 import {
   format,
   startOfMonth, endOfMonth,
@@ -11,6 +10,7 @@ import {
 } from 'date-fns'
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Sheet, SheetContent } from '../../../shared/ui/sheet'
+import { Popover, PopoverAnchor, PopoverContent } from '../../../shared/ui/popover'
 import { Button } from '../../../shared/ui/button'
 import { cn, THAI_MONTHS_FULL, fmtShortWithYear } from '../../../shared/utils'
 const DAY_LABELS = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']
@@ -237,78 +237,6 @@ function PickerInner({
   )
 }
 
-// ─── Desktop Popover (portal-based, position: fixed) ─────────────────────────
-
-interface DesktopPopoverProps {
-  triggerRef: React.RefObject<HTMLButtonElement>
-  onClose: () => void
-  children: React.ReactNode
-}
-
-function DesktopPopover({ triggerRef, onClose, children }: DesktopPopoverProps) {
-  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null)
-  const popoverRef = useRef<HTMLDivElement>(null)
-
-  const reposition = useCallback(() => {
-    if (!triggerRef.current) return
-    const rect = triggerRef.current.getBoundingClientRect()
-    setCoords({ top: rect.bottom + 8, left: rect.left, width: rect.width })
-  }, [triggerRef])
-
-  // Position before first paint to avoid coordinate flash
-  useLayoutEffect(() => {
-    reposition()
-  }, [reposition])
-
-  // Keep in sync with scroll / resize
-  useEffect(() => {
-    window.addEventListener('scroll', reposition, true)
-    window.addEventListener('resize', reposition)
-    return () => {
-      window.removeEventListener('scroll', reposition, true)
-      window.removeEventListener('resize', reposition)
-    }
-  }, [reposition])
-
-  // Click-outside and Escape to close
-  useEffect(() => {
-    const onMouse = (e: MouseEvent) => {
-      if (
-        popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
-        triggerRef.current && !triggerRef.current.contains(e.target as Node)
-      ) onClose()
-    }
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('mousedown', onMouse)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onMouse)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [onClose, triggerRef])
-
-  if (!coords) return null
-
-  const popoverW = Math.min(Math.max(coords.width, 300), 340)
-
-  return createPortal(
-    <div
-      ref={popoverRef}
-      style={{
-        position: 'fixed',
-        top: coords.top,
-        left: coords.left,
-        width: popoverW,
-        zIndex: 50,
-      }}
-      className="bg-card border border-border radius-card shadow-popover p-4"
-    >
-      {children}
-    </div>,
-    document.body,
-  )
-}
-
 // ─── DateRangeFilter ──────────────────────────────────────────────────────────
 
 export interface DateRangeFilterProps {
@@ -323,7 +251,6 @@ export function DateRangeFilter({ startDate, endDate, onRangeChange }: DateRange
   const [pendingStart, setPendingStart] = useState<Date | null>(null)
   const [pendingEnd, setPendingEnd] = useState<Date | null>(null)
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
 
   // Track viewport
   useEffect(() => {
@@ -432,49 +359,49 @@ export function DateRangeFilter({ startDate, endDate, onRangeChange }: DateRange
         })}
       </div>
 
-      {/* Trigger button */}
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={handleOpen}
-        className={cn(
-          'w-full h-11 rounded-xl border px-4',
-          'flex justify-between items-center gap-2',
-          'text-body transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          hasRange
-            ? 'bg-accent/60 border-primary/30 text-foreground'
-            : 'bg-background border-border text-muted-foreground hover:bg-accent/40',
-        )}
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <CalendarDays className="w-4 h-4 shrink-0" />
-          <span className="truncate">{displayText ?? 'เลือกช่วงวันที่'}</span>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          {hasRange && (
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label="ล้างวันที่"
-              onClick={e => { e.stopPropagation(); onRangeChange('', '') }}
-              onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); onRangeChange('', '') } }}
-              className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="w-3.5 h-3.5" />
-            </span>
-          )}
-          <ChevronDown
+      {/* Trigger button + Desktop Popover */}
+      <Popover open={!isMobile && isOpen} onOpenChange={(v) => { if (!v) handleCancel() }}>
+        <PopoverAnchor asChild>
+          <button
+            type="button"
+            onClick={handleOpen}
             className={cn(
-              'w-4 h-4 transition-transform duration-200',
-              !isMobile && isOpen && 'rotate-180',
+              'w-full h-11 rounded-xl border px-4',
+              'flex justify-between items-center gap-2',
+              'text-body transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              hasRange
+                ? 'bg-accent/60 border-primary/30 text-foreground'
+                : 'bg-background border-border text-muted-foreground hover:bg-accent/40',
             )}
-          />
-        </div>
-      </button>
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <CalendarDays className="w-4 h-4 shrink-0" />
+              <span className="truncate">{displayText ?? 'เลือกช่วงวันที่'}</span>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {hasRange && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label="ล้างวันที่"
+                  onClick={e => { e.stopPropagation(); onRangeChange('', '') }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); onRangeChange('', '') } }}
+                  className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </span>
+              )}
+              <ChevronDown
+                className={cn(
+                  'w-4 h-4 transition-transform duration-200',
+                  !isMobile && isOpen && 'rotate-180',
+                )}
+              />
+            </div>
+          </button>
+        </PopoverAnchor>
 
-      {/* ── Desktop: portal popover (does NOT push layout) ── */}
-      {!isMobile && isOpen && (
-        <DesktopPopover triggerRef={triggerRef} onClose={handleCancel}>
+        <PopoverContent className="w-[340px] p-4" align="start" sideOffset={8}>
           <PickerInner {...innerProps} compact={true} />
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" className="flex-1" onClick={handleCancel}>
@@ -489,8 +416,8 @@ export function DateRangeFilter({ startDate, endDate, onRangeChange }: DateRange
               ยืนยัน
             </Button>
           </div>
-        </DesktopPopover>
-      )}
+        </PopoverContent>
+      </Popover>
 
       {/* ── Mobile: bottom sheet with sticky footer ── */}
       {isMobile && (

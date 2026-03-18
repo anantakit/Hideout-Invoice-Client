@@ -3,7 +3,7 @@ import { isValid, isBefore, isSameDay, differenceInDays } from 'date-fns'
 import { CalendarIcon, ArrowRight, Moon } from 'lucide-react'
 import { Calendar, ScrollableCalendar } from '../../../../shared/ui/calendar'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../../../../shared/ui/sheet'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../../shared/ui/dialog'
+import { Popover, PopoverContent, PopoverTrigger } from '../../../../shared/ui/popover'
 import { cn, fmtShortBE, fmtLongBE } from '@/shared/utils'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -247,44 +247,36 @@ export function DateRangePicker({
     )
   }
 
-  // ── Desktop: centered Dialog with dual-month calendar ──────────────────────
+  // ── Desktop: Popover with dual-month calendar ──────────────────────────────
 
   return (
-    <div>
-      {triggerEl}
-      <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
-        <DialogContent
-          className="max-w-fit p-0 gap-0"
-          aria-describedby="date-range-dialog-desc"
-        >
-          <DialogHeader className="px-6 pt-5 pb-0">
-            <DialogTitle className="text-body font-semibold tracking-tight">
-              {phaseLabel}
-            </DialogTitle>
-            <DialogDescription id="date-range-dialog-desc" className="sr-only">
-              เลือกช่วงวันเข้าพักจากปฏิทิน
-            </DialogDescription>
-          </DialogHeader>
+    <Popover open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
+      <PopoverTrigger asChild>
+        {triggerEl}
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
+        <div className="px-5 pt-4 pb-0">
+          <p className="text-body font-semibold tracking-tight">{phaseLabel}</p>
+        </div>
 
-          {/* Phase indicator */}
-          <div className="px-6 pt-2 pb-3 border-b border-border-soft">
-            {phaseChip}
-          </div>
+        {/* Phase indicator */}
+        <div className="px-5 pt-2 pb-3 border-b border-border-soft">
+          {phaseChip}
+        </div>
 
-          {/* Dual-month calendar */}
-          <div className="px-6 pt-4 pb-5">
-            <Calendar
-              pendingStart={calPendingStart}
-              pendingEnd={calPendingEnd}
-              hoveredDate={calHoveredDate}
-              onDayClick={handleDayClick}
-              onDayHover={setHoveredDate}
-              initialViewDate={calInitialView}
-              numberOfMonths={2}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        {/* Dual-month calendar */}
+        <div className="px-5 pt-4 pb-4">
+          <Calendar
+            pendingStart={calPendingStart}
+            pendingEnd={calPendingEnd}
+            hoveredDate={calHoveredDate}
+            onDayClick={handleDayClick}
+            onDayHover={setHoveredDate}
+            initialViewDate={calInitialView}
+            numberOfMonths={2}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }
