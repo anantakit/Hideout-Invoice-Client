@@ -64,7 +64,7 @@ export function OutstandingList({ data, total, count }: Props) {
                   <span className="text-sm text-foreground group-hover:text-primary transition-colors truncate block">
                     {b.guest_name}
                   </span>
-                  <span className={`inline-block text-[11px] font-medium px-1.5 py-0.5 rounded mt-0.5 ${aging.className}`}>
+                  <span className={`inline-block text-micro-sm font-medium px-1.5 py-0.5 rounded mt-0.5 ${aging.className}`}>
                     {aging.text}
                   </span>
                 </div>

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { Banknote, TrendingUp, TrendingDown, BedDouble, AlertTriangle, ChevronRight, CalendarPlus } from 'lucide-react'
 import { Skeleton } from '../../../shared/ui/skeleton'
 import { Card, CardContent } from '../../../shared/ui/card'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../shared/ui/tooltip'
 import { formatKPI } from '@/shared/utils'
 import { useDashboard } from '../hooks/useDashboard'
 import { KPICard } from '../components/KPICard'
@@ -115,7 +114,7 @@ export default function Dashboard() {
               <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">เงินสดเข้าวันนี้</p>
+                    <p className="text-micro-sm sm:text-xs text-muted-foreground font-medium">เงินสดเข้าวันนี้</p>
                     <p className={`mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight leading-none ${
                       data.kpi.revenue_today > 0 ? 'text-foreground' : 'text-muted-foreground/40'
                     }`}>
@@ -123,14 +122,14 @@ export default function Dashboard() {
                     </p>
                     <div className="mt-1.5 space-y-0.5">
                       {data.kpi.revenue_today_change !== undefined && isFinite(data.kpi.revenue_today_change) && data.kpi.revenue_today_change !== -1 && data.kpi.revenue_today_change !== 0 && (
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-micro-sm text-muted-foreground">
                           <span className={`font-medium ${data.kpi.revenue_today_change > 0 ? 'text-success' : 'text-destructive'}`}>
                             {data.kpi.revenue_today_change > 0 ? '+' : ''}{(data.kpi.revenue_today_change * 100).toFixed(0)}%
                           </span>
                           {' '}จากเมื่อวาน
                         </p>
                       )}
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-micro-sm text-muted-foreground">
                         มูลค่าเข้าพักคืนนี้ <span className="font-medium text-foreground tabular-nums">{formatKPI(data.kpi.earned_revenue_today)} ฿</span>
                       </p>
                     </div>
@@ -157,13 +156,13 @@ export default function Dashboard() {
               <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">เข้าพักวันนี้</p>
+                    <p className="text-micro-sm sm:text-xs text-muted-foreground font-medium">เข้าพักวันนี้</p>
                     <p className="mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
                       {data.kpi.occupied_rooms}/{data.kpi.total_rooms} <span className="text-sm font-normal text-muted-foreground">ห้อง</span>
                     </p>
                     {/* Occupancy % + sparkline */}
                     <div className="mt-1.5 flex items-center gap-2">
-                      <span className={`text-[11px] sm:text-xs font-semibold tabular-nums ${
+                      <span className={`text-micro-sm sm:text-xs font-semibold tabular-nums ${
                         data.kpi.occupancy_rate >= 0.8 ? 'text-success' :
                         data.kpi.occupancy_rate <= 0.3 ? 'text-destructive' :
                         'text-info'
@@ -175,27 +174,15 @@ export default function Dashboard() {
                       )}
                     </div>
                     {/* ADR / RevPAR with tooltips */}
-                    <TooltipProvider delayDuration={200}>
-                      <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="cursor-help border-b border-dotted border-muted-foreground/30">
-                              ราคาเฉลี่ย <span className="font-medium text-foreground tabular-nums">{formatKPI(data.kpi.adr)}</span>
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="text-xs">ราคาเฉลี่ยต่อห้องที่ขายได้ (ADR)</TooltipContent>
-                        </Tooltip>
-                        <span className="text-border">|</span>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="cursor-help border-b border-dotted border-muted-foreground/30">
-                              รายได้/ห้อง <span className="font-medium text-foreground tabular-nums">{formatKPI(data.kpi.revpar)}</span>
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="text-xs">รายได้ต่อห้องทั้งหมด รวมห้องว่าง (RevPAR)</TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </TooltipProvider>
+                    <div className="mt-1 flex items-center gap-1.5 text-micro-sm text-muted-foreground">
+                      <span>
+                        ADR <span className="font-medium text-foreground tabular-nums">{formatKPI(data.kpi.adr)}</span>
+                      </span>
+                      <span className="text-border">|</span>
+                      <span>
+                        RevPAR <span className="font-medium text-foreground tabular-nums">{formatKPI(data.kpi.revpar)}</span>
+                      </span>
+                    </div>
                   </div>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-info-muted text-info-muted-foreground">
                     <BedDouble className="w-4 h-4" />
@@ -211,12 +198,12 @@ export default function Dashboard() {
                   <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">ยอดค้างชำระ</p>
+                        <p className="text-micro-sm sm:text-xs text-muted-foreground font-medium">ยอดค้างชำระ</p>
                         <p className="mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight text-warning leading-none">
                           {formatKPI(data.kpi.outstanding_balance)} ฿
                         </p>
                         <div className="mt-1.5 flex items-center gap-1">
-                          <span className="text-[11px] text-muted-foreground">{data.kpi.outstanding_count} รายการ</span>
+                          <span className="text-micro-sm text-muted-foreground">{data.kpi.outstanding_count} รายการ</span>
                           <ChevronRight className="w-3 h-3 text-muted-foreground" />
                         </div>
                       </div>
@@ -232,7 +219,7 @@ export default function Dashboard() {
                 <CardContent className="px-4 py-3 sm:px-5 sm:py-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">จองสัปดาห์นี้</p>
+                      <p className="text-micro-sm sm:text-xs text-muted-foreground font-medium">จองสัปดาห์นี้</p>
                       {data.kpi.booking_pace_week > 0 ? (
                         <>
                           <p className="mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
@@ -244,7 +231,7 @@ export default function Dashboard() {
                               const pct = Math.round((diff / data.kpi.booking_pace_prev) * 100)
                               return (
                                 <div className="flex items-center gap-1.5">
-                                  <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-md ${
+                                  <span className={`inline-flex items-center gap-0.5 text-micro-sm font-medium px-1.5 py-0.5 rounded-md ${
                                     diff > 0 ? 'text-success bg-success/10' :
                                     diff < 0 ? 'text-destructive bg-destructive/10' :
                                     'text-muted-foreground bg-muted'
@@ -253,11 +240,11 @@ export default function Dashboard() {
                                      diff < 0 ? <TrendingDown className="w-3 h-3" /> : null}
                                     {diff > 0 ? '+' : ''}{pct}%
                                   </span>
-                                  <span className="text-[11px] text-muted-foreground">vs สัปดาห์ก่อน</span>
+                                  <span className="text-micro-sm text-muted-foreground">vs สัปดาห์ก่อน</span>
                                 </div>
                               )
                             })() : (
-                              <p className="text-[11px] text-muted-foreground">7 วันล่าสุด</p>
+                              <p className="text-micro-sm text-muted-foreground">7 วันล่าสุด</p>
                             )}
                           </div>
                         </>
@@ -266,7 +253,7 @@ export default function Dashboard() {
                           <p className="mt-1 text-lg sm:text-2xl font-semibold tabular-nums tracking-tight text-muted-foreground/40 leading-none">
                             -
                           </p>
-                          <p className="mt-1.5 text-[11px] text-muted-foreground">ไม่มียอดค้าง</p>
+                          <p className="mt-1.5 text-micro-sm text-muted-foreground">ไม่มียอดค้าง</p>
                         </>
                       )}
                     </div>

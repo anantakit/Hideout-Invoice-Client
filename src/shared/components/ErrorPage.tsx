@@ -205,7 +205,7 @@ export default function ErrorPage({
               รายละเอียดทางเทคนิค
             </button>
             {detailOpen && (
-              <pre className="mt-2 mx-auto max-w-sm rounded-lg border border-border bg-muted/50 p-3 text-left font-mono text-[11px] leading-relaxed text-muted-foreground overflow-auto max-h-32">
+              <pre className="mt-2 mx-auto max-w-sm rounded-lg border border-border bg-muted/50 p-3 text-left font-mono text-micro-sm leading-relaxed text-muted-foreground overflow-auto max-h-32">
                 {detail}
               </pre>
             )}

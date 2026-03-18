@@ -76,8 +76,9 @@ const ReceiptItemRow = React.memo(function ReceiptItemRow({
       className="grid grid-cols-1 md:grid-cols-[1fr_100px_130px_100px_40px] gap-3 items-start p-4 bg-background rounded-lg border border-border"
     >
       <div>
-        <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">ห้อง / รายละเอียด</label>
+        <label htmlFor={`item-desc-${index}`} className="text-sm font-medium text-foreground md:hidden block mb-1.5">ห้อง / รายละเอียด</label>
         <Input
+          id={`item-desc-${index}`}
           placeholder="เช่น ห้อง 101"
           className={itemErrors?.description ? 'border-destructive' : ''}
           {...register(`items.${index}.description`)}
@@ -88,24 +89,28 @@ const ReceiptItemRow = React.memo(function ReceiptItemRow({
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">จำนวนคืน</label>
+        <label htmlFor={`item-qty-${index}`} className="text-sm font-medium text-foreground md:hidden block mb-1.5">จำนวนคืน</label>
         <Input
+          id={`item-qty-${index}`}
           type="number"
           step="1"
           min="1"
           placeholder="1"
+          inputMode="numeric"
           className={`text-center ${itemErrors?.quantity ? 'border-destructive' : ''}`}
           {...register(`items.${index}.quantity`)}
         />
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground md:hidden block mb-1.5">ราคาต่อคืน (บาท)</label>
+        <label htmlFor={`item-price-${index}`} className="text-sm font-medium text-foreground md:hidden block mb-1.5">ราคาต่อคืน (บาท)</label>
         <Input
+          id={`item-price-${index}`}
           type="number"
           step="0.01"
           min="0"
           placeholder="0.00"
+          inputMode="decimal"
           className={`text-right ${itemErrors?.unit_price ? 'border-destructive' : ''}`}
           {...register(`items.${index}.unit_price`)}
         />
@@ -477,13 +482,13 @@ export default function CreateReceipt() {
 
               {/* Desktop actions */}
               <div className="hidden md:flex justify-end gap-3">
-                <Button type="button" variant="outline" className="rounded-xl" onClick={() => navigate(-1)}>
+                <Button type="button" variant="outline" className="rounded-xl" onClick={() => navigate('/receipts')}>
                   ยกเลิก
                 </Button>
                 <Button
                   type="submit"
                   disabled={!selectedCustomer || form.formState.isSubmitting || createMutation.isPending}
-                  className="min-h-[44px] px-6 rounded-xl font-medium"
+                  className="touch-target px-6 rounded-xl font-medium"
                 >
                   {createMutation.isPending ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> กำลังสร้าง…</>
@@ -516,7 +521,7 @@ export default function CreateReceipt() {
           type="button"
           variant="ghost"
           size="sm"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/receipts')}
           className="w-full text-muted-foreground"
         >
           ยกเลิก

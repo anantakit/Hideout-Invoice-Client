@@ -18,6 +18,7 @@ import {
   TableRow,
 } from '../../../shared/ui/table'
 import Pagination from '../../../shared/ui/Pagination'
+import { Fab } from '../../../shared/ui/Fab'
 import { Skeleton } from '../../../shared/ui/skeleton'
 import { type BookingResponse, getStatusLabel } from '../types'
 import { FilterChipBar, type FilterChip as FilterChipType } from '../../../shared/ui/FilterChipBar'
@@ -162,7 +163,7 @@ export default function BookingListPage() {
   const hasFilters = Boolean(searchInput || statusParam || viewParam || startDateParam)
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-5xl mx-auto pb-24 md:pb-6">
 
       {/* Header */}
       <div className="flex items-start justify-between mb-4 gap-4">
@@ -172,10 +173,9 @@ export default function BookingListPage() {
             {data ? `${total} รายการ` : ''}
           </p>
         </div>
-        <Button onClick={() => navigate('/bookings/new')} className="shrink-0">
+        <Button onClick={() => navigate('/bookings/new')} className="shrink-0 hidden md:inline-flex">
           <Plus className="w-4 h-4 mr-1.5" />
-          <span className="hidden sm:inline">สร้างการจอง</span>
-          <span className="sm:hidden">สร้าง</span>
+          สร้างการจอง
         </Button>
       </div>
 
@@ -272,6 +272,8 @@ export default function BookingListPage() {
           </div>
         </div>
       )}
+
+      <Fab to="/bookings/new" label="สร้างการจอง" />
     </div>
   )
 }

@@ -228,7 +228,7 @@ export function OccupancyPressureChart({ data }: Props) {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <CardTitle className="text-section">แรงกดดันห้องว่าง 7 วัน</CardTitle>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-micro-sm text-muted-foreground mt-0.5">
               {criticalCount > 0 && (
                 <span className="text-destructive font-medium">{criticalCount} วันเสี่ยง</span>
               )}
@@ -242,7 +242,7 @@ export function OccupancyPressureChart({ data }: Props) {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-3 text-[11px] flex-wrap">
+          <div className="flex items-center gap-3 text-micro-sm flex-wrap">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm" style={{ background: ZONE_COLORS.critical }} />
               <span className="text-muted-foreground">วิกฤต</span>
@@ -315,7 +315,7 @@ export function OccupancyPressureChart({ data }: Props) {
                 return (
                   <div
                     key={d.date}
-                    className={`text-[11px] px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 ${
+                    className={`text-micro-sm px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 ${
                       d.action_type === 'operations'
                         ? 'border-destructive/30 bg-destructive/8 text-destructive'
                         : d.action_type === 'marketing'

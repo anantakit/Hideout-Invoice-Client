@@ -180,14 +180,14 @@ function DesktopPicker({ onConfirm, onCancel, ...bodyProps }: DesktopPickerProps
         <Button
           type="button"
           variant="ghost"
-          className="flex-1 min-h-[44px]"
+          className="flex-1 touch-target"
           onClick={onCancel}
         >
           ยกเลิก
         </Button>
         <Button
           type="button"
-          className="flex-1 min-h-[44px]"
+          className="flex-1 touch-target"
           onClick={onConfirm}
           disabled={!bodyProps.pendingStart}
         >
@@ -338,7 +338,7 @@ export function ReceiptDateFilter({ startDate, endDate, onRangeChange }: Receipt
             'inline-flex items-center gap-1.5',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             isCustomActive
-              ? 'bg-primary text-primary-foreground shadow-[0_1px_3px_rgba(91,124,250,0.35)]'
+              ? 'bg-primary text-primary-foreground shadow-active-chip'
               : 'text-muted-foreground hover:text-foreground hover:bg-accent/60 active:bg-accent/80',
           )}
         >
@@ -405,14 +405,14 @@ export function ReceiptDateFilter({ startDate, endDate, onRangeChange }: Receipt
               <Button
                 type="button"
                 variant="ghost"
-                className="flex-1 min-h-[44px]"
+                className="flex-1 touch-target"
                 onClick={handleCancel}
               >
                 ยกเลิก
               </Button>
               <Button
                 type="button"
-                className="flex-1 min-h-[44px]"
+                className="flex-1 touch-target"
                 onClick={handleConfirm}
                 disabled={!pendingStart}
               >

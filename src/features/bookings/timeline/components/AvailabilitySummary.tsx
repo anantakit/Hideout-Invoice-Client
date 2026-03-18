@@ -142,7 +142,7 @@ const AvailabilityCard = React.memo(function AvailabilityCard({
     >
       <CardContent className="p-3 flex flex-col gap-0">
         {/* Room type label */}
-        <span className="text-[11px] font-medium text-muted-foreground leading-none mb-2 truncate block">
+        <span className="text-micro-sm font-medium text-muted-foreground leading-none mb-2 truncate block">
           {label}
         </span>
 

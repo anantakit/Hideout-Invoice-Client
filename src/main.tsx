@@ -31,20 +31,20 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           toastOptions={{
             duration: 4000,
             style: {
-              background: 'hsl(224 16% 14%)',
-              color: 'hsl(220 14% 92%)',
-              border: '1px solid hsl(224 12% 22%)',
+              background: 'hsl(var(--card))',
+              color: 'hsl(var(--foreground))',
+              border: '1px solid hsl(var(--border))',
               borderRadius: '8px',
               fontSize: '13px',
               padding: '12px 16px',
             },
             success: {
-              style: { borderLeft: '3px solid hsl(150 45% 44%)' },
-              iconTheme: { primary: 'hsl(150 45% 44%)', secondary: 'hsl(0 0% 100%)' },
+              style: { borderLeft: '3px solid hsl(var(--success))' },
+              iconTheme: { primary: 'hsl(var(--success))', secondary: '#fff' },
             },
             error: {
-              style: { borderLeft: '3px solid hsl(0 50% 55%)' },
-              iconTheme: { primary: 'hsl(0 50% 55%)', secondary: 'hsl(0 0% 100%)' },
+              style: { borderLeft: '3px solid hsl(var(--destructive))' },
+              iconTheme: { primary: 'hsl(var(--destructive))', secondary: '#fff' },
             },
           }}
         />

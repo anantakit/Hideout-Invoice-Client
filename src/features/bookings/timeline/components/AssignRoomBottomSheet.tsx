@@ -255,7 +255,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
   // ── Render ──────────────────────────────────────────────────────────────
   return (
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) { setTransferringStay(null); onClose() } }}>
-      <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-0 flex flex-col max-h-[85vh]">
+      <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-0 flex flex-col sheet-mobile">
         {/* ═══════ Header ═══════ */}
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-border shrink-0">
           <SheetTitle className="text-base font-semibold tracking-tight text-left">

@@ -503,7 +503,7 @@ function RoomTypeBookingItem({
 
       {/* Available rooms hint */}
       {showRoomPicker && availableCount > 0 && (
-        <p className="text-[11px] text-muted-foreground -mt-2">
+        <p className="text-micro-sm text-muted-foreground -mt-2">
           ห้องว่าง {availableCount} ห้อง
           {unassignedCount > 0 && (
             <span className="text-warning font-medium ml-1">

@@ -92,11 +92,11 @@ export function OccupancyTrendChart({ data, totalRooms }: Props) {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-section">อัตราเข้าพัก & ราคาเฉลี่ย 14 วัน</CardTitle>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-micro-sm text-muted-foreground mt-0.5">
               เฉลี่ยเข้าพัก {avgOcc.toFixed(0)}% | ราคาเฉลี่ย {formatKPI(avgAdr)} ฿/คืน
             </p>
           </div>
-          <div className="flex items-center gap-4 text-[11px]">
+          <div className="flex items-center gap-4 text-micro-sm">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm bg-info" />
               <span className="text-muted-foreground">เข้าพัก%</span>

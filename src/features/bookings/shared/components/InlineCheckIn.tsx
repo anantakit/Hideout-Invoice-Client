@@ -232,7 +232,7 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
                       <span className="text-xs text-muted-foreground">{stay.room_type_name}</span>
                     </div>
                   )}
-                  <p className="text-[11px] text-muted-foreground mt-0.5 pl-5.5">
+                  <p className="text-micro-sm text-muted-foreground mt-0.5 pl-5.5">
                     {fmtShortISO(stay.check_in)} → {fmtShortISO(stay.check_out)} · {nights} คืน
                   </p>
               </ConfirmActionCard>

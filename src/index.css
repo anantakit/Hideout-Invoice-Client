@@ -39,6 +39,9 @@
   .text-micro {
     @apply text-[10px] leading-tight;
   }
+  .text-micro-sm {
+    @apply text-[11px] leading-tight;
+  }
   .text-h1 {
     @apply text-2xl font-semibold tracking-tight text-foreground;
   }
@@ -94,6 +97,19 @@
   }
   .light .shadow-popover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  /* ── 4b. Active chip shadow ────────────────────────────────────── */
+  .shadow-active-chip {
+    box-shadow: 0 1px 3px rgba(91, 124, 250, 0.35);
+  }
+
+  /* ── 4c. Touch & Sheet tokens ────────────────────────────────── */
+  .touch-target {
+    @apply min-h-[44px];
+  }
+  .sheet-mobile {
+    @apply max-h-[85vh];
   }
 
   /* ── 5. Status styles (border-left + semantic color) ───────────── */

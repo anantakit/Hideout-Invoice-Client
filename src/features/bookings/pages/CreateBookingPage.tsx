@@ -161,7 +161,7 @@ export default function CreateBookingPage() {
             variant="ghost"
             size="sm"
             className="-ml-2 text-muted-foreground mb-1"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/bookings')}
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             กลับ
@@ -218,7 +218,7 @@ export default function CreateBookingPage() {
                       <FormControl>
                         <Input
                           {...field}
-                          inputMode="numeric"
+                          inputMode="tel"
                           maxLength={10}
                           placeholder="0812345678"
                           onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
@@ -291,7 +291,7 @@ export default function CreateBookingPage() {
 
             {/* Submit */}
             <div className="pt-2">
-              <Button type="submit" disabled={!canSubmit} className="w-full md:w-auto md:min-w-36 md:float-right">
+              <Button type="submit" disabled={!canSubmit} className="w-full touch-target md:w-auto md:min-w-36 md:float-right">
                 {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {submitLabel}
               </Button>

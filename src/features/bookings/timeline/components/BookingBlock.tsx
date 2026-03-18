@@ -394,7 +394,7 @@ const BookingBlock = React.memo(function BookingBlock({
 
           {/* Content */}
           <div className={cn('flex flex-col min-w-0 flex-1', isMultiRoom && !isUpcoming && 'pl-1')}>
-            <span className="truncate text-[11px] font-bold leading-tight drop-shadow-sm">
+            <span className="truncate text-micro-sm font-bold leading-tight drop-shadow-sm">
               {booking.guest_name}
             </span>
             <span className="flex items-center gap-0.5 text-[10px] leading-tight opacity-80 truncate">

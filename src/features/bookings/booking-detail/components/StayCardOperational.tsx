@@ -445,7 +445,7 @@ export function StayCardOperational({
 
         return isMobile ? (
           <Sheet open={extendOpen} onOpenChange={handleExtendClose}>
-            <SheetContent side="bottom" className="rounded-t-2xl px-5 pt-5 pb-6 max-h-[85vh] flex flex-col">
+            <SheetContent side="bottom" className="rounded-t-2xl px-5 pt-5 pb-6 sheet-mobile flex flex-col">
               <SheetHeader className="pb-3 text-left shrink-0">
                 <SheetTitle>{hasConflict ? 'เลือกห้องสำหรับช่วงที่เหลือ' : 'ขยายวันเช็คเอาท์'}</SheetTitle>
                 <SheetDescription className="sr-only">เลือกวันเช็คเอาท์ใหม่</SheetDescription>
@@ -559,7 +559,7 @@ export function StayCardOperational({
                     value={returnDate}
                     onChange={(e) => setReturnDate(e.target.value)}
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="text-micro-sm text-muted-foreground mt-1">
                     {returnDate
                       ? `ย้ายชั่วคราว: ห้องใหม่ ${transferDate} → ${returnDate} แล้วกลับห้อง ${stay.room_number}`
                       : 'ระบุเพื่อย้ายชั่วคราวแล้วกลับห้องเดิมอัตโนมัติ'}
@@ -645,7 +645,7 @@ export function StayCardOperational({
 
         return isMobile ? (
           <Sheet open={transferOpen} onOpenChange={setTransferOpen}>
-            <SheetContent side="bottom" className="rounded-t-2xl px-5 pt-5 pb-6 max-h-[85vh] flex flex-col">
+            <SheetContent side="bottom" className="rounded-t-2xl px-5 pt-5 pb-6 sheet-mobile flex flex-col">
               <SheetHeader className="pb-3 text-left shrink-0">
                 <SheetTitle>ย้ายห้อง</SheetTitle>
                 <SheetDescription className="text-body text-muted-foreground">{transferDesc}</SheetDescription>

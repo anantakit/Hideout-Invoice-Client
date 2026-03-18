@@ -100,7 +100,7 @@ export function DatePicker({
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent
             side="bottom"
-            className="rounded-t-xl px-0 pb-0 flex flex-col max-h-[85vh]"
+            className="rounded-t-xl px-0 pb-0 flex flex-col sheet-mobile"
           >
             <SheetHeader className="px-5 pt-5 pb-3 pr-14 border-b border-border shrink-0">
               <SheetTitle className="text-base font-semibold tracking-tight text-left">

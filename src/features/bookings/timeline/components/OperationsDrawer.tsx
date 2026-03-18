@@ -330,7 +330,7 @@ function BookingDetailContent({
                   <span className="text-sm font-semibold">ห้อง {stay.room_number}</span>
                   <span className="text-xs text-muted-foreground">{stay.room_type_name}</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-micro-sm text-muted-foreground mt-0.5">
                   {fmtShortISO(stay.check_in)} → {fmtShortISO(stay.check_out)} · {differenceInDays(parseISO(stay.check_out), parseISO(stay.check_in))} คืน
                 </p>
               </ConfirmActionCard>
@@ -524,7 +524,7 @@ function CreateBookingContent({
         <div className="rounded-lg bg-muted/50 p-3 space-y-3">
           {/* Room chips */}
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">ห้องพัก</p>
+            <p className="text-micro-sm font-semibold uppercase tracking-wider text-muted-foreground">ห้องพัก</p>
             <div className="flex flex-wrap gap-1.5">
               {selectedRooms.map((room) => (
                 <Button
@@ -569,7 +569,7 @@ function CreateBookingContent({
                   if (availableRooms.length === 0) return null
                   return (
                     <div key={rt.room_type_id} className="space-y-1.5">
-                      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                      <p className="text-micro-sm font-medium text-muted-foreground uppercase tracking-wider">
                         {rt.room_type_name} · {formatTHBCurrency(rt.price_per_night)}/คืน
                       </p>
                       <div className="flex flex-wrap gap-1.5">
@@ -616,7 +616,7 @@ function CreateBookingContent({
 
           {/* Source toggle — compact inline pills */}
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">ประเภท</p>
+            <p className="text-micro-sm font-semibold uppercase tracking-wider text-muted-foreground">ประเภท</p>
             <div className="flex gap-2">
               {([
                 { value: 'advance' as const, label: 'จองล่วงหน้า', Icon: CalendarDays },
@@ -643,7 +643,7 @@ function CreateBookingContent({
 
         {/* Section 2: Guest info */}
         <div className="rounded-lg bg-muted/50 p-3 space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <p className="text-micro-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <User size={12} />
             ผู้เข้าพัก
           </p>
@@ -679,7 +679,7 @@ function CreateBookingContent({
 
         {/* Section 3: Payment */}
         <div className="rounded-lg bg-muted/50 p-3 space-y-2.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <p className="text-micro-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <Banknote size={12} />
             การชำระเงิน
           </p>

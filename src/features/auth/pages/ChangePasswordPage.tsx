@@ -53,7 +53,7 @@ export default function ChangePassword() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <Card className="shadow-sm">
+        <Card className="shadow-card">
           <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-base font-semibold tracking-tight">เปลี่ยนรหัสผ่าน</CardTitle>
           </CardHeader>
@@ -111,7 +111,7 @@ export default function ChangePassword() {
                 />
                 <Button
                   type="submit"
-                  className="w-full min-h-[44px] rounded-xl font-medium mt-2 transition-transform duration-150 active:scale-[0.98]"
+                  className="w-full touch-target rounded-xl font-medium mt-2 transition-transform duration-150 active:scale-[0.98]"
                   disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting

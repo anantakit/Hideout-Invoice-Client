@@ -62,7 +62,7 @@ function DayHeaders({ className }: { className?: string }) {
       {DAY_HEADERS.map(label => (
         <div
           key={label}
-          className="text-center text-[11px] font-medium text-muted-foreground py-1.5"
+          className="text-center text-micro-sm font-medium text-muted-foreground py-1.5"
         >
           {label}
         </div>

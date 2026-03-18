@@ -11,7 +11,7 @@ import RoomTypeModal from '../components/RoomTypeModal'
 import RoomModal from '../components/RoomModal'
 import { Card } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
-import { BottomBar } from '@/shared/ui/BottomBar'
+import { Fab } from '@/shared/ui/Fab'
 import {
   Select,
   SelectContent,
@@ -194,7 +194,7 @@ export default function AdminRoomsPage() {
 
   return (
     <>
-      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-28 md:pb-6 space-y-8">
+      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-24 md:pb-6 space-y-8">
         {/* ═══════════════════════════════════════════════════════
             Section 1: Room Types
             ═══════════════════════════════════════════════════════ */}
@@ -420,17 +420,11 @@ export default function AdminRoomsPage() {
         </section>
       </div>
 
-      {/* Mobile bottom bar */}
-      <BottomBar>
-        <Button
-          onClick={() => { setEditingRoom(undefined); setRoomModalOpen(true) }}
-          disabled={roomTypes.length === 0}
-          className="w-full min-h-[48px] radius-card font-medium transition-transform duration-150 active:scale-[0.98]"
-        >
-          <Plus className="w-4 h-4" />
-          เพิ่มห้อง
-        </Button>
-      </BottomBar>
+      <Fab
+        onClick={() => { setEditingRoom(undefined); setRoomModalOpen(true) }}
+        disabled={roomTypes.length === 0}
+        label="เพิ่มห้อง"
+      />
 
       {/* Modals */}
       <RoomTypeModal

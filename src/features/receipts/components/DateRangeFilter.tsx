@@ -214,7 +214,7 @@ function PickerInner({
           onClick={() => onPresetApply(preset)}
           className={cn(
             'w-full text-left px-3 rounded-xl text-sm hover:bg-accent transition-colors text-foreground',
-            compact ? 'py-2' : 'min-h-[44px] flex items-center py-3',
+            compact ? 'py-2' : 'touch-target flex items-center py-3',
           )}
         >
           {preset.label}

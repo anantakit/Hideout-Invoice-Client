@@ -43,7 +43,7 @@ export function FilterChipBar<K extends string = string>({
                 'transition-all duration-150',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 isActive
-                  ? 'bg-primary text-primary-foreground shadow-[0_1px_3px_rgba(91,124,250,0.35)]'
+                  ? 'bg-primary text-primary-foreground shadow-active-chip'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent/60 active:bg-accent/80',
               )}
             >

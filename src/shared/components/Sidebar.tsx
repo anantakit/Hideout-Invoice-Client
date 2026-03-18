@@ -79,7 +79,7 @@ const NAV_SECTIONS: NavSectionConfig[] = [
     label: 'Finance',
     items: [
       { to: '/dashboard', label: 'รายได้',   icon: BarChart3, end: true },
-      { to: '/receipts',  label: 'ใบเสร็จ', icon: FileText,  end: true },
+      { to: '/receipts',  label: 'ใบเสร็จ', icon: FileText },
     ],
   },
 ]
@@ -87,9 +87,9 @@ const NAV_SECTIONS: NavSectionConfig[] = [
 // ── Logo ──────────────────────────────────────────────────────────────────────
 
 /** Shared logo mark — used by both the sidebar and the mobile top bar. */
-export function Logo() {
+export function Logo({ className = 'w-8 h-8' }: { className?: string }) {
   return (
-    <div className="w-8 h-8 shrink-0">
+    <div className={`${className} shrink-0`}>
       <svg viewBox="0 0 100 100" fill="none" className="w-full h-full" aria-hidden>
         <rect width="100" height="100" rx="22" fill="hsl(224 18% 12%)" />
         <rect x=".5" y=".5" width="99" height="99" rx="21.5" fill="none" stroke="hsl(222 85% 64% / .06)" strokeWidth="1" />

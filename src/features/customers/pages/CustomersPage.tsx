@@ -11,7 +11,7 @@ import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import { Card } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
-import { BottomBar } from '../../../shared/ui/BottomBar'
+import { Fab } from '../../../shared/ui/Fab'
 import { Skeleton } from '../../../shared/ui/skeleton'
 import {
   Table,
@@ -75,7 +75,7 @@ export default function Customers() {
 
   return (
     <>
-      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-28 md:pb-6">
+      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-24 md:pb-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-section text-2xl">รายการลูกค้า</h1>
@@ -203,15 +203,10 @@ export default function Customers() {
         </Card>
       </div>
 
-      <BottomBar>
-        <Button
-          onClick={() => { setEditingCustomer(null); setModalOpen(true) }}
-          className="w-full min-h-[48px] radius-card font-medium transition-transform duration-150 active:scale-[0.98]"
-        >
-          <Plus className="w-4 h-4" />
-          เพิ่มลูกค้าใหม่
-        </Button>
-      </BottomBar>
+      <Fab
+        onClick={() => { setEditingCustomer(null); setModalOpen(true) }}
+        label="เพิ่มลูกค้าใหม่"
+      />
 
       <CustomerModal
         open={modalOpen}

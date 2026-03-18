@@ -83,7 +83,7 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <CardTitle className="text-sm sm:text-base font-semibold text-foreground">รายได้ประจำเดือน (Accrual)</CardTitle>
-            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+            <p className="text-micro-sm sm:text-xs text-muted-foreground mt-0.5">
               {hasPrevData
                 ? `มูลค่าห้องพักรายเดือน ปี ${yearLabel} vs ${prevYearLabel}`
                 : `มูลค่าห้องพักรายเดือน ปี ${yearLabel}`}
@@ -111,7 +111,7 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
         {/* ── Target editor ── */}
         {editMonth !== null && (
           <div className="mx-2 sm:mx-0 mb-3 p-3 rounded-lg bg-accent/50 border border-border">
-            <p className="text-[11px] text-muted-foreground font-medium mb-2">ตั้งเป้ารายได้</p>
+            <p className="text-micro-sm text-muted-foreground font-medium mb-2">ตั้งเป้ารายได้</p>
             <div className="flex items-center gap-2">
               <Select
                 value={String(editMonth)}

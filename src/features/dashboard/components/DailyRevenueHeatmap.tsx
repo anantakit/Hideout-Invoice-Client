@@ -108,7 +108,7 @@ export function DailyRevenueHeatmap({ data, month }: Props) {
                     key={di}
                     className={`
                       aspect-square rounded-md flex items-center justify-center relative
-                      text-[11px] tabular-nums transition-colors
+                      text-micro-sm tabular-nums transition-colors
                       ${future ? 'bg-muted/30 text-muted-foreground/40' : getIntensityClass(amount, max)}
                       ${!future && amount > 0 ? 'text-foreground font-medium' : ''}
                       ${!future && amount <= 0 ? 'text-muted-foreground/60' : ''}

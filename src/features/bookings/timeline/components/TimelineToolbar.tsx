@@ -84,7 +84,7 @@ function DatePickerContent({
               className={cn(
                 'text-caption rounded-lg transition-colors text-center',
                 mobile
-                  ? 'px-2 py-2.5 min-h-[44px] hover:bg-accent'
+                  ? 'px-2 py-2.5 touch-target hover:bg-accent'
                   : 'px-1.5 py-1.5 hover:bg-accent',
                 opt.isCurrent
                   ? mobile
@@ -292,7 +292,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
             {/* Mobile: bottom Sheet */}
             {isMobile && (
               <Sheet open={datePickerOpen} onOpenChange={(v) => { if (!v) setDatePickerOpen(false) }}>
-                <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-0 flex flex-col max-h-[85vh]">
+                <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-0 flex flex-col sheet-mobile">
                   <SheetHeader className="px-5 pt-5 pb-3 border-b border-border shrink-0">
                     <SheetTitle className="text-base font-semibold tracking-tight text-left">
                       เลือกวันที่
@@ -442,7 +442,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
         >
           <PanelRight size={18} />
           {todayPendingCheckinCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white tabular-nums">
+            <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-micro-sm font-bold text-white tabular-nums">
               {todayPendingCheckinCount}
             </span>
           )}
@@ -464,7 +464,7 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
         >
           <PanelRight size={18} />
           {todayPendingCheckinCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white tabular-nums">
+            <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-micro-sm font-bold text-white tabular-nums">
               {todayPendingCheckinCount}
             </span>
           )}

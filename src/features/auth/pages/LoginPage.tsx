@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
-import { Receipt, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import { Logo } from '../../../shared/components/Sidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../../shared/ui/form'
@@ -49,11 +50,11 @@ export default function Login() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 radius-card bg-primary flex items-center justify-center mb-3">
-            <Receipt className="w-6 h-6 text-primary-foreground" />
+          <div className="mb-3">
+            <Logo className="w-12 h-12" />
           </div>
           <h1 className="text-xl font-bold text-foreground">Hideout Resort</h1>
-          <p className="text-helper mt-1">ระบบใบเสร็จรับเงิน</p>
+          <p className="text-helper mt-1">Hotel Operations</p>
         </div>
 
         <Card className="shadow-card">
@@ -91,7 +92,7 @@ export default function Login() {
                 />
                 <Button
                   type="submit"
-                  className="w-full min-h-[44px] radius-card font-medium mt-2 transition-transform duration-150 active:scale-[0.98]"
+                  className="w-full touch-target radius-card font-medium mt-2 transition-transform duration-150 active:scale-[0.98]"
                   disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting

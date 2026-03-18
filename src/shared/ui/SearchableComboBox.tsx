@@ -236,7 +236,7 @@ export default function SearchableComboBox<T extends object>({
             <DialogPrimitive.Content
               className={cn(
                 'fixed inset-x-0 bottom-0 z-50 flex flex-col',
-                'max-h-[85vh] rounded-t-2xl border-t border-border bg-card shadow-xl',
+                'sheet-mobile rounded-t-2xl border-t border-border bg-card shadow-xl',
                 'data-[state=open]:animate-in data-[state=closed]:animate-out',
                 'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
                 'data-[state=closed]:duration-200 data-[state=open]:duration-250',

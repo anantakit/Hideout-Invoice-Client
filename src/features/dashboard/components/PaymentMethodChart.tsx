@@ -77,7 +77,7 @@ export function PaymentMethodChart({ data }: Props) {
                   <span className="text-sm font-semibold tabular-nums text-foreground">
                     {formatCompact(entry.amount)} ฿
                   </span>
-                  <span className="text-[11px] text-muted-foreground tabular-nums w-8 text-right">
+                  <span className="text-micro-sm text-muted-foreground tabular-nums w-8 text-right">
                     {pct.toFixed(0)}%
                   </span>
                 </div>

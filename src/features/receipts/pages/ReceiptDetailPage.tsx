@@ -111,7 +111,7 @@ export default function ReceiptDetail() {
               {receipt.invoice_number}
             </h1>
             <p className="text-helper mt-1">
-              สร้างเมื่อ {formatThaiDate(receipt.created_at)}
+              ออกเมื่อ {formatThaiDate(receipt.issue_date)} · สร้าง {formatThaiDate(receipt.created_at)}
             </p>
           </div>
 
@@ -154,20 +154,6 @@ export default function ReceiptDetail() {
 
       {/* ── Content cards ── */}
       <div className="space-y-6">
-
-        {/* Meta */}
-        <Card className="transition-shadow duration-200 md:hover:shadow-md">
-          <CardContent className="p-5 md:p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className="text-helper uppercase tracking-wide mb-1">เลขที่ใบเสร็จ</p>
-              <p className="text-base font-medium text-foreground">{receipt.invoice_number}</p>
-            </div>
-            <div>
-              <p className="text-helper uppercase tracking-wide mb-1">วันที่ออกเอกสาร</p>
-              <p className="text-base font-medium text-foreground">{formatThaiDate(receipt.issue_date)}</p>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Customer */}
         <Card className="transition-shadow duration-200 md:hover:shadow-md">
@@ -212,26 +198,43 @@ export default function ReceiptDetail() {
           <CardHeader className="py-4 px-5 md:px-8 border-b border-border">
             <h2 className="text-body font-medium text-foreground">รายการห้องพัก</h2>
           </CardHeader>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ห้อง / รายละเอียด</TableHead>
-                <TableHead className="text-center">จำนวนคืน</TableHead>
-                <TableHead className="text-right">ราคาต่อคืน (บาท)</TableHead>
-                <TableHead className="text-right">รวมเงิน</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {receipt.items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="text-foreground/80">{item.description}</TableCell>
-                  <TableCell className="text-center text-muted-foreground">{item.quantity}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{formatTHB(item.unit_price)}</TableCell>
-                  <TableCell className="text-right font-medium text-foreground">{formatTHB(item.total)}</TableCell>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ห้อง / รายละเอียด</TableHead>
+                  <TableHead className="text-center">จำนวนคืน</TableHead>
+                  <TableHead className="text-right">ราคาต่อคืน (บาท)</TableHead>
+                  <TableHead className="text-right">รวมเงิน</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {receipt.items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="text-foreground/80">{item.description}</TableCell>
+                    <TableCell className="text-center text-muted-foreground">{item.quantity}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{formatTHB(item.unit_price)}</TableCell>
+                    <TableCell className="text-right font-medium text-foreground">{formatTHB(item.total)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile stacked cards */}
+          <div className="sm:hidden divide-y divide-border">
+            {receipt.items.map((item) => (
+              <div key={item.id} className="px-5 py-3 space-y-1">
+                <p className="text-sm font-medium text-foreground">{item.description}</p>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{item.quantity} คืน × {formatTHB(item.unit_price)}</span>
+                  <span className="font-medium text-foreground">{formatTHB(item.total)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
 
           <div className="px-5 md:px-8 py-4 border-t border-border bg-muted/20">
             <div className="flex justify-between items-center max-w-xs ml-auto">
@@ -246,7 +249,7 @@ export default function ReceiptDetail() {
           <Card className="transition-shadow duration-200 md:hover:shadow-md">
             <CardContent className="p-5 md:p-8 space-y-2">
               <p className="text-helper uppercase tracking-wide">หมายเหตุ</p>
-              <p className="text-helper whitespace-pre-wrap">{receipt.notes}</p>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{receipt.notes}</p>
             </CardContent>
           </Card>
         )}
@@ -267,12 +270,12 @@ export default function ReceiptDetail() {
           </Card>
         )}
 
-        {/* Download — mobile only, bottom of content like CreateBookingPage */}
-        <div className="pt-2 md:hidden">
+        {/* Mobile actions — download + delete */}
+        <div className="pt-2 md:hidden space-y-2">
           <Button
             onClick={handleDownload}
             disabled={downloading}
-            className="w-full min-h-[44px]"
+            className="w-full touch-target"
           >
             {downloading
               ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -280,6 +283,31 @@ export default function ReceiptDetail() {
             }
             ดาวน์โหลด PDF
           </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                disabled={deleteMutation.isPending}
+                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+                ลบใบเสร็จ
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>ลบใบเสร็จ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  ลบใบเสร็จ {receipt.invoice_number}? การกระทำนี้ไม่สามารถย้อนกลับได้
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteMutation.mutate()}>ลบ</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
       </div>

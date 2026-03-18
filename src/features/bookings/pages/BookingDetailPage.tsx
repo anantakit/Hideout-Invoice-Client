@@ -139,14 +139,14 @@ export default function BookingDetailPage() {
           variant="ghost"
           size="sm"
           className="-ml-2 text-muted-foreground"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/bookings')}
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           รายการจอง
         </Button>
 
         <Card>
-          <CardContent className="px-4 py-3">
+          <CardContent className="p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -159,14 +159,12 @@ export default function BookingDetailPage() {
                   <Badge variant="outline" className="text-micro">
                     {booking.source === 'walk_in' ? 'วอล์คอิน' : booking.source === 'online' ? 'ออนไลน์' : 'จองล่วงหน้า'}
                   </Badge>
-                  {booking.key_deposit_amount > 0 && (
-                    <Badge variant="amber" className="text-micro">
-                      ประกันกุญแจ: {formatTHB(booking.key_deposit_amount)}
-                    </Badge>
-                  )}
                 </div>
                 <p className="text-helper mt-1">
                   สร้างเมื่อ {formatThaiDate(booking.created_at)}
+                  {booking.key_deposit_amount > 0 && (
+                    <span className="ml-2">· ประกันกุญแจ {formatTHB(booking.key_deposit_amount)}</span>
+                  )}
                 </p>
               </div>
               {!editing && booking.status !== 'CHECKED_OUT' && booking.status !== 'CANCELLED' && (
@@ -181,19 +179,21 @@ export default function BookingDetailPage() {
 
             {editing ? (
               /* ── Edit mode ── */
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-caption block mb-1">ชื่อผู้เข้าพัก</label>
+                    <label htmlFor="edit-name" className="text-caption block mb-1">ชื่อผู้เข้าพัก</label>
                     <Input
+                      id="edit-name"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       placeholder="ชื่อ-สกุล"
                     />
                   </div>
                   <div>
-                    <label className="text-caption block mb-1">เบอร์โทร</label>
+                    <label htmlFor="edit-phone" className="text-caption block mb-1">เบอร์โทร</label>
                     <Input
+                      id="edit-phone"
                       value={editPhone}
                       onChange={(e) => {
                         const v = e.target.value.replace(/\D/g, '').slice(0, 10)
@@ -205,14 +205,16 @@ export default function BookingDetailPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-caption block mb-1">ส่วนลด (฿)</label>
+                  <label htmlFor="edit-discount" className="text-caption block mb-1">ส่วนลด (฿)</label>
                   <Input
+                    id="edit-discount"
                     type="number"
                     min="0"
                     step="0.01"
                     value={editDiscount}
                     onChange={(e) => setEditDiscount(e.target.value)}
                     placeholder="0"
+                    inputMode="decimal"
                   />
                 </div>
                 <div>
@@ -234,22 +236,22 @@ export default function BookingDetailPage() {
                     {editCustomerId && (
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         className="text-destructive/70 shrink-0"
+                        aria-label="ล้างผู้ชำระเงิน"
                         onClick={() => { setEditCustomerId(undefined); setEditCustomerLabel(undefined) }}
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                       </Button>
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2 pt-1">
-                  <Button variant="outline" size="sm" className="flex-1" disabled={updateBooking.isPending} onClick={cancelEdit}>
+                <div className="flex gap-3 pt-1">
+                  <Button variant="outline" className="flex-1 touch-target" disabled={updateBooking.isPending} onClick={cancelEdit}>
                     ยกเลิก
                   </Button>
                   <Button
-                    size="sm"
-                    className="flex-1"
+                    className="flex-1 touch-target"
                     disabled={!editName.trim() || !editPhone.trim() || updateBooking.isPending}
                     onClick={saveEdit}
                   >

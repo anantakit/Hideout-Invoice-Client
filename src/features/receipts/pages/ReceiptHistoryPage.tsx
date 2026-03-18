@@ -31,7 +31,7 @@ import {
   AlertDialogTrigger,
 } from '../../../shared/ui/alert-dialog'
 import { ReceiptDateFilter } from '../components/ReceiptDateFilter'
-import { BottomBar } from '../../../shared/ui/BottomBar'
+import { Fab } from '../../../shared/ui/Fab'
 import { Skeleton } from '../../../shared/ui/skeleton'
 
 async function downloadReceipt(receipt: Receipt) {
@@ -157,7 +157,7 @@ export default function ReceiptHistory() {
 
   return (
     <>
-    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-28 md:pb-6">
+    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-24 md:pb-6">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -338,15 +338,7 @@ export default function ReceiptHistory() {
       </Card>
     </div>
 
-    {/* Mobile sticky action bar */}
-    <BottomBar>
-      <Button asChild className="w-full min-h-[48px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]">
-        <Link to="/receipts/new">
-          <Plus className="w-4 h-4" />
-          สร้างใบเสร็จ
-        </Link>
-      </Button>
-    </BottomBar>
+    <Fab to="/receipts/new" label="สร้างใบเสร็จ" />
     </>
   )
 }

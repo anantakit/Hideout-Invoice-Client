@@ -132,7 +132,7 @@ export function TodayActionPanel({ data }: Props) {
                         <span className="text-xs text-muted-foreground">{item.label}</span>
                       </div>
                       {item.warning && (
-                        <p className="text-[11px] text-warning font-medium">{item.warning}</p>
+                        <p className="text-micro-sm text-warning font-medium">{item.warning}</p>
                       )}
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
@@ -223,7 +223,7 @@ export function TodayActionPanel({ data }: Props) {
               {remaining > 0 && (
                 <Link
                   to="/bookings?view=departures_today_owing"
-                  className="block text-center text-[11px] text-primary hover:text-primary/80 font-medium mt-1.5 transition-colors"
+                  className="block text-center text-micro-sm text-primary hover:text-primary/80 font-medium mt-1.5 transition-colors"
                 >
                   ดูเพิ่มเติมอีก {remaining} รายการ
                 </Link>

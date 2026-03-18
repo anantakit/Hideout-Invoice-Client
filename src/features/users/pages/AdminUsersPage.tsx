@@ -12,7 +12,7 @@ import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import { Card } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
-import { BottomBar } from '../../../shared/ui/BottomBar'
+import { Fab } from '../../../shared/ui/Fab'
 import { Skeleton } from '../../../shared/ui/skeleton'
 import { Badge } from '../../../shared/ui/badge'
 import {
@@ -88,7 +88,7 @@ export default function AdminUsers() {
 
   return (
     <>
-      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-28 md:pb-6">
+      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-24 md:pb-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-section text-2xl">จัดการผู้ใช้</h1>
@@ -231,15 +231,10 @@ export default function AdminUsers() {
         </Card>
       </div>
 
-      <BottomBar>
-        <Button
-          onClick={() => { setEditingUser(undefined); setModalOpen(true) }}
-          className="w-full min-h-[48px] radius-card font-medium transition-transform duration-150 active:scale-[0.98]"
-        >
-          <Plus className="w-4 h-4" />
-          เพิ่มผู้ใช้
-        </Button>
-      </BottomBar>
+      <Fab
+        onClick={() => { setEditingUser(undefined); setModalOpen(true) }}
+        label="เพิ่มผู้ใช้"
+      />
 
       <UserModal open={modalOpen} onClose={handleClose} user={editingUser} />
     </>

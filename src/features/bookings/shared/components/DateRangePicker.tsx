@@ -216,7 +216,7 @@ export function DateRangePicker({
       <div>
         {triggerEl}
         <Sheet open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
-          <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-0 flex flex-col max-h-[85vh]">
+          <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-0 flex flex-col sheet-mobile">
             <SheetHeader className="px-5 pt-4 pb-0 shrink-0">
               <SheetTitle className="text-body font-semibold tracking-tight text-left">
                 {phaseLabel}
