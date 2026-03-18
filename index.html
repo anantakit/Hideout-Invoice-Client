@@ -26,6 +26,263 @@
     />
   </head>
   <body>
+    <!--
+      ── Premium Splash Screen ──
+      Token mapping (mirrors index.css :root):
+        --background  : hsl(224 16% 10%)  = #151821
+        --primary     : hsl(222 85% 64%)  = #5B8CFF
+        --foreground  : hsl(218 16% 92%)  = #E6EAF2
+        --muted-fg    : hsl(218 10% 60%)  = #8B95A5
+        --card        : hsl(224 18% 14%)  = #1C212B
+        --sidebar     : hsl(224 20% 12%)  = #181C25
+    -->
+    <div id="splash" class="splash">
+      <style>
+        /* ── Token-derived custom properties (splash-scoped) ───────────── */
+        .splash {
+          --sp-bg:         hsl(224 16% 7%);
+          --sp-bg-card:    hsl(224 18% 14%);
+          --sp-accent:     hsl(222 85% 64%);
+          --sp-accent-alt: hsl(260 67% 67%);
+          --sp-text:       hsl(218 16% 92%);
+          --sp-text-muted: hsl(218 10% 60%);
+          --sp-text-dim:   hsl(218 10% 45%);
+          --sp-glow:       hsl(222 85% 64% / .12);
+          --sp-ease:       cubic-bezier(.4, 0, .2, 1);
+        }
+
+        /* ── Root ──────────────────────────────────────────────────────── */
+        .splash {
+          position: fixed; inset: 0; z-index: 9999;
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          background: var(--sp-bg);
+          overflow: hidden;
+          font-family: Inter, system-ui, -apple-system, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          transition: opacity .5s var(--sp-ease);
+        }
+
+        /* ── Background: ambient depth layers ──────────────────────────── */
+        .splash__background {
+          position: absolute; inset: 0; overflow: hidden;
+        }
+        .splash__background::before,
+        .splash__background::after {
+          content: ''; position: absolute; border-radius: 50%;
+          filter: blur(80px);
+          animation: sp-ambient 10s var(--sp-ease) infinite alternate;
+        }
+        /* Top-left warm glow */
+        .splash__background::before {
+          width: 500px; height: 500px;
+          top: -15%; left: -10%;
+          background: radial-gradient(circle, var(--sp-glow), transparent 70%);
+        }
+        /* Bottom-right cool glow */
+        .splash__background::after {
+          width: 600px; height: 600px;
+          bottom: -20%; right: -15%;
+          background: radial-gradient(circle, hsl(260 67% 67% / .06), transparent 70%);
+          animation-delay: -5s;
+        }
+        @keyframes sp-ambient {
+          0%   { transform: translate(0, 0) scale(1) }
+          100% { transform: translate(30px, -20px) scale(1.1) }
+        }
+
+        /* Subtle grid pattern */
+        .splash__grid {
+          position: absolute; inset: 0;
+          background-image:
+            linear-gradient(hsl(224 16% 16% / .3) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(224 16% 16% / .3) 1px, transparent 1px);
+          background-size: 60px 60px;
+          mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, black 20%, transparent 70%);
+          -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, black 20%, transparent 70%);
+          opacity: .35;
+        }
+
+        /* ── Content wrapper ───────────────────────────────────────────── */
+        .splash__content {
+          position: relative; z-index: 1;
+          display: flex; flex-direction: column; align-items: center;
+          opacity: 0; transform: translateY(12px);
+          animation: sp-enter .8s var(--sp-ease) .15s forwards;
+        }
+        @keyframes sp-enter {
+          to { opacity: 1; transform: translateY(0) }
+        }
+
+        /* ── Logo ──────────────────────────────────────────────────────── */
+        .splash__logo {
+          position: relative;
+          width: 88px; height: 88px;
+          display: flex; align-items: center; justify-content: center;
+          border-radius: 22px;
+          background: hsl(224 18% 12%);
+          border: 1px solid hsl(222 85% 64% / .06);
+          box-shadow:
+            0 0 40px hsl(222 85% 64% / .10),
+            0 8px 32px hsl(0 0% 0% / .3);
+          animation: sp-float 4s var(--sp-ease) infinite;
+        }
+        @keyframes sp-float {
+          0%, 100% { transform: translateY(0) }
+          50%      { transform: translateY(-5px) }
+        }
+
+        .splash__logo svg {
+          position: relative; z-index: 1;
+        }
+
+        /* ── Brand typography ──────────────────────────────────────────── */
+        .splash__brand {
+          margin-top: 32px; text-align: center;
+          opacity: 0;
+          animation: sp-enter .6s var(--sp-ease) .4s forwards;
+        }
+        .splash__title {
+          font-size: 16px; font-weight: 600; letter-spacing: .32em;
+          color: var(--sp-text); line-height: 1;
+        }
+        .splash__subtitle {
+          font-size: 9px; font-weight: 400; letter-spacing: .55em;
+          color: var(--sp-text-dim); margin-top: 6px;
+          text-indent: .55em; /* center letter-spaced text */
+        }
+
+        /* ── Dot-fade loader ──────────────────────────────────────────── */
+        .splash__loader {
+          margin-top: 44px;
+          display: flex; align-items: center; gap: 10px;
+          opacity: 0;
+          animation: sp-enter .6s var(--sp-ease) .6s forwards;
+        }
+        .splash__loader-dot {
+          width: 6px; height: 6px; border-radius: 50%;
+          background: var(--sp-accent);
+          opacity: .15;
+          animation: sp-dot-fade 1.4s var(--sp-ease) infinite;
+        }
+        .splash__loader-dot:nth-child(2) { animation-delay: .2s; }
+        .splash__loader-dot:nth-child(3) { animation-delay: .4s; }
+        @keyframes sp-dot-fade {
+          0%, 100% { opacity: .15 }
+          40%      { opacity: 1 }
+        }
+
+        /* ── Status messages ───────────────────────────────────────────── */
+        .splash__status {
+          margin-top: 28px; height: 20px;
+          font-size: 12px; font-weight: 400;
+          color: var(--sp-text-dim);
+          letter-spacing: .03em;
+          opacity: 0;
+          animation: sp-enter .6s var(--sp-ease) .8s forwards;
+        }
+        .splash__status span {
+          display: inline-block;
+          animation: sp-msg-cycle 3s var(--sp-ease) forwards;
+        }
+        @keyframes sp-msg-cycle {
+          0%   { opacity: 0; transform: translateY(6px) }
+          8%   { opacity: 1; transform: translateY(0) }
+          90%  { opacity: 1; transform: translateY(0) }
+          100% { opacity: 0; transform: translateY(-6px) }
+        }
+
+        /* ── Footer ────────────────────────────────────────────────────── */
+        .splash__footer {
+          position: absolute;
+          bottom: max(28px, env(safe-area-inset-bottom, 28px));
+          z-index: 1;
+          font-size: 9px; font-weight: 400; letter-spacing: .2em;
+          color: var(--sp-text-dim);
+          opacity: .55;
+          text-indent: .2em;
+        }
+
+        /* ── Reduced motion ────────────────────────────────────────────── */
+        @media (prefers-reduced-motion: reduce) {
+          .splash__logo,
+          .splash__logo::before,
+          .splash__background::before,
+          .splash__background::after { animation: none }
+          .splash__loader-dot { animation: none; opacity: .4 }
+        }
+      </style>
+
+      <!-- Background layers -->
+      <div class="splash__background">
+        <div class="splash__grid"></div>
+      </div>
+
+      <!-- Main content -->
+      <div class="splash__content">
+
+        <!-- Logo mark -->
+        <div class="splash__logo">
+          <svg width="44" height="44" viewBox="0 0 100 100" fill="none">
+            <!-- Left pillar -->
+            <rect x="18" y="18" width="10" height="64" rx="3" fill="hsl(222 85% 64%)"/>
+            <!-- Right pillar -->
+            <rect x="72" y="18" width="10" height="64" rx="3" fill="hsl(222 85% 64%)"/>
+            <!-- Crossbar — slightly thinner -->
+            <rect x="28" y="43" width="44" height="8" rx="2" fill="hsl(222 85% 64%)" opacity=".6"/>
+          </svg>
+        </div>
+
+        <!-- Brand name -->
+        <div class="splash__brand">
+          <div class="splash__title">HIDEOUT</div>
+          <div class="splash__subtitle">RESORT</div>
+        </div>
+
+        <!-- Dot-fade loader -->
+        <div class="splash__loader">
+          <div class="splash__loader-dot"></div>
+          <div class="splash__loader-dot"></div>
+          <div class="splash__loader-dot"></div>
+        </div>
+
+        <!-- Status text -->
+        <div class="splash__status" id="sp-msg"></div>
+
+      </div>
+
+      <!-- Footer tagline -->
+      <div class="splash__footer">HOTEL INTELLIGENCE PLATFORM</div>
+
+      <!-- Splash logic -->
+      <script>
+        (function () {
+          var messages = [
+            'Syncing room availability\u2026',
+            'Loading booking history\u2026',
+            'Analyzing occupancy intelligence\u2026',
+            'Preparing revenue insights\u2026',
+            'Optimizing pricing engine\u2026',
+            'Almost ready\u2026'
+          ];
+          var msgEl  = document.getElementById('sp-msg');
+          var idx    = 0;
+
+          // Status message rotator
+          function showMsg() {
+            if (!msgEl) return;
+            msgEl.innerHTML = '<span>' + messages[idx % messages.length] + '</span>';
+            idx++;
+          }
+          showMsg();
+          var msgInterval = setInterval(showMsg, 3000);
+
+          // Expose cleanup for main.tsx
+          window.__splashCleanup = function () { clearInterval(msgInterval); };
+        })();
+      </script>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

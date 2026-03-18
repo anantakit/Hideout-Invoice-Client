@@ -1,38 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Background -->
   <rect width="512" height="512" rx="108" fill="#151821"/>
-  <!-- Subtle border -->
-  <rect x="1" y="1" width="510" height="510" rx="107" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2"/>
+  <rect x="1" y="1" width="510" height="510" rx="107" fill="none" stroke="rgba(91,124,250,0.06)" stroke-width="2"/>
 
-  <!-- H letterform — geometric, modern -->
-  <g fill="none" stroke="#5B8CFF" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Left vertical -->
-    <line x1="160" y1="120" x2="160" y2="320" stroke-width="32"/>
-    <!-- Right vertical -->
-    <line x1="352" y1="120" x2="352" y2="320" stroke-width="32"/>
-    <!-- Crossbar -->
-    <line x1="160" y1="220" x2="352" y2="220" stroke-width="32"/>
-  </g>
+  <!-- H — filled geometric with depth crossbar -->
+  <rect x="152" y="128" width="48" height="256" rx="14" fill="#5B7CFA"/>
+  <rect x="312" y="128" width="48" height="256" rx="14" fill="#5B7CFA"/>
+  <rect x="200" y="228" width="112" height="40" rx="10" fill="#5B7CFA" opacity=".6"/>
 
-  <!-- HIDEOUT RESORT — spaced tracking -->
-  <text
-    x="256"
-    y="400"
-    text-anchor="middle"
-    font-family="Inter, system-ui, sans-serif"
-    font-weight="500"
-    font-size="36"
-    letter-spacing="0.28em"
-    fill="rgba(255,255,255,0.45)"
-  >HIDEOUT</text>
-  <text
-    x="256"
-    y="436"
-    text-anchor="middle"
-    font-family="Inter, system-ui, sans-serif"
-    font-weight="400"
-    font-size="22"
-    letter-spacing="0.45em"
-    fill="rgba(255,255,255,0.25)"
-  >RESORT</text>
+  <text x="256" y="432" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="36" letter-spacing="0.28em" fill="rgba(255,255,255,0.45)">HIDEOUT</text>
 </svg>

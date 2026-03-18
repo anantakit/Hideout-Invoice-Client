@@ -3,7 +3,6 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
   BedDouble,
-  Building2,
   CalendarRange,
   DoorOpen,
   FileText,
@@ -90,8 +89,14 @@ const NAV_SECTIONS: NavSectionConfig[] = [
 /** Shared logo mark — used by both the sidebar and the mobile top bar. */
 export function Logo() {
   return (
-    <div className="w-8 h-8 radius-button bg-primary flex items-center justify-center shrink-0">
-      <Building2 className="w-4 h-4 text-primary-foreground" aria-hidden />
+    <div className="w-8 h-8 shrink-0">
+      <svg viewBox="0 0 100 100" fill="none" className="w-full h-full" aria-hidden>
+        <rect width="100" height="100" rx="22" fill="hsl(224 18% 12%)" />
+        <rect x=".5" y=".5" width="99" height="99" rx="21.5" fill="none" stroke="hsl(222 85% 64% / .06)" strokeWidth="1" />
+        <rect x="24" y="22" width="10" height="56" rx="3" fill="hsl(222 80% 62%)" />
+        <rect x="66" y="22" width="10" height="56" rx="3" fill="hsl(222 80% 62%)" />
+        <rect x="34" y="44" width="32" height="8" rx="2" fill="hsl(222 80% 62%)" opacity=".6" />
+      </svg>
     </div>
   )
 }

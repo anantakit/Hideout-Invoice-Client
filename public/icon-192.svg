@@ -1,11 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
   <rect width="192" height="192" rx="40" fill="#151821"/>
-  <rect x="1" y="1" width="190" height="190" rx="39" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="1" y="1" width="190" height="190" rx="39" fill="none" stroke="rgba(91,124,250,0.06)" stroke-width="1"/>
 
-  <!-- H — scaled for small icon -->
-  <g fill="none" stroke="#5B8CFF" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="60" y1="44" x2="60" y2="148" stroke-width="14"/>
-    <line x1="132" y1="44" x2="132" y2="148" stroke-width="14"/>
-    <line x1="60" y1="96" x2="132" y2="96" stroke-width="14"/>
-  </g>
+  <!-- H — filled geometric with depth crossbar -->
+  <rect x="56" y="48" width="20" height="96" rx="6" fill="#5B7CFA"/>
+  <rect x="116" y="48" width="20" height="96" rx="6" fill="#5B7CFA"/>
+  <rect x="76" y="84" width="40" height="16" rx="4" fill="#5B7CFA" opacity=".6"/>
 </svg>
