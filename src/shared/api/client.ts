@@ -113,10 +113,18 @@ apiClient.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    const message =
-      error.response?.data?.message ||
-      error.message ||
-      'An unexpected error occurred'
+    // Build a user-friendly message from the API response.
+    // For validation errors (422), include field-level details so the user
+    // knows exactly which fields need fixing.
+    const data = error.response?.data
+    let message = data?.message || error.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่'
+
+    if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+      const details = (data.errors as Array<{ field: string; message: string }>)
+        .map((e) => e.message)
+        .join(', ')
+      message = details
+    }
 
     // Attach HTTP status so callers can distinguish 403 from other errors
     const err = new Error(message) as Error & { status?: number }
