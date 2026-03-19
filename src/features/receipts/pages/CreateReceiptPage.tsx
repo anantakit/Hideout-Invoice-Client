@@ -18,6 +18,7 @@ import { BottomBar } from '../../../shared/ui/BottomBar'
 import { DatePicker } from '../../../shared/ui/DatePicker'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
+import { Textarea } from '../../../shared/ui/textarea'
 import { ToggleGroup } from '../../../shared/ui/ToggleGroup'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../../shared/ui/form'
 import {
@@ -29,7 +30,7 @@ import {
 } from '../../../shared/ui/select'
 
 const itemSchema = z.object({
-  description: z.string().min(1, 'กรุณาระบุเลขห้อง / รายละเอียด'),
+  description: z.string().min(1, 'กรุณาระบุรายละเอียด'),
   quantity: z.coerce.number().gt(0, 'ต้องมากกว่า 0'),
   unit_price: z.coerce.number().gte(0, 'ต้องไม่ติดลบ'),
 })
@@ -77,10 +78,10 @@ const ReceiptItemRow = React.memo(function ReceiptItemRow({
       className="grid grid-cols-1 md:grid-cols-[1fr_100px_130px_100px_40px] gap-3 items-start p-4 bg-background rounded-lg border border-border"
     >
       <div>
-        <label htmlFor={`item-desc-${index}`} className="text-sm font-medium text-foreground md:hidden block mb-1.5">ห้อง / รายละเอียด</label>
+        <label htmlFor={`item-desc-${index}`} className="text-sm font-medium text-foreground md:hidden block mb-1.5">รายละเอียด</label>
         <Input
           id={`item-desc-${index}`}
-          placeholder="เช่น ห้อง 101"
+          placeholder="เช่น ห้อง 101, ค่าซักรีด"
           className={itemErrors?.description ? 'border-destructive' : ''}
           {...register(`items.${index}.description`)}
         />
@@ -117,7 +118,8 @@ const ReceiptItemRow = React.memo(function ReceiptItemRow({
         />
       </div>
 
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between md:justify-end">
+        <span className="text-sm text-muted-foreground md:hidden">รวม</span>
         <span className="text-sm font-medium text-foreground text-right">{formatTHB(lineTotal)}</span>
       </div>
 
@@ -126,10 +128,11 @@ const ReceiptItemRow = React.memo(function ReceiptItemRow({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
+          className="touch-target-square text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
           onClick={() => onRemove(index)}
           disabled={!canRemove}
-          title="ลบห้อง"
+          aria-label="ลบรายการ"
+          title="ลบรายการ"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -328,7 +331,7 @@ export default function CreateReceipt() {
               <Card className="shadow-sm">
                 <CardHeader className="px-5 md:px-6 pt-5 pb-3 border-b border-border flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-base font-semibold tracking-tight">ผู้ชำระเงิน</CardTitle>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setCustomerModalOpen(true)}>
+                  <Button type="button" variant="outline" size="sm" className="touch-target" onClick={() => setCustomerModalOpen(true)}>
                     + เพิ่มลูกค้าใหม่
                   </Button>
                 </CardHeader>
@@ -412,7 +415,7 @@ export default function CreateReceipt() {
               {/* Room Items */}
               <Card className="shadow-sm">
                 <CardHeader className="px-5 md:px-6 pt-5 pb-3 border-b border-border">
-                  <CardTitle className="text-base font-semibold tracking-tight">รายการห้องพัก</CardTitle>
+                  <CardTitle className="text-base font-semibold tracking-tight">รายการ</CardTitle>
                 </CardHeader>
                 <CardContent className="p-5 md:p-6 space-y-3">
                   {bookingId && (
@@ -431,7 +434,7 @@ export default function CreateReceipt() {
                     </div>
                   )}
                   <div className="hidden md:grid grid-cols-[1fr_100px_130px_100px_40px] gap-3 mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
-                    <span>ห้อง / รายละเอียด</span>
+                    <span>รายละเอียด</span>
                     <span className="text-center">จำนวนคืน</span>
                     <span className="text-right">ราคาต่อคืน (บาท)</span>
                     <span className="text-right">รวมเงิน</span>
@@ -461,11 +464,11 @@ export default function CreateReceipt() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="mt-1"
+                    className="mt-1 touch-target"
                     onClick={() => append({ description: '', quantity: 1, unit_price: 0 })}
                   >
                     <Plus className="w-4 h-4" />
-                    เพิ่มห้อง
+                    เพิ่มรายการ
                   </Button>
                 </CardContent>
               </Card>
@@ -482,10 +485,9 @@ export default function CreateReceipt() {
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <textarea
+                          <Textarea
                             rows={3}
                             placeholder="หมายเหตุเพิ่มเติม…"
-                            className="flex min-h-[80px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary resize-none"
                             {...field}
                           />
                         </FormControl>
@@ -543,9 +545,8 @@ export default function CreateReceipt() {
         <Button
           type="button"
           variant="ghost"
-          size="sm"
           onClick={() => navigate('/receipts')}
-          className="w-full text-muted-foreground"
+          className="w-full touch-target text-muted-foreground"
         >
           ยกเลิก
         </Button>

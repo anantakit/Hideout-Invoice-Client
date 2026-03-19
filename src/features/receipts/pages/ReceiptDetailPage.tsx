@@ -65,14 +65,20 @@ export default function ReceiptDetail() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
-        <Skeleton className="h-6 w-32" />
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
+      <div className="px-4 py-6 sm:px-8 max-w-4xl mx-auto space-y-6">
+        {/* Back link */}
+        <Skeleton className="h-5 w-16" />
+        {/* Title + subtitle */}
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-64" />
         </div>
-        <Skeleton className="h-40 rounded-xl" />
+        {/* Customer card */}
+        <Skeleton className="h-28 rounded-xl" />
+        {/* Stay info card */}
+        <Skeleton className="h-20 rounded-xl" />
+        {/* Items table */}
+        <Skeleton className="h-48 rounded-xl" />
       </div>
     )
   }
@@ -98,7 +104,7 @@ export default function ReceiptDetail() {
         {/* Back link */}
         <Link
           to="/receipts"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4 touch-target"
         >
           <ChevronLeft className="w-4 h-4" />
           กลับ
@@ -196,7 +202,7 @@ export default function ReceiptDetail() {
         {/* Room items */}
         <Card className="overflow-hidden transition-shadow duration-200 md:hover:shadow-md">
           <CardHeader className="py-4 px-5 md:px-8 border-b border-border">
-            <h2 className="text-body font-medium text-foreground">รายการห้องพัก</h2>
+            <h2 className="text-body font-medium text-foreground">รายการ</h2>
           </CardHeader>
 
           {/* Desktop table */}
@@ -204,7 +210,7 @@ export default function ReceiptDetail() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ห้อง / รายละเอียด</TableHead>
+                  <TableHead>รายละเอียด</TableHead>
                   <TableHead className="text-center">จำนวนคืน</TableHead>
                   <TableHead className="text-right">ราคาต่อคืน (บาท)</TableHead>
                   <TableHead className="text-right">รวมเงิน</TableHead>
@@ -261,7 +267,7 @@ export default function ReceiptDetail() {
               <p className="text-helper uppercase tracking-wide mb-2">การจองที่เกี่ยวข้อง</p>
               <Link
                 to={`/bookings/${receipt.booking_id}`}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors touch-target"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 ดูการจอง #{receipt.booking_id.slice(0, 8).toUpperCase()}
@@ -289,7 +295,7 @@ export default function ReceiptDetail() {
               <Button
                 variant="ghost"
                 disabled={deleteMutation.isPending}
-                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="w-full touch-target text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="h-4 w-4" />
                 ลบใบเสร็จ
