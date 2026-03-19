@@ -61,6 +61,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
         amount: Number(values.amount),
         method: values.method,
         note: values.note || undefined,
+        idempotency_key: crypto.randomUUID(),
       },
       {
         onSuccess: () => {

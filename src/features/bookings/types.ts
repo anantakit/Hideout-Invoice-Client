@@ -229,6 +229,8 @@ export interface CreatePaymentPayload {
   amount: number
   method: 'CASH' | 'TRANSFER'
   note?: string
+  type?: 'PAYMENT' | 'REFUND'
+  idempotency_key: string
 }
 
 export interface ExtendStayPayload {
