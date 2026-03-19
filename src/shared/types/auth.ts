@@ -29,6 +29,10 @@ export interface LoginResponse {
   user: User
 }
 
+export interface RefreshResponse {
+  token: string
+}
+
 export interface ChangePasswordPayload {
   current_password: string
   new_password: string

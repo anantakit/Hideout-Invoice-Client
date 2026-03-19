@@ -8,8 +8,13 @@ interface Props {
 }
 
 export default function ProtectedRoute({ children, requiredRole }: Props) {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
+
+  // Wait for silent refresh to complete before making auth decisions
+  if (isLoading) {
+    return null
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
