@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef, Fragment } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFormContext, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Loader2, Banknote, KeyRound, CreditCard, Clock } from 'lucide-react'
+import { ArrowLeft, Loader2, Banknote, KeyRound, CreditCard, Clock, Check, X } from 'lucide-react'
 import { cn, todayISO, addDaysISO, formatCompactNumber } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
@@ -20,6 +20,7 @@ import { Input } from '@/shared/ui/input'
 import { ToggleGroup } from '@/shared/ui/ToggleGroup'
 import SearchableComboBox from '@/shared/ui/SearchableComboBox'
 import { useCreateBooking } from '../hooks'
+import { KEY_DEPOSIT_PER_ROOM } from '../constants'
 import { createBookingSchema } from '../create-booking/utils/createBookingSchema'
 import type { CreateBookingFormValues } from '../create-booking/utils/createBookingSchema'
 import { expandGroupedStays } from '../create-booking/utils/expandGroupedStays'
@@ -30,12 +31,17 @@ import { customersApi } from '../../customers/api'
 import CustomerModal from '../../customers/components/CustomerModal'
 import type { Customer } from '../../customers/types'
 
-const KEY_DEPOSIT_PER_ROOM = 200
-
 const SOURCE_OPTIONS = [
   { value: 'advance' as const, label: 'จองล่วงหน้า', desc: 'จองห้องพักล่วงหน้า' },
   { value: 'walk_in' as const, label: 'วอล์คอิน',     desc: 'เช็คอินทันที' },
 ]
+
+function formatPhoneDisplay(digits: string): string {
+  const d = digits.replace(/\D/g, '')
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`
+  return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6, 10)}`
+}
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
@@ -55,7 +61,7 @@ export default function CreateBookingPage() {
 
   const form = useForm<CreateBookingFormValues>({
     resolver: zodResolver(createBookingSchema),
-    mode: 'onBlur',
+    mode: 'onChange',
     defaultValues: {
       source: 'advance',
       guest_name: '',
@@ -94,12 +100,14 @@ export default function CreateBookingPage() {
   const hasPayment = paymentMode === 'reserve' || (paymentAmount != null && paymentAmount > 0)
   const canSubmit = hasGuest && hasValidItems && hasPayment && !isSubmitting
 
+
   const handleCustomerCreated = useCallback(
     (customer: Customer) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
       setSelectedCustomer(customer)
       form.setValue('customer_id', customer.id)
       setCustomerModalOpen(false)
+      toast.success(`เพิ่มลูกค้า "${customer.name}" สำเร็จ`)
     },
     [queryClient, form],
   )
@@ -172,6 +180,39 @@ export default function CreateBookingPage() {
           </p>
         </div>
 
+        {/* Progress — sticky so it stays visible while scrolling */}
+        <div className="sticky top-0 z-10 -mx-4 px-4 py-2.5 bg-background backdrop-blur-sm">
+          <div className="flex items-center gap-1 max-w-2xl mx-auto">
+            {[
+              { label: 'ผู้เข้าพัก', done: hasGuest },
+              { label: 'ห้องพัก', done: hasValidItems },
+              { label: 'ชำระเงิน', done: hasPayment },
+            ].map((step, i, arr) => (
+              <Fragment key={step.label}>
+                {i > 0 && (
+                  <div className={cn('h-px flex-1', arr[i - 1].done ? 'bg-primary/50' : 'bg-border')} />
+                )}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className={cn(
+                    'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold transition-colors motion-reduce:transition-none',
+                    step.done
+                      ? 'bg-primary text-primary-foreground'
+                      : 'border border-border text-muted-foreground',
+                  )}>
+                    {step.done ? <Check className="w-3 h-3" /> : i + 1}
+                  </div>
+                  <span className={cn(
+                    'text-xs',
+                    step.done ? 'text-foreground font-medium' : 'text-muted-foreground',
+                  )}>
+                    {step.label}
+                  </span>
+                </div>
+              </Fragment>
+            ))}
+          </div>
+        </div>
+
         <Form {...form}>
           <form onSubmit={onSubmit} className="space-y-5" noValidate>
 
@@ -219,9 +260,10 @@ export default function CreateBookingPage() {
                         <Input
                           {...field}
                           inputMode="tel"
-                          maxLength={10}
-                          placeholder="0812345678"
-                          onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                          maxLength={12}
+                          placeholder="081-234-5678"
+                          value={formatPhoneDisplay(field.value)}
+                          onChange={(e) => field.onChange(e.target.value.replace(/\D/g, '').slice(0, 10))}
                         />
                       </FormControl>
                       <FormMessage className="text-xs" />
@@ -255,10 +297,23 @@ export default function CreateBookingPage() {
                     )}
                   />
                   {selectedCustomer && (
-                    <div className="text-xs text-muted-foreground space-y-0.5 pl-1">
-                      <p className="font-semibold text-foreground">{selectedCustomer.name}</p>
-                      {selectedCustomer.phone && <p>โทร: {selectedCustomer.phone}</p>}
-                      {selectedCustomer.tax_id && <p>เลขผู้เสียภาษี: {selectedCustomer.tax_id}</p>}
+                    <div className="flex items-start justify-between">
+                      <div className="text-xs text-muted-foreground space-y-0.5 pl-1">
+                        <p className="font-semibold text-foreground">{selectedCustomer.name}</p>
+                        {selectedCustomer.phone && <p>โทร: {selectedCustomer.phone}</p>}
+                        {selectedCustomer.tax_id && <p>เลขผู้เสียภาษี: {selectedCustomer.tax_id}</p>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCustomer(null)
+                          form.setValue('customer_id', undefined)
+                        }}
+                        className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label="ยกเลิกเลือกผู้ชำระเงิน"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -290,9 +345,9 @@ export default function CreateBookingPage() {
             <BookingSummary />
 
             {/* Submit */}
-            <div className="pt-2">
+            <div className="pt-4 pb-6">
               <Button type="submit" disabled={!canSubmit} className="w-full touch-target md:w-auto md:min-w-36 md:float-right">
-                {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin motion-reduce:animate-none" />}
                 {submitLabel}
               </Button>
             </div>
@@ -328,20 +383,28 @@ function PaymentModeSelector() {
   const totalAmount = useTotalAmount()
   const items = useWatch({ control: form.control, name: 'items' })
   const paymentMode = useWatch({ control: form.control, name: 'payment_mode' })
+  const prevModeRef = useRef(paymentMode)
 
   const totalRooms = items.reduce((s, i) => s + Math.max(1, i.quantity ?? 1), 0)
   const depositAmount = KEY_DEPOSIT_PER_ROOM * totalRooms
 
-  // Auto-fill payment_amount when mode changes
+  // Auto-fill payment_amount when mode changes (doesn't overwrite user input in partial mode)
   useEffect(() => {
+    const modeChanged = prevModeRef.current !== paymentMode
+    prevModeRef.current = paymentMode
+
     if (paymentMode === 'full') {
-      form.setValue('payment_amount', totalAmount)
+      form.setValue('payment_amount', totalAmount > 0 ? totalAmount : undefined)
       form.setValue('key_deposit_amount', undefined)
     } else if (paymentMode === 'full_deposit') {
-      form.setValue('payment_amount', totalAmount + depositAmount)
+      const total = totalAmount + depositAmount
+      form.setValue('payment_amount', total > 0 ? total : undefined)
       form.setValue('key_deposit_amount', depositAmount)
     } else if (paymentMode === 'partial') {
-      form.setValue('key_deposit_amount', undefined)
+      if (modeChanged) {
+        form.setValue('payment_amount', undefined)
+        form.setValue('key_deposit_amount', undefined)
+      }
     } else {
       form.setValue('payment_amount', undefined)
       form.setValue('key_deposit_amount', undefined)
@@ -358,7 +421,8 @@ function PaymentModeSelector() {
             options={PAYMENT_MODE_OPTIONS}
             value={field.value}
             onChange={field.onChange}
-            columns={2}
+            responsiveColumns
+            className="grid-cols-1 sm:grid-cols-2"
           />
         </FormItem>
       )}
@@ -376,7 +440,7 @@ function PaymentFields() {
   const isReadOnly  = paymentMode === 'full' || paymentMode === 'full_deposit'
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <FormField
         control={form.control}
         name="payment_amount"

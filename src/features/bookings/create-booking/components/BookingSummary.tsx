@@ -6,8 +6,7 @@ import { Card, CardContent } from '@/shared/ui/card'
 import { Separator } from '@/shared/ui/separator'
 import { useRoomTypes } from '../../hooks'
 import type { CreateBookingFormValues } from '../utils/createBookingSchema'
-
-const KEY_DEPOSIT_PER_ROOM = 200
+import { KEY_DEPOSIT_PER_ROOM } from '../../constants'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

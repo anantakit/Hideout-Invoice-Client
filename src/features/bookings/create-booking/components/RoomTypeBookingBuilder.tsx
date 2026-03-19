@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react'
+import toast from 'react-hot-toast'
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form'
 import { Plus, Minus, Trash2, Loader2, Wand2, Check } from 'lucide-react'
 import { cn, todayISO, addDaysISO } from '@/shared/utils'
@@ -251,16 +252,17 @@ export function RoomTypeBookingBuilder() {
                     form.setValue(`items.${i}.assigned_room_ids`, [])
                   }
                 })
+                toast.success('ซิงค์วันที่ทุกรายการแล้ว')
               }
             }}
             className={cn(
-              'w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors',
+              'w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors motion-reduce:transition-none',
               sameDates
                 ? 'bg-primary border-primary text-primary-foreground'
                 : 'border-border bg-background hover:border-muted-foreground/50',
             )}
           >
-            {sameDates && <Check className="w-3 h-3" />}
+            {sameDates && <Check className="w-3.5 h-3.5" />}
           </button>
           <span className="text-body">ใช้วันที่เดิมสำหรับทุกรายการ</span>
         </label>
@@ -284,7 +286,7 @@ export function RoomTypeBookingBuilder() {
         variant="outline"
         size="sm"
         onClick={addItem}
-        className="w-full"
+        className="w-full touch-target"
       >
         <Plus className="w-4 h-4 mr-2" />
         เพิ่มประเภทห้อง
@@ -297,7 +299,7 @@ export function RoomTypeBookingBuilder() {
           variant="outline"
           size="sm"
           onClick={handleUnifiedAutoAssign}
-          className="w-full gap-1.5"
+          className="w-full gap-1.5 touch-target"
         >
           <Wand2 className="w-3.5 h-3.5" />
           มอบหมายอัตโนมัติทั้งหมด
@@ -398,7 +400,7 @@ function RoomTypeBookingItem({
               type="button"
               variant="ghost"
               size="icon"
-              className="h-7 w-7"
+              className="h-9 w-9"
               onClick={onRemove}
             >
               <Trash2 className="w-4 h-4 text-muted-foreground" />
@@ -419,6 +421,7 @@ function RoomTypeBookingItem({
                 value={field.value}
                 onValueChange={(v) => {
                   field.onChange(v)
+                  form.setValue(`items.${index}.quantity`, 1)
                   form.setValue(`items.${index}.assigned_room_ids`, [])
                 }}
               >
@@ -457,7 +460,7 @@ function RoomTypeBookingItem({
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-10 w-10 shrink-0 sm:h-9 sm:w-9"
+                    className="h-10 w-10 shrink-0 sm:h-9 sm:w-9 transition-colors"
                     disabled={!roomTypeId || field.value <= 1}
                     onClick={() => {
                       const next = Math.max(1, field.value - 1)
@@ -484,7 +487,7 @@ function RoomTypeBookingItem({
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-10 w-10 shrink-0 sm:h-9 sm:w-9"
+                    className="h-10 w-10 shrink-0 sm:h-9 sm:w-9 transition-colors"
                     disabled={!roomTypeId || field.value >= maxQuantity}
                     onClick={() => {
                       const next = Math.min(maxQuantity, field.value + 1)
@@ -500,6 +503,11 @@ function RoomTypeBookingItem({
           )}
         />
       </div>
+
+      {/* Hint when no room type selected */}
+      {!roomTypeId && (
+        <p className="text-xs text-muted-foreground -mt-2">เลือกประเภทห้องก่อนเพื่อดูห้องว่างและตั้งจำนวน</p>
+      )}
 
       {/* Available rooms hint */}
       {showRoomPicker && availableCount > 0 && (
@@ -553,7 +561,7 @@ function RoomTypeBookingItem({
 
           {availLoading ? (
             <div className="flex justify-center py-3">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none text-muted-foreground" />
             </div>
           ) : roomsForType.length === 0 ? (
             <p className="text-xs text-destructive">
@@ -581,10 +589,10 @@ function RoomTypeBookingItem({
                             className={cn(
                               'h-10 radius-button border text-xs font-semibold transition-colors',
                               isSelected
-                                ? 'border-primary bg-primary text-primary-foreground'
+                                ? 'border-primary bg-primary text-primary-foreground cursor-pointer'
                                 : isDisabled || isFull
                                 ? 'border-border/50 bg-muted/50 text-muted-foreground/50 cursor-not-allowed'
-                                : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5',
+                                : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5 cursor-pointer',
                             )}
                           >
                             {room.room_number}

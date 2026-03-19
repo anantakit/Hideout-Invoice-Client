@@ -38,6 +38,7 @@ import { type TimelineBooking, type TimelineRoom, type UnassignedStay, getStatus
 import { useBooking, useCreateBooking, useAvailabilityGrouped, useCheckoutRooms } from '../../hooks'
 import { InlineCheckIn } from '../../shared/components/InlineCheckIn'
 import { DesktopOperationsPanel } from './DesktopOperationsPanel'
+import { KEY_DEPOSIT_PER_ROOM } from '../../constants'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -432,7 +433,6 @@ function CreateBookingContent({
     })
   }
 
-  const KEY_DEPOSIT_PER_ROOM = 200
   const depositAmount = KEY_DEPOSIT_PER_ROOM * selectedRooms.length
 
   const hasGuest = guestName.trim().length > 0 && guestPhone.trim().length === 10

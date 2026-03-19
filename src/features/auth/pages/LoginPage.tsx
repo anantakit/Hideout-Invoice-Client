@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../../app/providers/AuthProvider'
 import { useForm } from 'react-hook-form'
@@ -24,19 +25,24 @@ export default function Login() {
   const location = useLocation()
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/timeline'
 
-  if (isAuthenticated) {
-    if (user?.must_change_password) {
-      navigate('/change-password', { replace: true })
-    } else {
-      navigate(from, { replace: true })
-    }
-    return null
-  }
-
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { username: '', password: '' },
   })
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (user?.must_change_password) {
+        navigate('/change-password', { replace: true })
+      } else {
+        navigate(from, { replace: true })
+      }
+    }
+  }, [isAuthenticated, user, navigate, from])
+
+  if (isAuthenticated) {
+    return null
+  }
 
   const onSubmit = async (values: FormValues) => {
     try {

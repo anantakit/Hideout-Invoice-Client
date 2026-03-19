@@ -16,6 +16,8 @@ export interface ToggleGroupProps<T extends string> {
   onChange: (value: T) => void
   /** Grid columns. Default: options.length (auto-fit). */
   columns?: number
+  /** When true, grid columns are controlled via className (no inline style). */
+  responsiveColumns?: boolean
   /** Compact mode: single-line without description. */
   compact?: boolean
   className?: string
@@ -34,15 +36,18 @@ export function ToggleGroup<T extends string>({
   value,
   onChange,
   columns,
+  responsiveColumns = false,
   compact = false,
   className,
 }: ToggleGroupProps<T>) {
-  const cols = columns ?? options.length
+  const gridStyle = responsiveColumns
+    ? undefined
+    : { gridTemplateColumns: `repeat(${columns ?? options.length}, minmax(0, 1fr))` }
 
   return (
     <div
       className={cn('grid gap-2', className)}
-      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      style={gridStyle}
     >
       {options.map((opt) => {
         const selected = value === opt.value
@@ -73,7 +78,7 @@ export function ToggleGroup<T extends string>({
                 {opt.label}
               </span>
               {!compact && opt.desc && (
-                <span className="text-[10px] leading-tight block">{opt.desc}</span>
+                <span className="text-[11px] leading-tight block opacity-80">{opt.desc}</span>
               )}
             </div>
           </button>
