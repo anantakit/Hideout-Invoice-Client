@@ -75,7 +75,7 @@ const ReceiptItemRow = React.memo(function ReceiptItemRow({
   return (
     <div
       key={fieldId}
-      className="grid grid-cols-1 md:grid-cols-[1fr_100px_130px_100px_40px] gap-3 items-start p-4 bg-background rounded-lg border border-border"
+      className="grid grid-cols-1 md:grid-cols-[1fr_100px_130px_100px_44px] gap-3 items-start md:items-center p-4 bg-background rounded-lg border border-border"
     >
       <div>
         <label htmlFor={`item-desc-${index}`} className="text-sm font-medium text-foreground md:hidden block mb-1.5">รายละเอียด</label>
@@ -433,7 +433,7 @@ export default function CreateReceipt() {
                       />
                     </div>
                   )}
-                  <div className="hidden md:grid grid-cols-[1fr_100px_130px_100px_40px] gap-3 mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
+                  <div className="hidden md:grid grid-cols-[1fr_100px_130px_100px_44px] gap-3 mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
                     <span>รายละเอียด</span>
                     <span className="text-center">จำนวนคืน</span>
                     <span className="text-right">ราคาต่อคืน (บาท)</span>

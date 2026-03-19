@@ -60,7 +60,7 @@ export function ToggleGroup<T extends string>({
             className={cn(
               'radius-card border text-left transition-colors cursor-pointer',
               compact
-                ? 'px-2 py-2 text-center'
+                ? 'flex items-center justify-center gap-1.5 px-3 py-1.5'
                 : opt.Icon
                   ? 'flex items-center gap-2.5 px-3 py-2.5'
                   : 'flex flex-col items-center gap-0.5 px-3 py-2 text-center',
@@ -69,7 +69,7 @@ export function ToggleGroup<T extends string>({
                 : 'border-border text-muted-foreground hover:border-muted-foreground/50',
             )}
           >
-            {opt.Icon && <opt.Icon className="w-4 h-4 shrink-0" />}
+            {opt.Icon && <opt.Icon className={cn('shrink-0', compact ? 'w-3.5 h-3.5' : 'w-4 h-4')} />}
             <div className="min-w-0">
               <span className={cn(
                 'block leading-tight font-semibold',
