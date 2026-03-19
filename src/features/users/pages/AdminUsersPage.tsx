@@ -38,9 +38,9 @@ import {
 type BadgeVariant = 'blue' | 'green' | 'gray'
 
 const ROLE_LABELS: Record<string, string> = {
-  admin: 'Admin',
-  staff: 'Staff',
-  viewer: 'Viewer',
+  admin: 'ผู้ดูแลระบบ',
+  staff: 'พนักงาน',
+  viewer: 'ผู้ชม',
 }
 
 const ROLE_BADGE_VARIANTS: Record<string, BadgeVariant> = {
@@ -141,8 +141,8 @@ export default function AdminUsers() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ชื่อ / Username</TableHead>
-                    <TableHead>Role</TableHead>
+                    <TableHead>ชื่อ / ชื่อผู้ใช้</TableHead>
+                    <TableHead>บทบาท</TableHead>
                     <TableHead className="hidden md:table-cell">วันที่สร้าง</TableHead>
                     <TableHead className="text-center">จัดการ</TableHead>
                   </TableRow>

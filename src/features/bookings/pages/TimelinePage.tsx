@@ -801,7 +801,7 @@ export default function TimelinePage() {
                     <div
                       ref={gridContainerRef}
                       role="grid"
-                      aria-label="Timeline ห้องพัก"
+                      aria-label="ตารางห้องพัก"
                       style={{
                         height:   rowVirtualizer.getTotalSize(),
                         position: 'relative',

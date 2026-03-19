@@ -29,9 +29,9 @@ interface Props {
 }
 
 const ROLES = [
-  { value: 'admin', label: 'Admin' },
-  { value: 'staff', label: 'Staff' },
-  { value: 'viewer', label: 'Viewer' },
+  { value: 'admin', label: 'ผู้ดูแลระบบ' },
+  { value: 'staff', label: 'พนักงาน' },
+  { value: 'viewer', label: 'ผู้ชม' },
 ] as const
 
 export default function UserModal({ open, onClose, user }: Props) {
@@ -123,7 +123,7 @@ export default function UserModal({ open, onClose, user }: Props) {
                 disabled={isEdit}
                 required={!isEdit}
               />
-              {isEdit && <p className="text-helper">ไม่สามารถเปลี่ยน username ได้</p>}
+              {isEdit && <p className="text-helper">ไม่สามารถเปลี่ยนชื่อผู้ใช้ได้</p>}
             </div>
 
             <div className="space-y-1.5">

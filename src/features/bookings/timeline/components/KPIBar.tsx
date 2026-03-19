@@ -76,7 +76,7 @@ export const KPIBar = React.memo(function KPIBar({
   return (
     <div className="h-10 shrink-0 flex items-center gap-4 px-3 border-b border-border-soft bg-card/50 text-xs tabular-nums overflow-x-auto">
       <KPIStat
-        label="Occupancy"
+        label="อัตราเข้าพัก"
         value={`${totals.occupancyPct}%`}
         color={totals.occupancyPct >= 90 ? 'bg-destructive' : 'bg-info'}
       />

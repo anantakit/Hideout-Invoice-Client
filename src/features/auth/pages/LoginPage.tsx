@@ -77,7 +77,7 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>ชื่อผู้ใช้</FormLabel>
                       <FormControl>
-                        <Input placeholder="username" autoComplete="username" autoFocus {...field} />
+                        <Input placeholder="ชื่อผู้ใช้" autoComplete="username" autoFocus {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

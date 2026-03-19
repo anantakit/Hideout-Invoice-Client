@@ -108,6 +108,9 @@
   .touch-target {
     @apply min-h-[44px];
   }
+  .touch-target-square {
+    @apply min-h-[44px] min-w-[44px];
+  }
   .sheet-mobile {
     @apply max-h-[85vh];
   }
