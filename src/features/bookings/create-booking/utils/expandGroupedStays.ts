@@ -25,6 +25,7 @@ export function expandGroupedStays(items: RoomTypeBookingItemForm[]): RoomStayPa
       room_id: assigned[i] ?? null,
       check_in: item.check_in,
       check_out: item.check_out,
+      ...(item.charged_price != null ? { charged_price: item.charged_price } : {}),
     }))
   })
 }

@@ -13,6 +13,8 @@ export const roomTypeBookingItemSchema = z
     check_out: z.string().min(1, 'กรุณาเลือกวันเช็คเอาท์'),
     /** Physical room IDs pre-selected by staff. Length must be ≤ quantity. */
     assigned_room_ids: z.array(z.string()).default([]),
+    /** Optional charged (discounted) price per night. */
+    charged_price: z.number().positive().optional(),
   })
   .refine((d) => !d.check_in || !d.check_out || d.check_out > d.check_in, {
     message: 'วันเช็คเอาท์ต้องหลังวันเช็คอิน',

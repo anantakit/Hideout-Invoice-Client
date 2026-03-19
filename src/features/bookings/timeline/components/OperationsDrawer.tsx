@@ -37,6 +37,7 @@ import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import { type TimelineBooking, type TimelineRoom, type UnassignedStay, getStatusLabel } from '../../types'
 import { useBooking, useCreateBooking, useAvailabilityGrouped, useCheckoutRooms } from '../../hooks'
 import { InlineCheckIn } from '../../shared/components/InlineCheckIn'
+import { ChargedPriceMulti } from '../../shared/components/ChargedPriceInput'
 import { DesktopOperationsPanel } from './DesktopOperationsPanel'
 import { KEY_DEPOSIT_PER_ROOM } from '../../constants'
 
@@ -377,6 +378,7 @@ interface SelectedRoom {
   roomTypeId: string
   roomTypeName: string
   pricePerNight: number
+  chargedPrice?: number
 }
 
 function CreateBookingContent({
@@ -417,7 +419,7 @@ function CreateBookingContent({
 
   const nights = differenceInDays(parseISO(prefill.checkOut), parseISO(prefill.checkIn))
   const totalAmount = useMemo(
-    () => selectedRooms.reduce((sum, r) => sum + nights * r.pricePerNight, 0),
+    () => selectedRooms.reduce((sum, r) => sum + nights * (r.chargedPrice ?? r.pricePerNight), 0),
     [selectedRooms, nights],
   )
 
@@ -431,6 +433,12 @@ function CreateBookingContent({
       }
       return [...prev, room]
     })
+  }
+
+  const updateChargedPrice = (roomId: string, price: number | undefined) => {
+    setSelectedRooms((prev) =>
+      prev.map((r) => r.roomId === roomId ? { ...r, chargedPrice: price } : r),
+    )
   }
 
   const depositAmount = KEY_DEPOSIT_PER_ROOM * selectedRooms.length
@@ -466,6 +474,7 @@ function CreateBookingContent({
           room_id: r.roomId,
           check_in: prefill.checkIn,
           check_out: prefill.checkOut,
+          ...(r.chargedPrice != null ? { charged_price: r.chargedPrice } : {}),
         })),
         payment,
       },
@@ -614,6 +623,20 @@ function CreateBookingContent({
             )}
           </div>
 
+          {/* Charged price (optional discount) */}
+          <ChargedPriceMulti
+            entries={selectedRooms.map((r) => ({
+              key: r.roomId,
+              label: r.roomNumber,
+              rackPrice: r.pricePerNight,
+              chargedPrice: r.chargedPrice,
+            }))}
+            onChange={(key, value) => updateChargedPrice(key, value)}
+            onClearAll={() => {
+              setSelectedRooms((prev) => prev.map((r) => ({ ...r, chargedPrice: undefined })))
+            }}
+          />
+
           {/* Source toggle — compact inline pills */}
           <div className="space-y-2">
             <p className="text-micro-sm font-semibold uppercase tracking-wider text-muted-foreground">ประเภท</p>
@@ -757,12 +780,25 @@ function CreateBookingContent({
         {/* Summary card */}
         {totalAmount > 0 && (
           <div className="rounded-lg border border-border-soft bg-card p-3 pl-3.5 border-l-2 border-l-primary/50 space-y-1.5 text-sm">
-            {selectedRooms.length > 1 && selectedRooms.map((r) => (
-              <div key={r.roomId} className="flex justify-between text-xs text-muted-foreground">
-                <span>ห้อง {r.roomNumber} ({nights} คืน)</span>
-                <span className="tabular-nums">{formatTHBCurrency(nights * r.pricePerNight)}</span>
-              </div>
-            ))}
+            {selectedRooms.length > 1 && selectedRooms.map((r) => {
+              const ep = r.chargedPrice ?? r.pricePerNight
+              const discounted = r.chargedPrice != null && r.chargedPrice < r.pricePerNight
+              return (
+                <div key={r.roomId} className="flex justify-between text-xs text-muted-foreground">
+                  <span>
+                    ห้อง {r.roomNumber} ({nights} คืน)
+                    {discounted && (
+                      <span className="ml-1">
+                        <span className="line-through">{formatTHBCurrency(r.pricePerNight)}</span>
+                        {' → '}
+                        <span className="text-primary">{formatTHBCurrency(ep)}</span>
+                      </span>
+                    )}
+                  </span>
+                  <span className="tabular-nums">{formatTHBCurrency(nights * ep)}</span>
+                </div>
+              )
+            })}
             <div className="flex justify-between">
               <span className="text-muted-foreground">
                 ค่าห้อง{selectedRooms.length > 1 ? ` (${selectedRooms.length} ห้อง)` : ''}

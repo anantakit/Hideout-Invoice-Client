@@ -77,10 +77,10 @@ export function useUpdateBooking(bookingId: string) {
 /** Fetch invoice prefill data for a booking with optional mode/filters. */
 export function useInvoicePrefill(
   bookingId: string | undefined,
-  opts?: { mode?: 'booking' | 'stay' | 'night'; stayIds?: string[]; date?: string },
+  opts?: { mode?: 'booking' | 'stay' | 'night'; stayIds?: string[]; date?: string; priceMode?: string },
 ) {
   return useQuery({
-    queryKey: ['invoice-prefill', bookingId, opts?.mode, opts?.stayIds, opts?.date] as const,
+    queryKey: ['invoice-prefill', bookingId, opts?.mode, opts?.stayIds, opts?.date, opts?.priceMode] as const,
     queryFn: () => bookingsApi.getInvoicePrefill(bookingId!, opts),
     enabled: Boolean(bookingId),
   })

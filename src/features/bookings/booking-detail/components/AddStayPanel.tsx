@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { cn, formatTHB, todayISO, addDaysISO } from '@/shared/utils'
 import { Card, CardContent } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
+import { ChargedPriceInput } from '../../shared/components/ChargedPriceInput'
 import { Separator } from '@/shared/ui/separator'
 import { DateRangePicker } from '../../shared/components/DateRangePicker'
 import type { DateRange } from '../../shared/components/DateRangePicker'
@@ -27,6 +28,7 @@ interface StayDraft {
   checkOut: string
   roomTypeId: string
   roomId: string | null
+  chargedPrice?: number
 }
 
 type Action =
@@ -35,6 +37,7 @@ type Action =
   | { type: 'UPDATE_DATES'; key: string; checkIn: string; checkOut: string }
   | { type: 'UPDATE_ROOM_TYPE'; key: string; roomTypeId: string }
   | { type: 'UPDATE_ROOM'; key: string; roomId: string | null }
+  | { type: 'UPDATE_CHARGED_PRICE'; key: string; chargedPrice?: number }
   | { type: 'RESET' }
 
 function makeRow(checkIn: string, checkOut: string): StayDraft {
@@ -61,6 +64,10 @@ function reducer(state: StayDraft[], action: Action): StayDraft[] {
     case 'UPDATE_ROOM':
       return state.map((d) =>
         d.key === action.key ? { ...d, roomId: action.roomId } : d,
+      )
+    case 'UPDATE_CHARGED_PRICE':
+      return state.map((d) =>
+        d.key === action.key ? { ...d, chargedPrice: action.chargedPrice } : d,
       )
     case 'RESET':
       return [makeRow(todayISO(), addDaysISO(1))]
@@ -138,7 +145,8 @@ export function AddStayPanel({ bookingId }: AddStayPanelProps) {
       const nights = Math.round(
         (new Date(d.checkOut).getTime() - new Date(d.checkIn).getTime()) / 86400000,
       )
-      return sum + rt.price_per_night * nights
+      const price = d.chargedPrice ?? rt.price_per_night
+      return sum + price * nights
     }, 0)
   }, [drafts, roomTypes])
 
@@ -162,6 +170,7 @@ export function AddStayPanel({ bookingId }: AddStayPanelProps) {
           room_id: d.roomId || undefined,
           check_in: d.checkIn,
           check_out: d.checkOut,
+          ...(d.chargedPrice != null ? { charged_price: d.chargedPrice } : {}),
         })),
       },
       {
@@ -311,7 +320,8 @@ function StayDraftRow({
 
   const selectedRoomType = roomTypes.find((rt) => rt.id === draft.roomTypeId)
   const pricePerNight = selectedRoomType?.price_per_night ?? 0
-  const rowTotal = pricePerNight * nights
+  const effectivePrice = draft.chargedPrice ?? pricePerNight
+  const rowTotal = effectivePrice * nights
 
   const availableRooms = useMemo(() => {
     if (!availability?.data || !draft.roomTypeId) return []
@@ -372,6 +382,15 @@ function StayDraftRow({
         </SelectContent>
       </Select>
 
+      {/* Charged price (optional discount) */}
+      {draft.roomTypeId && (
+        <ChargedPriceInput
+          rackPrice={pricePerNight}
+          chargedPrice={draft.chargedPrice}
+          onChange={(v) => dispatch({ type: 'UPDATE_CHARGED_PRICE', key: draft.key, chargedPrice: v })}
+        />
+      )}
+
       {/* Room picker */}
       {draft.roomTypeId && datesValid && (
         <div>
@@ -422,7 +441,16 @@ function StayDraftRow({
       {draft.roomTypeId && datesValid && nights > 0 && (
         <div className="flex items-center justify-between text-body">
           <span className="text-muted-foreground">
-            {formatTHB(pricePerNight)} × {nights} คืน
+            {draft.chargedPrice != null && draft.chargedPrice < pricePerNight ? (
+              <>
+                <span className="line-through">{formatTHB(pricePerNight)}</span>
+                {' '}
+                <span className="text-primary">{formatTHB(effectivePrice)}</span>
+              </>
+            ) : (
+              formatTHB(effectivePrice)
+            )}
+            {' × '}{nights} คืน
           </span>
           <span className="font-semibold tabular-nums">{formatTHB(rowTotal)}</span>
         </div>

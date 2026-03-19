@@ -5,6 +5,7 @@ import { Plus, Minus, Trash2, Loader2, Wand2, Check } from 'lucide-react'
 import { cn, todayISO, addDaysISO } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
+import { ChargedPriceInput } from '../../shared/components/ChargedPriceInput'
 import {
   FormControl,
   FormField,
@@ -336,6 +337,7 @@ function RoomTypeBookingItem({
   const ownCheckIn      = useWatch({ control: form.control, name: `items.${index}.check_in` })
   const ownCheckOut     = useWatch({ control: form.control, name: `items.${index}.check_out` })
   const assignedRoomIds = useWatch({ control: form.control, name: `items.${index}.assigned_room_ids` }) ?? []
+  const chargedPrice    = useWatch({ control: form.control, name: `items.${index}.charged_price` })
 
   const effectiveCheckIn  = hideDates ? sharedCheckIn  : ownCheckIn
   const effectiveCheckOut = hideDates ? sharedCheckOut : ownCheckOut
@@ -503,6 +505,19 @@ function RoomTypeBookingItem({
           )}
         />
       </div>
+
+      {/* ── Charged price (optional discount) ──────────────────── */}
+      {roomTypeId && (() => {
+        const rackPrice = roomTypes.find((rt) => rt.id === roomTypeId)?.price_per_night ?? 0
+        return (
+          <ChargedPriceInput
+            rackPrice={rackPrice}
+            chargedPrice={chargedPrice}
+            onChange={(v) => form.setValue(`items.${index}.charged_price`, v)}
+            className="-mt-1"
+          />
+        )
+      })()}
 
       {/* Hint when no room type selected */}
       {!roomTypeId && (

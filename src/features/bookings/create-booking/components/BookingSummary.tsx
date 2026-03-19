@@ -55,17 +55,20 @@ export function BookingSummary() {
   const lines = useMemo(() => {
     return items
       .map((item, i) => {
-        const price = priceMap[item.room_type_id]
-        if (price == null) return null
+        const rackPrice = priceMap[item.room_type_id]
+        if (rackPrice == null) return null
         const nights = calcNights(item.check_in, item.check_out)
         if (nights <= 0) return null
         const qty = Math.max(1, item.quantity ?? 1)
+        const price = item.charged_price ?? rackPrice
         return {
           index: i,
           name: nameMap[item.room_type_id] ?? 'ห้อง',
           quantity: qty,
           nights,
           price,
+          rackPrice,
+          hasDiscount: item.charged_price != null && item.charged_price < rackPrice,
           subtotal: price * nights * qty,
         }
       })
@@ -75,6 +78,8 @@ export function BookingSummary() {
         quantity: number
         nights: number
         price: number
+        rackPrice: number
+        hasDiscount: boolean
         subtotal: number
       }[]
   }, [items, priceMap, nameMap])
@@ -96,6 +101,13 @@ export function BookingSummary() {
               <span className="font-medium text-foreground">{line.quantity} ห้อง</span>
               {' × '}
               {line.nights} คืน
+              {line.hasDiscount && (
+                <span className="ml-1">
+                  (<span className="line-through">{formatTHB(line.rackPrice)}</span>
+                  {' → '}
+                  <span className="text-primary">{formatTHB(line.price)}</span>)
+                </span>
+              )}
             </span>
             <span className="font-medium text-foreground tabular-nums">
               {formatTHB(line.subtotal)}
@@ -154,8 +166,9 @@ export function useTotalAmount(): number {
       if (rt.price_per_night != null) priceMap[rt.id] = rt.price_per_night
     }
     return items.reduce((sum, item) => {
-      const price = priceMap[item.room_type_id]
-      if (!price) return sum
+      const rackPrice = priceMap[item.room_type_id]
+      if (!rackPrice) return sum
+      const price = item.charged_price ?? rackPrice
       const nights = calcNights(item.check_in, item.check_out)
       const qty    = Math.max(1, item.quantity ?? 1)
       return sum + price * nights * qty

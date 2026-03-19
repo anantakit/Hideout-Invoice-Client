@@ -231,12 +231,13 @@ export const bookingsApi = {
 
   getInvoicePrefill: async (
     bookingId: string,
-    opts?: { mode?: PrefillMode; stayIds?: string[]; date?: string },
+    opts?: { mode?: PrefillMode; stayIds?: string[]; date?: string; priceMode?: string },
   ): Promise<InvoicePrefillResponse> => {
     const params: Record<string, string> = {}
     if (opts?.mode && opts.mode !== 'booking') params.mode = opts.mode
     if (opts?.stayIds?.length) params.stay_ids = opts.stayIds.join(',')
     if (opts?.date) params.date = opts.date
+    if (opts?.priceMode && opts.priceMode !== 'rack') params.price_mode = opts.priceMode
     const { data } = await apiClient.get<ApiResponse<InvoicePrefillResponse>>(
       `/bookings/${bookingId}/invoice-prefill`,
       { params },

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Plus, X, Check, Loader2, AlertTriangle } from 'lucide-react'
+import { Plus, X, Check, Loader2, AlertTriangle, Tag, DollarSign } from 'lucide-react'
 import { receiptsApi } from '../api'
 import { customersApi } from '../../customers/api'
 import { formatTHB, todayISO } from '../../../shared/utils'
@@ -18,6 +18,7 @@ import { BottomBar } from '../../../shared/ui/BottomBar'
 import { DatePicker } from '../../../shared/ui/DatePicker'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
+import { ToggleGroup } from '../../../shared/ui/ToggleGroup'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../../shared/ui/form'
 import {
   Select,
@@ -148,11 +149,13 @@ export default function CreateReceipt() {
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [prefilled, setPrefilled] = useState(false)
+  const [priceMode, setPriceMode] = useState<'rack' | 'charged'>('rack')
 
   const { data: prefill } = useInvoicePrefill(bookingId, {
     mode: prefillMode,
     stayIds: prefillStayIds,
     date: prefillDate,
+    priceMode,
   })
   const { data: coverage } = useInvoiceCoverage(bookingId)
 
@@ -193,6 +196,11 @@ export default function CreateReceipt() {
       form.setValue('customer_id', prefillCustomer.id, { shouldValidate: true })
     }
   }, [prefillCustomer, selectedCustomer, form])
+
+  // Reset prefilled flag when price mode changes so items are re-applied
+  useEffect(() => {
+    setPrefilled(false)
+  }, [priceMode])
 
   // Prefill form from booking data
   useEffect(() => {
@@ -407,6 +415,21 @@ export default function CreateReceipt() {
                   <CardTitle className="text-base font-semibold tracking-tight">รายการห้องพัก</CardTitle>
                 </CardHeader>
                 <CardContent className="p-5 md:p-6 space-y-3">
+                  {bookingId && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="text-muted-foreground">ราคา:</span>
+                      <ToggleGroup
+                        compact
+                        options={[
+                          { value: 'rack' as const, label: 'ราคาปกติ', Icon: DollarSign },
+                          { value: 'charged' as const, label: 'ราคาจริง', Icon: Tag },
+                        ]}
+                        value={priceMode}
+                        onChange={setPriceMode}
+                        className="flex gap-2"
+                      />
+                    </div>
+                  )}
                   <div className="hidden md:grid grid-cols-[1fr_100px_130px_100px_40px] gap-3 mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
                     <span>ห้อง / รายละเอียด</span>
                     <span className="text-center">จำนวนคืน</span>

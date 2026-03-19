@@ -122,6 +122,24 @@ export function StayCardOperational({
           </div>
         </div>
 
+        {/* ── Price info ──────────────────────────────────────────────────── */}
+        {stay.price_per_night > 0 && (
+          <p className="text-helper text-muted-foreground">
+            {stay.charged_price_per_night != null && stay.charged_price_per_night < stay.price_per_night ? (
+              <>
+                <span className="line-through">{formatTHB(stay.price_per_night)}</span>
+                {' → '}
+                <span className="text-primary font-medium">{formatTHB(stay.charged_price_per_night)}</span>
+                /คืน · {formatTHB(stay.charged_price_per_night * nights)}
+              </>
+            ) : (
+              <>
+                {formatTHB(stay.charged_price_per_night ?? stay.price_per_night)}/คืน · {formatTHB((stay.charged_price_per_night ?? stay.price_per_night) * nights)}
+              </>
+            )}
+          </p>
+        )}
+
         {/* ── Transfer origin indicator ────────────────────────────────────── */}
         {stay.transfer_from_stay_id && (
           <p className="text-micro text-info flex items-center gap-1">

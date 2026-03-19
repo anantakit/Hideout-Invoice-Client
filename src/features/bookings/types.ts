@@ -28,6 +28,8 @@ export interface RoomStayResponse {
   check_in: string
   check_out: string
   nights: number
+  price_per_night: number
+  charged_price_per_night?: number
   status: string
   transfer_from_stay_id?: string
   assigned_at?: string
@@ -209,6 +211,7 @@ export interface RoomStayPayload {
   room_id?: string | null
   check_in: string   // YYYY-MM-DD
   check_out: string  // YYYY-MM-DD
+  charged_price?: number
 }
 
 export interface CreateBookingPayload {
