@@ -124,9 +124,11 @@ export default function CreateBookingPage() {
     const stays = expandGroupedStays(values.items)
 
     const totalRooms = values.items.reduce((s, i) => s + Math.max(1, i.quantity ?? 1), 0)
+    // full_deposit = จ่ายรวมประกันแล้ว → ไม่ต้องเก็บเพิ่ม (0)
+    // อื่นๆ = ต้องเก็บเงินประกันเพิ่มหน้าเคาน์เตอร์
     const depositAmount = values.payment_mode === 'full_deposit'
-      ? (values.key_deposit_amount ?? KEY_DEPOSIT_PER_ROOM * totalRooms)
-      : 0
+      ? 0
+      : KEY_DEPOSIT_PER_ROOM * totalRooms
 
     const payment =
       values.payment_mode !== 'reserve' && values.payment_amount
@@ -395,19 +397,15 @@ function PaymentModeSelector() {
 
     if (paymentMode === 'full') {
       form.setValue('payment_amount', totalAmount > 0 ? totalAmount : undefined)
-      form.setValue('key_deposit_amount', undefined)
     } else if (paymentMode === 'full_deposit') {
       const total = totalAmount + depositAmount
       form.setValue('payment_amount', total > 0 ? total : undefined)
-      form.setValue('key_deposit_amount', depositAmount)
     } else if (paymentMode === 'partial') {
       if (modeChanged) {
         form.setValue('payment_amount', undefined)
-        form.setValue('key_deposit_amount', undefined)
       }
     } else {
       form.setValue('payment_amount', undefined)
-      form.setValue('key_deposit_amount', undefined)
     }
   }, [paymentMode, totalAmount, depositAmount, form])
 

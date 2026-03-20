@@ -456,7 +456,8 @@ function CreateBookingContent({
   const handleSubmit = () => {
     if (!canSubmit) return
 
-    const keyDeposit = paymentMode === 'full_deposit' ? depositAmount : 0
+    // full_deposit = จ่ายรวมประกันแล้ว → ไม่ต้องเก็บเพิ่ม
+    const keyDeposit = paymentMode === 'full_deposit' ? 0 : depositAmount
 
     const payment =
       paymentMode !== 'reserve' && paymentAmount
@@ -808,6 +809,12 @@ function CreateBookingContent({
             {paymentMode === 'full_deposit' && (
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>ประกันกุญแจ ({selectedRooms.length} × ฿{KEY_DEPOSIT_PER_ROOM})</span>
+                <span className="tabular-nums">{formatTHBCurrency(depositAmount)}</span>
+              </div>
+            )}
+            {paymentMode !== 'full_deposit' && depositAmount > 0 && (
+              <div className="flex justify-between text-xs text-amber-500">
+                <span>เก็บเงินประกันเพิ่มหน้าเคาน์เตอร์</span>
                 <span className="tabular-nums">{formatTHBCurrency(depositAmount)}</span>
               </div>
             )}

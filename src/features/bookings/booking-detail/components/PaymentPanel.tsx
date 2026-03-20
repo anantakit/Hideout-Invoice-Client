@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Banknote, CreditCard, Plus, X } from 'lucide-react'
+import { Banknote, CreditCard, Plus, X, ShieldCheck, ShieldOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import { formatTHB, formatThaiDate } from '../../../../shared/utils'
@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../../../shared/ui/select'
-import { useCreatePayment } from '../../hooks'
+import { useCreatePayment, useUpdateBooking } from '../../hooks'
 import type { BookingResponse } from '../../types'
 
 // ─── Schema ────────────────────────────────────────────────────────────────────
@@ -46,6 +46,7 @@ type PaymentFormValues = z.infer<typeof paymentSchema>
 export function PaymentPanel({ booking }: { booking: BookingResponse }) {
   const [showForm, setShowForm] = useState(false)
   const createPayment = useCreatePayment(booking.id)
+  const updateBooking = useUpdateBooking(booking.id)
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
@@ -54,6 +55,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
 
   const isSettled = booking.status === 'CANCELLED' || booking.status === 'CHECKED_OUT'
   const hasBalance = booking.balance_amount > 0.005
+  const hasDeposit = booking.key_deposit_amount > 0
 
   function onSubmit(values: PaymentFormValues) {
     createPayment.mutate(
@@ -100,14 +102,33 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
             value={formatTHB(Math.max(0, booking.balance_amount))}
             className={cn('font-semibold', hasBalance ? 'text-destructive' : 'text-green-600')}
           />
-          {booking.key_deposit_amount > 0 && (
+          {hasDeposit && (
             <>
               <Separator />
-              <SummaryRow
-                label="ประกันกุญแจ"
-                value={formatTHB(booking.key_deposit_amount)}
-                className="text-amber-500"
-              />
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-1.5 text-amber-500">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  เก็บเงินประกันเพิ่ม
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold tabular-nums text-amber-500">
+                    {formatTHB(booking.key_deposit_amount)}
+                  </span>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+                    onClick={() => {
+                      updateBooking.mutate(
+                        { key_deposit_amount: 0 },
+                        { onSuccess: () => toast.success('ยกเว้นเงินประกันแล้ว') },
+                      )
+                    }}
+                    title="ยกเว้นเงินประกัน"
+                  >
+                    <ShieldOff className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -146,7 +167,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
         )}
 
         {/* ── Add payment form / button ────────────────────────────────────── */}
-        {!isSettled && (
+        {!isSettled && hasBalance && (
           <>
             {showForm ? (
               <Form {...form}>

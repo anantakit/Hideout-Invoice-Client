@@ -66,6 +66,7 @@ export function useUpdateBooking(bookingId: string) {
       customer_id?: string
       clear_customer?: boolean
       discount_amount?: number
+      key_deposit_amount?: number
     }) => bookingsApi.update(bookingId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })

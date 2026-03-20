@@ -86,7 +86,11 @@ export function BookingSummary() {
 
   const roomTotal = useMemo(() => lines.reduce((s, l) => s + l.subtotal, 0), [lines])
   const totalRooms = items.reduce((s, i) => s + Math.max(1, i.quantity ?? 1), 0)
-  const depositAmount = paymentMode === 'full_deposit' ? KEY_DEPOSIT_PER_ROOM * totalRooms : 0
+  const depositPerRoom = KEY_DEPOSIT_PER_ROOM * totalRooms
+  // full_deposit: จ่ายรวมประกันแล้ว (แสดงใน summary เป็นรายการ)
+  // อื่น: ต้องเก็บเพิ่มหน้าเคาน์เตอร์ (แสดงเป็น note แทน)
+  const depositInPayment = paymentMode === 'full_deposit' ? depositPerRoom : 0
+  const depositToCollect = paymentMode === 'full_deposit' ? 0 : depositPerRoom
 
   if (lines.length === 0) return null
 
@@ -115,23 +119,30 @@ export function BookingSummary() {
           </div>
         ))}
 
-        {depositAmount > 0 && (
+        {depositInPayment > 0 && (
           <div className="flex justify-between text-body">
             <span className="text-muted-foreground">
               ประกันกุญแจ ({totalRooms} ห้อง × ฿{KEY_DEPOSIT_PER_ROOM})
             </span>
             <span className="font-medium text-foreground tabular-nums">
-              {formatTHB(depositAmount)}
+              {formatTHB(depositInPayment)}
             </span>
           </div>
         )}
 
-        {(lines.length > 1 || depositAmount > 0) && (
+        {depositToCollect > 0 && (
+          <div className="flex justify-between text-body text-amber-500">
+            <span>เก็บเงินประกันเพิ่มหน้าเคาน์เตอร์</span>
+            <span className="font-medium tabular-nums">{formatTHB(depositToCollect)}</span>
+          </div>
+        )}
+
+        {(lines.length > 1 || depositInPayment > 0) && (
           <>
             <Separator />
             <div className="flex justify-between text-body font-semibold">
-              <span>{depositAmount > 0 ? 'รวมทั้งหมด (ค่าห้อง + ประกัน)' : 'รวมทั้งหมด'}</span>
-              <span className="tabular-nums">{formatTHB(roomTotal + depositAmount)}</span>
+              <span>{depositInPayment > 0 ? 'รวมทั้งหมด (ค่าห้อง + ประกัน)' : 'รวมทั้งหมด'}</span>
+              <span className="tabular-nums">{formatTHB(roomTotal + depositInPayment)}</span>
             </div>
           </>
         )}

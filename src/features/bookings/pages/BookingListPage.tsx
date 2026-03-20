@@ -27,6 +27,33 @@ import type { DateRange } from '../shared/components/DateRangePicker'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Format room labels as { label, count } for two-line display. */
+function getRoomInfo(booking: BookingResponse): { label: string; count: number } {
+  const active = booking.room_stays.filter((s) => s.status !== 'CANCELLED')
+  if (active.length === 0) return { label: '—', count: 0 }
+
+  const assigned = active.filter((s) => s.room_number)
+  const unassigned = active.filter((s) => !s.room_number)
+
+  const parts: string[] = []
+
+  if (assigned.length > 0) {
+    parts.push(assigned.map((s) => s.room_number).join(', '))
+  }
+
+  if (unassigned.length > 0) {
+    const grouped: Record<string, number> = {}
+    for (const s of unassigned) {
+      grouped[s.room_type_name] = (grouped[s.room_type_name] || 0) + 1
+    }
+    for (const [name, count] of Object.entries(grouped)) {
+      parts.push(count > 1 ? `${name} x ${count}` : name)
+    }
+  }
+
+  return { label: parts.join(', '), count: active.length }
+}
+
 /** Extract earliest check_in and latest check_out from a booking's stays. */
 function getStayRange(booking: BookingResponse): { checkIn: string; checkOut: string } | null {
   const stays = booking.room_stays
@@ -226,7 +253,7 @@ export default function BookingListPage() {
                 <TableRow>
                   <TableHead>ผู้เข้าพัก</TableHead>
                   <TableHead>สถานะ</TableHead>
-                  <TableHead className="text-center">ห้อง</TableHead>
+                  <TableHead>ห้อง</TableHead>
                   <TableHead>วันเข้าพัก</TableHead>
                   <TableHead className="text-right">ยอดค้าง</TableHead>
                   <TableHead className="w-10" />
@@ -299,8 +326,16 @@ function DesktopRow({
       <TableCell>
         <StatusBadge status={booking.status} />
       </TableCell>
-      <TableCell className="text-center text-body text-muted-foreground">
-        {booking.room_stays.length} ห้อง
+      <TableCell>
+        {(() => {
+          const info = getRoomInfo(booking)
+          return (
+            <>
+              <p className="text-body">{info.label}</p>
+              <p className="text-helper mt-0.5">{info.count} ห้อง</p>
+            </>
+          )
+        })()}
       </TableCell>
       <TableCell className="text-body text-muted-foreground whitespace-nowrap">
         {range ? (
@@ -355,8 +390,11 @@ function MobileCard({
 
           <div className="flex items-center gap-2 mt-3">
             <StatusBadge status={booking.status} />
-            <span className="text-helper">
-              {booking.room_stays.length} ห้อง
+            <span className="text-helper truncate max-w-[140px]">
+              {(() => {
+                const info = getRoomInfo(booking)
+                return `${info.label} · ${info.count} ห้อง`
+              })()}
             </span>
             {range && (
               <span className="text-helper ml-auto inline-flex items-center gap-1">
