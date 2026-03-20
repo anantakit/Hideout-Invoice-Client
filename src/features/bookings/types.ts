@@ -79,6 +79,7 @@ export interface BookingResponse {
   paid_amount: number
   balance_amount: number
   key_deposit_amount: number
+  deposit_status: 'NONE' | 'PENDING' | 'COLLECTED'
   room_stays: RoomStayResponse[]
   payments: PaymentResponse[]
   invoices: InvoiceResponseShort[]
@@ -220,6 +221,7 @@ export interface CreateBookingPayload {
   guest_phone: string
   customer_id?: string
   key_deposit_amount?: number
+  deposit_status?: string
   stays: RoomStayPayload[]
   payment?: CreateBookingPaymentPayload
 }
@@ -270,6 +272,8 @@ export interface TimelineBooking {
   check_out: string
   status: string
   balance_amount: number
+  key_deposit_amount: number
+  deposit_status: string
   /** Booking source: walk_in | advance */
   source: string
   /** Set when this stay was created by a room transfer (split stay). */

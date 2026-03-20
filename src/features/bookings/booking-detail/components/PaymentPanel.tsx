@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Banknote, CreditCard, Plus, X, ShieldCheck, ShieldOff } from 'lucide-react'
+import { Banknote, CreditCard, Plus, X, ShieldCheck, ShieldAlert, ShieldOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import { formatTHB, formatThaiDate } from '../../../../shared/utils'
@@ -102,33 +102,59 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
             value={formatTHB(Math.max(0, booking.balance_amount))}
             className={cn('font-semibold', hasBalance ? 'text-destructive' : 'text-green-600')}
           />
-          {hasDeposit && (
+          {booking.deposit_status !== 'NONE' && hasDeposit && (
             <>
               <Separator />
               <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-1.5 text-amber-500">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  เก็บ
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold tabular-nums text-amber-500">
-                    {' ' + booking.key_deposit_amount.toLocaleString()}
+                {booking.deposit_status === 'PENDING' ? (
+                  <span className="flex items-center gap-1.5 text-amber-500">
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    เก็บประกัน
                   </span>
-                  <button
-                    type="button"
-                    className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-                    onClick={() => {
-                      updateBooking.mutate(
-                        { key_deposit_amount: 0 },
-                        { onSuccess: () => toast.success('ยกเว้นเงินประกันแล้ว') },
-                      )
-                    }}
-                    title="ยกเว้นเงินประกัน"
-                  >
-                    <ShieldOff className="w-3.5 h-3.5" />
-                  </button>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-green-600">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    เก็บแล้ว
+                  </span>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className={cn('font-semibold tabular-nums', booking.deposit_status === 'PENDING' ? 'text-amber-500' : 'text-green-600')}>
+                    {booking.key_deposit_amount.toLocaleString()}
+                  </span>
+                  {booking.deposit_status === 'PENDING' && (
+                    <>
+                      <button
+                        type="button"
+                        className="text-xs text-success hover:text-success/80 transition-colors cursor-pointer font-medium"
+                        onClick={() => {
+                          updateBooking.mutate(
+                            { deposit_status: 'COLLECTED' },
+                            { onSuccess: () => toast.success('บันทึกเก็บเงินประกันแล้ว') },
+                          )
+                        }}
+                      >
+                        เก็บแล้ว
+                      </button>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+                        onClick={() => {
+                          updateBooking.mutate(
+                            { deposit_status: 'NONE' },
+                            { onSuccess: () => toast.success('ยกเว้นเงินประกันแล้ว') },
+                          )
+                        }}
+                        title="ยกเว้นเงินประกัน"
+                      >
+                        <ShieldOff className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
+              {booking.deposit_status === 'COLLECTED' && isSettled && (
+                <p className="text-xs text-amber-500 font-medium">คืนประกัน {booking.key_deposit_amount.toLocaleString()}</p>
+              )}
             </>
           )}
         </div>

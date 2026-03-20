@@ -28,7 +28,7 @@ export const STATUS_CFG: Record<RoomStatus | RangeStatus, {
   cardClass: string
 }> = {
   available:       { label: 'ว่าง',        badge: 'green', cardClass: 'room-available' },
-  reserved:        { label: 'จองแล้ว',     badge: 'amber', cardClass: 'room-booked' },
+  reserved:        { label: 'จองแล้ว',     badge: 'blue',  cardClass: 'room-booked' },
   checked_in:      { label: 'เข้าพัก',     badge: 'blue',  cardClass: 'room-occupied' },
   checkout_today:  { label: 'เช็คเอาท์',   badge: 'amber', cardClass: 'room-checkout' },
   turnover:        { label: 'เปลี่ยนแขก',  badge: 'red',   cardClass: 'room-turnover' },
@@ -126,7 +126,7 @@ export function classifyRooms(
       return ci <= dateStr && co > dateStr
     })
 
-    if (coStay && !activeOverlapping) {
+    if (coStay && coStay.status !== 'CHECKED_OUT' && !activeOverlapping) {
       c.checkout_today++
       result.push({
         room, typeName, status: 'checkout_today',

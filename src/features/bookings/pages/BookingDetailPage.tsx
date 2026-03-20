@@ -162,8 +162,11 @@ export default function BookingDetailPage() {
                 </div>
                 <p className="text-helper mt-1">
                   สร้างเมื่อ {formatThaiDate(booking.created_at)}
-                  {booking.key_deposit_amount > 0 && (
-                    <span className="ml-2 text-amber-500">เก็บ{' ' + booking.key_deposit_amount.toLocaleString()}</span>
+                  {booking.deposit_status === 'PENDING' && (
+                    <span className="ml-2 text-amber-500">· เก็บประกัน {booking.key_deposit_amount.toLocaleString()}</span>
+                  )}
+                  {booking.deposit_status === 'COLLECTED' && (
+                    <span className="ml-2 text-green-600">· ประกัน {booking.key_deposit_amount.toLocaleString()}</span>
                   )}
                 </p>
               </div>
@@ -292,7 +295,7 @@ export default function BookingDetailPage() {
 
       {/* ── 2. Inline Check-In (conditional) ────────────────────────── */}
       {checkInPendingStays.length > 0 && (
-        <InlineCheckIn bookingId={id} pendingStays={checkInPendingStays} keyDepositAmount={booking.key_deposit_amount} />
+        <InlineCheckIn bookingId={id} pendingStays={checkInPendingStays} keyDepositAmount={booking.key_deposit_amount} depositStatus={booking.deposit_status} />
       )}
 
       {/* ── 3. Room Stays ──────────────────────────────────────────────── */}

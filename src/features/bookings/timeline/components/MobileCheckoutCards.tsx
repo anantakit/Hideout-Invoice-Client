@@ -45,10 +45,15 @@ export const PendingCheckoutCard = React.memo(function PendingCheckoutCard({
         </div>
       )}
 
-      {/* Row 4: balance */}
+      {/* Row 4: balance + deposit refund */}
       {hasBalance && (
         <p className="text-helper text-destructive font-medium mt-1">
           ค้าง {formatTHBCurrency(co.balance)}
+        </p>
+      )}
+      {co.depositStatus === 'COLLECTED' && co.keyDepositAmount > 0 && (
+        <p className="text-helper text-amber-500 font-medium mt-1">
+          คืนประกัน {co.keyDepositAmount.toLocaleString()}
         </p>
       )}
 

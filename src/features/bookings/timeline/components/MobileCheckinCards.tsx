@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChevronRight, CheckCircle2, Phone, ExternalLink } from 'lucide-react'
+import { ChevronRight, CheckCircle2, Phone, ExternalLink, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
@@ -49,6 +49,20 @@ export const PendingCheckinCard = React.memo(function PendingCheckinCard({
       {ci.booking?.guest_phone && (
         <div className="flex items-center gap-1 text-helper text-primary mt-1">
           <Phone className="w-3 h-3" />{ci.booking.guest_phone}
+        </div>
+      )}
+
+      {/* Deposit status */}
+      {ci.booking?.deposit_status === 'PENDING' && (
+        <div className="flex items-center gap-1.5 mt-1">
+          <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
+          <span className="text-xs font-medium text-warning">เก็บ {ci.booking.key_deposit_amount.toLocaleString()}</span>
+        </div>
+      )}
+      {ci.booking?.deposit_status === 'COLLECTED' && (
+        <div className="flex items-center gap-1.5 mt-1">
+          <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
+          <span className="text-xs font-medium text-success">เก็บแล้ว {ci.booking.key_deposit_amount.toLocaleString()}</span>
         </div>
       )}
 

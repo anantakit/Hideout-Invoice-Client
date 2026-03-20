@@ -169,11 +169,14 @@ const CheckOutBottomSheet = React.memo(function CheckOutBottomSheet({
 
                 {/* Row 2: Balance + checkout all */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-3">
                     {hasBalance ? (
                       <span className="text-xs font-medium text-destructive">ค้าง {formatTHBCurrency(balance)}</span>
                     ) : (
                       <span className="text-xs font-medium text-success">ชำระครบแล้ว</span>
+                    )}
+                    {booking?.deposit_status === 'COLLECTED' && (booking?.key_deposit_amount ?? 0) > 0 && (
+                      <span className="text-xs font-medium text-amber-500">คืนประกัน {booking!.key_deposit_amount.toLocaleString()}</span>
                     )}
                   </div>
                   {pendingStays.length > 1 && (

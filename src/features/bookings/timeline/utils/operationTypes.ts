@@ -33,6 +33,8 @@ export interface CheckoutBooking {
   guestName: string
   roomNumbers: string[]
   balance: number
+  keyDepositAmount: number
+  depositStatus: string
   checkIn: string
   nights: number
   stays: CheckoutStay[]

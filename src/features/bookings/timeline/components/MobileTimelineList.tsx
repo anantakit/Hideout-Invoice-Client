@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { parseISO, isToday, differenceInDays, format, addDays } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, BedDouble, LogOut } from 'lucide-react'
+import { ChevronRight, ChevronDown, BedDouble, LogOut } from 'lucide-react'
 import { cn, fmtShort, fmtShortISO, todayISO as todayISOUtil, addDaysISO } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
@@ -26,6 +26,7 @@ interface MobileTimelineListProps {
   selectedDateStr: string
   bookingColorMap: Record<string, string>
   roomTypeNameMap: Record<string, string>
+  roomTypeIdMap: Record<string, string>
   unassignedStays: UnassignedStay[]
   onSelectBooking: (booking: TimelineBooking, roomNumbers?: string[]) => void
 }
@@ -36,6 +37,7 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   rooms,
   selectedDateStr,
   roomTypeNameMap,
+  roomTypeIdMap,
   unassignedStays,
   onSelectBooking,
 }: MobileTimelineListProps) {
@@ -147,6 +149,8 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
               guestName: b.guest_name,
               roomNumbers: [room.room_number],
               balance: b.balance_amount,
+              keyDepositAmount: b.key_deposit_amount,
+              depositStatus: b.deposit_status,
               checkIn: ci,
               nights: differenceInDays(parseISO(b.check_out), parseISO(b.check_in)),
               stays: [stay],
@@ -298,7 +302,11 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
     (entry: RoomEntry) => {
       if (entry.status === 'available') {
         const nextDay = format(addDays(parseISO(selectedDateStr), 1), 'yyyy-MM-dd')
-        navigate(`${ROUTES.bookings.new}?check_in=${selectedDateStr}&check_out=${nextDay}`)
+        const rtId = roomTypeIdMap[entry.room.id] ?? ''
+        const params = new URLSearchParams({ check_in: selectedDateStr, check_out: nextDay })
+        if (rtId) params.set('room_type_id', rtId)
+        params.set('room_id', entry.room.id)
+        navigate(`${ROUTES.bookings.new}?${params}`)
         return
       }
       if (entry.status === 'range_available' || entry.status === 'range_occupied') return
@@ -315,6 +323,10 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   const total = displayedEntries.length
   const hasCheckins = dateOps.checkins.length > 0 || dateOps.doneCheckins.length > 0
   const hasCheckouts = dateOps.checkouts.length > 0 || dateOps.doneCheckouts.length > 0
+  const checkinAllDone = hasCheckins && dateOps.checkins.length === 0
+  const checkoutAllDone = hasCheckouts && dateOps.checkouts.length === 0
+  const [checkinExpanded, setCheckinExpanded] = useState(!checkinAllDone)
+  const [checkoutExpanded, setCheckoutExpanded] = useState(!checkoutAllDone)
 
   // ── Render ──────────────────────────────────────────────────────────────
   return (
@@ -434,23 +446,31 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           ════════════════════════════════════════════════════════════════════ */}
       {hasCheckins && (
       <div className="px-4 space-section space-y-2">
-        <div className="text-label text-primary flex items-center space-inline">
+        <button
+          type="button"
+          className="text-label text-primary flex items-center space-inline w-full cursor-pointer"
+          onClick={() => setCheckinExpanded((v) => !v)}
+        >
           เช็คอิน{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
           <Badge variant="default" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
             {dateKPI.checkinDone}/{dateKPI.checkinTotal}
           </Badge>
-        </div>
+          <ChevronDown className={cn(
+            'w-3.5 h-3.5 ml-auto text-muted-foreground transition-transform',
+            checkinExpanded && 'rotate-180',
+          )} />
+        </button>
 
-        <>
-              {dateOps.checkins.map((ci) => (
-                <PendingCheckinCard key={ci.bookingId} ci={ci} onAssign={setAssignSheetBookingId} />
-              ))}
-
-              {/* Already checked-in bookings (walk-ins etc.) — shown dimmed */}
-              {dateOps.doneCheckins.map((ci) => (
-                <DoneCheckinCard key={ci.bookingId} ci={ci} onNavigate={handleNavigateToBooking} />
-              ))}
+        {checkinExpanded && (
+          <>
+            {dateOps.checkins.map((ci) => (
+              <PendingCheckinCard key={ci.bookingId} ci={ci} onAssign={setAssignSheetBookingId} />
+            ))}
+            {dateOps.doneCheckins.map((ci) => (
+              <DoneCheckinCard key={ci.bookingId} ci={ci} onNavigate={handleNavigateToBooking} />
+            ))}
           </>
+        )}
       </div>
       )}
 
@@ -459,23 +479,32 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
           ════════════════════════════════════════════════════════════════════ */}
       {hasCheckouts && (
       <div className="px-4 space-section space-y-2">
-        <div className="text-label text-warning flex items-center space-inline">
+        <button
+          type="button"
+          className="text-label text-warning flex items-center space-inline w-full cursor-pointer"
+          onClick={() => setCheckoutExpanded((v) => !v)}
+        >
           <LogOut className="w-3 h-3" />
           เช็คเอาท์{viewingToday ? 'วันนี้' : ` ${fmtShort(selectedDate)}`}
           <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
             {dateKPI.checkoutDone}/{dateKPI.checkoutTotal}
           </Badge>
-        </div>
+          <ChevronDown className={cn(
+            'w-3.5 h-3.5 ml-auto text-muted-foreground transition-transform',
+            checkoutExpanded && 'rotate-180',
+          )} />
+        </button>
 
-        {/* Pending checkouts — tap to open bottom sheet */}
-        {dateOps.checkouts.map((co) => (
-          <PendingCheckoutCard key={co.bookingId} co={co} onOpen={setCheckoutSheetBookingId} />
-        ))}
-
-        {/* Fully done checkouts — dimmed */}
-        {dateOps.doneCheckouts.map((co) => (
-          <DoneCheckoutCard key={co.bookingId} co={co} onNavigate={handleNavigateToBooking} />
-        ))}
+        {checkoutExpanded && (
+          <>
+            {dateOps.checkouts.map((co) => (
+              <PendingCheckoutCard key={co.bookingId} co={co} onOpen={setCheckoutSheetBookingId} />
+            ))}
+            {dateOps.doneCheckouts.map((co) => (
+              <DoneCheckoutCard key={co.bookingId} co={co} onNavigate={handleNavigateToBooking} />
+            ))}
+          </>
+        )}
       </div>
       )}
 

@@ -32,17 +32,18 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
   const needsAssign = ci.unassignedCount > 0
   const canCheckIn = hasRoom && isCheckInDay && !needsAssign && Boolean(ci.roomStayId && ci.roomId)
 
-  const depositLine = fullBooking && (
+  const depositStatus = fullBooking?.deposit_status ?? 'NONE'
+  const depositLine = fullBooking && depositStatus !== 'NONE' && (
     <div className="flex items-center gap-1.5 mt-1.5">
-      {keyDeposit > 0 ? (
+      {depositStatus === 'PENDING' ? (
         <>
           <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-          <span className="text-xs font-medium text-warning">เก็บ{' ' + keyDeposit.toLocaleString()}</span>
+          <span className="text-xs font-medium text-warning">เก็บ {keyDeposit.toLocaleString()}</span>
         </>
       ) : (
         <>
           <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-          <span className="text-xs font-medium text-success">จ่ายครบ</span>
+          <span className="text-xs font-medium text-success">เก็บแล้ว {keyDeposit.toLocaleString()}</span>
         </>
       )}
     </div>

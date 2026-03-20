@@ -32,8 +32,10 @@ interface InlineCheckInProps {
   pendingStays: RoomStayResponse[]
   /** When true, renders without Card wrapper (for use inside drawer/panel). */
   compact?: boolean
-  /** Key deposit amount from booking — 0 or undefined = not collected. */
+  /** Key deposit amount from booking. */
   keyDepositAmount?: number
+  /** Deposit status: NONE, PENDING, COLLECTED. */
+  depositStatus?: string
 }
 
 interface AvailableRoom {
@@ -44,7 +46,7 @@ interface AvailableRoom {
 
 // ─── InlineCheckIn ───────────────────────────────────────────────────────────
 
-export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmount = 0 }: InlineCheckInProps) {
+export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmount = 0, depositStatus = 'NONE' }: InlineCheckInProps) {
   const checkIn = useCheckInRooms(bookingId)
 
   // stayId → roomId (for unassigned stays that need room selection)
@@ -171,25 +173,25 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
 
   // ── Key deposit banner ──────────────────────────────────────────────────
 
-  const depositLine = (
+  const depositLine = depositStatus !== 'NONE' ? (
     <div className="flex items-center gap-1.5">
-      {keyDepositAmount > 0 ? (
+      {depositStatus === 'PENDING' ? (
         <>
           <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
           <span className="text-xs font-medium text-warning">
-            เก็บประกัน{' ' + keyDepositAmount.toLocaleString()}
+            เก็บ {keyDepositAmount.toLocaleString()}
           </span>
         </>
       ) : (
         <>
           <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
           <span className="text-xs font-medium text-success">
-            จ่ายครบ
+            เก็บแล้ว {keyDepositAmount.toLocaleString()}
           </span>
         </>
       )}
     </div>
-  )
+  ) : null
 
   // ── Render ───────────────────────────────────────────────────────────────
 

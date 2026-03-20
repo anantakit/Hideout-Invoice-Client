@@ -46,6 +46,11 @@ export function SingleRoomCheckOutCard({
           ค้าง ฿{co.balance.toLocaleString()}
         </p>
       )}
+      {co.depositStatus === 'COLLECTED' && co.keyDepositAmount > 0 && (
+        <p className="text-helper text-amber-500 font-medium mt-0.5">
+          คืนประกัน {co.keyDepositAmount.toLocaleString()}
+        </p>
+      )}
     </ConfirmActionCard>
   )
 }

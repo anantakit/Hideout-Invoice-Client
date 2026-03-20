@@ -124,11 +124,8 @@ export default function CreateBookingPage() {
     const stays = expandGroupedStays(values.items)
 
     const totalRooms = values.items.reduce((s, i) => s + Math.max(1, i.quantity ?? 1), 0)
-    // full_deposit = จ่ายรวมประกันแล้ว → ไม่ต้องเก็บเพิ่ม (0)
-    // อื่นๆ = ต้องเก็บเงินประกันเพิ่มหน้าเคาน์เตอร์
-    const depositAmount = values.payment_mode === 'full_deposit'
-      ? 0
-      : KEY_DEPOSIT_PER_ROOM * totalRooms
+    const depositAmount = KEY_DEPOSIT_PER_ROOM * totalRooms
+    const depositStatus = values.payment_mode === 'full_deposit' ? 'COLLECTED' : 'PENDING'
 
     const payment =
       values.payment_mode !== 'reserve' && values.payment_amount
@@ -142,6 +139,7 @@ export default function CreateBookingPage() {
         guest_phone: values.guest_phone,
         customer_id: values.customer_id || undefined,
         key_deposit_amount: depositAmount,
+        deposit_status: depositStatus,
         stays,
         payment,
       },

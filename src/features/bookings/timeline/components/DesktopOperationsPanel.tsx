@@ -115,6 +115,8 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
               guestName: b.guest_name,
               roomNumbers: [room.room_number],
               balance: b.balance_amount,
+              keyDepositAmount: b.key_deposit_amount,
+              depositStatus: b.deposit_status,
               checkIn: ci,
               nights: differenceInDays(parseISO(b.check_out), parseISO(b.check_in)),
               stays: [stay],

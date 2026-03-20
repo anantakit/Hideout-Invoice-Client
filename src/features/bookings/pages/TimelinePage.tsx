@@ -730,6 +730,7 @@ export default function TimelinePage() {
               selectedDateStr={mobileSelectedDateStr}
               bookingColorMap={bookingColorMap}
               roomTypeNameMap={roomTypeNameByRoomId}
+              roomTypeIdMap={roomTypeIdByRoomId}
               unassignedStays={unassignedStays}
               onSelectBooking={handleSelectBooking}
             />

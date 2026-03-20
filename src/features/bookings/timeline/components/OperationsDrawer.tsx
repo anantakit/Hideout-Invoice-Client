@@ -247,17 +247,17 @@ function BookingDetailContent({
                 <DoorOpen size={14} />
                 {roomNumbers.length > 1 ? `${roomNumbers.length} ห้อง` : 'ห้องพัก'}
               </p>
-              {keyDeposit > 0 ? (
+              {fullBooking?.deposit_status === 'PENDING' ? (
                 <span className="text-xs text-warning flex items-center gap-1">
                   <ShieldAlert size={12} />
-                  เก็บ{' ' + keyDeposit.toLocaleString()}
+                  เก็บ {keyDeposit.toLocaleString()}
                 </span>
-              ) : (
+              ) : fullBooking?.deposit_status === 'COLLECTED' ? (
                 <span className="text-xs text-success flex items-center gap-1">
                   <ShieldCheck size={12} />
-                  จ่ายครบ
+                  เก็บแล้ว {keyDeposit.toLocaleString()}
                 </span>
-              )}
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-2">
               {roomNumbers.map((rn) => (
@@ -292,7 +292,7 @@ function BookingDetailContent({
 
         {/* Inline check-in */}
         {pendingStays.length > 0 && (
-          <InlineCheckIn bookingId={booking.booking_id} pendingStays={pendingStays} compact keyDepositAmount={keyDeposit} />
+          <InlineCheckIn bookingId={booking.booking_id} pendingStays={pendingStays} compact keyDepositAmount={keyDeposit} depositStatus={fullBooking?.deposit_status} />
         )}
 
         {/* Checkout section — matches InlineCheckIn compact layout */}
@@ -456,8 +456,7 @@ function CreateBookingContent({
   const handleSubmit = () => {
     if (!canSubmit) return
 
-    // full_deposit = จ่ายรวมประกันแล้ว → ไม่ต้องเก็บเพิ่ม
-    const keyDeposit = paymentMode === 'full_deposit' ? 0 : depositAmount
+    const depositStatus = paymentMode === 'full_deposit' ? 'COLLECTED' : 'PENDING'
 
     const payment =
       paymentMode !== 'reserve' && paymentAmount
@@ -469,7 +468,8 @@ function CreateBookingContent({
         source,
         guest_name: guestName.trim(),
         guest_phone: guestPhone.trim(),
-        key_deposit_amount: keyDeposit,
+        key_deposit_amount: depositAmount,
+        deposit_status: depositStatus,
         stays: selectedRooms.map((r) => ({
           room_type_id: r.roomTypeId,
           room_id: r.roomId,
