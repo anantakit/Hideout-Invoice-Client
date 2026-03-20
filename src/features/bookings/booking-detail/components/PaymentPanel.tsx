@@ -108,11 +108,11 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1.5 text-amber-500">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  เก็บเงินประกันเพิ่ม
+                  เก็บ
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold tabular-nums text-amber-500">
-                    {formatTHB(booking.key_deposit_amount)}
+                    {' ' + booking.key_deposit_amount.toLocaleString()}
                   </span>
                   <button
                     type="button"

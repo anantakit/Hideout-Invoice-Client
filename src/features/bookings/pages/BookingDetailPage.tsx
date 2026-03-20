@@ -163,7 +163,7 @@ export default function BookingDetailPage() {
                 <p className="text-helper mt-1">
                   สร้างเมื่อ {formatThaiDate(booking.created_at)}
                   {booking.key_deposit_amount > 0 && (
-                    <span className="ml-2 text-amber-500">· เก็บประกันเพิ่ม {formatTHB(booking.key_deposit_amount)}</span>
+                    <span className="ml-2 text-amber-500">เก็บ{' ' + booking.key_deposit_amount.toLocaleString()}</span>
                   )}
                 </p>
               </div>

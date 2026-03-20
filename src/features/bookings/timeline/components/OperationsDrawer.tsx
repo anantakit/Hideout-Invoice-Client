@@ -248,14 +248,14 @@ function BookingDetailContent({
                 {roomNumbers.length > 1 ? `${roomNumbers.length} ห้อง` : 'ห้องพัก'}
               </p>
               {keyDeposit > 0 ? (
-                <span className="text-xs text-success flex items-center gap-1">
-                  <ShieldCheck size={12} />
-                  ประกัน {formatTHBCurrency(keyDeposit)}
-                </span>
-              ) : pendingStays.length > 0 && (
                 <span className="text-xs text-warning flex items-center gap-1">
                   <ShieldAlert size={12} />
-                  เก็บประกัน {formatTHBCurrency(roomNumbers.length * 200)}
+                  เก็บ{' ' + keyDeposit.toLocaleString()}
+                </span>
+              ) : (
+                <span className="text-xs text-success flex items-center gap-1">
+                  <ShieldCheck size={12} />
+                  จ่ายครบ
                 </span>
               )}
             </div>
@@ -814,8 +814,8 @@ function CreateBookingContent({
             )}
             {paymentMode !== 'full_deposit' && depositAmount > 0 && (
               <div className="flex justify-between text-xs text-amber-500">
-                <span>เก็บเงินประกันเพิ่มหน้าเคาน์เตอร์</span>
-                <span className="tabular-nums">{formatTHBCurrency(depositAmount)}</span>
+                <span>เก็บประกันหน้าเคาน์เตอร์</span>
+                <span className="tabular-nums">{' ' + formatTHBCurrency(depositAmount)}</span>
               </div>
             )}
             {paymentMode !== 'reserve' && paymentAmount && (

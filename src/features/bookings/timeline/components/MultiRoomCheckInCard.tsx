@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ShieldCheck, ShieldAlert } from 'lucide-react'
-import { cn, formatTHBCurrency } from '@/shared/utils'
+import { cn } from '@/shared/utils'
 import { CardButton } from '@/shared/ui/card-button'
 import { useBooking } from '../../hooks'
 import type { CheckinBooking } from '../utils/operationTypes'
@@ -47,13 +47,13 @@ export function MultiRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
           <div className="flex items-center gap-1.5 mt-1.5">
             {keyDeposit > 0 ? (
               <>
-                <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-                <span className="text-xs font-medium text-success">ประกัน {formatTHBCurrency(keyDeposit)}</span>
+                <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
+                <span className="text-xs font-medium text-warning">เก็บ{' ' + keyDeposit.toLocaleString()}</span>
               </>
             ) : (
               <>
-                <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-                <span className="text-xs font-medium text-warning">เก็บประกัน {formatTHBCurrency(ci.totalStays * 200)}</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
+                <span className="text-xs font-medium text-success">จ่ายครบ</span>
               </>
             )}
           </div>

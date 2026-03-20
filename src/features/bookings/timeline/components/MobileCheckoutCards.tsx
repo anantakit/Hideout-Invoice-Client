@@ -12,7 +12,6 @@ export const PendingCheckoutCard = React.memo(function PendingCheckoutCard({
   co: CheckoutBooking
   onOpen: (bookingId: string) => void
 }) {
-  const isSingleRoom = co.stays.length === 1
   const doneCount = co.stays.filter((s) => s.status === 'CHECKED_OUT').length
   const hasBalance = co.balance > 0
   const progressPct = co.stays.length > 0 ? (doneCount / co.stays.length) * 100 : 0
@@ -27,7 +26,7 @@ export const PendingCheckoutCard = React.memo(function PendingCheckoutCard({
       <div className="flex items-center justify-between gap-2">
         <span className="text-body font-semibold truncate">{co.guestName}</span>
         <span className="text-helper shrink-0">
-          {isSingleRoom ? `${co.nights} คืน` : `${co.stays.length} ห้อง · ${co.nights} คืน`}
+          {co.stays.length} ห้อง · {co.nights} คืน
         </span>
       </div>
 

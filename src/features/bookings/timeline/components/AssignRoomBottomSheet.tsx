@@ -32,7 +32,7 @@ import {
   useTransferRoom,
 } from '../../hooks'
 import type { RoomStayResponse } from '../../types'
-import { cn, todayISO, fmtShortISO, formatTHBCurrency } from '@/shared/utils'
+import { cn, todayISO, fmtShortISO } from '@/shared/utils'
 import { useNavigate } from 'react-router-dom'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -321,13 +321,13 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                   <div className="flex items-center gap-1.5">
                     {(booking?.key_deposit_amount ?? 0) > 0 ? (
                       <>
-                        <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-                        <span className="text-xs font-medium text-success">ประกัน {formatTHBCurrency(booking!.key_deposit_amount)}</span>
+                        <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
+                        <span className="text-xs font-medium text-warning">เก็บ{' ' + booking!.key_deposit_amount.toLocaleString()}</span>
                       </>
                     ) : (
                       <>
-                        <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-                        <span className="text-xs font-medium text-warning">เก็บประกัน {formatTHBCurrency(totalActive * 200)}</span>
+                        <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
+                        <span className="text-xs font-medium text-success">จ่ายครบ</span>
                       </>
                     )}
                   </div>

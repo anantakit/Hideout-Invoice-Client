@@ -12,7 +12,6 @@ export const PendingCheckinCard = React.memo(function PendingCheckinCard({
   ci: CheckinBooking
   onAssign: (bookingId: string) => void
 }) {
-  const isSingleRoom = ci.totalStays === 1
   const assignedCount = ci.totalStays - ci.unassignedCount
   const allAssigned = ci.unassignedCount === 0
   const progressPct = ci.totalStays > 0 ? (assignedCount / ci.totalStays) * 100 : 0
@@ -28,7 +27,7 @@ export const PendingCheckinCard = React.memo(function PendingCheckinCard({
       <div className="flex items-center justify-between gap-2">
         <span className="text-body font-semibold truncate">{ci.guestName}</span>
         <span className="text-helper shrink-0">
-          {isSingleRoom ? `${ci.nights} คืน` : `${ci.totalStays} ห้อง · ${ci.nights} คืน`}
+          {ci.totalStays} ห้อง · {ci.nights} คืน
         </span>
       </div>
 

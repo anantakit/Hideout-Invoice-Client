@@ -132,8 +132,8 @@ export function BookingSummary() {
 
         {depositToCollect > 0 && (
           <div className="flex justify-between text-body text-amber-500">
-            <span>เก็บเงินประกันเพิ่มหน้าเคาน์เตอร์</span>
-            <span className="font-medium tabular-nums">{formatTHB(depositToCollect)}</span>
+            <span>เก็บประกันหน้าเคาน์เตอร์</span>
+            <span className="font-medium tabular-nums">{' ' + formatTHB(depositToCollect)}</span>
           </div>
         )}
 

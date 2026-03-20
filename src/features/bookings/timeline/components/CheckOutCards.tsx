@@ -27,18 +27,20 @@ export function SingleRoomCheckOutCard({
   return (
     <ConfirmActionCard
       disabled={!canCheckOut}
-      icon={<LogOut className="w-4 h-4 text-warning" />}
       confirmTitle="ยืนยันเช็คเอาท์"
       confirmDescription={`เช็คเอาท์ ${co.guestName} ห้อง ${stay.roomNumber} ?`}
       confirmLabel="เช็คเอาท์"
       onConfirm={onCheckOut}
       className="space-card"
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-body font-semibold truncate">{co.guestName}</span>
-        <span className="text-helper shrink-0">{co.nights} คืน</span>
+        <span className="text-helper shrink-0">1 ห้อง · {co.nights} คืน</span>
       </div>
-      <p className="text-helper mt-0.5">ห้อง {stay.roomNumber}</p>
+      <div className="flex items-center justify-between mt-0.5">
+        <span className="text-helper">ห้อง {stay.roomNumber}</span>
+        {canCheckOut && <LogOut className="w-4 h-4 text-warning shrink-0" />}
+      </div>
       {hasBalance && (
         <p className="text-helper text-destructive font-medium mt-0.5">
           ค้าง ฿{co.balance.toLocaleString()}

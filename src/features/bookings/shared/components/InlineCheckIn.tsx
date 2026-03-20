@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { LogIn, Loader2, Key, ShieldCheck, ShieldAlert } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { fmtShortISO, formatTHBCurrency } from '@/shared/utils'
+import { fmtShortISO } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import {
   Select,
@@ -171,21 +171,20 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
 
   // ── Key deposit banner ──────────────────────────────────────────────────
 
-  const expectedDeposit = pendingStays.length * 200
   const depositLine = (
     <div className="flex items-center gap-1.5">
       {keyDepositAmount > 0 ? (
         <>
-          <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-          <span className="text-xs font-medium text-success">
-            ประกัน {formatTHBCurrency(keyDepositAmount)}
+          <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
+          <span className="text-xs font-medium text-warning">
+            เก็บประกัน{' ' + keyDepositAmount.toLocaleString()}
           </span>
         </>
       ) : (
         <>
-          <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-          <span className="text-xs font-medium text-warning">
-            เก็บประกัน {formatTHBCurrency(expectedDeposit)}
+          <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
+          <span className="text-xs font-medium text-success">
+            จ่ายครบ
           </span>
         </>
       )}

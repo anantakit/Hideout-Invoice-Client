@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { LogIn, Loader2, ChevronDown, ShieldCheck, ShieldAlert } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { cn, todayISO, formatTHBCurrency } from '@/shared/utils'
+import { cn, todayISO } from '@/shared/utils'
 import { CardButton } from '@/shared/ui/card-button'
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import { useCheckInRooms, useBooking } from '../../hooks'
@@ -36,13 +36,13 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
     <div className="flex items-center gap-1.5 mt-1.5">
       {keyDeposit > 0 ? (
         <>
-          <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-          <span className="text-xs font-medium text-success">ประกัน {formatTHBCurrency(keyDeposit)}</span>
+          <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
+          <span className="text-xs font-medium text-warning">เก็บ{' ' + keyDeposit.toLocaleString()}</span>
         </>
       ) : (
         <>
-          <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-          <span className="text-xs font-medium text-warning">เก็บประกัน {formatTHBCurrency(ci.totalStays * 200)}</span>
+          <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
+          <span className="text-xs font-medium text-success">จ่ายครบ</span>
         </>
       )}
     </div>
@@ -64,7 +64,7 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-body font-semibold truncate">{ci.guestName}</span>
-            <span className="text-helper shrink-0">{ci.nights} คืน</span>
+            <span className="text-helper shrink-0">1 ห้อง · {ci.nights} คืน</span>
           </div>
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center space-inline text-helper">
@@ -103,7 +103,6 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
       disabled={!canCheckIn || checkInMutation.isPending}
       loading={checkInMutation.isPending}
       loader={<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-      icon={<LogIn className="w-4 h-4 text-primary" />}
       confirmTitle="ยืนยันเช็คอิน"
       confirmDescription={`เช็คอิน ${ci.guestName} ห้อง ${ci.assignedRooms[0]} ?`}
       confirmLabel="เช็คอิน"
@@ -111,22 +110,24 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
       className="space-card"
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-body font-semibold truncate">{ci.guestName}</span>
-            <span className="text-helper shrink-0">{ci.nights} คืน</span>
-          </div>
-          <div className="flex items-center space-inline text-helper mt-0.5">
-            <span>{ci.typeName}</span>
-            {hasRoom && (
-              <>
-                <span>·</span>
-                <span className="font-medium text-foreground/70">ห้อง {ci.assignedRooms[0]}</span>
-              </>
-            )}
-          </div>
+        <span className="text-body font-semibold truncate">{ci.guestName}</span>
+        <span className="text-helper shrink-0">1 ห้อง · {ci.nights} คืน</span>
+      </div>
+      <div className="flex items-center justify-between mt-0.5">
+        <div className="flex items-center space-inline text-helper">
+          <span>{ci.typeName}</span>
+          {hasRoom && (
+            <>
+              <span>·</span>
+              <span className="font-medium text-foreground/70">ห้อง {ci.assignedRooms[0]}</span>
+            </>
+          )}
         </div>
-        {statusIndicator}
+        {checkInMutation.isPending
+          ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />
+          : canCheckIn
+            ? <LogIn className="w-4 h-4 text-primary shrink-0" />
+            : statusIndicator}
       </div>
       {depositLine}
     </ConfirmActionCard>
