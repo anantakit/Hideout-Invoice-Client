@@ -50,7 +50,7 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
             value={String(limit)}
             onValueChange={(v) => { onLimitChange(Number(v)); onPageChange(1) }}
           >
-            <SelectTrigger className="h-8 w-[5.5rem] text-xs">
+            <SelectTrigger className="h-9 w-[5.5rem] text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -79,7 +79,7 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
                 key={n}
                 variant={n === page ? 'default' : 'ghost'}
                 size="icon"
-                className="w-8 h-8"
+                className="w-9 h-9 min-h-[44px] min-w-[44px]"
                 onClick={() => onPageChange(n as number)}
               >
                 {n}
@@ -108,7 +108,7 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-9 w-9 min-h-[44px] min-w-[44px]"
             onClick={() => onPageChange(page - 1)}
             disabled={page === 1}
           >
@@ -120,7 +120,7 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-9 w-9 min-h-[44px] min-w-[44px]"
             onClick={() => onPageChange(page + 1)}
             disabled={page === totalPages}
           >

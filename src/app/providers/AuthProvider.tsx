@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     // Fire-and-forget — don't block logout on API call
-    authApi.logout().catch(() => {})
+    authApi.logout().catch((err) => console.warn('Logout API failed:', err))
     setAccessToken(null)
     localStorage.removeItem('user')
     setUser(null)

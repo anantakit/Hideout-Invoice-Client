@@ -75,9 +75,11 @@ function DownloadButton({
 function DeleteReceiptDialog({
   invoiceNumber,
   onConfirm,
+  isPending,
 }: {
   invoiceNumber: string
   onConfirm: () => void
+  isPending?: boolean
 }) {
   return (
     <AlertDialog>
@@ -86,7 +88,7 @@ function DeleteReceiptDialog({
           variant="ghost"
           size="icon"
           className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
-          title="ลบ"
+          aria-label="ลบ"
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -100,7 +102,7 @@ function DeleteReceiptDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>ลบ</AlertDialogAction>
+          <AlertDialogAction disabled={isPending} onClick={onConfirm}>{isPending ? 'กำลังลบ…' : 'ลบ'}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -278,7 +280,7 @@ export default function ReceiptHistory() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
-                          <Button variant="ghost" size="icon" className="w-8 h-8" asChild title="ดูรายละเอียด">
+                          <Button variant="ghost" size="icon" className="w-8 h-8" asChild aria-label="ดูรายละเอียด">
                             <Link to={`/receipts/${receipt.id}`}><Eye className="w-4 h-4" /></Link>
                           </Button>
                           <DownloadButton
@@ -289,6 +291,7 @@ export default function ReceiptHistory() {
                           <DeleteReceiptDialog
                             invoiceNumber={receipt.invoice_number}
                             onConfirm={() => deleteMutation.mutate(receipt.id)}
+                            isPending={deleteMutation.isPending}
                           />
                         </div>
                       </TableCell>

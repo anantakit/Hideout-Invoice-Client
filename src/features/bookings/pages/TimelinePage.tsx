@@ -7,7 +7,7 @@ import { CalendarPlus } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { TooltipProvider } from '@/shared/ui/tooltip'
 import toast from 'react-hot-toast'
-import { todayISO } from '@/shared/utils'
+import { todayISO, getErrorMessage } from '@/shared/utils'
 import ErrorPanel from '@/shared/components/ErrorPanel'
 import TimelineSkeleton from '../timeline/components/TimelineSkeleton'
 import { useTimeline, useAvailabilityGrouped, useMoveStay } from '../hooks'
@@ -598,8 +598,8 @@ export default function TimelinePage() {
           onSuccess: () => {
             toast.success(`ย้ายไป${roomLabel} (${payload.newCheckIn} → ${payload.newCheckOut}) สำเร็จ`)
           },
-          onError: (err: any) => {
-            const serverMsg: string = err?.response?.data?.error ?? ''
+          onError: (err: unknown) => {
+            const serverMsg = getErrorMessage(err, '')
             let msg: string
 
             if (serverMsg.includes('room type mismatch')) {

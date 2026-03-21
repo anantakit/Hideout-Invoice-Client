@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronUp, BedDouble, ArrowRight, Wand2, Loader2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { getErrorMessage } from '@/shared/utils'
 import { cn, fmtShortISO } from '@/shared/utils'
 import { Card } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
@@ -55,8 +56,8 @@ export const PendingAssignmentsPanel = React.memo(function PendingAssignmentsPan
         toast('ไม่มีรายการที่ต้องมอบหมาย')
       }
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error ?? 'มอบหมายห้องอัตโนมัติไม่สำเร็จ')
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, 'มอบหมายห้องอัตโนมัติไม่สำเร็จ'))
     },
   })
 

@@ -5,7 +5,7 @@ import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { cn, todayISO, addDaysISO, fmtShortISO, fmtShort } from '@/shared/utils'
+import { cn, todayISO, addDaysISO, fmtShortISO, fmtShort, getErrorMessage } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import {
   AlertDialog, AlertDialogTrigger, AlertDialogContent,
@@ -59,8 +59,8 @@ export function PendingAssignmentsSection({
       }
       setAutoAssignDate(null)
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error ?? 'มอบหมายอัตโนมัติไม่สำเร็จ')
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, 'มอบหมายอัตโนมัติไม่สำเร็จ'))
       setAutoAssignDate(null)
     },
   })

@@ -15,7 +15,7 @@ if (splash) {
   setTimeout(() => {
     splash.style.opacity = '0'
     setTimeout(() => {
-      ;(window as any).__splashCleanup?.()
+      window.__splashCleanup?.()
       splash.remove()
     }, 500)
   }, delay)

@@ -150,7 +150,7 @@ export default function ReceiptDetail() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => deleteMutation.mutate()}>ลบ</AlertDialogAction>
+                  <AlertDialogAction disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate()}>{deleteMutation.isPending ? 'กำลังลบ…' : 'ลบ'}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

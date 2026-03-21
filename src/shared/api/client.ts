@@ -43,11 +43,7 @@ export function setAccessToken(token: string | null) {
 
 // ── Token refresh logic ──────────────────────────────────────────────────────
 
-let isRefreshing = false
-let pendingRequests: Array<{
-  resolve: (value: unknown) => void
-  reject: (error: unknown) => void
-}> = []
+let refreshPromise: Promise<string> | null = null
 
 apiClient.interceptors.response.use(
   (response) => response,
@@ -65,44 +61,32 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retry = true
 
-      if (isRefreshing) {
-        // Queue this request until refresh completes
-        return new Promise((resolve, reject) => {
-          pendingRequests.push({
-            resolve: () => {
-              originalRequest.headers.Authorization = `Bearer ${accessToken}`
-              resolve(apiClient(originalRequest))
-            },
-            reject,
+      // Use a shared Promise so concurrent 401s only trigger one refresh
+      if (!refreshPromise) {
+        refreshPromise = axios
+          .post<RefreshResponse>(
+            `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/refresh`,
+            {},
+            { withCredentials: true },
+          )
+          .then((res) => {
+            accessToken = res.data.token
+            return res.data.token
           })
-        })
+          .catch((refreshError) => {
+            forceLogout()
+            throw refreshError
+          })
+          .finally(() => {
+            refreshPromise = null
+          })
       }
 
-      isRefreshing = true
-
       try {
-        // POST /auth/refresh — refresh token is in httpOnly cookie (sent automatically)
-        const res = await axios.post<RefreshResponse>(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/refresh`,
-          {},
-          { withCredentials: true }
-        )
-
-        accessToken = res.data.token
-
-        // Retry queued requests with new token
-        pendingRequests.forEach(({ resolve }) => resolve(undefined))
-        pendingRequests = []
-        isRefreshing = false
-
-        // Retry original request with new token
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`
+        const newToken = await refreshPromise
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
         return apiClient(originalRequest)
       } catch {
-        isRefreshing = false
-        pendingRequests.forEach(({ reject }) => reject(error))
-        pendingRequests = []
-        forceLogout()
         return Promise.reject(error)
       }
     }

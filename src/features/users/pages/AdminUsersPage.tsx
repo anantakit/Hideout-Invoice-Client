@@ -172,7 +172,7 @@ export default function AdminUsers() {
                             size="icon"
                             className="w-8 h-8"
                             onClick={() => handleEdit(u)}
-                            title="แก้ไข"
+                            aria-label="แก้ไข"
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -183,7 +183,7 @@ export default function AdminUsers() {
                                 size="icon"
                                 className="h-9 w-9 radius-button text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
                                 disabled={u.id === me?.id}
-                                title="ลบ"
+                                aria-label="ลบ"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -198,6 +198,7 @@ export default function AdminUsers() {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
                                 <AlertDialogAction
+                                  disabled={deleteMutation.isPending}
                                   onClick={() => {
                                     if (u.id === me?.id) {
                                       toast.error('ไม่สามารถลบบัญชีของตนเองได้')
@@ -206,7 +207,7 @@ export default function AdminUsers() {
                                     deleteMutation.mutate(u.id)
                                   }}
                                 >
-                                  ลบ
+                                  {deleteMutation.isPending ? 'กำลังลบ…' : 'ลบ'}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

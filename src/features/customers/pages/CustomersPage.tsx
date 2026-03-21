@@ -153,7 +153,7 @@ export default function Customers() {
                             size="icon"
                             className="w-8 h-8"
                             onClick={() => handleEdit(customer)}
-                            title="แก้ไข"
+                            aria-label="แก้ไข"
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -163,7 +163,7 @@ export default function Customers() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-9 w-9 radius-button text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
-                                title="ลบ"
+                                aria-label="ลบ"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -177,8 +177,8 @@ export default function Customers() {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMutation.mutate(customer.id)}>
-                                  ลบ
+                                <AlertDialogAction disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(customer.id)}>
+                                  {deleteMutation.isPending ? 'กำลังลบ…' : 'ลบ'}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

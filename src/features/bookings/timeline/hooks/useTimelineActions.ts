@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { bookingsApi } from '../../api'
+import { getErrorMessage } from '@/shared/utils'
 
 export function useTimelineActions() {
   const qc = useQueryClient()
@@ -30,8 +31,8 @@ export function useTimelineActions() {
       toast.success('เช็คอินสำเร็จ')
       invalidateAll()
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error ?? 'เช็คอินไม่สำเร็จ')
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, 'เช็คอินไม่สำเร็จ'))
     },
   })
 
@@ -47,8 +48,8 @@ export function useTimelineActions() {
       toast.success('เช็คเอาท์สำเร็จ')
       invalidateAll()
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error ?? 'เช็คเอาท์ไม่สำเร็จ')
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, 'เช็คเอาท์ไม่สำเร็จ'))
     },
   })
 
@@ -64,8 +65,8 @@ export function useTimelineActions() {
       toast.success('ยกเลิกการจองสำเร็จ')
       invalidateAll()
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error ?? 'ยกเลิกไม่สำเร็จ')
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, 'ยกเลิกไม่สำเร็จ'))
     },
   })
 

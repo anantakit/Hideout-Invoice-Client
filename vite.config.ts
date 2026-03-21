@@ -50,7 +50,7 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-css',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 60 },
             },
           },
           {
@@ -59,13 +59,16 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-webfonts',
-              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 60 },
             },
           },
         ],
       },
     }),
   ],
+  build: {
+    sourcemap: false,
+  },
   base: '/',
   server: {
     port: 3000,

@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { Banknote, CreditCard, Plus, X, ShieldCheck, ShieldAlert, ShieldOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
-import { formatTHB, formatThaiDate } from '../../../../shared/utils'
+import { formatTHB, formatThaiDate, getErrorMessage } from '../../../../shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../shared/ui/card'
 import { Button } from '../../../../shared/ui/button'
 import { Input } from '../../../../shared/ui/input'
@@ -34,7 +34,8 @@ const paymentSchema = z.object({
   amount: z
     .string()
     .min(1, 'กรุณาระบุจำนวนเงิน')
-    .refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'จำนวนเงินต้องมากกว่า 0'),
+    .refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'จำนวนเงินต้องมากกว่า 0')
+    .refine((v) => { const n = Number(v); return Number.isFinite(n) && Math.round(n * 100) === n * 100 }, 'ระบุได้ไม่เกิน 2 ตำแหน่งทศนิยม'),
   method: z.enum(['CASH', 'TRANSFER'], { required_error: 'กรุณาเลือกวิธีชำระเงิน' }),
   note: z.string().max(255).optional(),
 })
@@ -72,7 +73,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
           setShowForm(false)
         },
         onError: (err) => {
-          toast.error((err as Error).message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+          toast.error(getErrorMessage(err))
         },
       },
     )
@@ -119,7 +120,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
                 )}
                 <div className="flex items-center gap-2">
                   <span className={cn('font-semibold tabular-nums', booking.deposit_status === 'PENDING' ? 'text-amber-500' : 'text-green-600')}>
-                    {booking.key_deposit_amount.toLocaleString()}
+                    {(booking.key_deposit_amount ?? 0).toLocaleString()}
                   </span>
                   {booking.deposit_status === 'PENDING' && (
                     <>
@@ -144,7 +145,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
                             { onSuccess: () => toast.success('ยกเว้นเงินประกันแล้ว') },
                           )
                         }}
-                        title="ยกเว้นเงินประกัน"
+                        aria-label="ยกเว้นเงินประกัน"
                       >
                         <ShieldOff className="w-3.5 h-3.5" />
                       </button>
@@ -153,7 +154,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
                 </div>
               </div>
               {booking.deposit_status === 'COLLECTED' && isSettled && (
-                <p className="text-xs text-amber-500 font-medium">คืนประกัน {booking.key_deposit_amount.toLocaleString()}</p>
+                <p className="text-xs text-amber-500 font-medium">คืนประกัน {(booking.key_deposit_amount ?? 0).toLocaleString()}</p>
               )}
             </>
           )}

@@ -255,7 +255,7 @@ export default function AdminRoomsPage() {
                             size="icon"
                             className="w-8 h-8"
                             onClick={() => { setEditingRt(rt); setRtModalOpen(true) }}
-                            title="แก้ไข"
+                            aria-label="แก้ไข"
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -265,7 +265,7 @@ export default function AdminRoomsPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                title="ลบ"
+                                aria-label="ลบ"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -279,8 +279,8 @@ export default function AdminRoomsPage() {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteRtMutation.mutate(rt.id)}>
-                                  ลบ
+                                <AlertDialogAction disabled={deleteRtMutation.isPending} onClick={() => deleteRtMutation.mutate(rt.id)}>
+                                  {deleteRtMutation.isPending ? 'กำลังลบ…' : 'ลบ'}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -378,7 +378,7 @@ export default function AdminRoomsPage() {
                               size="icon"
                               className="w-8 h-8"
                               onClick={() => { setEditingRoom(room); setRoomModalOpen(true) }}
-                              title="แก้ไข"
+                              aria-label="แก้ไข"
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -388,7 +388,7 @@ export default function AdminRoomsPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                  title="ลบ"
+                                  aria-label="ลบ"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -402,8 +402,8 @@ export default function AdminRoomsPage() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deleteRoomMutation.mutate(room.id)}>
-                                    ลบ
+                                  <AlertDialogAction disabled={deleteRoomMutation.isPending} onClick={() => deleteRoomMutation.mutate(room.id)}>
+                                    {deleteRoomMutation.isPending ? 'กำลังลบ…' : 'ลบ'}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>

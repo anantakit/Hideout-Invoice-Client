@@ -271,7 +271,7 @@
           // Status message rotator
           function showMsg() {
             if (!msgEl) return;
-            msgEl.innerHTML = '<span>' + messages[idx % messages.length] + '</span>';
+            msgEl.textContent = messages[idx % messages.length];
             idx++;
           }
           showMsg();

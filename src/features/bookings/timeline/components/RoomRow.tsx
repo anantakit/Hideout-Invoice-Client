@@ -214,28 +214,30 @@ const RoomRow = React.memo(function RoomRow({
         onClick={handleAreaClick}
         onPointerDown={handleAreaPointerDown}
       >
-        {/* Grid lines (visual only) */}
-        <div className="absolute inset-0 flex pointer-events-none" aria-hidden>
-          {Array.from({ length: windowDays }).map((_, i) => {
-            const cellDate  = addDays(windowStart, i)
-            const todayCell = isToday(cellDate)
-            const isWeekend = isSaturday(cellDate) || isSunday(cellDate)
-            return (
-              <div
-                key={i}
-                className={cn(
-                  'border-r border-timeline-grid/50 flex-shrink-0',
-                  todayCell
-                    ? 'bg-primary/8'
-                    : isWeekend
-                      ? 'bg-muted/20'
-                      : isEven && 'bg-accent/[0.04]',
-                )}
-                style={{ width: 'var(--timeline-cell-width)' }}
-              />
-            )
-          })}
-        </div>
+        {/* Grid lines (visual only — memoized to avoid re-render on drag) */}
+        {useMemo(() => (
+          <div className="absolute inset-0 flex pointer-events-none" aria-hidden>
+            {Array.from({ length: windowDays }).map((_, i) => {
+              const cellDate  = addDays(windowStart, i)
+              const todayCell = isToday(cellDate)
+              const isWeekend = isSaturday(cellDate) || isSunday(cellDate)
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    'border-r border-timeline-grid/50 flex-shrink-0',
+                    todayCell
+                      ? 'bg-primary/8'
+                      : isWeekend
+                        ? 'bg-muted/20'
+                        : isEven && 'bg-accent/[0.04]',
+                  )}
+                  style={{ width: 'var(--timeline-cell-width)' }}
+                />
+              )
+            })}
+          </div>
+        ), [windowDays, windowStart, isEven])}
 
         {/* Today vertical indicator line */}
         {todayOffset >= 0 && (

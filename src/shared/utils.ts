@@ -152,6 +152,13 @@ export function formatKPI(n: number): string {
   return formatCompactNumber(n)
 }
 
+/** Extract a user-friendly error message from unknown error types */
+export function getErrorMessage(err: unknown, fallback = 'เกิดข้อผิดพลาด กรุณาลองใหม่'): string {
+  if (err instanceof Error) return err.message || fallback
+  if (typeof err === 'string') return err
+  return fallback
+}
+
 export function addDaysISO(days: number): string {
   const d = new Date()
   d.setDate(d.getDate() + days)

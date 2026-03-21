@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useForm, useFieldArray, Controller, type UseFormRegister } from 'react-hook-form'
+import { useForm, useFieldArray, Controller, type UseFormRegister, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -52,7 +52,7 @@ interface ReceiptItemRowProps {
   fieldId: string
   index: number
   register: UseFormRegister<ReceiptFormValues>
-  errors: any
+  errors: FieldErrors<ReceiptFormValues>
   watchedItem: { quantity?: number; unit_price?: number }
   onRemove: (index: number) => void
   canRemove: boolean
@@ -512,7 +512,7 @@ export default function CreateReceipt() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={!selectedCustomer || form.formState.isSubmitting || createMutation.isPending}
+                  disabled={!selectedCustomer || createMutation.isPending}
                   className="touch-target px-6 rounded-xl font-medium"
                 >
                   {createMutation.isPending ? (
@@ -533,7 +533,7 @@ export default function CreateReceipt() {
         <Button
           type="submit"
           form="create-receipt-form"
-          disabled={!selectedCustomer || form.formState.isSubmitting || createMutation.isPending}
+          disabled={!selectedCustomer || createMutation.isPending}
           className="w-full min-h-[52px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]"
         >
           {createMutation.isPending ? (
