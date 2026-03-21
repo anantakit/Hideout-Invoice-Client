@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import { Plus, X, Check, Loader2, AlertTriangle, Tag, DollarSign } from 'lucide-react'
 import { receiptsApi } from '../api'
 import { customersApi } from '../../customers/api'
-import { formatTHB, todayISO } from '../../../shared/utils'
+import { formatTHB, todayISO, formatPhone } from '../../../shared/utils'
 import CustomerModal from '../../customers/components/CustomerModal'
 import SearchableComboBox from '../../../shared/ui/SearchableComboBox'
 import type { Customer } from '../../customers/types'
@@ -361,7 +361,7 @@ export default function CreateReceipt() {
                     <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground space-y-1 border border-border">
                       <p className="font-semibold text-foreground">{selectedCustomer.name}</p>
                       {selectedCustomer.address && <p>{selectedCustomer.address}</p>}
-                      {selectedCustomer.phone && <p>โทร: {selectedCustomer.phone}</p>}
+                      {selectedCustomer.phone && <p>โทร: {formatPhone(selectedCustomer.phone)}</p>}
                       {selectedCustomer.tax_id && <p>เลขผู้เสียภาษี: {selectedCustomer.tax_id}</p>}
                     </div>
                   )}

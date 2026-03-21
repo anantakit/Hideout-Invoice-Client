@@ -152,6 +152,15 @@ export function formatKPI(n: number): string {
   return formatCompactNumber(n)
 }
 
+/** Format Thai phone number: 0812345678 → 081-234-5678 */
+export function formatPhone(phone: string | undefined | null): string {
+  if (!phone) return ''
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+  if (digits.length === 9) return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`
+  return phone
+}
+
 /** Extract a user-friendly error message from unknown error types */
 export function getErrorMessage(err: unknown, fallback = 'เกิดข้อผิดพลาด กรุณาลองใหม่'): string {
   if (err instanceof Error) return err.message || fallback

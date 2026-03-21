@@ -12,7 +12,7 @@ import { Input } from '../../../shared/ui/input'
 import SearchableComboBox from '@/shared/ui/SearchableComboBox'
 import { customersApi } from '../../customers/api'
 import type { Customer } from '../../customers/types'
-import { formatThaiDate, formatTHB, formatCompactNumber } from '../../../shared/utils'
+import { formatThaiDate, formatTHB, formatCompactNumber, formatPhone } from '../../../shared/utils'
 import ErrorPage from '@/shared/components/ErrorPage'
 import { useBooking, useUpdateBooking } from '../hooks'
 import { InlineCheckIn } from '../shared/components/InlineCheckIn'
@@ -272,7 +272,7 @@ export default function BookingDetailPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                    <span className="text-body">{booking.guest_phone}</span>
+                    <span className="text-body">{formatPhone(booking.guest_phone)}</span>
                   </div>
                 </div>
                 {booking.customer_name && (

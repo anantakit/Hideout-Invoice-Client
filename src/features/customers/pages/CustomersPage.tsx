@@ -6,7 +6,7 @@ import { customersApi } from '../api'
 import CustomerModal from '../components/CustomerModal'
 import Pagination from '../../../shared/ui/Pagination'
 import type { Customer } from '../types'
-import { formatThaiDate } from '../../../shared/utils'
+import { formatThaiDate, formatPhone } from '../../../shared/utils'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import { Card } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
@@ -146,9 +146,9 @@ export default function Customers() {
                     <TableRow key={customer.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell>
                         <p className="font-medium text-foreground">{customer.name}</p>
-                        {customer.phone && <p className="text-helper mt-0.5 sm:hidden">{customer.phone}</p>}
+                        {customer.phone && <p className="text-helper mt-0.5 sm:hidden">{formatPhone(customer.phone)}</p>}
                       </TableCell>
-                      <TableCell className="text-muted-foreground hidden sm:table-cell">{customer.phone || '—'}</TableCell>
+                      <TableCell className="text-muted-foreground hidden sm:table-cell">{formatPhone(customer.phone) || '—'}</TableCell>
                       <TableCell className="text-muted-foreground hidden md:table-cell">{customer.tax_id || '—'}</TableCell>
                       <TableCell className="text-muted-foreground hidden lg:table-cell">{formatThaiDate(customer.created_at)}</TableCell>
                       <TableCell>

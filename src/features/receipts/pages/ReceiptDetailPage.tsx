@@ -6,7 +6,7 @@ import { ChevronLeft, Download, Trash2, Loader2, ExternalLink } from 'lucide-rea
 import { Skeleton } from '@/shared/ui/skeleton'
 import { receiptsApi } from '../api'
 import ErrorPage from '@/shared/components/ErrorPage'
-import { formatTHB, formatThaiDate } from '../../../shared/utils'
+import { formatTHB, formatThaiDate, formatPhone } from '../../../shared/utils'
 import { Card, CardContent, CardHeader } from '../../../shared/ui/card'
 import { Button } from '../../../shared/ui/button'
 import {
@@ -169,7 +169,7 @@ export default function ReceiptDetail() {
               <p className="text-base font-medium text-foreground">{receipt.customer.name}</p>
               <div className="mt-1.5 space-y-1 text-sm text-muted-foreground">
                 {receipt.customer.address && <p>{receipt.customer.address}</p>}
-                {receipt.customer.phone && <p>โทร: {receipt.customer.phone}</p>}
+                {receipt.customer.phone && <p>โทร: {formatPhone(receipt.customer.phone)}</p>}
                 {receipt.customer.tax_id && <p>เลขผู้เสียภาษี: {receipt.customer.tax_id}</p>}
               </div>
             </div>

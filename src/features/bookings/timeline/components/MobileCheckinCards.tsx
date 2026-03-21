@@ -1,6 +1,6 @@
 import React from 'react'
 import { ChevronRight, CheckCircle2, Phone, ExternalLink, ShieldCheck, ShieldAlert } from 'lucide-react'
-import { cn, formatCompactNumber } from '@/shared/utils'
+import { cn, formatCompactNumber, formatPhone } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
 import type { CheckinBooking } from '../utils/operationTypes'
@@ -48,7 +48,7 @@ export const PendingCheckinCard = React.memo(function PendingCheckinCard({
       </div>
       {ci.booking?.guest_phone && (
         <div className="flex items-center gap-1 text-helper text-primary mt-1">
-          <Phone className="w-3 h-3" />{ci.booking.guest_phone}
+          <Phone className="w-3 h-3" />{formatPhone(ci.booking.guest_phone)}
         </div>
       )}
 
@@ -111,7 +111,7 @@ export const DoneCheckinCard = React.memo(function DoneCheckinCard({
       <div className="flex items-center gap-3 mt-1">
         {ci.booking?.guest_phone && (
           <a href={`tel:${ci.booking.guest_phone}`} className="flex items-center gap-1 text-helper text-primary active:opacity-70">
-            <Phone className="w-3 h-3" />{ci.booking.guest_phone}
+            <Phone className="w-3 h-3" />{formatPhone(ci.booking.guest_phone)}
           </a>
         )}
         <Button variant="ghost" size="sm" onClick={() => onNavigate(ci.bookingId)} className="gap-1 h-auto p-0 text-helper text-muted-foreground hover:text-foreground">

@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, ChevronRight, CalendarX, ArrowRight } from 'lucide-react'
-import { formatTHB, fmtShortISO } from '../../../shared/utils'
+import { formatTHB, fmtShortISO, formatPhone } from '../../../shared/utils'
 import ErrorPanel from '../../../shared/components/ErrorPanel'
 import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
 import { useBookings } from '../hooks'
@@ -321,7 +321,7 @@ function DesktopRow({
     <TableRow className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={onView}>
       <TableCell>
         <p className="font-medium">{booking.guest_name}</p>
-        <p className="text-helper mt-0.5">{booking.guest_phone}</p>
+        <p className="text-helper mt-0.5">{formatPhone(booking.guest_phone)}</p>
       </TableCell>
       <TableCell>
         <StatusBadge status={booking.status} />
@@ -383,7 +383,7 @@ function MobileCard({
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="font-semibold truncate break-all">{booking.guest_name}</p>
-              <p className="text-helper mt-0.5">{booking.guest_phone}</p>
+              <p className="text-helper mt-0.5">{formatPhone(booking.guest_phone)}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
           </div>

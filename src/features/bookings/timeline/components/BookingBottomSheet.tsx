@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
-import { fmtThaiDate, formatTHBCurrency } from '@/shared/utils'
+import { fmtThaiDate, formatTHBCurrency, formatPhone } from '@/shared/utils'
 import { type TimelineBooking, getStatusLabel } from '../../types'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ const BookingBottomSheet = React.memo(function BookingBottomSheet({
             className="flex items-center gap-2 mb-3 text-primary active:opacity-70"
           >
             <Phone className="w-4 h-4 shrink-0" />
-            <span className="text-body">{booking.guest_phone}</span>
+            <span className="text-body">{formatPhone(booking.guest_phone)}</span>
           </a>
         )}
 

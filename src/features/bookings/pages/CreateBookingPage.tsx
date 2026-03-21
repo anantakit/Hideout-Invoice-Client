@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Loader2, Banknote, KeyRound, CreditCard, Clock, Check, X } from 'lucide-react'
-import { cn, todayISO, addDaysISO, formatCompactNumber } from '@/shared/utils'
+import { cn, todayISO, addDaysISO, formatCompactNumber, formatPhone } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
 import {
@@ -300,7 +300,7 @@ export default function CreateBookingPage() {
                     <div className="flex items-start justify-between">
                       <div className="text-xs text-muted-foreground space-y-0.5 pl-1">
                         <p className="font-semibold text-foreground">{selectedCustomer.name}</p>
-                        {selectedCustomer.phone && <p>โทร: {selectedCustomer.phone}</p>}
+                        {selectedCustomer.phone && <p>โทร: {formatPhone(selectedCustomer.phone)}</p>}
                         {selectedCustomer.tax_id && <p>เลขผู้เสียภาษี: {selectedCustomer.tax_id}</p>}
                       </div>
                       <button
