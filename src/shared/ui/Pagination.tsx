@@ -50,7 +50,7 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
             value={String(limit)}
             onValueChange={(v) => { onLimitChange(Number(v)); onPageChange(1) }}
           >
-            <SelectTrigger className="h-9 w-[5.5rem] text-sm">
+            <SelectTrigger className="h-9 w-[7rem] text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
