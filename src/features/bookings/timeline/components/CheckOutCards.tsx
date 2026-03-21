@@ -7,6 +7,7 @@ import {
   AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
+import { formatCompactNumber } from '@/shared/utils'
 import type { CheckoutBooking, CheckoutStay } from '../utils/operationTypes'
 
 // ─── Single-Room Check-Out Card ──────────────────────────────────────────────
@@ -43,12 +44,12 @@ export function SingleRoomCheckOutCard({
       </div>
       {hasBalance && (
         <p className="text-helper text-destructive font-medium mt-0.5">
-          ค้าง ฿{co.balance.toLocaleString()}
+          ค้าง ฿{formatCompactNumber(co.balance)}
         </p>
       )}
       {co.depositStatus === 'COLLECTED' && co.keyDepositAmount > 0 && (
         <p className="text-helper text-amber-500 font-medium mt-0.5">
-          คืนประกัน {co.keyDepositAmount.toLocaleString()}
+          คืนประกัน {formatCompactNumber(co.keyDepositAmount)}
         </p>
       )}
     </ConfirmActionCard>

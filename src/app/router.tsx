@@ -4,6 +4,7 @@ import { AuthProvider } from './providers/AuthProvider'
 import { ThemeProvider } from './providers/ThemeProvider'
 import ProtectedRoute from '../shared/components/ProtectedRoute'
 import Layout from '../shared/components/Layout'
+import ErrorBoundary from '../shared/components/ErrorBoundary'
 import ErrorPage from '../shared/components/ErrorPage'
 import { Skeleton } from '../shared/ui/skeleton'
 import Login from '../features/auth/pages/LoginPage'
@@ -62,15 +63,15 @@ export default function App() {
                 }
               >
                 <Route index element={<Navigate to="/timeline" replace />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/receipts/new" element={<CreateReceipt />} />
-                <Route path="/receipts" element={<ReceiptHistory />} />
-                <Route path="/receipts/:id" element={<ReceiptDetail />} />
-                <Route path="/customers" element={<Customers />} />
-                <Route path="/bookings" element={<BookingList />} />
-                <Route path="/bookings/new" element={<CreateBooking />} />
-                <Route path="/timeline" element={<Timeline />} />
-                <Route path="/bookings/:id" element={<BookingDetail />} />
+                <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+                <Route path="/receipts/new" element={<ErrorBoundary><CreateReceipt /></ErrorBoundary>} />
+                <Route path="/receipts" element={<ErrorBoundary><ReceiptHistory /></ErrorBoundary>} />
+                <Route path="/receipts/:id" element={<ErrorBoundary><ReceiptDetail /></ErrorBoundary>} />
+                <Route path="/customers" element={<ErrorBoundary><Customers /></ErrorBoundary>} />
+                <Route path="/bookings" element={<ErrorBoundary><BookingList /></ErrorBoundary>} />
+                <Route path="/bookings/new" element={<ErrorBoundary><CreateBooking /></ErrorBoundary>} />
+                <Route path="/timeline" element={<ErrorBoundary><Timeline /></ErrorBoundary>} />
+                <Route path="/bookings/:id" element={<ErrorBoundary><BookingDetail /></ErrorBoundary>} />
                 <Route
                   path="/admin/users"
                   element={

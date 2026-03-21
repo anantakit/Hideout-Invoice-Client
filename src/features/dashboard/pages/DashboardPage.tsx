@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Banknote, TrendingUp, TrendingDown, BedDouble, AlertTriangle, ChevronRight, CalendarPlus } from 'lucide-react'
 import { Skeleton } from '../../../shared/ui/skeleton'
@@ -9,12 +9,14 @@ import { KPICard } from '../components/KPICard'
 import { MonthSelector } from '../components/MonthSelector'
 import { TodayActionPanel } from '../components/TodayActionPanel'
 import { OccupancySparkline } from '../components/OccupancySparkline'
-import { RevenueTrendChart } from '../components/RevenueTrendChart'
-import { DailyRevenueHeatmap } from '../components/DailyRevenueHeatmap'
-import { PaymentMethodChart } from '../components/PaymentMethodChart'
 import { OutstandingList } from '../components/OutstandingList'
 import { OwnerInsights } from '../components/OwnerInsights'
-import { OccupancyPressureChart } from '../components/OccupancyPressureChart'
+
+// Lazy-load Recharts-heavy components — they're only visible below the fold
+const RevenueTrendChart = lazy(() => import('../components/RevenueTrendChart').then(m => ({ default: m.RevenueTrendChart })))
+const DailyRevenueHeatmap = lazy(() => import('../components/DailyRevenueHeatmap').then(m => ({ default: m.DailyRevenueHeatmap })))
+const PaymentMethodChart = lazy(() => import('../components/PaymentMethodChart').then(m => ({ default: m.PaymentMethodChart })))
+const OccupancyPressureChart = lazy(() => import('../components/OccupancyPressureChart').then(m => ({ default: m.OccupancyPressureChart })))
 
 function currentMonth(): string {
   const now = new Date()
@@ -272,7 +274,9 @@ export default function Dashboard() {
       {isLoading ? (
         <ChartSkeleton />
       ) : data?.occupancy_pressure && data.occupancy_pressure.length > 0 ? (
-        <OccupancyPressureChart data={data.occupancy_pressure} />
+        <Suspense fallback={<ChartSkeleton />}>
+          <OccupancyPressureChart data={data.occupancy_pressure} />
+        </Suspense>
       ) : null}
 
       {/* ── 4. Owner Insights ────────────────────────────────────────── */}
@@ -289,7 +293,7 @@ export default function Dashboard() {
             <ChartSkeleton />
           </>
         ) : data ? (
-          <>
+          <Suspense fallback={<><ChartSkeleton /><ChartSkeleton /><ChartSkeleton /></>}>
             <DailyRevenueHeatmap data={data.daily_revenue} month={month} />
             <PaymentMethodChart data={data.payment_method_breakdown} />
             <OutstandingList
@@ -297,7 +301,7 @@ export default function Dashboard() {
               total={data.kpi.outstanding_balance}
               count={data.kpi.outstanding_count}
             />
-          </>
+          </Suspense>
         ) : null}
       </div>
 
@@ -305,11 +309,13 @@ export default function Dashboard() {
       {isLoading ? (
         <ChartSkeleton />
       ) : data ? (
+        <Suspense fallback={<ChartSkeleton />}>
         <RevenueTrendChart
           data={data.monthly_revenue}
           yearLabel={year}
           prevYearLabel={prevYear}
         />
+        </Suspense>
       ) : null}
     </div>
   )

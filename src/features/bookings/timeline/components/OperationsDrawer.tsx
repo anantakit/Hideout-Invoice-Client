@@ -23,7 +23,7 @@ import {
   ShieldCheck,
   ShieldAlert,
 } from 'lucide-react'
-import { cn, fmtThaiDate, fmtShortISO, formatTHBCurrency, todayISO } from '@/shared/utils'
+import { cn, fmtThaiDate, fmtShortISO, formatTHBCurrency, todayISO, formatCompactNumber } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
@@ -250,12 +250,12 @@ function BookingDetailContent({
               {fullBooking?.deposit_status === 'PENDING' ? (
                 <span className="text-xs text-warning flex items-center gap-1">
                   <ShieldAlert size={12} />
-                  เก็บ {keyDeposit.toLocaleString()}
+                  เก็บ {formatCompactNumber(keyDeposit)}
                 </span>
               ) : fullBooking?.deposit_status === 'COLLECTED' ? (
                 <span className="text-xs text-success flex items-center gap-1">
                   <ShieldCheck size={12} />
-                  เก็บแล้ว {keyDeposit.toLocaleString()}
+                  เก็บแล้ว {formatCompactNumber(keyDeposit)}
                 </span>
               ) : null}
             </div>
@@ -751,7 +751,7 @@ function CreateBookingContent({
                   )}
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder={totalAmount > 0 ? totalAmount.toLocaleString() : '0'}
+                  placeholder={totalAmount > 0 ? formatCompactNumber(totalAmount) : '0'}
                 />
               </div>
               <div>

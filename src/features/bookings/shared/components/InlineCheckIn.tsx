@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { LogIn, Loader2, Key, ShieldCheck, ShieldAlert } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { fmtShortISO } from '@/shared/utils'
+import { fmtShortISO, formatCompactNumber } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import {
   Select,
@@ -179,14 +179,14 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
         <>
           <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
           <span className="text-xs font-medium text-warning">
-            เก็บ {keyDepositAmount.toLocaleString()}
+            เก็บ {formatCompactNumber(keyDepositAmount)}
           </span>
         </>
       ) : (
         <>
           <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
           <span className="text-xs font-medium text-success">
-            เก็บแล้ว {keyDepositAmount.toLocaleString()}
+            เก็บแล้ว {formatCompactNumber(keyDepositAmount)}
           </span>
         </>
       )}

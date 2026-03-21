@@ -22,7 +22,7 @@ import {
 } from '@/shared/ui/alert-dialog'
 import { useBooking, useCheckoutRooms } from '../../hooks'
 import type { RoomStayResponse } from '../../types'
-import { cn, fmtShortISO, formatTHBCurrency } from '@/shared/utils'
+import { cn, fmtShortISO, formatTHBCurrency, formatCompactNumber } from '@/shared/utils'
 import { useNavigate } from 'react-router-dom'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ const CheckOutBottomSheet = React.memo(function CheckOutBottomSheet({
                       <span className="text-xs font-medium text-success">ชำระครบแล้ว</span>
                     )}
                     {booking?.deposit_status === 'COLLECTED' && (booking?.key_deposit_amount ?? 0) > 0 && (
-                      <span className="text-xs font-medium text-amber-500">คืนประกัน {booking!.key_deposit_amount.toLocaleString()}</span>
+                      <span className="text-xs font-medium text-amber-500">คืนประกัน {formatCompactNumber(booking!.key_deposit_amount)}</span>
                     )}
                   </div>
                   {pendingStays.length > 1 && (

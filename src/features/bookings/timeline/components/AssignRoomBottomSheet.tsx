@@ -32,7 +32,7 @@ import {
   useTransferRoom,
 } from '../../hooks'
 import type { RoomStayResponse } from '../../types'
-import { cn, todayISO, fmtShortISO } from '@/shared/utils'
+import { cn, todayISO, fmtShortISO, formatCompactNumber } from '@/shared/utils'
 import { useNavigate } from 'react-router-dom'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -322,12 +322,12 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                     {booking?.deposit_status === 'PENDING' ? (
                       <>
                         <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-                        <span className="text-xs font-medium text-warning">เก็บ {booking.key_deposit_amount.toLocaleString()}</span>
+                        <span className="text-xs font-medium text-warning">เก็บ {formatCompactNumber(booking.key_deposit_amount)}</span>
                       </>
                     ) : booking?.deposit_status === 'COLLECTED' ? (
                       <>
                         <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-                        <span className="text-xs font-medium text-success">เก็บแล้ว {booking.key_deposit_amount.toLocaleString()}</span>
+                        <span className="text-xs font-medium text-success">เก็บแล้ว {formatCompactNumber(booking.key_deposit_amount)}</span>
                       </>
                     ) : null}
                   </div>
@@ -395,7 +395,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                                     'text-micro font-medium',
                                     diff > 0 ? 'text-warning' : 'text-success',
                                   )}>
-                                    {diff > 0 ? '+' : ''}{diff.toLocaleString()}/คืน
+                                    {diff > 0 ? '+' : ''}{formatCompactNumber(diff)}/คืน
                                   </span>
                                 )}
                               </div>

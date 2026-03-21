@@ -119,10 +119,15 @@ export default function Customers() {
               ))}
             </div>
           ) : !data || data.data.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
               <p className="text-sm">
                 {searchInput ? 'ไม่พบลูกค้าที่ตรงกับการค้นหา' : 'ยังไม่มีลูกค้า'}
               </p>
+              {!searchInput && (
+                <Button variant="outline" size="sm" onClick={() => { setEditingCustomer(null); setModalOpen(true) }}>
+                  <Plus className="w-4 h-4 mr-1.5" />เพิ่มลูกค้าใหม่
+                </Button>
+              )}
             </div>
           ) : (
             <div className={`transition-opacity duration-150 ${isFetching ? 'opacity-60' : 'opacity-100'}`}>

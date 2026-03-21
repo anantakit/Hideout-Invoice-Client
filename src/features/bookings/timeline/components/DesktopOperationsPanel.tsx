@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { parseISO, isToday, differenceInDays } from 'date-fns'
 import { ChevronDown, BedDouble, LogIn, LogOut, CheckCircle2 } from 'lucide-react'
-import { cn, todayISO, addDaysISO, fmtShort } from '@/shared/utils'
+import { cn, todayISO, addDaysISO, fmtShort, formatCompactNumber } from '@/shared/utils'
 import { CardButton } from '@/shared/ui/card-button'
 import { Badge } from '@/shared/ui/badge'
 import type { TimelineRoom, TimelineBooking, UnassignedStay } from '../../types'
@@ -397,7 +397,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                       </div>
                       {hasBalance && (
                         <p className="text-helper text-destructive font-medium mt-1">
-                          ค้าง ฿{co.balance.toLocaleString()}
+                          ค้าง ฿{formatCompactNumber(co.balance)}
                         </p>
                       )}
                     </CardButton>

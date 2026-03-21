@@ -26,7 +26,7 @@
 
 ### Security
 - [x] **S2** — เปลี่ยน `innerHTML` เป็น `textContent` ใน splash screen
-- [ ] **S3** — เพิ่ม Content-Security-Policy header (ต้อง tune ตาม production domain)
+- [x] **S3** — เพิ่ม Content-Security-Policy header ใน nginx.conf
 - [x] **S4** — แก้ Axios refresh token race condition → Promise-based lock
 
 ### Data Integrity
@@ -41,7 +41,7 @@
 
 ### Performance
 - [x] **P1** — Memoize timeline grid lines ด้วย `useMemo`
-- [ ] **P2** — Lazy-load Recharts components (ต้องทำเพิ่ม)
+- [x] **P2** — Lazy-load Recharts components (4 chart components แยก chunk)
 - [x] **P3** — bookingColorMap ตรวจแล้ว — useMemo อยู่แล้ว ไม่มีปัญหา
 
 ### Deploy & Infrastructure
@@ -54,28 +54,28 @@
 ## Medium (แก้ได้หลัง launch)
 
 ### Data Integrity
-- [ ] **D6** — Standardize money formatting ทั้ง codebase (ใช้ `formatTHB()` ทุกที่)
+- [x] **D6** — Standardize money formatting ทั้ง codebase → `formatCompactNumber()` (25 จุด, 14 ไฟล์)
 - [x] **D7** — Date comparison timezone safety — ยอมรับได้ (server/browser เป็น timezone ไทยทั้งคู่)
 
 ### UX & Accessibility
-- [ ] **U4** — เพิ่ม CTA ใน empty states
-- [ ] **U5** — เพิ่ม word-break สำหรับ Thai text truncation
-- [ ] **U6** — เพิ่ม aria-live region สำหรับ toast notifications
-- [ ] **U7** — เพิ่ม isFetching indicator บน Timeline
+- [x] **U4** — เพิ่ม CTA ใน empty states (Receipts + Customers)
+- [x] **U5** — เพิ่ม `break-all` สำหรับ Thai text truncation (BookingList + ReceiptHistory)
+- [x] **U6** — เพิ่ม `ariaProps: { role: 'alert', 'aria-live': 'assertive' }` บน Toaster
+- [x] **U7** — เพิ่ม isFetching indicator บน Timeline (opacity-60 ระหว่าง refetch)
 
 ### Performance
 - [x] **P4** — เพิ่ม `gcTime: 2 นาที` ใน QueryProvider
-- [ ] **P5** — Standardize staleTime ทั้ง codebase
+- [x] **P5** — สร้าง `shared/constants/queryConfig.ts` กับ `STALE_TIMES` constants
 - [x] **P6** — Grid lines memoize ด้วย useMemo (ทำรวมกับ P1)
 
 ### Code Quality
 - [x] **C1** — แก้ `any` type ใน error handlers → สร้าง `getErrorMessage(err: unknown)` utility + แก้ 5 ไฟล์
 - [x] **C2** — แก้ `errors: any` ใน ReceiptItemRow → `FieldErrors<ReceiptFormValues>`
-- [ ] **C3** — เพิ่ม page-level ErrorBoundary (TimelinePage, CreateReceiptPage)
+- [x] **C3** — เพิ่ม page-level ErrorBoundary ครอบทุก route (9 pages)
 
 ### Deploy & Infrastructure
 - [x] **I6** — เพิ่ม `ENV NODE_ENV=production` ใน Dockerfile
-- [ ] **I7** — เพิ่ม bundle analysis script
+- [x] **I7** — เพิ่ม `build:analyze` script + `rollup-plugin-visualizer`
 
 ---
 

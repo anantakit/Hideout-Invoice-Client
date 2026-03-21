@@ -6,7 +6,7 @@ import {
   TIMELINE_BLOCK_GAP_PX,
   TIMELINE_BLOCK_PADDING_PX,
 } from '../utils/tokens'
-import { cn, todayISO } from '@/shared/utils'
+import { cn, todayISO, formatCompactNumber } from '@/shared/utils'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/shared/ui/tooltip'
 import { Badge } from '@/shared/ui/badge'
 import { Separator } from '@/shared/ui/separator'
@@ -468,7 +468,7 @@ const BookingBlock = React.memo(function BookingBlock({
             Number(booking.balance_amount) > 0 ? 'text-destructive' : 'text-success',
           )}>
             {Number(booking.balance_amount) > 0
-              ? `ค้าง ฿${Number(booking.balance_amount).toLocaleString()}`
+              ? `ค้าง ฿${formatCompactNumber(Number(booking.balance_amount))}`
               : 'ชำระแล้ว'}
           </p>
         )}

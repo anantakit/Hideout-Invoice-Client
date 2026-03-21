@@ -29,6 +29,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Toaster
           position="top-right"
           toastOptions={{
+            ariaProps: { role: 'alert', 'aria-live': 'assertive' },
             duration: 4000,
             style: {
               background: 'hsl(var(--card))',

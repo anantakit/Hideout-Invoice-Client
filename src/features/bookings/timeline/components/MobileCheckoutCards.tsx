@@ -1,6 +1,6 @@
 import React from 'react'
 import { ChevronRight, CheckCircle2, Phone, ExternalLink } from 'lucide-react'
-import { cn, formatTHBCurrency } from '@/shared/utils'
+import { cn, formatTHBCurrency, formatCompactNumber } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
 import type { CheckoutBooking } from '../utils/operationTypes'
@@ -53,7 +53,7 @@ export const PendingCheckoutCard = React.memo(function PendingCheckoutCard({
       )}
       {co.depositStatus === 'COLLECTED' && co.keyDepositAmount > 0 && (
         <p className="text-helper text-amber-500 font-medium mt-1">
-          คืนประกัน {co.keyDepositAmount.toLocaleString()}
+          คืนประกัน {formatCompactNumber(co.keyDepositAmount)}
         </p>
       )}
 

@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { Banknote, CreditCard, Plus, X, ShieldCheck, ShieldAlert, ShieldOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
-import { formatTHB, formatThaiDate, getErrorMessage } from '../../../../shared/utils'
+import { formatTHB, formatThaiDate, getErrorMessage, formatCompactNumber } from '../../../../shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../shared/ui/card'
 import { Button } from '../../../../shared/ui/button'
 import { Input } from '../../../../shared/ui/input'
@@ -120,7 +120,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
                 )}
                 <div className="flex items-center gap-2">
                   <span className={cn('font-semibold tabular-nums', booking.deposit_status === 'PENDING' ? 'text-amber-500' : 'text-green-600')}>
-                    {(booking.key_deposit_amount ?? 0).toLocaleString()}
+                    {formatCompactNumber(booking.key_deposit_amount ?? 0)}
                   </span>
                   {booking.deposit_status === 'PENDING' && (
                     <>
@@ -154,7 +154,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
                 </div>
               </div>
               {booking.deposit_status === 'COLLECTED' && isSettled && (
-                <p className="text-xs text-amber-500 font-medium">คืนประกัน {(booking.key_deposit_amount ?? 0).toLocaleString()}</p>
+                <p className="text-xs text-amber-500 font-medium">คืนประกัน {formatCompactNumber(booking.key_deposit_amount ?? 0)}</p>
               )}
             </>
           )}

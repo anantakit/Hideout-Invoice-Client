@@ -382,7 +382,7 @@ function MobileCard({
         <CardContent className="p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-semibold truncate">{booking.guest_name}</p>
+              <p className="font-semibold truncate break-all">{booking.guest_name}</p>
               <p className="text-helper mt-0.5">{booking.guest_phone}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />

@@ -12,7 +12,7 @@ import { Input } from '../../../shared/ui/input'
 import SearchableComboBox from '@/shared/ui/SearchableComboBox'
 import { customersApi } from '../../customers/api'
 import type { Customer } from '../../customers/types'
-import { formatThaiDate, formatTHB } from '../../../shared/utils'
+import { formatThaiDate, formatTHB, formatCompactNumber } from '../../../shared/utils'
 import ErrorPage from '@/shared/components/ErrorPage'
 import { useBooking, useUpdateBooking } from '../hooks'
 import { InlineCheckIn } from '../shared/components/InlineCheckIn'
@@ -163,10 +163,10 @@ export default function BookingDetailPage() {
                 <p className="text-helper mt-1">
                   สร้างเมื่อ {formatThaiDate(booking.created_at)}
                   {booking.deposit_status === 'PENDING' && (
-                    <span className="ml-2 text-amber-500">· เก็บประกัน {booking.key_deposit_amount.toLocaleString()}</span>
+                    <span className="ml-2 text-amber-500">· เก็บประกัน {formatCompactNumber(booking.key_deposit_amount)}</span>
                   )}
                   {booking.deposit_status === 'COLLECTED' && (
-                    <span className="ml-2 text-green-600">· ประกัน {booking.key_deposit_amount.toLocaleString()}</span>
+                    <span className="ml-2 text-green-600">· ประกัน {formatCompactNumber(booking.key_deposit_amount)}</span>
                   )}
                 </p>
               </div>

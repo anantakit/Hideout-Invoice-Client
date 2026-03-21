@@ -230,10 +230,15 @@ export default function ReceiptHistory() {
             ))}
           </div>
         ) : !data || data.data.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
             <p className="text-sm">
               {hasFilters ? 'ไม่พบใบเสร็จที่ตรงกับเงื่อนไข' : 'ยังไม่มีใบเสร็จ'}
             </p>
+            {!hasFilters && (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/receipts/new"><Plus className="w-4 h-4 mr-1.5" />สร้างใบเสร็จใหม่</Link>
+              </Button>
+            )}
           </div>
         ) : (
           <div className={`transition-opacity duration-150 ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
@@ -307,7 +312,7 @@ export default function ReceiptHistory() {
                 <div key={receipt.id} className="px-4 py-4 flex items-center justify-between gap-3">
                   <Link to={`/receipts/${receipt.id}`} className="flex-1 min-w-0">
                     <p className="font-semibold text-primary text-sm truncate">{receipt.invoice_number}</p>
-                    <p className="text-sm text-foreground/80 truncate mt-0.5">{receipt.customer?.name ?? '—'}</p>
+                    <p className="text-sm text-foreground/80 truncate break-all mt-0.5">{receipt.customer?.name ?? '—'}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{formatThaiDate(receipt.issue_date)}</p>
                   </Link>
                   <div className="flex flex-col items-end gap-2 shrink-0">

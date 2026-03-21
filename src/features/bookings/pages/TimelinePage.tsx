@@ -131,7 +131,7 @@ export default function TimelinePage() {
   const availTo   = useMemo(() => format(addDays(startOfDay(visibleStartDate), 1), 'yyyy-MM-dd'), [visibleStartDate])
 
   // ── Queries ───────────────────────────────────────────────────────────────
-  const { data: timelineData, isLoading, isError } = useTimeline(fromStr, toStr)
+  const { data: timelineData, isLoading, isError, isFetching } = useTimeline(fromStr, toStr)
 
   const { data: availData, isLoading: availLoading } =
     useAvailabilityGrouped(availFrom, availTo)
@@ -756,7 +756,7 @@ export default function TimelinePage() {
           >
 
             {/* Timeline grid — ALWAYS mounted for infinite scroll hook */}
-            <div ref={scrollContainerRef} className="flex-1 overflow-auto">
+            <div ref={scrollContainerRef} className={`flex-1 overflow-auto transition-opacity duration-150 ${isFetching && !isLoading ? 'opacity-60' : ''}`}>
 
               {/* Loading skeleton */}
               {(isLoading || forceSkeleton) && <TimelineSkeleton />}

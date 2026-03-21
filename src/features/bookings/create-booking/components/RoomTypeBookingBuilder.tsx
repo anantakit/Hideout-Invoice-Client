@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form'
 import { Plus, Minus, Trash2, Loader2, Wand2, Check, ChevronDown } from 'lucide-react'
-import { cn, todayISO, addDaysISO } from '@/shared/utils'
+import { cn, todayISO, addDaysISO, formatCompactNumber } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { ChargedPriceInput } from '../../shared/components/ChargedPriceInput'
@@ -439,7 +439,7 @@ function RoomTypeBookingItem({
                     <SelectItem key={rt.id} value={rt.id}>
                       {rt.name}
                       {rt.price_per_night != null
-                        ? ` (฿${rt.price_per_night.toLocaleString()}/คืน)`
+                        ? ` (฿${formatCompactNumber(rt.price_per_night)}/คืน)`
                         : ''}
                     </SelectItem>
                   ))}

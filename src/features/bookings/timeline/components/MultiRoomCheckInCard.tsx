@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ShieldCheck, ShieldAlert } from 'lucide-react'
-import { cn } from '@/shared/utils'
+import { cn, formatCompactNumber } from '@/shared/utils'
 import { CardButton } from '@/shared/ui/card-button'
 import { useBooking } from '../../hooks'
 import type { CheckinBooking } from '../utils/operationTypes'
@@ -48,12 +48,12 @@ export function MultiRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
             {fullBooking.deposit_status === 'PENDING' ? (
               <>
                 <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-                <span className="text-xs font-medium text-warning">เก็บ {keyDeposit.toLocaleString()}</span>
+                <span className="text-xs font-medium text-warning">เก็บ {formatCompactNumber(keyDeposit)}</span>
               </>
             ) : (
               <>
                 <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-                <span className="text-xs font-medium text-success">เก็บแล้ว {keyDeposit.toLocaleString()}</span>
+                <span className="text-xs font-medium text-success">เก็บแล้ว {formatCompactNumber(keyDeposit)}</span>
               </>
             )}
           </div>

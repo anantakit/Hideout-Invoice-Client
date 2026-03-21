@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { LogIn, Loader2, ChevronDown, ShieldCheck, ShieldAlert } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { cn, todayISO } from '@/shared/utils'
+import { cn, todayISO, formatCompactNumber } from '@/shared/utils'
 import { CardButton } from '@/shared/ui/card-button'
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import { useCheckInRooms, useBooking } from '../../hooks'
@@ -38,12 +38,12 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
       {depositStatus === 'PENDING' ? (
         <>
           <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-          <span className="text-xs font-medium text-warning">เก็บ {keyDeposit.toLocaleString()}</span>
+          <span className="text-xs font-medium text-warning">เก็บ {formatCompactNumber(keyDeposit)}</span>
         </>
       ) : (
         <>
           <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-          <span className="text-xs font-medium text-success">เก็บแล้ว {keyDeposit.toLocaleString()}</span>
+          <span className="text-xs font-medium text-success">เก็บแล้ว {formatCompactNumber(keyDeposit)}</span>
         </>
       )}
     </div>
