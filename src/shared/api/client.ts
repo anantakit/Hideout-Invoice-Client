@@ -3,14 +3,11 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import type { ApiError } from '../types/api'
 import type { RefreshResponse } from '../types/auth'
 
-if (!import.meta.env.VITE_API_BASE_URL) {
-  throw new Error(
-    'VITE_API_BASE_URL is not defined. Set it in .env.local (dev) or Vercel environment variables (prod).'
-  )
-}
+// VITE_API_BASE_URL: set to http://localhost:8080 for dev, empty string for same-origin production
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export const apiClient = axios.create({
-  baseURL: `${import.meta.env.VITE_API_BASE_URL}/api/v1`,
+  baseURL: `${API_BASE_URL}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -65,7 +62,7 @@ apiClient.interceptors.response.use(
       if (!refreshPromise) {
         refreshPromise = axios
           .post<RefreshResponse>(
-            `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/refresh`,
+            `${API_BASE_URL}/api/v1/auth/refresh`,
             {},
             { withCredentials: true },
           )
