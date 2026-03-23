@@ -443,7 +443,7 @@ function CreateBookingContent({
 
   const depositAmount = KEY_DEPOSIT_PER_ROOM * selectedRooms.length
 
-  const hasGuest = guestName.trim().length > 0 && guestPhone.trim().length === 10
+  const hasGuest = guestName.trim().length > 0
   const hasPayment = paymentMode === 'reserve' || (paymentAmount !== '' && Number(paymentAmount) > 0)
   const canSubmit = hasGuest && hasPayment && !createBooking.isPending
 

@@ -87,13 +87,12 @@ export default function CreateBookingPage() {
   const source      = useWatch({ control: form.control, name: 'source' })
   const paymentMode = useWatch({ control: form.control, name: 'payment_mode' })
   const guestName   = useWatch({ control: form.control, name: 'guest_name' })
-  const guestPhone  = useWatch({ control: form.control, name: 'guest_phone' })
   const items       = useWatch({ control: form.control, name: 'items' })
   const paymentAmount = useWatch({ control: form.control, name: 'payment_amount' })
   const isSubmitting = createBooking.isPending
 
   // Disable submit until all required fields are filled
-  const hasGuest = guestName.trim().length > 0 && guestPhone.trim().length > 0
+  const hasGuest = guestName.trim().length > 0
   const hasValidItems = items.every(
     (item) => item.room_type_id && item.check_in && item.check_out && item.check_out > item.check_in,
   )
