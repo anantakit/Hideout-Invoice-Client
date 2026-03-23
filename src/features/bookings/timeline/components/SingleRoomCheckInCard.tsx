@@ -5,7 +5,7 @@ import { cn, todayISO, formatCompactNumber } from '@/shared/utils'
 import { CardButton } from '@/shared/ui/card-button'
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import { useCheckInRooms, useBooking } from '../../hooks'
-import type { CheckinBooking } from '../utils/operationTypes'
+import { formatNightsLabel, type CheckinBooking } from '../utils/operationTypes'
 import { InlineCheckInPanel } from './InlineCheckInPanel'
 
 export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
@@ -65,7 +65,7 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-body font-semibold truncate">{ci.guestName}</span>
-            <span className="text-helper shrink-0">1 ห้อง · {ci.nights} คืน</span>
+            <span className="text-helper shrink-0">1 ห้อง · {formatNightsLabel(ci)}</span>
           </div>
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center space-inline text-helper">
@@ -112,7 +112,7 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-body font-semibold truncate">{ci.guestName}</span>
-        <span className="text-helper shrink-0">1 ห้อง · {ci.nights} คืน</span>
+        <span className="text-helper shrink-0">1 ห้อง · {formatNightsLabel(ci)}</span>
       </div>
       <div className="flex items-center justify-between mt-0.5">
         <div className="flex items-center space-inline text-helper">

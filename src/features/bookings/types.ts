@@ -308,6 +308,9 @@ export interface UnassignedStay {
   check_in: string
   check_out: string
   status: string
+  key_deposit_amount: number
+  deposit_status: string
+  balance_amount: number
 }
 
 export interface TimelineResponse {

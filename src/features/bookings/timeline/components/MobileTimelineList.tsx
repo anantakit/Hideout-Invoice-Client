@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { parseISO, isToday, differenceInDays, format, addDays } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, ChevronDown, BedDouble, LogOut } from 'lucide-react'
+import { ChevronRight, ChevronDown, BedDouble, LogOut, Share2 } from 'lucide-react'
 import { cn, fmtShort, fmtShortISO, todayISO as todayISOUtil, addDaysISO } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
@@ -12,7 +12,9 @@ import { computeDateKPI } from '../utils/computeDateKPI'
 import { StayAvailabilityCard } from './StayAvailabilityCard'
 import type { DateRange } from '../../shared/components/DateRangePicker'
 import CheckInBottomSheet from './AssignRoomBottomSheet'
-import { toDateStr, type CheckinBooking, type CheckoutStay, type CheckoutBooking } from '../utils/operationTypes'
+import { toDateStr } from '../utils/operationTypes'
+import { computeDateOps } from '../utils/computeDateOps'
+import { computeStayingGuests, buildShareText, shareOrCopy } from '../utils/shareOperations'
 import { classifyRooms, overlapsRange, ALL_FILTERS, RANGE_FILTERS, type FilterValue, type RoomEntry } from '../utils/classifyRooms'
 import { RoomCard } from './RoomCard'
 import { PendingCheckinCard, DoneCheckinCard } from './MobileCheckinCards'
@@ -94,121 +96,10 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   // OPERATIONS — scoped to selectedDate (unified check-in section)
   // ══════════════════════════════════════════════════════════════════════════
 
-  const dateOps = useMemo(() => {
-    const checkinMap = new Map<string, CheckinBooking>()
-    const checkoutMap = new Map<string, CheckoutBooking>()
-
-    for (const room of rooms) {
-      if (room.status === 'MAINTENANCE') continue
-
-      for (const b of room.bookings) {
-        const ci = toDateStr(b.check_in)
-        const co = toDateStr(b.check_out)
-
-        // Check-in on selectedDate
-        if (ci === selectedDateStr) {
-          const existing = checkinMap.get(b.booking_id)
-          if (existing) {
-            existing.assignedRooms.push(room.room_number)
-            existing.stayStatuses.push(b.status)
-            existing.totalStays++
-          } else {
-            checkinMap.set(b.booking_id, {
-              bookingId: b.booking_id,
-              guestName: b.guest_name,
-              typeName: roomTypeNameMap[room.id] ?? '',
-              nights: differenceInDays(parseISO(b.check_out), parseISO(b.check_in)),
-              assignedRooms: [room.room_number],
-              unassignedCount: 0,
-              totalStays: 1,
-              stayStatuses: [b.status],
-              booking: b,
-            })
-          }
-        }
-
-        // For CHECKED_OUT stays, use the actual checkout date (checked_out_at) instead
-        // of the scheduled check_out date — so early checkouts show on the correct day.
-        const actualCheckoutDate = b.status === 'CHECKED_OUT' && b.checked_out_at
-          ? toDateStr(b.checked_out_at)
-          : co
-        if (actualCheckoutDate === selectedDateStr) {
-          const stay: CheckoutStay = {
-            roomStayId: b.room_stay_id,
-            roomNumber: room.room_number,
-            status: b.status,
-            booking: b,
-          }
-          const existing = checkoutMap.get(b.booking_id)
-          if (existing) {
-            existing.roomNumbers.push(room.room_number)
-            existing.stays.push(stay)
-          } else {
-            checkoutMap.set(b.booking_id, {
-              bookingId: b.booking_id,
-              guestName: b.guest_name,
-              roomNumbers: [room.room_number],
-              balance: b.balance_amount,
-              keyDepositAmount: b.key_deposit_amount,
-              depositStatus: b.deposit_status,
-              checkIn: ci,
-              nights: differenceInDays(parseISO(b.check_out), parseISO(b.check_in)),
-              stays: [stay],
-              booking: b,
-            })
-          }
-        }
-      }
-    }
-
-    // Merge unassigned stays checking in on selectedDate into checkinMap
-    for (const s of unassignedStays) {
-      if (toDateStr(s.check_in) === selectedDateStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT') {
-        const existing = checkinMap.get(s.booking_id)
-        if (existing) {
-          existing.unassignedCount++
-          existing.stayStatuses.push(s.status)
-          existing.totalStays++
-        } else {
-          checkinMap.set(s.booking_id, {
-            bookingId: s.booking_id,
-            guestName: s.guest_name,
-            typeName: s.room_type_name,
-            nights: differenceInDays(parseISO(s.check_out), parseISO(s.check_in)),
-            assignedRooms: [],
-            unassignedCount: 1,
-            totalStays: 1,
-            stayStatuses: [s.status],
-          })
-        }
-      }
-    }
-
-    // Separate fully-checked-in bookings from pending.
-    // A booking is "done" only when ALL its stays are CHECKED_IN or CHECKED_OUT.
-    // Previously this checked a single stay's status which was wrong for multi-room
-    // bookings with mixed statuses (e.g. 1 CHECKED_IN + 2 ASSIGNED).
-    const allCheckins = Array.from(checkinMap.values())
-    const isAllCheckedInOrOut = (ci: CheckinBooking) =>
-      ci.stayStatuses.length > 0 &&
-      ci.stayStatuses.every((st) => st === 'CHECKED_IN' || st === 'CHECKED_OUT')
-    const pendingCheckins = allCheckins.filter((ci) => !isAllCheckedInOrOut(ci))
-    const doneCheckins = allCheckins.filter(isAllCheckedInOrOut)
-
-    // Sort checkouts: pending (has unchecked-out stays) first, fully done last
-    const allCheckouts = Array.from(checkoutMap.values())
-    const pendingCheckouts = allCheckouts
-      .filter((co) => co.stays.some((s) => s.status === 'CHECKED_IN'))
-      .sort((a, b) => (b.balance - a.balance))
-    const doneCheckouts = allCheckouts.filter((co) => co.stays.every((s) => s.status === 'CHECKED_OUT'))
-
-    return {
-      checkins: pendingCheckins,
-      doneCheckins,
-      checkouts: pendingCheckouts,
-      doneCheckouts,
-    }
-  }, [rooms, selectedDateStr, roomTypeNameMap, unassignedStays])
+  const dateOps = useMemo(
+    () => computeDateOps(rooms, unassignedStays, selectedDateStr, roomTypeNameMap),
+    [rooms, unassignedStays, selectedDateStr, roomTypeNameMap],
+  )
 
   // ══════════════════════════════════════════════════════════════════════════
   // ROOM LIST — scoped to selectedDate, uses same classifyRooms as KPI
@@ -328,6 +219,32 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
   const [checkinExpanded, setCheckinExpanded] = useState(!checkinAllDone)
   const [checkoutExpanded, setCheckoutExpanded] = useState(!checkoutAllDone)
 
+  // Reset expanded state when date changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setCheckinExpanded(!checkinAllDone)
+    setCheckoutExpanded(!checkoutAllDone)
+  }, [selectedDateStr])
+
+  // ── Staying guests + share ────────────────────────────────────────────
+  const stayingGuests = useMemo(
+    () => computeStayingGuests(rooms, selectedDateStr),
+    [rooms, selectedDateStr],
+  )
+
+  const handleShare = useCallback(() => {
+    const text = buildShareText(
+      selectedDateStr,
+      dateOps.checkouts,
+      dateOps.doneCheckouts,
+      dateOps.checkins,
+      dateOps.doneCheckins,
+      stayingGuests,
+      kpi,
+    )
+    shareOrCopy(text)
+  }, [selectedDateStr, dateOps, stayingGuests, kpi])
+
   // ── Render ──────────────────────────────────────────────────────────────
   return (
     <div className="flex-1 overflow-auto pb-6">
@@ -439,6 +356,17 @@ export const MobileTimelineList = React.memo(function MobileTimelineList({
             )}
           </div>
         )}
+
+        {/* Share button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-1.5 text-muted-foreground"
+          onClick={handleShare}
+        >
+          <Share2 className="w-3.5 h-3.5" />
+          แชร์สรุปวันนี้
+        </Button>
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════

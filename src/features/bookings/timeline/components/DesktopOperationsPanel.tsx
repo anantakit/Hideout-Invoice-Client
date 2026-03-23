@@ -1,14 +1,16 @@
 import React, { useState, useMemo, useCallback } from 'react'
-import { parseISO, isToday, differenceInDays } from 'date-fns'
-import { ChevronDown, BedDouble, LogIn, LogOut, CheckCircle2 } from 'lucide-react'
+import { parseISO, isToday } from 'date-fns'
+import { ChevronDown, BedDouble, LogIn, LogOut, CheckCircle2, Share2, Copy } from 'lucide-react'
 import { cn, todayISO, addDaysISO, fmtShort, formatCompactNumber } from '@/shared/utils'
+import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
 import { Badge } from '@/shared/ui/badge'
 import type { TimelineRoom, TimelineBooking, UnassignedStay } from '../../types'
 import type { DateRange } from '../../shared/components/DateRangePicker'
 import { StayAvailabilityCard } from './StayAvailabilityCard'
 import { computeDateKPI } from '../utils/computeDateKPI'
-import { toDateStr, type CheckinBooking, type CheckoutBooking, type CheckoutStay } from '../utils/operationTypes'
+import { computeDateOps } from '../utils/computeDateOps'
+import { computeStayingGuests, buildShareText, shareOrCopy, isMobileDevice } from '../utils/shareOperations'
 import { SingleRoomCheckInCard } from './SingleRoomCheckInCard'
 import { MultiRoomCheckInCard } from './MultiRoomCheckInCard'
 import { SingleRoomCheckOutCard, MultiRoomCheckOutRow, CheckOutAllButton } from './CheckOutCards'
@@ -65,113 +67,31 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
     : 0
 
   // ── Operations ───────────────────────────────────────────────────────────
-  const dateOps = useMemo(() => {
-    const checkinMap = new Map<string, CheckinBooking>()
-    const checkoutMap = new Map<string, CheckoutBooking>()
-
-    for (const room of rooms) {
-      if (room.status === 'MAINTENANCE') continue
-      for (const b of room.bookings) {
-        const ci = toDateStr(b.check_in)
-        const co = toDateStr(b.check_out)
-
-        if (ci === selectedDateStr) {
-          const existing = checkinMap.get(b.booking_id)
-          if (existing) {
-            existing.assignedRooms.push(room.room_number)
-            existing.stayStatuses.push(b.status)
-            existing.totalStays++
-          } else {
-            checkinMap.set(b.booking_id, {
-              bookingId: b.booking_id,
-              guestName: b.guest_name,
-              typeName: roomTypeNameMap[room.id] ?? '',
-              nights: differenceInDays(parseISO(b.check_out), parseISO(b.check_in)),
-              assignedRooms: [room.room_number],
-              unassignedCount: 0,
-              totalStays: 1,
-              stayStatuses: [b.status],
-              booking: b,
-              roomStayId: b.room_stay_id,
-              roomId: room.id,
-            })
-          }
-        }
-
-        if (co === selectedDateStr) {
-          const stay: CheckoutStay = {
-            roomStayId: b.room_stay_id,
-            roomNumber: room.room_number,
-            status: b.status,
-            booking: b,
-          }
-          const existing = checkoutMap.get(b.booking_id)
-          if (existing) {
-            existing.roomNumbers.push(room.room_number)
-            existing.stays.push(stay)
-          } else {
-            checkoutMap.set(b.booking_id, {
-              bookingId: b.booking_id,
-              guestName: b.guest_name,
-              roomNumbers: [room.room_number],
-              balance: b.balance_amount,
-              keyDepositAmount: b.key_deposit_amount,
-              depositStatus: b.deposit_status,
-              checkIn: ci,
-              nights: differenceInDays(parseISO(b.check_out), parseISO(b.check_in)),
-              stays: [stay],
-              booking: b,
-            })
-          }
-        }
-      }
-    }
-
-    // Merge unassigned
-    for (const s of unassignedStays) {
-      if (toDateStr(s.check_in) === selectedDateStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT') {
-        const existing = checkinMap.get(s.booking_id)
-        if (existing) {
-          existing.unassignedCount++
-          existing.stayStatuses.push(s.status)
-          existing.totalStays++
-        } else {
-          checkinMap.set(s.booking_id, {
-            bookingId: s.booking_id,
-            guestName: s.guest_name,
-            typeName: s.room_type_name,
-            nights: differenceInDays(parseISO(s.check_out), parseISO(s.check_in)),
-            assignedRooms: [],
-            unassignedCount: 1,
-            totalStays: 1,
-            stayStatuses: [s.status],
-          })
-        }
-      }
-    }
-
-    const allCheckins = Array.from(checkinMap.values())
-    const isAllCheckedInOrOut = (ci: CheckinBooking) =>
-      ci.stayStatuses.length > 0 &&
-      ci.stayStatuses.every((st) => st === 'CHECKED_IN' || st === 'CHECKED_OUT')
-    const pendingCheckins = allCheckins.filter((ci) => !isAllCheckedInOrOut(ci))
-    const doneCheckins = allCheckins.filter(isAllCheckedInOrOut)
-
-    const allCheckouts = Array.from(checkoutMap.values())
-    const pendingCheckouts = allCheckouts
-      .filter((co) => co.stays.some((s) => s.status === 'CHECKED_IN'))
-      .sort((a, b) => (b.balance - a.balance))
-    const doneCheckouts = allCheckouts.filter((co) => co.stays.every((s) => s.status === 'CHECKED_OUT'))
-
-    return {
-      checkins: pendingCheckins,
-      doneCheckins,
-      checkouts: pendingCheckouts,
-      doneCheckouts,
-    }
-  }, [rooms, selectedDateStr, roomTypeNameMap, unassignedStays])
+  const dateOps = useMemo(
+    () => computeDateOps(rooms, unassignedStays, selectedDateStr, roomTypeNameMap),
+    [rooms, unassignedStays, selectedDateStr, roomTypeNameMap],
+  )
 
   const handleRangeChange = useCallback((r: DateRange) => setStayRange(r), [])
+
+  // ── Staying guests (checked-in, not checking out on selected date) ────
+  const stayingGuests = useMemo(
+    () => computeStayingGuests(rooms, selectedDateStr),
+    [rooms, selectedDateStr],
+  )
+
+  const handleShare = useCallback(() => {
+    const text = buildShareText(
+      selectedDateStr,
+      dateOps.checkouts,
+      dateOps.doneCheckouts,
+      dateOps.checkins,
+      dateOps.doneCheckins,
+      stayingGuests,
+      kpi,
+    )
+    shareOrCopy(text)
+  }, [selectedDateStr, dateOps, stayingGuests, kpi])
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -179,9 +99,20 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
 
       {/* ── Hotel Status ──────────────────────────────────────────────── */}
       <div className="p-4 space-y-3 border-b border-border">
-        <p className="text-section text-base">
-          {fmtShort(selectedDate)} {selectedDate.getFullYear() + 543}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-section text-base">
+            {fmtShort(selectedDate)} {selectedDate.getFullYear() + 543}
+          </p>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            onClick={handleShare}
+            title="แชร์สรุปวันนี้"
+          >
+            {isMobileDevice() ? <Share2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          </Button>
+        </div>
 
         {/* Available rooms */}
         <div className="radius-card border border-border bg-card space-card">
@@ -280,13 +211,13 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
             onClick={() => setShowCheckins((v) => !v)}
             className="w-full flex items-center justify-between cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <p className="text-label text-primary flex items-center space-inline">
+            <span className="text-label text-primary flex items-center space-inline">
               <LogIn className="w-3 h-3" />
               เช็คอิน{viewingToday ? 'วันนี้' : ''}
               <Badge variant="default" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
                 {dateKPI.checkinDone}/{dateKPI.checkinTotal}
               </Badge>
-            </p>
+            </span>
             <ChevronDown className={cn(
               'w-3.5 h-3.5 text-primary/50 transition-transform',
               showCheckins && 'rotate-180',
@@ -334,13 +265,13 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
             onClick={() => setShowCheckouts((v) => !v)}
             className="w-full flex items-center justify-between cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <p className="text-label text-warning flex items-center space-inline">
+            <span className="text-label text-warning flex items-center space-inline">
               <LogOut className="w-3 h-3" />
               เช็คเอาท์{viewingToday ? 'วันนี้' : ''}
               <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
                 {dateKPI.checkoutDone}/{dateKPI.checkoutTotal}
               </Badge>
-            </p>
+            </span>
             <ChevronDown className={cn(
               'w-3.5 h-3.5 text-warning/50 transition-transform',
               showCheckouts && 'rotate-180',

@@ -80,14 +80,16 @@ export function computeDateKPI(
     })
 
     // Classify for "available" count:
-    // - Turnover (pending checkout + incoming checkin): NOT available
-    // - Checkout today with no active overlap: available only if already CHECKED_OUT
+    // "ว่าง" = รับ booking ใหม่ได้ (ไม่ใช่แค่ว่างตอนนี้)
+    // - Turnover (checkout + incoming checkin same day): NOT available
+    // - Checkout today (ยังไม่ออก or ออกแล้ว) with no new checkin: available
     // - Active overlapping stay: NOT available
     // - Otherwise: available
-    if (coStay && coStay.status !== 'CHECKED_OUT' && activeBookings.find((b) => toDateStr(b.check_in) === dateStr && coStay.booking_id !== b.booking_id)) {
-      // turnover — not available
+    if (coStay && activeBookings.find((b) => toDateStr(b.check_in) === dateStr && coStay.booking_id !== b.booking_id)) {
+      // turnover — not available (มีคนเข้าใหม่ห้องเดียวกันวันนี้)
     } else if (coStay && !activeOverlapping) {
-      if (coStay.status === 'CHECKED_OUT') { physicallyAvailable++; t.available++ }
+      // checkout วันนี้ ไม่มีคนเข้าใหม่ → ว่างรับ booking ได้
+      physicallyAvailable++; t.available++
     } else if (activeOverlapping) {
       // occupied — not available
     } else {

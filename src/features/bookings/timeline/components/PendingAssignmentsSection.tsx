@@ -133,11 +133,11 @@ export function PendingAssignmentsSection({
 
   return (
     <div className="p-4 border-b border-border space-y-3">
-      <p className="text-label text-muted-foreground flex items-center space-inline">
+      <span className="text-label text-muted-foreground flex items-center space-inline">
         <BedDouble className="w-3 h-3" />
         รอมอบหมายห้อง
         <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">{totalStays}</Badge>
-      </p>
+      </span>
 
       <div className="space-y-3">
         {urgentSections.map((section) => (

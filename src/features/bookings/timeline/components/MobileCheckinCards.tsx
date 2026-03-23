@@ -3,7 +3,7 @@ import { ChevronRight, CheckCircle2, Phone, ExternalLink, ShieldCheck, ShieldAle
 import { cn, formatCompactNumber, formatPhone } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
-import type { CheckinBooking } from '../utils/operationTypes'
+import { formatNightsLabel, type CheckinBooking } from '../utils/operationTypes'
 
 export const PendingCheckinCard = React.memo(function PendingCheckinCard({
   ci,
@@ -27,7 +27,7 @@ export const PendingCheckinCard = React.memo(function PendingCheckinCard({
       <div className="flex items-center justify-between gap-2">
         <span className="text-body font-semibold truncate">{ci.guestName}</span>
         <span className="text-helper shrink-0">
-          {ci.totalStays} ห้อง · {ci.nights} คืน
+          {ci.totalStays} ห้อง · {formatNightsLabel(ci)}
         </span>
       </div>
 

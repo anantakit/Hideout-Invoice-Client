@@ -3,7 +3,7 @@ import { ChevronDown, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { cn, formatCompactNumber } from '@/shared/utils'
 import { CardButton } from '@/shared/ui/card-button'
 import { useBooking } from '../../hooks'
-import type { CheckinBooking } from '../utils/operationTypes'
+import { formatNightsLabel, type CheckinBooking } from '../utils/operationTypes'
 import { InlineCheckInPanel } from './InlineCheckInPanel'
 
 export function MultiRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
@@ -25,7 +25,7 @@ export function MultiRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
       >
         <div className="flex items-center justify-between gap-2">
           <span className="text-body font-semibold truncate">{ci.guestName}</span>
-          <span className="text-helper shrink-0">{ci.totalStays} ห้อง · {ci.nights} คืน</span>
+          <span className="text-helper shrink-0">{ci.totalStays} ห้อง · {formatNightsLabel(ci)}</span>
         </div>
         <div className="flex items-center justify-between mt-1">
           <div className="flex items-center space-inline text-helper">
