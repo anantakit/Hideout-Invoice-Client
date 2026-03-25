@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingsApi } from '../api'
-import type { CreateBookingPayload, BookingQueryParams, CreatePaymentPayload, ExtendStayPayload, MoveStayPayload, EarlyCheckoutPayload, AddStaysPayload } from '../types'
+import type { CreateBookingPayload, BookingQueryParams, CreatePaymentPayload, UpdatePaymentPayload, ExtendStayPayload, MoveStayPayload, EarlyCheckoutPayload, AddStaysPayload } from '../types'
 
 export const AVAILABILITY_GROUPED_KEY = (checkIn: string, checkOut: string, excludeBookingId?: string) =>
   ['availability-grouped', checkIn, checkOut, excludeBookingId ?? ''] as const
@@ -256,6 +256,18 @@ export function useCreatePayment(bookingId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreatePaymentPayload) => bookingsApi.createPayment(bookingId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
+    },
+  })
+}
+
+/** Edit an existing payment's amount, method, or note. */
+export function useUpdatePayment(bookingId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ paymentId, payload }: { paymentId: string; payload: UpdatePaymentPayload }) =>
+      bookingsApi.updatePayment(bookingId, paymentId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.detail(bookingId) })
     },

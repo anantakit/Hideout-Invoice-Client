@@ -238,6 +238,12 @@ export interface CreatePaymentPayload {
   idempotency_key: string
 }
 
+export interface UpdatePaymentPayload {
+  amount?: number
+  method?: 'CASH' | 'TRANSFER'
+  note?: string
+}
+
 export interface ExtendStayPayload {
   new_check_out: string // YYYY-MM-DD
   transfer_room_id?: string // optional: room for overflow period when conflict

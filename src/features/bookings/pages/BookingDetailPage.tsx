@@ -249,12 +249,13 @@ export default function BookingDetailPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-3 pt-1">
-                  <Button variant="outline" className="flex-1 touch-target" disabled={updateBooking.isPending} onClick={cancelEdit}>
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" size="sm" className="flex-1" disabled={updateBooking.isPending} onClick={cancelEdit}>
                     ยกเลิก
                   </Button>
                   <Button
-                    className="flex-1 touch-target"
+                    size="sm"
+                    className="flex-1"
                     disabled={!editName.trim() || !editPhone.trim() || updateBooking.isPending}
                     onClick={saveEdit}
                   >
