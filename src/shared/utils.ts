@@ -176,3 +176,7 @@ export function addDaysISO(days: number): string {
   const dd = String(d.getDate()).padStart(2, '0')
   return `${yyyy}-${mm}-${dd}`
 }
+
+/** Detect mobile/touch device for share vs copy behavior. */
+export const isMobileDevice = () =>
+  window.matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0

@@ -9,6 +9,7 @@ import {
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import { formatCompactNumber } from '@/shared/utils'
 import type { CheckoutBooking, CheckoutStay } from '../utils/operationTypes'
+import { DepositReturnBadge } from '../../shared/components/DepositBadge'
 
 // ─── Single-Room Check-Out Card ──────────────────────────────────────────────
 
@@ -47,11 +48,7 @@ export function SingleRoomCheckOutCard({
           ค้าง ฿{formatCompactNumber(co.balance)}
         </p>
       )}
-      {co.depositStatus === 'COLLECTED' && co.keyDepositAmount > 0 && (
-        <p className="text-helper text-amber-500 font-medium mt-0.5">
-          คืนประกัน {formatCompactNumber(co.keyDepositAmount)}
-        </p>
-      )}
+      <DepositReturnBadge booking={{ key_deposit_amount: co.keyDepositAmount, deposit_paid: co.depositPaid, deposit_status: co.depositStatus }} className="text-helper font-medium mt-0.5" />
     </ConfirmActionCard>
   )
 }

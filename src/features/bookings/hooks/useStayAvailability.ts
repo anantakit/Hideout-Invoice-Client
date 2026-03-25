@@ -33,7 +33,7 @@ export function useStayAvailability(checkIn: string, checkOut: string) {
         roomTypes: data.room_types.map((rt) => ({
           id: rt.room_type_id,
           name: rt.room_type_name,
-          available: rt.rooms.filter((r) => r.available).length,
+          available: Math.max(0, rt.rooms.filter((r) => r.available).length - (rt.unassigned_count ?? 0)),
           total: rt.rooms.length,
         })),
       }

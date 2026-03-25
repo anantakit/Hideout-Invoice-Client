@@ -20,8 +20,6 @@ import {
   CalendarDays,
   User,
   Footprints,
-  ShieldCheck,
-  ShieldAlert,
 } from 'lucide-react'
 import { cn, fmtThaiDate, fmtShortISO, formatTHBCurrency, todayISO, formatCompactNumber } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
@@ -39,6 +37,7 @@ import { useBooking, useCreateBooking, useAvailabilityGrouped, useCheckoutRooms 
 import { InlineCheckIn } from '../../shared/components/InlineCheckIn'
 import { ChargedPriceMulti } from '../../shared/components/ChargedPriceInput'
 import { DesktopOperationsPanel } from './DesktopOperationsPanel'
+import { DepositBadge } from '../../shared/components/DepositBadge'
 import { KEY_DEPOSIT_PER_ROOM } from '../../constants'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -175,7 +174,6 @@ function BookingDetailContent({
   // Always fetch full booking for deposit info, check-in & checkout actions
   const canCheckOut = status === 'CHECKED_IN' || status === 'PARTIALLY_CHECKED_IN'
   const { data: fullBooking } = useBooking(booking.booking_id)
-  const keyDeposit = fullBooking?.key_deposit_amount ?? 0
 
   const todayDate = todayISO()
   const pendingStays = useMemo(() => {
@@ -247,17 +245,7 @@ function BookingDetailContent({
                 <DoorOpen size={14} />
                 {roomNumbers.length > 1 ? `${roomNumbers.length} ห้อง` : 'ห้องพัก'}
               </p>
-              {fullBooking?.deposit_status === 'PENDING' ? (
-                <span className="text-xs text-warning flex items-center gap-1">
-                  <ShieldAlert size={12} />
-                  เก็บ {formatCompactNumber(keyDeposit)}
-                </span>
-              ) : fullBooking?.deposit_status === 'COLLECTED' ? (
-                <span className="text-xs text-success flex items-center gap-1">
-                  <ShieldCheck size={12} />
-                  เก็บแล้ว {formatCompactNumber(keyDeposit)}
-                </span>
-              ) : null}
+              {fullBooking && <DepositBadge booking={fullBooking} />}
             </div>
             <div className="flex flex-wrap gap-2">
               {roomNumbers.map((rn) => (
@@ -292,7 +280,7 @@ function BookingDetailContent({
 
         {/* Inline check-in */}
         {pendingStays.length > 0 && (
-          <InlineCheckIn bookingId={booking.booking_id} pendingStays={pendingStays} compact keyDepositAmount={keyDeposit} depositStatus={fullBooking?.deposit_status} />
+          <InlineCheckIn bookingId={booking.booking_id} pendingStays={pendingStays} compact />
         )}
 
         {/* Checkout section — matches InlineCheckIn compact layout */}
@@ -460,7 +448,11 @@ function CreateBookingContent({
 
     const payment =
       paymentMode !== 'reserve' && paymentAmount
-        ? { amount: Number(paymentAmount), method: paymentMethod }
+        ? {
+            amount: Number(paymentAmount),
+            method: paymentMethod,
+            deposit_amount: paymentMode === 'full_deposit' ? depositAmount : undefined,
+          }
         : undefined
 
     createBooking.mutate(
@@ -617,7 +609,7 @@ function CreateBookingContent({
                     <Loader2 className="icon-sm animate-spin text-muted-foreground" />
                   </div>
                 )}
-                {availData && availData.room_types.every((rt) => rt.rooms.filter((r) => r.available).length === 0) && (
+                {availData && availData.room_types.every((rt) => Math.max(0, rt.rooms.filter((r) => r.available).length - (rt.unassigned_count ?? 0)) === 0) && (
                   <p className="text-xs text-muted-foreground text-center py-1.5">ไม่มีห้องว่าง</p>
                 )}
               </div>

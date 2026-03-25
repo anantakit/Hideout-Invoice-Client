@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react'
 import { parseISO, differenceInDays } from 'date-fns'
-import { Loader2, Check, CheckCircle2, ArrowRightLeft, Phone, ExternalLink, ShieldCheck, ShieldAlert, LogIn } from 'lucide-react'
+import { Loader2, Check, CheckCircle2, ArrowRightLeft, Phone, ExternalLink, LogIn } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   Sheet,
@@ -32,6 +32,7 @@ import {
   useTransferRoom,
 } from '../../hooks'
 import type { RoomStayResponse } from '../../types'
+import { DepositBadge } from '../../shared/components/DepositBadge'
 import { cn, todayISO, fmtShortISO, formatCompactNumber } from '@/shared/utils'
 import { useNavigate } from 'react-router-dom'
 
@@ -319,17 +320,7 @@ const CheckInBottomSheet = React.memo(function CheckInBottomSheet({
                 {/* Row 2: Deposit status + check-in-all on same row */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    {booking?.deposit_status === 'PENDING' ? (
-                      <>
-                        <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-                        <span className="text-xs font-medium text-warning">เก็บ {formatCompactNumber(booking.key_deposit_amount)}</span>
-                      </>
-                    ) : booking?.deposit_status === 'COLLECTED' ? (
-                      <>
-                        <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-                        <span className="text-xs font-medium text-success">เก็บแล้ว {formatCompactNumber(booking.key_deposit_amount)}</span>
-                      </>
-                    ) : null}
+                    {booking && <DepositBadge booking={booking} />}
                   </div>
                   {isCheckInDay && assignedStays.length > 1 && (
                     <Button

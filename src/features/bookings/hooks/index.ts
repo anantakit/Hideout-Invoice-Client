@@ -67,6 +67,7 @@ export function useUpdateBooking(bookingId: string) {
       clear_customer?: boolean
       discount_amount?: number
       key_deposit_amount?: number
+      deposit_returned?: number
       deposit_status?: string
     }) => bookingsApi.update(bookingId, payload),
     onSuccess: () => {

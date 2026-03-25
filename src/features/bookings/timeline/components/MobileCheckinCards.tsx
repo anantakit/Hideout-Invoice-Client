@@ -1,9 +1,10 @@
 import React from 'react'
-import { ChevronRight, CheckCircle2, Phone, ExternalLink, ShieldCheck, ShieldAlert } from 'lucide-react'
-import { cn, formatCompactNumber, formatPhone } from '@/shared/utils'
+import { ChevronRight, CheckCircle2, Phone, ExternalLink } from 'lucide-react'
+import { cn, formatPhone } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
 import { formatNightsLabel, type CheckinBooking } from '../utils/operationTypes'
+import { DepositBadge } from '../../shared/components/DepositBadge'
 
 export const PendingCheckinCard = React.memo(function PendingCheckinCard({
   ci,
@@ -52,19 +53,7 @@ export const PendingCheckinCard = React.memo(function PendingCheckinCard({
         </div>
       )}
 
-      {/* Deposit status */}
-      {ci.booking?.deposit_status === 'PENDING' && (
-        <div className="flex items-center gap-1.5 mt-1">
-          <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-          <span className="text-xs font-medium text-warning">เก็บ {formatCompactNumber(ci.booking.key_deposit_amount)}</span>
-        </div>
-      )}
-      {ci.booking?.deposit_status === 'COLLECTED' && (
-        <div className="flex items-center gap-1.5 mt-1">
-          <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-          <span className="text-xs font-medium text-success">เก็บแล้ว {formatCompactNumber(ci.booking.key_deposit_amount)}</span>
-        </div>
-      )}
+      {ci.booking && <DepositBadge booking={ci.booking} className="mt-1" />}
 
       {/* Row 3: mini progress bar + count (only if multi-room) */}
       {ci.totalStays > 1 && (

@@ -355,7 +355,8 @@ function RoomTypeBookingItem({
   const roomsForType = matchedType?.rooms ?? []
   const unassignedCount = matchedType?.unassigned_count ?? 0
 
-  const availableCount = roomsForType.filter((r) => r.available).length
+  const physicalAvail  = roomsForType.filter((r) => r.available).length
+  const availableCount = Math.max(0, physicalAvail - unassignedCount)
   const maxQuantity    = availableCount > 0 ? availableCount : Infinity
 
   const assignedCount = assignedRoomIds.length

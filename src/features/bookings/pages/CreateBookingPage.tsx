@@ -128,7 +128,13 @@ export default function CreateBookingPage() {
 
     const payment =
       values.payment_mode !== 'reserve' && values.payment_amount
-        ? { amount: values.payment_amount, method: values.payment_method }
+        ? {
+            amount: values.payment_amount,
+            method: values.payment_method,
+            // Tell backend how much of the total payment is deposit so it creates
+            // separate PAYMENT + DEPOSIT records instead of one combined record.
+            deposit_amount: values.payment_mode === 'full_deposit' ? depositAmount : undefined,
+          }
         : undefined
 
     createBooking.mutate(

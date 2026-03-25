@@ -15,6 +15,7 @@ import { SingleRoomCheckInCard } from './SingleRoomCheckInCard'
 import { MultiRoomCheckInCard } from './MultiRoomCheckInCard'
 import { SingleRoomCheckOutCard, MultiRoomCheckOutRow, CheckOutAllButton } from './CheckOutCards'
 import { PendingAssignmentsSection } from './PendingAssignmentsSection'
+import { DepositReturnBadge } from '../../shared/components/DepositBadge'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -331,6 +332,7 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
                           ค้าง ฿{formatCompactNumber(co.balance)}
                         </p>
                       )}
+                      <DepositReturnBadge booking={{ key_deposit_amount: co.keyDepositAmount, deposit_paid: co.depositPaid, deposit_status: co.depositStatus }} className="text-helper font-medium mt-0.5" />
                     </CardButton>
 
                     {isExpanded && (

@@ -38,10 +38,13 @@ export interface RoomStayResponse {
   created_at: string
 }
 
+export type PaymentType = 'PAYMENT' | 'REFUND' | 'DEPOSIT' | 'DEPOSIT_REFUND'
+
 export interface PaymentResponse {
   id: string
   booking_id: string
   amount: number
+  type: PaymentType
   method: 'CASH' | 'TRANSFER'
   note?: string
   created_at: string
@@ -78,7 +81,9 @@ export interface BookingResponse {
   discount_amount: number
   paid_amount: number
   balance_amount: number
+  deposit_paid: number
   key_deposit_amount: number
+  deposit_returned?: number | null
   deposit_status: 'NONE' | 'PENDING' | 'COLLECTED'
   room_stays: RoomStayResponse[]
   payments: PaymentResponse[]
@@ -203,6 +208,7 @@ export interface BookingQueryParams {
 export interface CreateBookingPaymentPayload {
   amount: number
   method: 'CASH' | 'TRANSFER'
+  deposit_amount?: number
 }
 
 /** One stay slot in a CreateBookingPayload.  room_id is optional — omit or
@@ -234,7 +240,7 @@ export interface CreatePaymentPayload {
   amount: number
   method: 'CASH' | 'TRANSFER'
   note?: string
-  type?: 'PAYMENT' | 'REFUND'
+  type?: PaymentType
   idempotency_key: string
 }
 
@@ -279,6 +285,7 @@ export interface TimelineBooking {
   status: string
   balance_amount: number
   key_deposit_amount: number
+  deposit_paid: number
   deposit_status: string
   /** Booking source: walk_in | advance */
   source: string

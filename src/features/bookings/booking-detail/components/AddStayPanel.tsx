@@ -95,7 +95,7 @@ export function AddStayPanel({ bookingId }: AddStayPanelProps) {
   const uniqueDatePairs = useMemo(() => {
     const seen = new Map<string, { checkIn: string; checkOut: string }>()
     for (const d of drafts) {
-      if (d.checkIn && d.checkOut && d.checkOut > d.checkIn && d.roomTypeId) {
+      if (d.checkIn && d.checkOut && d.checkOut > d.checkIn) {
         const key = `${d.checkIn}|${d.checkOut}`
         if (!seen.has(key)) seen.set(key, { checkIn: d.checkIn, checkOut: d.checkOut })
       }
@@ -365,7 +365,7 @@ function StayDraftRow({
         onChange={handleDatesChange}
       />
 
-      {/* Room type */}
+      {/* Room type — shows availability count per type, disables full types */}
       <Select
         value={draft.roomTypeId}
         onValueChange={(v) => dispatch({ type: 'UPDATE_ROOM_TYPE', key: draft.key, roomTypeId: v })}
@@ -374,11 +374,23 @@ function StayDraftRow({
           <SelectValue placeholder="เลือกประเภทห้อง" />
         </SelectTrigger>
         <SelectContent>
-          {roomTypes.map((rt) => (
-            <SelectItem key={rt.id} value={rt.id}>
-              {rt.name} — {formatTHB(rt.price_per_night ?? 0)}/คืน
-            </SelectItem>
-          ))}
+          {roomTypes.map((rt) => {
+            const groupedType = availability?.data?.room_types.find((t) => t.room_type_id === rt.id)
+            const physicalAvail = groupedType?.rooms.filter((r) => r.available).length ?? 0
+            // Subtract unassigned reservations — they take capacity at type-level
+            const availCount = Math.max(0, physicalAvail - (groupedType?.unassigned_count ?? 0))
+            const hasAvail = !availability?.data || availCount > 0
+            return (
+              <SelectItem key={rt.id} value={rt.id} disabled={!hasAvail}>
+                {rt.name} — {formatTHB(rt.price_per_night ?? 0)}/คืน
+                {availability?.data && (
+                  <span className={hasAvail ? 'text-muted-foreground' : 'text-destructive'}>
+                    {' '}({availCount > 0 ? `ว่าง ${availCount}` : 'เต็ม'})
+                  </span>
+                )}
+              </SelectItem>
+            )
+          })}
         </SelectContent>
       </Select>
 

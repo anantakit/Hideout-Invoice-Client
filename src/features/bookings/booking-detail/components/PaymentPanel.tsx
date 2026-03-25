@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Banknote, CreditCard, Plus, X, ShieldCheck, ShieldAlert, ShieldOff, Pencil } from 'lucide-react'
+import { Banknote, CreditCard, Plus, X, ShieldCheck, ShieldOff, Pencil, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
 import { formatTHB, formatThaiDate, getErrorMessage, formatCompactNumber } from '../../../../shared/utils'
@@ -19,6 +19,7 @@ import {
 } from '../../../../shared/ui/select'
 import { useCreatePayment, useUpdateBooking, useUpdatePayment } from '../../hooks'
 import type { BookingResponse, PaymentResponse } from '../../types'
+import { computeDeposit } from '../../shared/depositUtils'
 
 // ─── Schema ────────────────────────────────────────────────────────────────────
 
@@ -131,7 +132,11 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
 
   const isSettled = booking.status === 'CANCELLED' || booking.status === 'CHECKED_OUT'
   const hasBalance = booking.balance_amount > 0.005
-  const hasDeposit = booking.key_deposit_amount > 0
+  const dep = computeDeposit(booking)
+  const hasDeposit = dep.expected > 0
+
+  const roomPayments = booking.payments.filter((p) => p.type === 'PAYMENT' || p.type === 'REFUND')
+  const depositPayments = booking.payments.filter((p) => p.type === 'DEPOSIT' || p.type === 'DEPOSIT_REFUND')
 
   function startEdit(payment: PaymentResponse) {
     setEditingPaymentId(payment.id)
@@ -183,7 +188,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
             <SummaryRow
               label="ส่วนลด"
               value={`-${formatTHB(booking.discount_amount)}`}
-              className="text-green-600"
+              className="text-success"
             />
           )}
           <SummaryRow label="ชำระแล้ว" value={formatTHB(booking.paid_amount)} />
@@ -191,67 +196,88 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
           <SummaryRow
             label="ยอดค้างชำระ"
             value={formatTHB(Math.max(0, booking.balance_amount))}
-            className={cn('font-semibold', hasBalance ? 'text-destructive' : 'text-green-600')}
+            className={cn('font-semibold', hasBalance ? 'text-destructive' : 'text-success')}
           />
-          {booking.deposit_status !== 'NONE' && hasDeposit && (
+          {dep.status !== 'NONE' && hasDeposit && (
             <>
               <Separator />
-              <div className="flex items-center justify-between text-sm">
-                {booking.deposit_status === 'PENDING' ? (
-                  <span className="flex items-center gap-1.5 text-amber-500">
-                    <ShieldAlert className="w-3.5 h-3.5" />
-                    เก็บประกัน
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5 text-green-600">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    เก็บแล้ว
-                  </span>
-                )}
-                <div className="flex items-center gap-2">
-                  <span className={cn('font-semibold tabular-nums', booking.deposit_status === 'PENDING' ? 'text-amber-500' : 'text-green-600')}>
-                    {formatCompactNumber(booking.key_deposit_amount ?? 0)}
-                  </span>
-                  {booking.deposit_status === 'PENDING' && (
-                    <>
-                      <button
-                        type="button"
-                        className="text-xs text-success hover:text-success/80 transition-colors cursor-pointer font-medium"
-                        onClick={() => {
-                          updateBooking.mutate(
-                            { deposit_status: 'COLLECTED' },
-                            { onSuccess: () => toast.success('บันทึกเก็บเงินประกันแล้ว') },
-                          )
-                        }}
-                      >
-                        เก็บแล้ว
-                      </button>
-                      <button
-                        type="button"
-                        className="text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-                        onClick={() => {
-                          updateBooking.mutate(
-                            { deposit_status: 'NONE' },
-                            { onSuccess: () => toast.success('ยกเว้นเงินประกันแล้ว') },
-                          )
-                        }}
-                        aria-label="ยกเว้นเงินประกัน"
-                      >
-                        <ShieldOff className="w-3.5 h-3.5" />
-                      </button>
-                    </>
-                  )}
+
+              {/* ── PENDING: progress + auto-collect notice ── */}
+              {dep.status === 'PENDING' && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">ประกัน</span>
+                    <span className="font-semibold tabular-nums">
+                      {formatCompactNumber(dep.paid)} / {formatCompactNumber(dep.expected)}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-warning transition-all"
+                      style={{ width: `${dep.expected > 0 ? Math.round((dep.paid / dep.expected) * 100) : 0}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">เก็บอัตโนมัติเมื่อเช็คอิน</span>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer flex items-center gap-1"
+                      onClick={() => {
+                        updateBooking.mutate(
+                          { deposit_status: 'NONE' },
+                          { onSuccess: () => toast.success('ยกเว้นเงินประกันแล้ว') },
+                        )
+                      }}
+                    >
+                      <ShieldOff className="w-3 h-3" />
+                      ยกเว้น
+                    </button>
+                  </div>
                 </div>
-              </div>
-              {booking.deposit_status === 'COLLECTED' && isSettled && (
-                <p className="text-xs text-amber-500 font-medium">คืนประกัน {formatCompactNumber(booking.key_deposit_amount ?? 0)}</p>
+              )}
+
+              {/* ── COLLECTED: show total + editable return amount ── */}
+              {dep.status === 'COLLECTED' && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-1.5 text-success">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      ประกันเก็บครบ
+                    </span>
+                    <span className="font-semibold tabular-nums text-success">
+                      {formatCompactNumber(dep.paid)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">คืนประกัน</span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        max={dep.paid}
+                        className="w-24 h-8 text-right text-sm tabular-nums"
+                        defaultValue={dep.toReturn}
+                        onBlur={(e) => {
+                          const val = Math.max(0, Math.min(dep.paid, parseInt(e.target.value) || 0))
+                          if (val !== dep.toReturn) {
+                            updateBooking.mutate(
+                              { deposit_returned: val },
+                              { onSuccess: () => toast.success(`บันทึกคืนประกัน ฿${val}`) },
+                            )
+                          }
+                        }}
+                      />
+                      <span className="text-xs text-muted-foreground">/ {formatCompactNumber(dep.paid)}</span>
+                    </div>
+                  </div>
+                </div>
               )}
             </>
           )}
         </div>
 
-        {/* ── Payment history ─────────────────────────────────────────────── */}
-        {booking.payments.length > 0 && (
+        {/* ── Room payment history ──────────────────────────────────────── */}
+        {roomPayments.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-helper font-medium">ประวัติการชำระ</p>
@@ -261,8 +287,8 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
                   size="sm"
                   className="text-muted-foreground hover:text-foreground -mr-2 h-7 px-2"
                   onClick={() => {
-                    if (booking.payments.length === 1) {
-                      startEdit(booking.payments[0])
+                    if (roomPayments.length === 1) {
+                      startEdit(roomPayments[0])
                     } else {
                       setEditingPaymentId('pick')
                     }
@@ -287,7 +313,7 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
               <p className="text-xs text-muted-foreground">เลือกรายการที่ต้องการแก้ไข</p>
             )}
             <div className="space-y-1">
-              {booking.payments.map((p) =>
+              {roomPayments.map((p) =>
                 editingPaymentId === p.id ? (
                   <PaymentForm
                     key={p.id}
@@ -331,6 +357,24 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
                 ),
               )}
             </div>
+          </div>
+        )}
+
+        {/* ── Deposit payment history ────────────────────────────────────── */}
+        {depositPayments.length > 0 && (
+          <div className="space-y-1">
+            {depositPayments.map((p) => (
+              <div key={p.id} className="flex items-center justify-between text-sm py-1">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                  <span>ประกัน</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{formatTHB(p.amount)}</span>
+                  <span className="text-helper">{formatThaiDate(p.created_at)}</span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

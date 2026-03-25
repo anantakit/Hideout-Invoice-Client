@@ -55,6 +55,7 @@ export interface CheckoutBooking {
   roomNumbers: string[]
   balance: number
   keyDepositAmount: number
+  depositPaid: number
   depositStatus: string
   checkIn: string
   nights: number

@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { differenceInDays, parseISO } from 'date-fns'
-import { LogIn, Loader2, Key, ShieldCheck, ShieldAlert } from 'lucide-react'
+import { LogIn, Loader2, Key } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { fmtShortISO, formatCompactNumber } from '@/shared/utils'
+import { fmtShortISO } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import {
   Select,
@@ -32,10 +32,6 @@ interface InlineCheckInProps {
   pendingStays: RoomStayResponse[]
   /** When true, renders without Card wrapper (for use inside drawer/panel). */
   compact?: boolean
-  /** Key deposit amount from booking. */
-  keyDepositAmount?: number
-  /** Deposit status: NONE, PENDING, COLLECTED. */
-  depositStatus?: string
 }
 
 interface AvailableRoom {
@@ -46,7 +42,7 @@ interface AvailableRoom {
 
 // ─── InlineCheckIn ───────────────────────────────────────────────────────────
 
-export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmount = 0, depositStatus = 'NONE' }: InlineCheckInProps) {
+export function InlineCheckIn({ bookingId, pendingStays, compact }: InlineCheckInProps) {
   const checkIn = useCheckInRooms(bookingId)
 
   // stayId → roomId (for unassigned stays that need room selection)
@@ -171,28 +167,6 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
     return room ? `ห้อง ${room.room_number}` : `ห้อง ${roomId.slice(0, 6)}`
   }
 
-  // ── Key deposit banner ──────────────────────────────────────────────────
-
-  const depositLine = depositStatus !== 'NONE' ? (
-    <div className="flex items-center gap-1.5">
-      {depositStatus === 'PENDING' ? (
-        <>
-          <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-          <span className="text-xs font-medium text-warning">
-            เก็บ {formatCompactNumber(keyDepositAmount)}
-          </span>
-        </>
-      ) : (
-        <>
-          <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-          <span className="text-xs font-medium text-success">
-            เก็บแล้ว {formatCompactNumber(keyDepositAmount)}
-          </span>
-        </>
-      )}
-    </div>
-  ) : null
-
   // ── Render ───────────────────────────────────────────────────────────────
 
   const stayRows = (
@@ -201,7 +175,6 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
         const nights = differenceInDays(parseISO(stay.check_out), parseISO(stay.check_in))
         const roomId = selections[stay.id] || stay.room_id || ''
         const hasRoom = roomId !== ''
-        const isAssigned = Boolean(stay.room_id)
         const isSingleChecking = checkingInStayId === stay.id && checkIn.isPending
 
         return (
@@ -218,21 +191,11 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
                 confirmLabel="เช็คอิน"
                 onConfirm={() => handleCheckInSingle(stay)}
               >
-                  {isAssigned ? (
-                    <div className="flex items-center gap-2">
-                      <Key className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-semibold">ห้อง {stay.room_number}</span>
-                      <span className="text-xs text-muted-foreground">{stay.room_type_name}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Key className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-semibold">
-                        {getRoomLabel(stay)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{stay.room_type_name}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Key className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-sm font-semibold">{getRoomLabel(stay)}</span>
+                    <span className="text-xs text-muted-foreground">{stay.room_type_name}</span>
+                  </div>
                   <p className="text-micro-sm text-muted-foreground mt-0.5 pl-5.5">
                     {fmtShortISO(stay.check_in)} → {fmtShortISO(stay.check_out)} · {nights} คืน
                   </p>
@@ -342,9 +305,9 @@ export function InlineCheckIn({ bookingId, pendingStays, compact, keyDepositAmou
   }
 
   // ── Full mode (BookingDetailPage) — with Card wrapper ──
+  // depositLine omitted here — PaymentPanel below already shows deposit info.
   return (
     <div className="space-y-3">
-      {depositLine}
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
           <LogIn className="w-3.5 h-3.5" />

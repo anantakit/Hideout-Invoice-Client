@@ -81,6 +81,7 @@ export function computeDateOps(
             roomNumbers: [room.room_number],
             balance: b.balance_amount,
             keyDepositAmount: b.key_deposit_amount,
+            depositPaid: b.deposit_paid ?? 0,
             depositStatus: b.deposit_status,
             checkIn: ci,
             nights: differenceInDays(parseISO(b.check_out), parseISO(b.check_in)),
@@ -117,7 +118,7 @@ export function computeDateOps(
             room_stay_id: '', booking_id: s.booking_id, guest_name: s.guest_name,
             check_in: s.check_in, check_out: s.check_out, status: s.status,
             balance_amount: s.balance_amount, key_deposit_amount: s.key_deposit_amount,
-            deposit_status: s.deposit_status, source: '',
+            deposit_paid: 0, deposit_status: s.deposit_status, source: '',
           },
         })
       }

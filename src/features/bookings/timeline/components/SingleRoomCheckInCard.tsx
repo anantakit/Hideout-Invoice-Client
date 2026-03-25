@@ -1,18 +1,17 @@
-import { useState } from 'react'
-import { LogIn, Loader2, ChevronDown, ShieldCheck, ShieldAlert } from 'lucide-react'
+import { memo, useState } from 'react'
+import { LogIn, Loader2, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { cn, todayISO, formatCompactNumber } from '@/shared/utils'
+import { cn, todayISO } from '@/shared/utils'
 import { CardButton } from '@/shared/ui/card-button'
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
-import { useCheckInRooms, useBooking } from '../../hooks'
+import { useCheckInRooms } from '../../hooks'
 import { formatNightsLabel, type CheckinBooking } from '../utils/operationTypes'
 import { InlineCheckInPanel } from './InlineCheckInPanel'
+import { CollectSummary } from './CollectSummary'
 
-export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
+export const SingleRoomCheckInCard = memo(function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
   const [expanded, setExpanded] = useState(false)
   const checkInMutation = useCheckInRooms(ci.bookingId)
-  const { data: fullBooking } = useBooking(ci.bookingId)
-  const keyDeposit = fullBooking?.key_deposit_amount ?? 0
   const today = todayISO()
 
   const ciDate = ci.booking?.check_in?.slice(0, 10) ?? ''
@@ -32,22 +31,7 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
   const needsAssign = ci.unassignedCount > 0
   const canCheckIn = hasRoom && isCheckInDay && !needsAssign && Boolean(ci.roomStayId && ci.roomId)
 
-  const depositStatus = fullBooking?.deposit_status ?? 'NONE'
-  const depositLine = fullBooking && depositStatus !== 'NONE' && (
-    <div className="flex items-center gap-1.5 mt-1.5">
-      {depositStatus === 'PENDING' ? (
-        <>
-          <ShieldAlert className="w-3.5 h-3.5 text-warning shrink-0" />
-          <span className="text-xs font-medium text-warning">เก็บ {formatCompactNumber(keyDeposit)}</span>
-        </>
-      ) : (
-        <>
-          <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-          <span className="text-xs font-medium text-success">เก็บแล้ว {formatCompactNumber(keyDeposit)}</span>
-        </>
-      )}
-    </div>
-  )
+  const depositLine = ci.booking && <CollectSummary booking={ci.booking} className="mt-1.5" />
 
   // ── Needs room assignment — expandable card with InlineCheckInPanel ──
   if (needsAssign) {
@@ -133,4 +117,4 @@ export function SingleRoomCheckInCard({ ci }: { ci: CheckinBooking }) {
       {depositLine}
     </ConfirmActionCard>
   )
-}
+})

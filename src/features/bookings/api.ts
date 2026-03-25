@@ -78,6 +78,7 @@ export const bookingsApi = {
     customer_id?: string
     clear_customer?: boolean
     discount_amount?: number
+    deposit_returned?: number
   }): Promise<BookingResponse> => {
     const { data } = await apiClient.patch<ApiResponse<BookingResponse>>(`/bookings/${id}`, payload)
     return data.data
