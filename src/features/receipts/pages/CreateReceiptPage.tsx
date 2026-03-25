@@ -14,7 +14,6 @@ import SearchableComboBox from '../../../shared/ui/SearchableComboBox'
 import type { Customer } from '../../customers/types'
 import { useInvoicePrefill, useInvoiceCoverage } from '../../bookings/hooks'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
-import { BottomBar } from '../../../shared/ui/BottomBar'
 import { DatePicker } from '../../../shared/ui/DatePicker'
 import { Button } from '../../../shared/ui/button'
 import { Input } from '../../../shared/ui/input'
@@ -272,7 +271,7 @@ export default function CreateReceipt() {
 
   return (
     <>
-      <div className="px-4 md:px-6 py-6 max-w-4xl mx-auto pb-28 md:pb-6">
+      <div className="px-4 md:px-6 py-6 max-w-4xl mx-auto">
         {/* Page header */}
         <div className="mb-6">
           <h1 className="text-h1 text-xl sm:text-2xl">สร้างใบเสร็จใหม่</h1>
@@ -523,34 +522,35 @@ export default function CreateReceipt() {
                 </Button>
               </div>
 
+              {/* Mobile actions */}
+              <div className="pt-2 md:hidden space-y-2">
+                <Button
+                  type="submit"
+                  disabled={!selectedCustomer || createMutation.isPending}
+                  className="w-full min-h-[52px] rounded-xl font-medium"
+                >
+                  {createMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> กำลังสร้าง…</>
+                  ) : (
+                    <><Check className="w-4 h-4" /> สร้างใบเสร็จ</>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => navigate('/receipts')}
+                  className="w-full touch-target text-muted-foreground"
+                >
+                  ยกเลิก
+                </Button>
+              </div>
+
             </div>
 
           </form>
         </Form>
       </div>
 
-      <BottomBar>
-        <Button
-          type="submit"
-          form="create-receipt-form"
-          disabled={!selectedCustomer || createMutation.isPending}
-          className="w-full min-h-[52px] rounded-xl font-medium transition-transform duration-150 active:scale-[0.98]"
-        >
-          {createMutation.isPending ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> กำลังสร้าง…</>
-          ) : (
-            <><Check className="w-4 h-4" /> สร้างใบเสร็จ</>
-          )}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => navigate('/receipts')}
-          className="w-full touch-target text-muted-foreground"
-        >
-          ยกเลิก
-        </Button>
-      </BottomBar>
 
       <CustomerModal
         open={customerModalOpen}
