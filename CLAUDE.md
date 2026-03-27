@@ -14,13 +14,11 @@ npx tsc --noEmit         # type check
 ```
 src/
   app/                   → routes, providers (AuthProvider, QueryClient)
-  features/              → feature modules (bookings, receipts, customers)
-    bookings/
-      api.ts             → API functions (single const object with async methods)
-      types.ts           → interfaces + type unions
-      hooks.ts           → TanStack Query hooks wrapping api functions
-      pages/             → page components
-      components/        → feature-specific components
+  features/              → feature modules (bookings, timeline, receipts, customers)
+    bookings/            → booking CRUD, detail, stays, payments
+    timeline/            → timeline view (drag/resize, virtualization, draw-to-create)
+    receipts/            → receipt generation
+    customers/           → customer management
   shared/
     api/client.ts        → axios instance, token management, 401 interceptor
     ui/                  → shadcn/ui primitives (button, card, dialog, etc.)
@@ -55,4 +53,5 @@ See `.claude/rules/` for detailed guidance on:
 - `react-style.md` — React/TypeScript conventions
 - `anti-patterns.md` — known anti-patterns to avoid and refactor
 - `design-system.md` — dark theme tokens, color system
+- `feature-structure.md` — feature module boundaries, import rules
 - `timeline.md` — timeline drag/resize/virtualization
