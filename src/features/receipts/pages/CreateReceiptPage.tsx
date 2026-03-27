@@ -2,10 +2,8 @@ import { useCallback, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+import { useQueryClient } from '@tanstack/react-query'
 import { Check, Loader2, AlertTriangle } from 'lucide-react'
-import { receiptsApi } from '../api'
 import { formatTHB, todayISO } from '@/shared/utils'
 import CustomerModal from '../../customers/components/CustomerModal'
 import type { Customer } from '../../customers/types'
@@ -19,6 +17,7 @@ import { receiptSchema, type ReceiptFormValues } from '../schemas'
 import { useReceiptPrefill } from '../hooks/useReceiptPrefill'
 import { ReceiptLineItems } from '../components/ReceiptLineItems'
 import { CustomerSection } from '../components/CustomerSection'
+import { useCreateReceipt } from '../hooks/useCreateReceipt'
 
 export default function CreateReceipt() {
   const navigate = useNavigate()
@@ -52,15 +51,7 @@ export default function CreateReceipt() {
     (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0), 0,
   )
 
-  const createMutation = useMutation({
-    mutationFn: receiptsApi.create,
-    onSuccess: (receipt) => {
-      toast.success(`สร้างใบเสร็จ ${receipt.invoice_number} สำเร็จ`)
-      queryClient.invalidateQueries({ queryKey: ['receipts'] })
-      navigate(`/receipts/${receipt.id}`)
-    },
-    onError: (err: Error) => toast.error(err.message),
-  })
+  const createMutation = useCreateReceipt()
 
   const onSubmit = (values: ReceiptFormValues) => {
     createMutation.mutate({

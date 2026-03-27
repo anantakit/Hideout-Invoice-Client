@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Receipt, FileText } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
@@ -20,8 +19,7 @@ import {
 import { formatThaiDate, formatTHB } from '@/shared/utils'
 import { addDaysToISO } from '../utils/bookingStatusHelpers'
 import type { BookingResponse, RoomStayResponse, InvoiceResponseShort } from '../../types'
-
-type BillingMode = 'booking' | 'stay' | 'night'
+import { useReceiptBillingState } from '../hooks/useReceiptBillingState'
 
 export function ReceiptSection({
   bookingId,
@@ -32,37 +30,14 @@ export function ReceiptSection({
   booking: BookingResponse
   stays: RoomStayResponse[]
 }) {
-  const navigate = useNavigate()
-  const [showModeSelect, setShowModeSelect] = useState(false)
-  const [billingMode, setBillingMode] = useState<BillingMode>('booking')
-  const [selectedStayIds, setSelectedStayIds] = useState<string[]>([])
-  const [selectedStayId, setSelectedStayId] = useState('')
-  const [selectedDate, setSelectedDate] = useState('')
-
-  function handleConfirm() {
-    const params = new URLSearchParams({ booking_id: bookingId })
-    if (billingMode !== 'booking') params.set('mode', billingMode)
-    if (billingMode === 'stay' && selectedStayIds.length > 0) {
-      params.set('stay_ids', selectedStayIds.join(','))
-    }
-    if (billingMode === 'night' && selectedStayId) {
-      params.set('stay_ids', selectedStayId)
-      if (selectedDate) params.set('date', selectedDate)
-    }
-    setShowModeSelect(false)
-    navigate(`/receipts/new?${params.toString()}`)
-  }
-
-  function toggleStayId(id: string) {
-    setSelectedStayIds((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
-    )
-  }
-
-  const canConfirm =
-    billingMode === 'booking' ||
-    (billingMode === 'stay' && selectedStayIds.length > 0) ||
-    (billingMode === 'night' && selectedStayId && selectedDate)
+  const {
+    showModeSelect, setShowModeSelect,
+    billingMode, changeBillingMode,
+    selectedStayIds, toggleStayId,
+    selectedStayId, changeNightStay,
+    selectedDate, setSelectedDate,
+    canConfirm, handleConfirm,
+  } = useReceiptBillingState(bookingId)
 
   return (
     <Card>
@@ -119,12 +94,7 @@ export function ReceiptSection({
             {/* Mode selection cards */}
             <RadioCardGroup
               value={billingMode}
-              onValueChange={(val) => {
-                setBillingMode(val as BillingMode)
-                setSelectedStayIds([])
-                setSelectedStayId('')
-                setSelectedDate('')
-              }}
+              onValueChange={(val) => changeBillingMode(val as 'booking' | 'stay' | 'night')}
             >
               {([
                 ['booking', 'ทั้งการจอง', 'รวมทุกห้องในใบเสร็จเดียว'],
@@ -168,10 +138,7 @@ export function ReceiptSection({
                   <p className="text-helper font-medium mb-1">เลือกห้อง:</p>
                   <Select
                     value={selectedStayId || undefined}
-                    onValueChange={(val) => {
-                      setSelectedStayId(val)
-                      setSelectedDate('')
-                    }}
+                    onValueChange={changeNightStay}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="เลือก..." />

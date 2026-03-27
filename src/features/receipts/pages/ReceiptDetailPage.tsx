@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useParams, Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { ChevronLeft, Download, Trash2, Loader2, ExternalLink } from 'lucide-react'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -15,11 +15,10 @@ import {
   AlertDialogTrigger,
 } from '@/shared/ui/alert-dialog'
 import { ReceiptItemsCard } from '../components/ReceiptItemsCard'
+import { useDeleteReceipt } from '../hooks/useDeleteReceipt'
 
 export default function ReceiptDetail() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const [downloading, setDownloading] = useState(false)
 
   const { data: receipt, isLoading, error } = useQuery({
@@ -28,11 +27,7 @@ export default function ReceiptDetail() {
     enabled: !!id,
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: () => receiptsApi.delete(id!),
-    onSuccess: () => { toast.success('ลบใบเสร็จสำเร็จ'); queryClient.invalidateQueries({ queryKey: ['receipts'] }); navigate('/receipts') },
-    onError: (err: Error) => toast.error(err.message),
-  })
+  const deleteMutation = useDeleteReceipt({ navigateTo: '/receipts' })
 
   const handleDownload = async () => {
     if (!receipt) return
@@ -63,7 +58,7 @@ export default function ReceiptDetail() {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader><AlertDialogTitle>ลบใบเสร็จ?</AlertDialogTitle><AlertDialogDescription>ลบใบเสร็จ {receipt.invoice_number}? การกระทำนี้ไม่สามารถย้อนกลับได้</AlertDialogDescription></AlertDialogHeader>
-        <AlertDialogFooter><AlertDialogCancel>ยกเลิก</AlertDialogCancel><AlertDialogAction disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate()}>{deleteMutation.isPending ? 'กำลังลบ…' : 'ลบ'}</AlertDialogAction></AlertDialogFooter>
+        <AlertDialogFooter><AlertDialogCancel>ยกเลิก</AlertDialogCancel><AlertDialogAction disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(id!)}>{deleteMutation.isPending ? 'กำลังลบ…' : 'ลบ'}</AlertDialogAction></AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   )
@@ -160,7 +155,7 @@ export default function ReceiptDetail() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader><AlertDialogTitle>ลบใบเสร็จ?</AlertDialogTitle><AlertDialogDescription>ลบใบเสร็จ {receipt.invoice_number}? การกระทำนี้ไม่สามารถย้อนกลับได้</AlertDialogDescription></AlertDialogHeader>
-              <AlertDialogFooter><AlertDialogCancel>ยกเลิก</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate()}>ลบ</AlertDialogAction></AlertDialogFooter>
+              <AlertDialogFooter><AlertDialogCancel>ยกเลิก</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(id!)}>ลบ</AlertDialogAction></AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         </div>

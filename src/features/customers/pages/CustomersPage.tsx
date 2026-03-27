@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 import { customersApi } from '../api'
+import { useDeleteCustomer } from '../hooks/useDeleteCustomer'
 import CustomerModal from '../components/CustomerModal'
 import Pagination from '../../../shared/ui/Pagination'
 import type { Customer } from '../types'
@@ -46,14 +46,7 @@ export default function Customers() {
     placeholderData: (prev) => prev,
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: customersApi.delete,
-    onSuccess: () => {
-      toast.success('ลบลูกค้าสำเร็จ')
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
-    },
-    onError: (err: Error) => toast.error(err.message),
-  })
+  const deleteMutation = useDeleteCustomer()
 
   const handleEdit = (customer: Customer) => {
     setEditingCustomer(customer)

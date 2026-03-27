@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 import { adminApi } from '../api'
+import { useDeleteUser } from '../hooks/useDeleteUser'
 import { useAuth } from '../../../app/providers/AuthProvider'
 import UserModal from '../components/UserModal'
 import Pagination from '../../../shared/ui/Pagination'
@@ -51,7 +52,6 @@ const ROLE_BADGE_VARIANTS: Record<string, BadgeVariant> = {
 
 export default function AdminUsers() {
   const { user: me } = useAuth()
-  const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | undefined>()
 
@@ -63,14 +63,7 @@ export default function AdminUsers() {
     placeholderData: (prev) => prev,
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: adminApi.deleteUser,
-    onSuccess: () => {
-      toast.success('ลบผู้ใช้สำเร็จ')
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
-    },
-    onError: (err: Error) => toast.error(err.message),
-  })
+  const deleteMutation = useDeleteUser()
 
   const handleEdit = (user: User) => {
     setEditingUser(user)

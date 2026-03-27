@@ -30,11 +30,7 @@ export function StayCardOperational({
   stay: RoomStayResponse
   booking?: BookingResponse
 }) {
-  const [cancelOpen, setCancelOpen] = useState(false)
-  const [extendOpen, setExtendOpen] = useState(false)
-  const [checkoutOpen, setCheckoutOpen] = useState(false)
-  const [transferOpen, setTransferOpen] = useState(false)
-  const [earlyCheckoutOpen, setEarlyCheckoutOpen] = useState(false)
+  const [openDialog, setOpenDialog] = useState<'cancel' | 'extend' | 'checkout' | 'transfer' | 'earlyCheckout' | null>(null)
 
   const cancel = useCancelStay(bookingId)
   const checkout = useCheckoutRooms(bookingId)
@@ -140,7 +136,7 @@ export function StayCardOperational({
                 variant="default"
                 size="sm"
                 disabled={checkout.isPending}
-                onClick={() => canEarlyCheckout ? setEarlyCheckoutOpen(true) : setCheckoutOpen(true)}
+                onClick={() => setOpenDialog(canEarlyCheckout ? 'earlyCheckout' : 'checkout')}
               >
                 {checkout.isPending ? (
                   <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
@@ -154,7 +150,7 @@ export function StayCardOperational({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setTransferOpen(true)}
+                onClick={() => setOpenDialog('transfer')}
               >
                 <ArrowRightLeft className="w-4 h-4 mr-1.5" />
                 ย้ายห้อง
@@ -165,7 +161,7 @@ export function StayCardOperational({
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground"
-                onClick={() => setExtendOpen(true)}
+                onClick={() => setOpenDialog('extend')}
               >
                 <CalendarClock className="w-4 h-4 mr-1.5" />
                 ขยายเวลา
@@ -177,7 +173,7 @@ export function StayCardOperational({
                 size="sm"
                 disabled={cancel.isPending}
                 className="text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                onClick={() => setCancelOpen(true)}
+                onClick={() => setOpenDialog('cancel')}
               >
                 {cancel.isPending ? (
                   <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
@@ -194,37 +190,37 @@ export function StayCardOperational({
 
       {/* ── Operation dialogs/sheets ────────────────────────────────────── */}
       <CancelStayDialog
-        open={cancelOpen}
-        onOpenChange={setCancelOpen}
+        open={openDialog === 'cancel'}
+        onOpenChange={(open) => setOpenDialog(open ? 'cancel' : null)}
         bookingId={bookingId}
         stay={stay}
       />
 
       <ExtendStaySheet
-        open={extendOpen}
-        onOpenChange={setExtendOpen}
+        open={openDialog === 'extend'}
+        onOpenChange={(open) => setOpenDialog(open ? 'extend' : null)}
         bookingId={bookingId}
         stay={stay}
       />
 
       <CheckoutStayDialog
-        open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
+        open={openDialog === 'checkout'}
+        onOpenChange={(open) => setOpenDialog(open ? 'checkout' : null)}
         bookingId={bookingId}
         stay={stay}
       />
 
       <EarlyCheckoutDialog
-        open={earlyCheckoutOpen}
-        onOpenChange={setEarlyCheckoutOpen}
+        open={openDialog === 'earlyCheckout'}
+        onOpenChange={(open) => setOpenDialog(open ? 'earlyCheckout' : null)}
         bookingId={bookingId}
         stay={stay}
         booking={booking}
       />
 
       <TransferRoomSheet
-        open={transferOpen}
-        onOpenChange={setTransferOpen}
+        open={openDialog === 'transfer'}
+        onOpenChange={(open) => setOpenDialog(open ? 'transfer' : null)}
         bookingId={bookingId}
         stay={stay}
       />

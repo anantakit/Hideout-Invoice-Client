@@ -123,12 +123,8 @@ export default function TimelinePage() {
               selectedRoomTypeId={s.selectedRoomTypeId}
               onRoomTypeSelect={s.handleRoomTypeSelect}
               roomAvailability={s.roomAvailability}
-              kpiTotals={s.kpiTotals}
-              arrivalsDepartures={s.arrivalsDepartures}
-              availLoading={s.availLoading}
-              onToggleOpsDrawer={s.handleToggleOpsDrawer}
-              drawerMode={s.drawerMode}
-              todayPendingCheckinCount={s.todayPendingCheckinCount}
+              kpiProps={{ kpiTotals: s.kpiTotals, arrivalsDepartures: s.arrivalsDepartures, availLoading: s.availLoading }}
+              opsDrawerProps={{ onToggleOpsDrawer: s.handleToggleOpsDrawer, drawerMode: s.drawerMode, todayPendingCheckinCount: s.todayPendingCheckinCount }}
             />
 
             {/* ── Mobile: date strip + list (< md) ───────────────────── */}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Plus, Search } from 'lucide-react'
 import { receiptsApi, type ReceiptQueryParams } from '../api'
@@ -14,6 +14,7 @@ import { DateRangeFilter } from '@/shared/components/DateRangeFilter'
 import { Fab } from '@/shared/ui/Fab'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { ReceiptTable } from '../components/ReceiptTable'
+import { useDeleteReceipt } from '../hooks/useDeleteReceipt'
 
 async function downloadReceipt(receipt: Receipt) {
   try {
@@ -24,7 +25,6 @@ async function downloadReceipt(receipt: Receipt) {
 }
 
 export default function ReceiptHistory() {
-  const queryClient = useQueryClient()
 
   const { page, limit, searchInput, params: paginationParams, setPage, setLimit, setSearchInput } =
     usePaginatedQuery({ defaultLimit: 20 })
@@ -57,14 +57,7 @@ export default function ReceiptHistory() {
     placeholderData: (prev) => prev,
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: receiptsApi.delete,
-    onSuccess: () => {
-      toast.success('ลบใบเสร็จสำเร็จ')
-      queryClient.invalidateQueries({ queryKey: ['receipts'] })
-    },
-    onError: (err: Error) => toast.error(err.message),
-  })
+  const deleteMutation = useDeleteReceipt()
 
   const meta = data?.meta
   const totalPages = meta?.total_pages ?? 1

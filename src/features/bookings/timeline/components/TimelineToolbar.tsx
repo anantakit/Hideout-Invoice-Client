@@ -10,6 +10,18 @@ import ToolbarKPIStrip from './ToolbarKPIStrip'
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
+export interface KpiProps {
+  kpiTotals: { total: number; occupied: number; unassigned: number; available: number; occupancyPct: number }
+  arrivalsDepartures: { arrivals: number; departures: number }
+  availLoading: boolean
+}
+
+export interface OpsDrawerProps {
+  onToggleOpsDrawer: () => void
+  drawerMode: string | null
+  todayPendingCheckinCount?: number
+}
+
 interface TimelineToolbarProps {
   /** Left edge of the visible viewport (the date the user "is on"). */
   visibleStartDate: Date
@@ -31,17 +43,9 @@ interface TimelineToolbarProps {
   onRoomTypeSelect: (id: string | null) => void
   roomAvailability: RoomAvailability[]
 
-  /** KPI data */
-  kpiTotals: { total: number; occupied: number; unassigned: number; available: number; occupancyPct: number }
-  arrivalsDepartures: { arrivals: number; departures: number }
-  availLoading: boolean
-
-  /** Actions */
-  onToggleOpsDrawer: () => void
-  drawerMode: string | null
-
-  /** Number of pending check-in tasks today (unassigned + assigned not checked in) */
-  todayPendingCheckinCount?: number
+  /** KPI + Ops drawer (grouped) */
+  kpiProps: KpiProps
+  opsDrawerProps: OpsDrawerProps
 }
 
 // ─── Ops Drawer Button ──────────────────────────────────────────────────────
@@ -94,13 +98,11 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
   selectedRoomTypeId,
   onRoomTypeSelect,
   roomAvailability,
-  kpiTotals,
-  arrivalsDepartures,
-  availLoading,
-  onToggleOpsDrawer,
-  drawerMode,
-  todayPendingCheckinCount = 0,
+  kpiProps,
+  opsDrawerProps,
 }: TimelineToolbarProps) {
+  const { kpiTotals, arrivalsDepartures, availLoading } = kpiProps
+  const { onToggleOpsDrawer, drawerMode, todayPendingCheckinCount = 0 } = opsDrawerProps
   return (
     <div className="tl-toolbar h-16 shrink-0 flex items-center border-b border-tl-border bg-tl-header">
 
