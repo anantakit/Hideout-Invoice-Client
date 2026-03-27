@@ -13,15 +13,9 @@ import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import { fmtThaiDate, formatTHBCurrency, formatPhone } from '@/shared/utils'
-import { type TimelineBooking, getStatusLabel } from '../../types'
+import { getStatusLabel } from '../../types'
 import { bookingStatusVariant } from '../../booking-detail/utils/bookingStatusHelpers'
-
-// ─── Public types ─────────────────────────────────────────────────────────────
-
-export interface SelectedBookingContext {
-  booking: TimelineBooking
-  roomNumbers: string[]
-}
+import type { SelectedBookingContext } from '../types'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

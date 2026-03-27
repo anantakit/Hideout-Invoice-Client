@@ -2,21 +2,16 @@ import React from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
-import type { TimelineBooking } from '../../types'
 import { DesktopOperationsPanel } from './DesktopOperationsPanel'
 import { BookingDetailContent } from './BookingDetailContent'
 import { InlineCreateBookingForm } from './InlineCreateBookingForm'
 import { useTimelineContext } from '../context/TimelineContext'
 import { useTimelineCallbacks } from '../context/TimelineCallbackContext'
+import type { SelectedBookingContext } from '../types'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export type DrawerMode = 'ops' | 'booking-detail' | 'create-booking' | null
-
-export interface SelectedBookingContext {
-  booking: TimelineBooking
-  roomNumbers: string[]
-}
 
 export interface CreateBookingPrefill {
   roomId: string

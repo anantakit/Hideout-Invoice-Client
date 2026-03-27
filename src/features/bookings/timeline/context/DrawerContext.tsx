@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
-import type { DrawerMode, SelectedBookingContext, CreateBookingPrefill } from '../components/OperationsDrawer'
+import type { DrawerMode, CreateBookingPrefill } from '../components/OperationsDrawer'
+import type { SelectedBookingContext } from '../types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

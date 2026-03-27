@@ -15,7 +15,7 @@ import { bookingStatusVariant } from '../../booking-detail/utils/bookingStatusHe
 import { useBooking, useCheckoutRooms } from '../../hooks'
 import { InlineCheckIn } from '../../shared/components/InlineCheckIn'
 import { DepositBadge } from '../../shared/components/DepositBadge'
-import type { SelectedBookingContext } from './OperationsDrawer'
+import type { SelectedBookingContext } from '../types'
 import { CheckoutAllButton } from './CheckoutAllButton'
 
 // ── Types ────────────────────────────────────────────────────────────────────
