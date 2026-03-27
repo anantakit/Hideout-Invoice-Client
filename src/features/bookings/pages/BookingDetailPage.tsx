@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Phone, User, Receipt, CreditCard, Pencil } from 'lucide-react'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -17,7 +17,7 @@ import { StayCardOperational } from '../booking-detail/components/StayCardOperat
 import { ReceiptSection } from '../booking-detail/components/ReceiptSection'
 import { EventTimeline } from '../booking-detail/components/EventTimeline'
 import { AddStayPanel } from '../booking-detail/components/AddStayPanel'
-import { BookingEditForm } from '../booking-detail/components/BookingEditForm'
+import { BookingEditForm, type BookingEditFields } from '../booking-detail/components/BookingEditForm'
 import { bookingStatusVariant } from '../booking-detail/utils/bookingStatusHelpers'
 import { getStatusLabel } from '../types'
 
@@ -26,12 +26,9 @@ export default function BookingDetailPage() {
   const navigate = useNavigate()
   const { data: booking, isLoading, isError } = useBooking(id)
 
-  const [editing, setEditing] = useState(false)
-  const [editName, setEditName] = useState('')
-  const [editPhone, setEditPhone] = useState('')
-  const [editDiscount, setEditDiscount] = useState('')
-  const [editCustomerId, setEditCustomerId] = useState<string | undefined>(undefined)
-  const [editCustomerLabel, setEditCustomerLabel] = useState<string | undefined>(undefined)
+  // null = not editing, object = editing with field values (6 useState → 1)
+  const [editFields, setEditFields] = useState<BookingEditFields | null>(null)
+  const editing = editFields !== null
   const updateBooking = useUpdateBooking(id)
 
   const bd = useMemo(() => {
@@ -42,26 +39,33 @@ export default function BookingDetailPage() {
 
   function startEdit() {
     if (!booking) return
-    setEditName(booking.guest_name); setEditPhone(booking.guest_phone)
-    setEditDiscount(String(booking.discount_amount || 0))
-    setEditCustomerId(booking.customer_id ?? undefined); setEditCustomerLabel(booking.customer_name ?? undefined)
-    setEditing(true)
+    setEditFields({
+      name: booking.guest_name,
+      phone: booking.guest_phone,
+      discount: String(booking.discount_amount || 0),
+      customerId: booking.customer_id ?? undefined,
+      customerLabel: booking.customer_name ?? undefined,
+    })
   }
 
+  const handleFieldChange = useCallback(<K extends keyof BookingEditFields>(key: K, value: BookingEditFields[K]) => {
+    setEditFields((prev) => prev ? { ...prev, [key]: value } : prev)
+  }, [])
+
   function saveEdit() {
-    if (!booking) return
+    if (!booking || !editFields) return
     const payload: Record<string, unknown> = {}
-    if (editName !== booking.guest_name) payload.guest_name = editName
-    if (editPhone !== booking.guest_phone) payload.guest_phone = editPhone
-    const disc = parseFloat(editDiscount) || 0
+    if (editFields.name !== booking.guest_name) payload.guest_name = editFields.name
+    if (editFields.phone !== booking.guest_phone) payload.guest_phone = editFields.phone
+    const disc = parseFloat(editFields.discount) || 0
     if (disc !== booking.discount_amount) payload.discount_amount = disc
-    if (editCustomerId !== (booking.customer_id ?? undefined)) {
-      if (editCustomerId) payload.customer_id = editCustomerId
+    if (editFields.customerId !== (booking.customer_id ?? undefined)) {
+      if (editFields.customerId) payload.customer_id = editFields.customerId
       else payload.clear_customer = true
     }
-    if (Object.keys(payload).length === 0) { setEditing(false); return }
+    if (Object.keys(payload).length === 0) { setEditFields(null); return }
     updateBooking.mutate(payload as Parameters<typeof updateBooking.mutate>[0], {
-      onSuccess: () => { toast.success('บันทึกการแก้ไขเรียบร้อย'); setEditing(false) },
+      onSuccess: () => { toast.success('บันทึกการแก้ไขเรียบร้อย'); setEditFields(null) },
       onError: (err) => { toast.error((err as Error).message || 'เกิดข้อผิดพลาด') },
     })
   }
@@ -110,13 +114,10 @@ export default function BookingDetailPage() {
             <Separator className="my-3" />
             {editing ? (
               <BookingEditForm
-                editName={editName} setEditName={setEditName}
-                editPhone={editPhone} setEditPhone={setEditPhone}
-                editDiscount={editDiscount} setEditDiscount={setEditDiscount}
-                editCustomerId={editCustomerId} setEditCustomerId={setEditCustomerId}
-                editCustomerLabel={editCustomerLabel} setEditCustomerLabel={setEditCustomerLabel}
+                fields={editFields}
+                onFieldChange={handleFieldChange}
                 isPending={updateBooking.isPending}
-                onCancel={() => setEditing(false)} onSave={saveEdit}
+                onCancel={() => setEditFields(null)} onSave={saveEdit}
               />
             ) : (
               <div className="space-y-2">
