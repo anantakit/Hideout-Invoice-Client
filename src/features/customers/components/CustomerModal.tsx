@@ -2,11 +2,10 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useMutation } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
-import { customersApi } from '../api'
 import type { Customer } from '../types'
+import { useCreateCustomer } from '../hooks/useCreateCustomer'
+import { useUpdateCustomer } from '../hooks/useUpdateCustomer'
 import {
   Dialog,
   DialogContent,
@@ -116,23 +115,13 @@ export default function CustomerModal({ open, onClose, onCreated, customer }: Pr
     }
   }, [open, customer, form])
 
-  const createMutation = useMutation({
-    mutationFn: customersApi.create,
-    onSuccess: (c) => { toast.success(`เพิ่มลูกค้า "${c.name}" สำเร็จ`); onCreated(c) },
-    onError: (err: Error) => toast.error(err.message),
-  })
-
-  const updateMutation = useMutation({
-    mutationFn: (values: FormValues) => customersApi.update(customer!.id, values),
-    onSuccess: (c) => { toast.success(`แก้ไขข้อมูล "${c.name}" สำเร็จ`); onCreated(c) },
-    onError: (err: Error) => toast.error(err.message),
-  })
-
-  const isPending = createMutation.isPending || updateMutation.isPending
+  const { mutate: createCustomer, isPending: isCreating } = useCreateCustomer(onCreated)
+  const { mutate: updateCustomer, isPending: isUpdating } = useUpdateCustomer(onCreated)
+  const isPending = isCreating || isUpdating
 
   const onSubmit = (values: FormValues) => {
-    if (isEditing) updateMutation.mutate(values)
-    else createMutation.mutate(values)
+    if (isEditing) updateCustomer({ id: customer!.id, payload: values })
+    else createCustomer(values)
   }
 
   return (

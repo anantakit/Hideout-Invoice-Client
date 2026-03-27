@@ -2,13 +2,11 @@ import { useState, useMemo } from 'react'
 import { parseISO, differenceInDays } from 'date-fns'
 import { ChevronDown, BedDouble } from 'lucide-react'
 import { CardButton } from '@/shared/ui/card-button'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
-import { cn, todayISO, addDaysISO, fmtShort, getErrorMessage } from '@/shared/utils'
+import { cn, todayISO, addDaysISO, fmtShort } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import type { UnassignedStay } from '../../types'
-import { bookingsApi } from '../../api'
 import { toDateStr } from '../utils/operationTypes'
+import { useAutoAssignRooms } from '../hooks/useAutoAssignRooms'
 import { PendingDateSection } from './PendingDateSection'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -30,38 +28,17 @@ export function PendingAssignmentsSection({
 }: {
   unassignedStays: UnassignedStay[]
 }) {
-  const qc = useQueryClient()
   const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null)
   const [autoAssignDate, setAutoAssignDate] = useState<string | null>(null)
   const todayStr = todayISO()
 
-  const autoAssign = useMutation({
-    mutationFn: (date: string) => bookingsApi.autoAssignRooms(date),
-    onSuccess: (resp) => {
-      qc.invalidateQueries({ queryKey: ['timeline'] })
-      qc.invalidateQueries({ queryKey: ['bookings'] })
-      qc.invalidateQueries({ queryKey: ['availability'] })
-      qc.invalidateQueries({ queryKey: ['availability-grouped'] })
-      if (resp.assigned_count > 0 && resp.skipped_count === 0) {
-        toast.success(`มอบหมายห้องสำเร็จ ${resp.assigned_count} รายการ`)
-      } else if (resp.assigned_count > 0) {
-        toast.success(`มอบหมายสำเร็จ ${resp.assigned_count}, ข้าม ${resp.skipped_count}`)
-      } else if (resp.skipped_count > 0) {
-        toast.error(resp.skipped[0]?.reason ?? 'ไม่มีห้องว่าง')
-      } else {
-        toast('ไม่มีรายการที่ต้องมอบหมาย')
-      }
-      setAutoAssignDate(null)
-    },
-    onError: (err: unknown) => {
-      toast.error(getErrorMessage(err, 'มอบหมายอัตโนมัติไม่สำเร็จ'))
-      setAutoAssignDate(null)
-    },
+  const { mutate: autoAssignMutate, isPending: autoAssignPending } = useAutoAssignRooms({
+    onSettled: () => setAutoAssignDate(null),
   })
 
   const handleAutoAssign = (date: string) => {
     setAutoAssignDate(date)
-    autoAssign.mutate(date)
+    autoAssignMutate(date)
   }
 
   const grouped = useMemo(() => {
@@ -140,7 +117,7 @@ export function PendingAssignmentsSection({
             section={section}
             expandedBookingId={expandedBookingId}
             setExpandedBookingId={setExpandedBookingId}
-            autoAssign={autoAssign}
+            autoAssign={{ isPending: autoAssignPending }}
             autoAssignDate={autoAssignDate}
             handleAutoAssign={handleAutoAssign}
           />
@@ -171,7 +148,7 @@ export function PendingAssignmentsSection({
               section={section}
               expandedBookingId={expandedBookingId}
               setExpandedBookingId={setExpandedBookingId}
-              autoAssign={autoAssign}
+              autoAssign={{ isPending: autoAssignPending }}
               autoAssignDate={autoAssignDate}
               handleAutoAssign={handleAutoAssign}
             />
@@ -181,5 +158,3 @@ export function PendingAssignmentsSection({
     </div>
   )
 }
-
-

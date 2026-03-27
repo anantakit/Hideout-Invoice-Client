@@ -2,11 +2,10 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
-import { adminApi } from '../api'
 import type { User, CreateUserPayload, UpdateUserPayload } from '../../../shared/types/auth'
+import { useCreateUser } from '../hooks/useCreateUser'
+import { useUpdateUser } from '../hooks/useUpdateUser'
 import {
   Dialog,
   DialogContent,
@@ -64,7 +63,6 @@ const userSchema = (isEdit: boolean) =>
 type UserFormValues = z.infer<ReturnType<typeof userSchema>>
 
 export default function UserModal({ open, onClose, user }: Props) {
-  const queryClient = useQueryClient()
   const isEdit = !!user
 
   const form = useForm<UserFormValues>({
@@ -88,37 +86,18 @@ export default function UserModal({ open, onClose, user }: Props) {
     }
   }, [user, open, form])
 
-  const createMutation = useMutation({
-    mutationFn: adminApi.createUser,
-    onSuccess: () => {
-      toast.success('สร้างผู้ใช้สำเร็จ')
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
-      onClose()
-    },
-    onError: (err: Error) => toast.error(err.message),
-  })
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateUserPayload }) =>
-      adminApi.updateUser(id, payload),
-    onSuccess: () => {
-      toast.success('อัปเดตผู้ใช้สำเร็จ')
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
-      onClose()
-    },
-    onError: (err: Error) => toast.error(err.message),
-  })
-
-  const isPending = createMutation.isPending || updateMutation.isPending
+  const { mutate: createUser, isPending: isCreating } = useCreateUser(onClose)
+  const { mutate: updateUser, isPending: isUpdating } = useUpdateUser(onClose)
+  const isPending = isCreating || isUpdating
 
   function onSubmit(values: UserFormValues) {
     if (isEdit && user) {
       const payload: UpdateUserPayload = { full_name: values.full_name, role: values.role, must_change_password: values.must_change_password }
       if (values.password) payload.password = values.password
-      updateMutation.mutate({ id: user.id, payload })
+      updateUser({ id: user.id, payload })
     } else {
       const payload: CreateUserPayload = { full_name: values.full_name, username: values.username, password: values.password, role: values.role, must_change_password: values.must_change_password }
-      createMutation.mutate(payload)
+      createUser(payload)
     }
   }
 

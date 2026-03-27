@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Bar, CartesianGrid, ComposedChart, LabelList, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, Pencil, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
 import { Input } from '../../../shared/ui/input'
 import { Button } from '../../../shared/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../shared/ui/select'
 import { formatTHB, THAI_MONTHS_SHORT, THAI_MONTHS_FULL, formatCompact } from '../../../shared/utils'
-import { dashboardApi } from '../api'
+import { useUpdateRevenueTarget } from '../hooks/useUpdateRevenueTarget'
 import type { MonthlyRevenueEntry } from '../types'
 
 interface Props {
@@ -37,19 +36,12 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
   // Target editing state
   const [editMonth, setEditMonth] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
-  const queryClient = useQueryClient()
-  const mutation = useMutation({
-    mutationFn: ({ month, amount }: { month: number; amount: number }) =>
-      dashboardApi.upsertRevenueTarget(ceYear, month, amount),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-    },
-  })
+  const { mutate, isPending } = useUpdateRevenueTarget(ceYear)
 
   const handleEditSubmit = (month: number) => {
     const amount = parseFloat(editValue)
     if (!isNaN(amount) && amount >= 0) {
-      mutation.mutate({ month, amount })
+      mutate({ month, amount })
     } else {
       setEditMonth(null)
     }
@@ -150,7 +142,7 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
                 size="icon"
                 className="shrink-0 h-9 w-9 text-success hover:text-success hover:bg-success/10"
                 onClick={() => handleEditSubmit(editMonth)}
-                disabled={mutation.isPending}
+                disabled={isPending}
               >
                 <Check className="w-4 h-4" />
               </Button>
