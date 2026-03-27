@@ -1,11 +1,13 @@
 import React, { useCallback, useMemo } from 'react'
 import { addDays, differenceInDays, format, isToday, isSaturday, isSunday, parseISO, max, min, startOfDay } from 'date-fns'
 import { cn, todayISO } from '@/shared/utils'
-import type { TimelineRoom, TimelineBooking } from '../../types'
+import type { TimelineRoom } from '../../types'
 import BookingBlock from './BookingBlock'
-import { getCellWidthPx, TIMELINE_WINDOW_DAYS } from '../utils/tokens'
+import { TIMELINE_WINDOW_DAYS } from '../utils/tokens'
 import { computeRoomLayout } from '../utils/bookingLayout'
-import type { DragMode, DragState } from '../hooks/useTimelineDrag'
+import type { DragState } from '../hooks/useTimelineDrag'
+import { useTimelineContext } from '../context/TimelineContext'
+import { useTimelineCallbacks } from '../context/TimelineCallbackContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,42 +15,11 @@ interface RoomRowProps {
   room: TimelineRoom
   /** Room type name — shown as a label under the room number. */
   roomTypeName?: string
-  windowStart: Date
-  windowEnd: Date
   /** Pre-computed row height (px) — set by the virtualizer based on layer count. */
   rowHeight: number
-  onSelectBooking: (booking: TimelineBooking, roomNumbers?: string[]) => void
-  onEmptyCellClick?: (roomId: string, date: Date) => void
   isEven?: boolean
-  bookingColorMap: Record<string, string>
-  bookingRoomCountMap: Record<string, number>
-  /** Called when user starts a drag or resize on a booking block. */
-  onDragStart?: (
-    e: React.PointerEvent,
-    booking: TimelineBooking,
-    roomId: string,
-    mode: DragMode,
-  ) => void
   /** Current drag state — passed through to BookingBlock for visual dimming. */
   dragState?: DragState | null
-  /** Called to open context menu on a booking block. */
-  onContextMenu?: (
-    booking: TimelineBooking,
-    roomId: string,
-    roomNumber: string,
-    x: number,
-    y: number,
-  ) => void
-  /** Keyboard: move booking. */
-  onKeyboardMove?: (booking: TimelineBooking, roomId: string, direction: 'left' | 'right' | 'up' | 'down') => void
-  /** Keyboard: resize booking. */
-  onKeyboardResize?: (booking: TimelineBooking, roomId: string, edge: 'extend' | 'shrink') => void
-  /** Double-click on booking block — opens full detail page. */
-  onDoubleClickBooking?: (booking: TimelineBooking) => void
-  /** Number of days visible in the timeline window. */
-  windowDays?: number
-  /** Called on pointer down on empty cell — used for draw-to-create. */
-  onDrawStart?: (e: React.PointerEvent, roomId: string) => void
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -85,24 +56,22 @@ const STATUS_LABEL: Record<string, string> = {
 const RoomRow = React.memo(function RoomRow({
   room,
   roomTypeName,
-  windowStart,
-  windowEnd,
   rowHeight,
-  onSelectBooking,
-  onEmptyCellClick,
   isEven = false,
-  bookingColorMap,
-  bookingRoomCountMap,
-  onDragStart,
   dragState,
-  onContextMenu,
-  onKeyboardMove,
-  onKeyboardResize,
-  onDoubleClickBooking,
-  windowDays: windowDaysProp,
-  onDrawStart,
 }: RoomRowProps) {
-  const windowDays = windowDaysProp ?? TIMELINE_WINDOW_DAYS
+  const { windowStart, windowEnd, zoomDays, bookingColorMap, bookingRoomCountMap } = useTimelineContext()
+  const {
+    onSelectBooking,
+    onDoubleClickBooking,
+    onContextMenu,
+    onDragStart,
+    onKeyboardMove,
+    onKeyboardResize,
+    onDrawStart,
+  } = useTimelineCallbacks()
+
+  const windowDays = zoomDays ?? TIMELINE_WINDOW_DAYS
   const todayStr = useMemo(() => todayISO(), [])
   const displayStatus = useMemo(() => deriveDisplayStatus(room, todayStr), [room, todayStr])
   const isEmpty = room.bookings.length === 0
@@ -138,23 +107,13 @@ const RoomRow = React.memo(function RoomRow({
     // Ignore if the click was on an active booking block (CHECKED_OUT blocks are passthrough)
     const block = (e.target as HTMLElement).closest('.tl-booking-block') as HTMLElement | null
     if (block && block.dataset.stayStatus !== 'CHECKED_OUT') return
-    if (!onEmptyCellClick) return
-
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x    = e.clientX - rect.left
-    const dayIndex = Math.floor(x / getCellWidthPx())
-    if (dayIndex < 0 || dayIndex >= windowDays) return
-
-    const clickedDate = addDays(windowStart, dayIndex)
-    onEmptyCellClick(room.id, clickedDate)
-  }, [onEmptyCellClick, room.id, windowStart, windowDays])
+  }, [])
 
   // ── Draw-to-create: pointer down on empty area ────────────────────────
   // Allow draw through CHECKED_OUT blocks (they're history, room is available).
   const handleAreaPointerDown = useCallback((e: React.PointerEvent) => {
     const block = (e.target as HTMLElement).closest('.tl-booking-block') as HTMLElement | null
     if (block && block.dataset.stayStatus !== 'CHECKED_OUT') return
-    if (!onDrawStart) return
     onDrawStart(e, room.id)
   }, [onDrawStart, room.id])
 

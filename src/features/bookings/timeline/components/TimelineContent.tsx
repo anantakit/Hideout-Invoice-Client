@@ -4,18 +4,19 @@ import { CalendarPlus } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { ROUTES } from '@/app/routes'
 import type { Virtualizer } from '@tanstack/react-virtual'
-import type { TimelineRoom, TimelineBooking } from '../../types'
+import type { TimelineRoom } from '../../types'
 import type { SelectedBookingContext } from './BookingBottomSheet'
 import type { DrawerMode, CreateBookingPrefill } from './OperationsDrawer'
 import type { DrawPreviewPosition } from '../hooks/useTimelineDraw'
-import type { DragState, DragMode, DragPreviewPosition } from '../hooks/useTimelineDrag'
+import type { DragState, DragPreviewPosition } from '../hooks/useTimelineDrag'
 import TimelineHeader from './TimelineHeader'
 import TimelineSkeleton from './TimelineSkeleton'
 import ErrorPanel from '@/shared/components/ErrorPanel'
 import RoomRow from './RoomRow'
 import DragPreview from './DragPreview'
 import { OperationsDrawer } from './OperationsDrawer'
-import type { UnassignedStay } from '../../types'
+import { useTimelineContext } from '../context/TimelineContext'
+import { useTimelineCallbacks } from '../context/TimelineCallbackContext'
 
 interface TimelineContentProps {
   // Loading/error
@@ -29,16 +30,8 @@ interface TimelineContentProps {
 
   // Timeline data
   days: Date[]
-  windowStart: Date
-  windowEnd: Date
-  zoomDays: number
   selectedRoomTypeId: string | null
   filteredRooms: TimelineRoom[]
-
-  // Maps
-  roomTypeNameByRoomId: Record<string, string>
-  bookingColorMap: Record<string, string>
-  bookingRoomCountMap: Record<string, number>
 
   // Virtualizer
   rowVirtualizer: Virtualizer<HTMLDivElement, Element>
@@ -48,31 +41,16 @@ interface TimelineContentProps {
   dragState: DragState | null
   previewPos: DragPreviewPosition | null
   isDragging: boolean
-  onDragStart: (e: React.PointerEvent | PointerEvent, booking: TimelineBooking, roomId: string, mode: DragMode) => void
-  onKeyboardMove: (booking: TimelineBooking, roomId: string, direction: 'left' | 'right' | 'up' | 'down') => void
-  onKeyboardResize: (booking: TimelineBooking, roomId: string, edge: 'extend' | 'shrink') => void
 
   // Draw
   drawPreview: DrawPreviewPosition | null
-  onDrawStart: (e: React.PointerEvent, roomId: string) => void
-
-  // Booking actions
-  onSelectBooking: (b: TimelineBooking, roomNumbers?: string[]) => void
-  onDoubleClickBooking: (b: TimelineBooking) => void
-  onContextMenu: (booking: TimelineBooking, roomId: string, roomNumber: string, x: number, y: number) => void
 
   // Drawer
   drawerMode: DrawerMode
   onCloseDrawer: () => void
   selectedBooking: SelectedBookingContext | null
-  onDrawerCheckIn: (b: TimelineBooking) => void
-  onDirectCheckOut: (b: TimelineBooking) => void
   createBookingPrefill: CreateBookingPrefill | null
   onBookingCreated: (bookingId: string) => void
-  allRooms: TimelineRoom[]
-  todayStr: string
-  roomTypeNameMap: Record<string, string>
-  unassignedStays: UnassignedStay[]
 }
 
 export function TimelineContent({
@@ -82,40 +60,23 @@ export function TimelineContent({
   forceSkeleton,
   scrollContainerRef,
   days,
-  windowStart,
-  windowEnd,
-  zoomDays,
   selectedRoomTypeId,
   filteredRooms,
-  roomTypeNameByRoomId,
-  bookingColorMap,
-  bookingRoomCountMap,
   rowVirtualizer,
   gridContainerRef,
   dragState,
   previewPos,
   isDragging,
-  onDragStart,
-  onKeyboardMove,
-  onKeyboardResize,
   drawPreview,
-  onDrawStart,
-  onSelectBooking,
-  onDoubleClickBooking,
-  onContextMenu,
   drawerMode,
   onCloseDrawer,
   selectedBooking,
-  onDrawerCheckIn,
-  onDirectCheckOut,
   createBookingPrefill,
   onBookingCreated,
-  allRooms,
-  todayStr,
-  roomTypeNameMap,
-  unassignedStays,
 }: TimelineContentProps) {
   const navigate = useNavigate()
+  const { zoomDays, roomTypeNameMap, allRooms, todayStr, unassignedStays } = useTimelineContext()
+  const { onDoubleClickBooking, onDrawerCheckIn, onDirectCheckOut } = useTimelineCallbacks()
 
   return (
     <div className="hidden md:flex flex-1 overflow-hidden">
@@ -209,22 +170,10 @@ export function TimelineContent({
                       >
                         <RoomRow
                           room={room}
-                          roomTypeName={roomTypeNameByRoomId[room.id]}
-                          windowStart={windowStart}
-                          windowEnd={windowEnd}
+                          roomTypeName={roomTypeNameMap[room.id]}
                           rowHeight={virtualRow.size}
-                          onSelectBooking={onSelectBooking}
                           isEven={virtualRow.index % 2 === 0}
-                          bookingColorMap={bookingColorMap}
-                          bookingRoomCountMap={bookingRoomCountMap}
-                          onDragStart={onDragStart}
                           dragState={dragState}
-                          onContextMenu={onContextMenu}
-                          windowDays={zoomDays}
-                          onKeyboardMove={onKeyboardMove}
-                          onKeyboardResize={onKeyboardResize}
-                          onDoubleClickBooking={onDoubleClickBooking}
-                          onDrawStart={onDrawStart}
                         />
                       </div>
                     )

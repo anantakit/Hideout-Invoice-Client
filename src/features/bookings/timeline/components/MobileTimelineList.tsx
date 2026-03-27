@@ -7,7 +7,7 @@ import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { CardButton } from '@/shared/ui/card-button'
 import { ROUTES } from '@/app/routes'
-import type { TimelineRoom, TimelineBooking, UnassignedStay } from '../../types'
+import type { TimelineRoom } from '../../types'
 import { computeDateKPI } from '../utils/computeDateKPI'
 import { StayAvailabilityCard } from './StayAvailabilityCard'
 import type { DateRange } from '../../shared/components/DateRangePicker'
@@ -20,17 +20,15 @@ import { RoomCard } from './RoomCard'
 import { PendingCheckinCard, DoneCheckinCard } from './MobileCheckinCards'
 import { PendingCheckoutCard, DoneCheckoutCard } from './MobileCheckoutCards'
 import CheckOutBottomSheet from './CheckOutBottomSheet'
+import { useTimelineContext } from '../context/TimelineContext'
+import { useTimelineCallbacks } from '../context/TimelineCallbackContext'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface MobileTimelineListProps {
   rooms: TimelineRoom[]
   selectedDateStr: string
-  bookingColorMap: Record<string, string>
-  roomTypeNameMap: Record<string, string>
   roomTypeIdMap: Record<string, string>
-  unassignedStays: UnassignedStay[]
-  onSelectBooking: (booking: TimelineBooking, roomNumbers?: string[]) => void
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -38,11 +36,10 @@ interface MobileTimelineListProps {
 export const MobileTimelineList = React.memo(function MobileTimelineList({
   rooms,
   selectedDateStr,
-  roomTypeNameMap,
   roomTypeIdMap,
-  unassignedStays,
-  onSelectBooking,
 }: MobileTimelineListProps) {
+  const { roomTypeNameMap, unassignedStays } = useTimelineContext()
+  const { onSelectBooking } = useTimelineCallbacks()
   const navigate = useNavigate()
   const handleNavigateToBooking = useCallback(
     (bookingId: string) => navigate(`/bookings/${bookingId}`),
