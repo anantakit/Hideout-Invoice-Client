@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/utils'
-import { useBooking, useAvailabilityGrouped, useAssignRooms } from '../../hooks'
+import { useAssignRooms } from '../../hooks'
+import { useRoomPickerData } from '../hooks/useRoomPickerData'
 
 // ─── InlineRoomPicker ─────────────────────────────────────────────────────────
 
@@ -17,39 +18,9 @@ export function InlineRoomPicker({
   checkOut: string
   onDone: () => void
 }) {
-  const { data: booking, isLoading: bookingLoading } = useBooking(bookingId)
-  const { data: availability, isLoading: availLoading } = useAvailabilityGrouped(
-    checkIn, checkOut, true, bookingId,
-  )
+  const { unassignedStays, roomsByType, isLoading } = useRoomPickerData(bookingId, checkIn, checkOut)
   const assignMutation = useAssignRooms(bookingId)
   const [busyStayId, setBusyStayId] = useState<string | null>(null)
-
-  const unassignedStays = useMemo(() => {
-    if (!booking) return []
-    return booking.room_stays.filter((s) => s.status === 'RESERVED' && !s.room_id)
-  }, [booking])
-
-  const assignedRoomIds = useMemo(() => {
-    if (!booking) return new Set<string>()
-    return new Set(booking.room_stays.filter((s) => s.room_id).map((s) => s.room_id!))
-  }, [booking])
-
-  const neededTypeIds = useMemo(
-    () => new Set(unassignedStays.map((s) => s.room_type_id)),
-    [unassignedStays],
-  )
-
-  const roomsByType = useMemo(() => {
-    if (!availability) return []
-    return availability.room_types
-      .filter((rt) => neededTypeIds.has(rt.room_type_id))
-      .map((rt) => ({
-        typeId: rt.room_type_id,
-        typeName: rt.room_type_name,
-        rooms: rt.rooms.filter((r) => r.available && !assignedRoomIds.has(r.room_id)),
-      }))
-      .filter((rt) => rt.rooms.length > 0)
-  }, [availability, neededTypeIds, assignedRoomIds])
 
   const handleAssign = async (roomTypeId: string, roomId: string, roomNumber: string) => {
     const stay = unassignedStays.find((s) => s.room_type_id === roomTypeId)
@@ -66,7 +37,6 @@ export function InlineRoomPicker({
     }
   }
 
-  const isLoading = bookingLoading || availLoading
   const isBusy = assignMutation.isPending
 
   return (

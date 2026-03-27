@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { LogIn, Loader2, CheckCircle2, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { cn, todayISO, fmtShortISO } from '@/shared/utils'
+import { cn, fmtShortISO } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import {
   AlertDialog, AlertDialogTrigger, AlertDialogContent,
@@ -9,51 +9,20 @@ import {
   AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
-import type { RoomStayResponse } from '../../types'
-import { useBooking, useAvailabilityGrouped, useAssignRooms, useCheckInRooms } from '../../hooks'
+import { useAssignRooms, useCheckInRooms } from '../../hooks'
+import { useCheckInPanelData } from '../hooks/useCheckInData'
 import { UnassignedRoomPicker } from './UnassignedRoomPicker'
 
 export function InlineCheckInPanel({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
-  const { data: booking, isLoading: bookingLoading } = useBooking(bookingId)
+  const {
+    unassignedStays, assignedStays, checkedInStays, totalActive,
+    ciDate, isCheckInDay, roomsByType, isLoading, availLoading,
+  } = useCheckInPanelData(bookingId)
+
   const assignMutation = useAssignRooms(bookingId)
   const checkInMutation = useCheckInRooms(bookingId)
   const [busyStayId, setBusyStayId] = useState<string | null>(null)
   const [checkingInAll, setCheckingInAll] = useState(false)
-
-  const today = todayISO()
-
-  const { unassignedStays, assignedStays, checkedInStays, totalActive } = useMemo(() => {
-    if (!booking) return { unassignedStays: [] as RoomStayResponse[], assignedStays: [] as RoomStayResponse[], checkedInStays: [] as RoomStayResponse[], totalActive: 0 }
-    const active = booking.room_stays.filter((s) => s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT')
-    return {
-      unassignedStays: active.filter((s) => s.status === 'RESERVED' && !s.room_id),
-      assignedStays: active.filter((s) => (s.status === 'RESERVED' || s.status === 'ASSIGNED') && s.room_id),
-      checkedInStays: active.filter((s) => s.status === 'CHECKED_IN'),
-      totalActive: active.length,
-    }
-  }, [booking])
-
-  const ciDate = (unassignedStays[0] ?? assignedStays[0] ?? checkedInStays[0])?.check_in?.slice(0, 10) ?? ''
-  const coDate = (unassignedStays[0] ?? assignedStays[0] ?? checkedInStays[0])?.check_out?.slice(0, 10) ?? ''
-  const isCheckInDay = ciDate <= today
-
-  const { data: availability, isLoading: availLoading } = useAvailabilityGrouped(
-    ciDate, coDate, unassignedStays.length > 0 && Boolean(ciDate && coDate), bookingId,
-  )
-
-  const assignedRoomIds = useMemo(() => {
-    if (!booking) return new Set<string>()
-    return new Set(booking.room_stays.filter((s: RoomStayResponse) => s.room_id).map((s: RoomStayResponse) => s.room_id!))
-  }, [booking])
-
-  const roomsByType = useMemo(() => {
-    if (!availability) return []
-    const needed = new Set(unassignedStays.map((s) => s.room_type_id))
-    return availability.room_types
-      .filter((rt) => needed.has(rt.room_type_id))
-      .map((rt) => ({ typeId: rt.room_type_id, typeName: rt.room_type_name, rooms: rt.rooms.filter((r) => r.available && !assignedRoomIds.has(r.room_id)) }))
-      .filter((rt) => rt.rooms.length > 0)
-  }, [availability, unassignedStays, assignedRoomIds])
 
   const isBusy = assignMutation.isPending || checkInMutation.isPending
 
@@ -83,7 +52,7 @@ export function InlineCheckInPanel({ bookingId, onDone }: { bookingId: string; o
 
   return (
     <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-3">
-      {bookingLoading ? (
+      {isLoading ? (
         <div className="flex items-center justify-center py-3"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
       ) : (
         <>

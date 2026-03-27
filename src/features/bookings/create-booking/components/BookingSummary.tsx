@@ -6,7 +6,7 @@ import { Separator } from '@/shared/ui/separator'
 import { useRoomTypes } from '../../hooks'
 import { KEY_DEPOSIT_PER_ROOM } from '../../constants'
 import type { CreateBookingFormValues } from '../utils/createBookingSchema'
-import { calcNights, calcLineTotal, calcKeyDeposit } from '../utils/bookingCalc'
+import { calcLineItems, calcDepositSplit, calcTotalRooms } from '../utils/bookingSummaryCalc'
 
 // ─── BookingSummary ────────────────────────────────────────────────────────────
 
@@ -39,45 +39,11 @@ export function BookingSummary() {
     return m
   }, [roomTypes])
 
-  const lines = useMemo(() => {
-    return items
-      .map((item, i) => {
-        const rackPrice = priceMap[item.room_type_id]
-        if (rackPrice == null) return null
-        const nights = calcNights(item.check_in, item.check_out)
-        if (nights <= 0) return null
-        const qty = Math.max(1, item.quantity ?? 1)
-        const price = item.charged_price ?? rackPrice
-        return {
-          index: i,
-          name: nameMap[item.room_type_id] ?? 'ห้อง',
-          quantity: qty,
-          nights,
-          price,
-          rackPrice,
-          hasDiscount: item.charged_price != null && item.charged_price < rackPrice,
-          subtotal: calcLineTotal(price, qty, nights),
-        }
-      })
-      .filter(Boolean) as {
-        index: number
-        name: string
-        quantity: number
-        nights: number
-        price: number
-        rackPrice: number
-        hasDiscount: boolean
-        subtotal: number
-      }[]
-  }, [items, priceMap, nameMap])
+  const lines = useMemo(() => calcLineItems(items, priceMap, nameMap), [items, priceMap, nameMap])
 
   const roomTotal = useMemo(() => lines.reduce((s, l) => s + l.subtotal, 0), [lines])
-  const totalRooms = items.reduce((s, i) => s + Math.max(1, i.quantity ?? 1), 0)
-  const depositPerRoom = calcKeyDeposit(totalRooms)
-  // full_deposit: จ่ายรวมประกันแล้ว (แสดงใน summary เป็นรายการ)
-  // อื่น: ต้องเก็บเพิ่มหน้าเคาน์เตอร์ (แสดงเป็น note แทน)
-  const depositInPayment = paymentMode === 'full_deposit' ? depositPerRoom : 0
-  const depositToCollect = paymentMode === 'full_deposit' ? 0 : depositPerRoom
+  const totalRooms = calcTotalRooms(items)
+  const { depositInPayment, depositToCollect } = calcDepositSplit(paymentMode, totalRooms)
 
   if (lines.length === 0) return null
 

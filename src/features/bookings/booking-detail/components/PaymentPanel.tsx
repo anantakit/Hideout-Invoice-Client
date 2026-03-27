@@ -7,6 +7,7 @@ import { Input } from '../../../../shared/ui/input'
 import { Separator } from '../../../../shared/ui/separator'
 import type { BookingResponse } from '../../types'
 import { computeDeposit } from '../../shared/depositUtils'
+import { filterPaymentsByType } from '../utils/paymentUtils'
 import { usePaymentPanel } from '../hooks/usePaymentPanel'
 import { PaymentForm } from './PaymentForm'
 import { RoomPaymentHistory, DepositPaymentHistory } from './PaymentHistory'
@@ -21,8 +22,8 @@ export function PaymentPanel({ booking }: { booking: BookingResponse }) {
   const dep = computeDeposit(booking)
   const hasDeposit = dep.expected > 0
 
-  const roomPayments = booking.payments.filter((p) => p.type === 'PAYMENT' || p.type === 'REFUND')
-  const depositPayments = booking.payments.filter((p) => p.type === 'DEPOSIT' || p.type === 'DEPOSIT_REFUND')
+  const roomPayments = filterPaymentsByType(booking.payments, ['PAYMENT', 'REFUND'])
+  const depositPayments = filterPaymentsByType(booking.payments, ['DEPOSIT', 'DEPOSIT_REFUND'])
 
   return (
     <Card>

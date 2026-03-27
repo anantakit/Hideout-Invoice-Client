@@ -4,6 +4,7 @@ import {
 import { formatCompactNumber } from '@/shared/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import type { OccupancyPressureEntry } from '../types'
+import { calcPressureKPI, getTopInsights } from '../utils/dashboardCalc'
 import {
   DAY_NAMES, ZONE_COLORS, ACTION_TYPE_ICON, MomentumBadge, PressureTooltip,
 } from './PressureTooltip'
@@ -19,9 +20,7 @@ function formatKPI(n: number): string {
 export function OccupancyPressureChart({ data }: Props) {
   if (!data || data.length === 0) return null
 
-  const criticalCount = data.filter((d) => d.zone === 'critical' || d.zone === 'at_risk').length
-  const totalAtRisk = data.reduce((s, d) => s + d.revenue_at_risk, 0)
-  const totalUpside = data.reduce((s, d) => s + d.revenue_upside, 0)
+  const { criticalCount, totalAtRisk, totalUpside } = calcPressureKPI(data)
 
   return (
     <Card className="h-full">
@@ -105,11 +104,7 @@ export function OccupancyPressureChart({ data }: Props) {
         {/* Insight cards */}
         {data.some((d) => d.insight || d.zone === 'critical' || d.zone === 'at_risk' || d.zone === 'high_demand') && (
           <div className="mt-3 flex flex-wrap gap-2 px-2">
-            {[...data]
-              .filter((d) => d.insight || d.zone === 'critical' || d.zone === 'at_risk' || d.zone === 'high_demand')
-              .sort((a, b) => b.action_priority - a.action_priority)
-              .slice(0, 4)
-              .map((d) => {
+            {getTopInsights(data, 4).map((d) => {
                 const date = new Date(d.date)
                 const dayLabel = `${DAY_NAMES[date.getDay()]} ${date.getDate()}/${date.getMonth() + 1}`
                 const at = ACTION_TYPE_ICON[d.action_type] || ACTION_TYPE_ICON.monitoring

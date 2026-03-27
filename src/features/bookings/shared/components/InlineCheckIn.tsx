@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { LogIn, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/shared/ui/button'
@@ -6,20 +6,15 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
   AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
-import { useCheckInRooms, useAvailabilityGrouped } from '../../hooks'
+import { useCheckInRooms } from '../../hooks'
 import type { RoomStayResponse } from '../../types'
+import { useCheckInAvailability } from '../../timeline/hooks/useCheckInData'
 import { CheckInStayRow } from './CheckInStayRow'
 
 interface InlineCheckInProps {
   bookingId: string
   pendingStays: RoomStayResponse[]
   compact?: boolean
-}
-
-interface AvailableRoom {
-  room_id: string
-  room_number: string
-  available: boolean
 }
 
 export function InlineCheckIn({ bookingId, pendingStays }: InlineCheckInProps) {
@@ -42,27 +37,8 @@ export function InlineCheckIn({ bookingId, pendingStays }: InlineCheckInProps) {
   const unassigned = pendingStays.filter((s) => !s.room_id && !selections[s.id])
   const allReady = assigned.length === pendingStays.length
 
-  const checkInDate = pendingStays.reduce((min, s) => (s.check_in < min ? s.check_in : min), pendingStays[0].check_in)
-  const checkOutDate = pendingStays.reduce((max, s) => (s.check_out > max ? s.check_out : max), pendingStays[0].check_out)
-
-  const { data: availability, isLoading: availabilityLoading } =
-    useAvailabilityGrouped(checkInDate, checkOutDate, unassigned.length > 0, bookingId)
-
-  const roomsByType = useMemo(() => {
-    const map = new Map<string, AvailableRoom[]>()
-    if (availability) {
-      for (const rt of availability.room_types) {
-        map.set(rt.room_type_id, rt.rooms.map((r) => ({ room_id: r.room_id, room_number: r.room_number, available: r.available })))
-      }
-    }
-    return map
-  }, [availability])
-
-  const selectedRoomIds = useMemo(() => {
-    const set = new Set<string>()
-    for (const stay of pendingStays) { const rid = selections[stay.id] || stay.room_id; if (rid) set.add(rid) }
-    return set
-  }, [pendingStays, selections])
+  const { roomsByType, selectedRoomIds, availabilityLoading } =
+    useCheckInAvailability(bookingId, pendingStays, unassigned.length, selections)
 
   function getRoomLabel(stay: RoomStayResponse): string {
     const roomId = selections[stay.id] || stay.room_id || ''

@@ -7,20 +7,11 @@ import {
   AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
   AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
+import type { PendingDateSectionData } from '../hooks/usePendingGroups'
 import { InlineRoomPicker } from './InlineRoomPicker'
 
-interface PendingBookingGroup {
-  bookingId: string
-  guestName: string
-  checkIn: string
-  checkOut: string
-  roomTypeNames: string[]
-  totalRooms: number
-  nights: number
-}
-
 interface DateSectionProps {
-  section: { dateStr: string; label: string; isUrgent: boolean; bookings: PendingBookingGroup[]; stayCount: number }
+  section: PendingDateSectionData
   expandedBookingId: string | null
   setExpandedBookingId: (id: string | null) => void
   autoAssign: { isPending: boolean }

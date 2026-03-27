@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Bar, CartesianGrid, ComposedChart, LabelList, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Check, Pencil, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { formatTHB, THAI_MONTHS_SHORT, THAI_MONTHS_FULL, formatCompact } from '../../../shared/utils'
 import { useUpdateRevenueTarget } from '../hooks/useUpdateRevenueTarget'
 import type { MonthlyRevenueEntry } from '../types'
+import { calcYTDCumulative, calcYoYPercent } from '../utils/dashboardCalc'
 
 interface Props {
   data: MonthlyRevenueEntry[]
@@ -21,14 +22,7 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
   const hasPrevData = data.some((d) => d.previous > 0)
   const hasTarget = data.some((d) => d.target > 0)
 
-  // Enrich with YTD cumulative
-  const chartData = useMemo(() => {
-    let cumulative = 0
-    return data.map((d) => {
-      cumulative += d.current
-      return { ...d, ytd: cumulative }
-    })
-  }, [data])
+  const chartData = calcYTDCumulative(data)
 
   // Extract year from yearLabel (Thai BE → CE)
   const ceYear = Number(yearLabel) - 543
@@ -51,8 +45,8 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
   const YoYLabel = (props: Record<string, unknown>) => {
     const { x, y, width, index } = props as { x: number; y: number; width: number; index: number }
     const entry = chartData[index]
-    if (!entry?.previous || entry.previous <= 0) return null
-    const pct = ((entry.current - entry.previous) / entry.previous) * 100
+    const pct = calcYoYPercent(entry?.current ?? 0, entry?.previous ?? 0)
+    if (pct == null) return null
     const color = pct >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))'
     return (
       <text x={x + width / 2} y={y - 6} textAnchor="middle" fill={color} fontSize={10} fontWeight={500}>
