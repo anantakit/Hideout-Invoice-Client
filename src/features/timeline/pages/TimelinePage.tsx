@@ -1,24 +1,24 @@
 import { useRef, useCallback, useMemo } from 'react'
 import { TooltipProvider } from '@/shared/ui/tooltip'
 import { useIsMobile } from '@/shared/hooks/useIsMobile'
-import TimelineToolbar from '../timeline/components/TimelineToolbar'
-import BookingBottomSheet from '../timeline/components/BookingBottomSheet'
-import BookingContextMenu from '../timeline/components/BookingContextMenu'
-import { MobileDateStrip } from '../timeline/components/MobileDateStrip'
-import { MobileTimelineList } from '../timeline/components/MobileTimelineList'
-import { TimelineContent } from '../timeline/components/TimelineContent'
+import TimelineToolbar from '../components/TimelineToolbar'
+import BookingBottomSheet from '../components/BookingBottomSheet'
+import BookingContextMenu from '../components/BookingContextMenu'
+import { MobileDateStrip } from '../components/MobileDateStrip'
+import { MobileTimelineList } from '../components/MobileTimelineList'
+import { TimelineContent } from '../components/TimelineContent'
 import {
   KeyboardHelpDialog,
   CancelConfirmDialog,
   CheckInConfirmDialog,
   CheckOutConfirmDialog,
-} from '../timeline/components/TimelineConfirmDialogs'
-import { useTimelineState } from '../timeline/hooks/useTimelineState'
-import { useTimelineKeyboard } from '../timeline/hooks/useTimelineKeyboard'
-import { TimelineProvider, type TimelineContextValue } from '../timeline/context/TimelineContext'
-import { TimelineCallbackProvider, type TimelineCallbackContextValue } from '../timeline/context/TimelineCallbackContext'
-import { DrawerProvider, type DrawerContextValue } from '../timeline/context/DrawerContext'
-import { DragStateProvider, type DragStateContextValue } from '../timeline/context/DragStateContext'
+} from '../components/TimelineConfirmDialogs'
+import { useTimelineState } from '../hooks/useTimelineState'
+import { useTimelineKeyboard } from '../hooks/useTimelineKeyboard'
+import { TimelineProvider, type TimelineContextValue } from '../context/TimelineContext'
+import { TimelineCallbackProvider, type TimelineCallbackContextValue } from '../context/TimelineCallbackContext'
+import { DrawerProvider, type DrawerContextValue } from '../context/DrawerContext'
+import { DragStateProvider, type DragStateContextValue } from '../context/DragStateContext'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 

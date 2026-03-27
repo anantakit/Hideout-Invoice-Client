@@ -21,7 +21,7 @@ const AdminRooms     = lazy(() => import('../features/rooms/pages/AdminRoomsPage
 const CreateBooking     = lazy(() => import('../features/bookings/pages/CreateBookingPage'))
 const BookingList       = lazy(() => import('../features/bookings/pages/BookingListPage'))
 const BookingDetail     = lazy(() => import('../features/bookings/pages/BookingDetailPage'))
-const Timeline          = lazy(() => import('../features/bookings/pages/TimelinePage'))
+const Timeline          = lazy(() => import('../features/timeline/pages/TimelinePage'))
 
 function PageLoader() {
   return (
