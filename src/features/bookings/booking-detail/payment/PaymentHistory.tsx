@@ -3,7 +3,7 @@ import { cn } from '@/shared/utils'
 import { formatTHB, formatThaiDate } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import type { PaymentResponse } from '../../types'
-import type { PaymentFormValues } from '../hooks/usePaymentPanel'
+import type { PaymentFormValues } from './usePaymentPanel'
 import { PaymentForm } from './PaymentForm'
 
 // ── Room Payment History ─────────────────────────────────────────────────────

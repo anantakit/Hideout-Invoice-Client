@@ -1,7 +1,7 @@
 import { Plus, X } from 'lucide-react'
 import { Card, CardContent } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
-import { useAddStayForm } from '../hooks/useAddStayForm'
+import { useAddStayForm } from './useAddStayForm'
 import { AddStayForm } from './AddStayForm'
 
 // ── AddStayPanel ────────────────────────────────────────────────────────────

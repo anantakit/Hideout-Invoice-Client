@@ -3,8 +3,8 @@ import { formatTHB } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import type { RoomTypeResponse, AvailabilityGroupedResponse } from '../../types'
-import type { StayDraft, Action } from '../hooks/useAddStayForm'
-import { StayDraftRow } from './StayDraftRow'
+import type { StayDraft, Action } from './useAddStayForm'
+import { StayDraftRow } from '../components/StayDraftRow'
 
 // ── AddStayForm ─────────────────────────────────────────────────────────────
 

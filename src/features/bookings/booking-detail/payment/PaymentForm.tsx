@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
-import type { PaymentFormValues } from '../hooks/usePaymentPanel'
+import type { PaymentFormValues } from './usePaymentPanel'
 
 // ── Schema ───────────────────────────────────────────────────────────────────
 

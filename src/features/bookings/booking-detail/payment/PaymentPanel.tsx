@@ -8,7 +8,7 @@ import { Separator } from '@/shared/ui/separator'
 import type { BookingResponse } from '../../types'
 import { computeDeposit } from '../../shared/depositUtils'
 import { filterPaymentsByType } from '../../shared/utils/paymentUtils'
-import { usePaymentPanel } from '../hooks/usePaymentPanel'
+import { usePaymentPanel } from './usePaymentPanel'
 import { PaymentForm } from './PaymentForm'
 import { RoomPaymentHistory, DepositPaymentHistory } from './PaymentHistory'
 

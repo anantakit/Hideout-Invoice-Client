@@ -12,7 +12,7 @@ import {
   SelectItem,
 } from '@/shared/ui/select'
 import type { RoomTypeResponse, AvailabilityGroupedResponse } from '../../types'
-import type { StayDraft, Action } from '../hooks/useAddStayForm'
+import type { StayDraft, Action } from '../stay/useAddStayForm'
 import { calcAvailableCount } from '../../shared/availabilityCalc'
 
 // ── StayDraftRow ────────────────────────────────────────────────────────────

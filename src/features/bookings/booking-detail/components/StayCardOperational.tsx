@@ -7,11 +7,11 @@ import { Button } from '@/shared/ui/button'
 import { Badge } from '@/shared/ui/badge'
 import { formatThaiDate, formatTHB } from '@/shared/utils'
 import { useCancelStay, useCheckoutRooms } from '../../hooks'
-import { EarlyCheckoutDialog } from './EarlyCheckoutDialog'
-import { CancelStayDialog } from './CancelStayDialog'
-import { ExtendStaySheet } from './ExtendStaySheet'
-import { CheckoutStayDialog } from './CheckoutStayDialog'
-import { TransferRoomSheet } from './TransferRoomSheet'
+import { EarlyCheckoutDialog } from '../stay/EarlyCheckoutDialog'
+import { CancelStayDialog } from '../stay/CancelStayDialog'
+import { ExtendStaySheet } from '../stay/ExtendStaySheet'
+import { CheckoutStayDialog } from '../stay/CheckoutStayDialog'
+import { TransferRoomSheet } from '../stay/TransferRoomSheet'
 import {
   stayStatusVariant,
   calcNights,
