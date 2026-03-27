@@ -13,6 +13,7 @@ import {
 } from '@/shared/ui/select'
 import type { RoomTypeResponse, AvailabilityGroupedResponse } from '../../types'
 import type { StayDraft, Action } from '../hooks/useAddStayForm'
+import { calcAvailableCount } from '../../shared/availabilityCalc'
 
 // ── StayDraftRow ────────────────────────────────────────────────────────────
 
@@ -101,7 +102,7 @@ export function StayDraftRow({
           {roomTypes.map((rt) => {
             const groupedType = availability?.data?.room_types.find((t) => t.room_type_id === rt.id)
             const physicalAvail = groupedType?.rooms.filter((r) => r.available).length ?? 0
-            const availCount = Math.max(0, physicalAvail - (groupedType?.unassigned_count ?? 0))
+            const availCount = calcAvailableCount(physicalAvail, groupedType?.unassigned_count ?? 0)
             const hasAvail = !availability?.data || availCount > 0
             return (
               <SelectItem key={rt.id} value={rt.id} disabled={!hasAvail}>

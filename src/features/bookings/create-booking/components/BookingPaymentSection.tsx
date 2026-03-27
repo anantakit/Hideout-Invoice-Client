@@ -14,7 +14,7 @@ import { Input } from '@/shared/ui/input'
 import { ToggleGroup } from '@/shared/ui/ToggleGroup'
 import { KEY_DEPOSIT_PER_ROOM } from '../../constants'
 import type { CreateBookingFormValues } from '../utils/createBookingSchema'
-import { useTotalAmount } from './BookingSummary'
+import { useTotalAmount } from '../hooks/useTotalAmount'
 
 const PAYMENT_MODE_OPTIONS = [
   { value: 'full' as const,         label: 'ค่าห้อง',              desc: 'ชำระเต็มจำนวน',        Icon: Banknote },

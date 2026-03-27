@@ -6,6 +6,7 @@ import { useAvailabilityGrouped } from '../../hooks'
 import { proximityAutoAssignAll } from '../utils/roomAssignment'
 import type { CreateBookingFormValues } from '../utils/createBookingSchema'
 import type { RoomTypeResponse } from '../../types'
+import { calcAvailableCount } from '../../shared/availabilityCalc'
 
 // ── useRoomTypeBuilder ───────────────────────────────────────────────────────
 
@@ -127,7 +128,7 @@ export function useRoomTypeBookingItem(
   const unassignedCount = matchedType?.unassigned_count ?? 0
 
   const physicalAvail  = roomsForType.filter((r) => r.available).length
-  const availableCount = Math.max(0, physicalAvail - unassignedCount)
+  const availableCount = calcAvailableCount(physicalAvail, unassignedCount)
   const maxQuantity    = availableCount > 0 ? availableCount : Infinity
 
   const assignedCount = assignedRoomIds.length

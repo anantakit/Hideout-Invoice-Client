@@ -4,6 +4,7 @@ import { cn, formatTHBCurrency } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
 import { ChargedPriceMulti } from '../../shared/components/ChargedPriceInput'
 import type { AvailabilityGroupedResponse } from '../../types'
+import { calcAvailableCount } from '../../shared/availabilityCalc'
 import type { SelectedRoom, BookingSource } from '../hooks/useInlineBookingForm'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -121,7 +122,7 @@ export function InlineRoomSelector({
                 <Loader2 className="icon-sm animate-spin text-muted-foreground" />
               </div>
             )}
-            {availData && availData.room_types.every((rt) => Math.max(0, rt.rooms.filter((r) => r.available).length - (rt.unassigned_count ?? 0)) === 0) && (
+            {availData && availData.room_types.every((rt) => calcAvailableCount(rt.rooms.filter((r) => r.available).length, rt.unassigned_count ?? 0) === 0) && (
               <p className="text-xs text-muted-foreground text-center py-1.5">ไม่มีห้องว่าง</p>
             )}
           </div>

@@ -1,25 +1,12 @@
 import { useMemo } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
-import { differenceInDays, isValid } from 'date-fns'
 import { formatTHB } from '@/shared/utils'
 import { Card, CardContent } from '@/shared/ui/card'
 import { Separator } from '@/shared/ui/separator'
 import { useRoomTypes } from '../../hooks'
-import type { CreateBookingFormValues } from '../utils/createBookingSchema'
 import { KEY_DEPOSIT_PER_ROOM } from '../../constants'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function calcNights(checkIn: string, checkOut: string): number {
-  if (!checkIn || !checkOut) return 0
-  const [cy, cm, cd] = checkIn.split('-').map(Number)
-  const [oy, om, od] = checkOut.split('-').map(Number)
-  if (!cy || !cm || !cd || !oy || !om || !od) return 0
-  const ci = new Date(cy, cm - 1, cd)
-  const co = new Date(oy, om - 1, od)
-  if (!isValid(ci) || !isValid(co)) return 0
-  return Math.max(0, differenceInDays(co, ci))
-}
+import type { CreateBookingFormValues } from '../utils/createBookingSchema'
+import { calcNights, calcLineTotal, calcKeyDeposit } from '../utils/bookingCalc'
 
 // ─── BookingSummary ────────────────────────────────────────────────────────────
 
@@ -69,7 +56,7 @@ export function BookingSummary() {
           price,
           rackPrice,
           hasDiscount: item.charged_price != null && item.charged_price < rackPrice,
-          subtotal: price * nights * qty,
+          subtotal: calcLineTotal(price, qty, nights),
         }
       })
       .filter(Boolean) as {
@@ -86,7 +73,7 @@ export function BookingSummary() {
 
   const roomTotal = useMemo(() => lines.reduce((s, l) => s + l.subtotal, 0), [lines])
   const totalRooms = items.reduce((s, i) => s + Math.max(1, i.quantity ?? 1), 0)
-  const depositPerRoom = KEY_DEPOSIT_PER_ROOM * totalRooms
+  const depositPerRoom = calcKeyDeposit(totalRooms)
   // full_deposit: จ่ายรวมประกันแล้ว (แสดงใน summary เป็นรายการ)
   // อื่น: ต้องเก็บเพิ่มหน้าเคาน์เตอร์ (แสดงเป็น note แทน)
   const depositInPayment = paymentMode === 'full_deposit' ? depositPerRoom : 0
@@ -163,26 +150,3 @@ export function BookingSummary() {
   )
 }
 
-// ─── useTotalAmount ───────────────────────────────────────────────────────────
-
-/** Returns the grand total (price × quantity × nights) for all valid items. */
-export function useTotalAmount(): number {
-  const form = useFormContext<CreateBookingFormValues>()
-  const items = useWatch({ control: form.control, name: 'items' })
-  const { data: roomTypes = [] } = useRoomTypes()
-
-  return useMemo(() => {
-    const priceMap: Record<string, number> = {}
-    for (const rt of roomTypes) {
-      if (rt.price_per_night != null) priceMap[rt.id] = rt.price_per_night
-    }
-    return items.reduce((sum, item) => {
-      const rackPrice = priceMap[item.room_type_id]
-      if (!rackPrice) return sum
-      const price = item.charged_price ?? rackPrice
-      const nights = calcNights(item.check_in, item.check_out)
-      const qty    = Math.max(1, item.quantity ?? 1)
-      return sum + price * nights * qty
-    }, 0)
-  }, [items, roomTypes])
-}
