@@ -1,11 +1,11 @@
 import { pdf } from '@react-pdf/renderer'
-import { apiClient } from '../../shared/api/client'
+import { apiClient } from '@/shared/api/client'
 import type {
   Receipt,
   ReceiptListResponse,
   CreateReceiptPayload,
 } from './types'
-import type { ApiResponse } from '../../shared/types/api'
+import type { ApiResponse } from '@/shared/types/api'
 import { ReceiptPDF } from './components/ReceiptPDF'
 import { createElement } from 'react'
 

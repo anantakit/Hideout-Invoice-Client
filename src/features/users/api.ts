@@ -1,7 +1,7 @@
-import { apiClient } from '../../shared/api/client'
-import type { User, UserListResponse, CreateUserPayload, UpdateUserPayload } from '../../shared/types/auth'
-import type { ApiResponse } from '../../shared/types/api'
-import type { PaginationParams } from '../../shared/types/pagination'
+import { apiClient } from '@/shared/api/client'
+import type { User, UserListResponse, CreateUserPayload, UpdateUserPayload } from '@/shared/types/auth'
+import type { ApiResponse } from '@/shared/types/api'
+import type { PaginationParams } from '@/shared/types/pagination'
 
 export interface UserQueryParams extends PaginationParams {
   search?: string

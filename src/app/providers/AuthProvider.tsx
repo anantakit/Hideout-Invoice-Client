@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import type { User, LoginPayload } from '../../shared/types/auth'
+import type { User, LoginPayload } from '@/shared/types/auth'
 import { authApi } from '../../features/auth/api'
-import { setAccessToken } from '../../shared/api/client'
+import { setAccessToken } from '@/shared/api/client'
 
 interface AuthContextValue {
   user: User | null

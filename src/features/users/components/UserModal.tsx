@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Loader2 } from 'lucide-react'
-import type { User, CreateUserPayload, UpdateUserPayload } from '../../../shared/types/auth'
+import type { User, CreateUserPayload, UpdateUserPayload } from '@/shared/types/auth'
 import { useCreateUser } from '../hooks/useCreateUser'
 import { useUpdateUser } from '../hooks/useUpdateUser'
 import {
@@ -12,9 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../shared/ui/dialog'
-import { Button } from '../../../shared/ui/button'
-import { Input } from '../../../shared/ui/input'
+} from '@/shared/ui/dialog'
+import { Button } from '@/shared/ui/button'
+import { Input } from '@/shared/ui/input'
 import {
   Form,
   FormField,
@@ -22,14 +22,14 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from '../../../shared/ui/form'
+} from '@/shared/ui/form'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../shared/ui/select'
+} from '@/shared/ui/select'
 
 interface Props {
   open: boolean

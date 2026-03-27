@@ -10,7 +10,7 @@ import type { Style } from '@react-pdf/types'
 import type { ReactNode } from 'react'
 import { bahttext } from 'bahttext'
 import type { Receipt } from '../types'
-import { THAI_MONTHS_SHORT } from '../../../shared/utils'
+import { THAI_MONTHS_SHORT } from '@/shared/utils'
 
 // ── Font ─────────────────────────────────────────────────────────────────────
 Font.register({

@@ -10,7 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import { formatCompact, formatCompactNumber } from '@/shared/utils'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import type { DailyOccupancyEntry } from '../types'
 
 interface Props {

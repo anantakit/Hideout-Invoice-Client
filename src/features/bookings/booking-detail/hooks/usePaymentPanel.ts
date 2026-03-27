@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import { getErrorMessage } from '../../../../shared/utils'
+import { getErrorMessage } from '@/shared/utils'
 import { useCreatePayment, useUpdateBooking, useUpdatePayment } from '../../hooks'
 import type { BookingResponse, PaymentResponse } from '../../types'
 

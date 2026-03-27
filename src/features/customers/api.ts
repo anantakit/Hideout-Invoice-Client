@@ -1,11 +1,11 @@
-import { apiClient } from '../../shared/api/client'
+import { apiClient } from '@/shared/api/client'
 import type {
   Customer,
   CustomerListResponse,
   CreateCustomerPayload,
   UpdateCustomerPayload,
 } from './types'
-import type { ApiResponse } from '../../shared/types/api'
+import type { ApiResponse } from '@/shared/types/api'
 
 export interface CustomerQueryParams {
   search?: string

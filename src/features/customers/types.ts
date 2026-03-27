@@ -1,4 +1,4 @@
-import type { Meta } from '../../shared/types/pagination'
+import type { Meta } from '@/shared/types/pagination'
 
 export interface Customer {
   id: string

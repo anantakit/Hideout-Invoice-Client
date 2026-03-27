@@ -1,16 +1,16 @@
 import { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../../../app/providers/AuthProvider'
+import { useAuth } from '@/app/providers/AuthProvider'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
-import { Logo } from '../../../shared/components/Sidebar'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
-import { Button } from '../../../shared/ui/button'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../../shared/ui/form'
-import { Input } from '../../../shared/ui/input'
+import { Logo } from '@/shared/components/Sidebar'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
+import { Button } from '@/shared/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/shared/ui/form'
+import { Input } from '@/shared/ui/input'
 
 const schema = z.object({
   username: z.string().min(1, 'กรุณาระบุชื่อผู้ใช้'),

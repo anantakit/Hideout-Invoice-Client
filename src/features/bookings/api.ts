@@ -1,5 +1,5 @@
-import { apiClient } from '../../shared/api/client'
-import type { ApiResponse } from '../../shared/types/api'
+import { apiClient } from '@/shared/api/client'
+import type { ApiResponse } from '@/shared/types/api'
 import type {
   RoomTypeResponse,
   RoomResponse,

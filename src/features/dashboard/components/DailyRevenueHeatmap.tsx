@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import type { DailyRevenueEntry } from '../types'
 import { getIntensityClass, buildCalendarGrid } from '../utils/heatmapCalc'
 

@@ -5,11 +5,11 @@ import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
 import { authApi } from '../api'
-import { useAuth } from '../../../app/providers/AuthProvider'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
-import { Button } from '../../../shared/ui/button'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../../shared/ui/form'
-import { Input } from '../../../shared/ui/input'
+import { useAuth } from '@/app/providers/AuthProvider'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
+import { Button } from '@/shared/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/shared/ui/form'
+import { Input } from '@/shared/ui/input'
 
 const schema = z
   .object({

@@ -4,15 +4,15 @@ import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 import { customersApi } from '../api'
 import { useDeleteCustomer } from '../hooks/useDeleteCustomer'
 import CustomerModal from '../components/CustomerModal'
-import Pagination from '../../../shared/ui/Pagination'
+import Pagination from '@/shared/ui/Pagination'
 import type { Customer } from '../types'
-import { formatThaiDate, formatPhone } from '../../../shared/utils'
-import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
-import { Card } from '../../../shared/ui/card'
-import { Button } from '../../../shared/ui/button'
-import { Input } from '../../../shared/ui/input'
-import { Fab } from '../../../shared/ui/Fab'
-import { Skeleton } from '../../../shared/ui/skeleton'
+import { formatThaiDate, formatPhone } from '@/shared/utils'
+import { usePaginatedQuery } from '@/shared/hooks/usePaginatedQuery'
+import { Card } from '@/shared/ui/card'
+import { Button } from '@/shared/ui/button'
+import { Input } from '@/shared/ui/input'
+import { Fab } from '@/shared/ui/Fab'
+import { Skeleton } from '@/shared/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../../shared/ui/table'
+} from '@/shared/ui/table'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '../../../shared/ui/alert-dialog'
+} from '@/shared/ui/alert-dialog'
 
 export default function Customers() {
   const queryClient = useQueryClient()

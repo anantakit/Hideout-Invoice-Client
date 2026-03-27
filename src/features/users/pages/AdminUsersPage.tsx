@@ -4,18 +4,18 @@ import toast from 'react-hot-toast'
 import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 import { adminApi } from '../api'
 import { useDeleteUser } from '../hooks/useDeleteUser'
-import { useAuth } from '../../../app/providers/AuthProvider'
+import { useAuth } from '@/app/providers/AuthProvider'
 import UserModal from '../components/UserModal'
-import Pagination from '../../../shared/ui/Pagination'
-import type { User } from '../../../shared/types/auth'
-import { formatThaiDate } from '../../../shared/utils'
-import { usePaginatedQuery } from '../../../shared/hooks/usePaginatedQuery'
-import { Card } from '../../../shared/ui/card'
-import { Button } from '../../../shared/ui/button'
-import { Input } from '../../../shared/ui/input'
-import { Fab } from '../../../shared/ui/Fab'
-import { Skeleton } from '../../../shared/ui/skeleton'
-import { Badge } from '../../../shared/ui/badge'
+import Pagination from '@/shared/ui/Pagination'
+import type { User } from '@/shared/types/auth'
+import { formatThaiDate } from '@/shared/utils'
+import { usePaginatedQuery } from '@/shared/hooks/usePaginatedQuery'
+import { Card } from '@/shared/ui/card'
+import { Button } from '@/shared/ui/button'
+import { Input } from '@/shared/ui/input'
+import { Fab } from '@/shared/ui/Fab'
+import { Skeleton } from '@/shared/ui/skeleton'
+import { Badge } from '@/shared/ui/badge'
 import {
   Table,
   TableBody,
@@ -23,7 +23,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../../shared/ui/table'
+} from '@/shared/ui/table'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '../../../shared/ui/alert-dialog'
+} from '@/shared/ui/alert-dialog'
 
 type BadgeVariant = 'blue' | 'green' | 'gray'
 

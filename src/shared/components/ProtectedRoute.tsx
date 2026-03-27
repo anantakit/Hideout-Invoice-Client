@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
-import { useAuth } from '../../app/providers/AuthProvider'
+import { useAuth } from '@/app/providers/AuthProvider'
 
 interface Props {
   children: ReactNode

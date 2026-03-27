@@ -1,5 +1,5 @@
 import type { Customer } from '../customers/types'
-import type { Meta } from '../../shared/types/pagination'
+import type { Meta } from '@/shared/types/pagination'
 
 export interface ReceiptItem {
   id: string

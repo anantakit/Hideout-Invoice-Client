@@ -1,4 +1,4 @@
-import { Card, CardContent } from '../../../shared/ui/card'
+import { Card, CardContent } from '@/shared/ui/card'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 interface KPICardProps {

@@ -2,15 +2,15 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X } from 'lucide-react'
-import { Button } from '../../../../shared/ui/button'
-import { Input } from '../../../../shared/ui/input'
+import { Button } from '@/shared/ui/button'
+import { Input } from '@/shared/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../shared/ui/select'
+} from '@/shared/ui/select'
 import type { PaymentFormValues } from '../hooks/usePaymentPanel'
 
 // ── Schema ───────────────────────────────────────────────────────────────────

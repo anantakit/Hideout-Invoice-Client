@@ -1,5 +1,5 @@
-import { apiClient } from '../../shared/api/client'
-import type { LoginPayload, LoginResponse, ChangePasswordPayload, RefreshResponse } from '../../shared/types/auth'
+import { apiClient } from '@/shared/api/client'
+import type { LoginPayload, LoginResponse, ChangePasswordPayload, RefreshResponse } from '@/shared/types/auth'
 
 export const authApi = {
   login: async (payload: LoginPayload): Promise<LoginResponse> => {

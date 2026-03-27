@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react'
 import { isValid, isBefore, isSameDay, differenceInDays } from 'date-fns'
 import { CalendarIcon, ArrowRight, Moon } from 'lucide-react'
-import { Calendar, ScrollableCalendar } from '../../../../shared/ui/calendar'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../../../../shared/ui/sheet'
-import { Popover, PopoverContent, PopoverTrigger } from '../../../../shared/ui/popover'
+import { Calendar, ScrollableCalendar } from '@/shared/ui/calendar'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/ui/sheet'
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover'
 import { cn, fmtShortBE, fmtLongBE } from '@/shared/utils'
 import { useIsMobile } from '@/shared/hooks/useIsMobile'
 

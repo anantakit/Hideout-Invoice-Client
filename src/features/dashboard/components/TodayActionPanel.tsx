@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { LogIn, LogOut, SprayCan, ChevronRight, AlertCircle, Wallet, CheckCircle2 } from 'lucide-react'
 import { formatKPI } from '@/shared/utils'
-import { Card, CardContent } from '../../../shared/ui/card'
+import { Card, CardContent } from '@/shared/ui/card'
 import type { TodayActions } from '../types'
 
 interface Props {

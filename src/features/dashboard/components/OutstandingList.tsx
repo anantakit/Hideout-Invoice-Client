@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { formatCompactNumber } from '@/shared/utils'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import type { OutstandingBookingEntry } from '../types'
 
 interface Props {

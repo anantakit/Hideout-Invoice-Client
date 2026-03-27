@@ -12,9 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../shared/ui/dialog'
-import { Button } from '../../../shared/ui/button'
-import { Input } from '../../../shared/ui/input'
+} from '@/shared/ui/dialog'
+import { Button } from '@/shared/ui/button'
+import { Input } from '@/shared/ui/input'
 import {
   Form,
   FormControl,
@@ -22,8 +22,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '../../../shared/ui/form'
-import ThaiAddressPicker, { type ThaiAddress } from '../../../shared/ui/ThaiAddressPicker'
+} from '@/shared/ui/form'
+import ThaiAddressPicker, { type ThaiAddress } from '@/shared/ui/ThaiAddressPicker'
 import { parseAddressToThaiAddr, buildAddressString, emptyAddr } from '../utils/addressUtils'
 
 const schema = z.object({
