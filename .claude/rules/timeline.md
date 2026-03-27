@@ -31,12 +31,38 @@ paths:
 - `useMemo` for booking color map and room count map
 - `useCallback` for all drag/keyboard handlers to prevent RoomRow re-renders
 
-## Known Issues (Refactoring Targets)
+## Current Architecture (Post Phase 3 Split)
 
-- `TimelinePage.tsx` is 916 lines — should extract:
-  - Timeline state management → `useTimelineState` hook
-  - Keyboard shortcuts → `useTimelineKeyboard` hook
-  - Mobile date strip → separate component
-  - Draw-to-create logic → `useTimelineDraw` hook
-- 13+ props drilled through TimelinePage → RoomRow → BookingBlock — consider context
-- Error message mapping (server → Thai) embedded in drag handler — extract to utility
+`TimelinePage.tsx` was split into custom hooks:
+- `useTimelineState.ts` — centralized state (zoom, dates, selection, drag/draw modes, dialogs)
+- `useTimelineDrag.ts` — drag/resize logic
+- `useTimelineKeyboard.ts` — keyboard shortcuts
+- `useTimelineActions.ts` — booking mutations
+- `useTimelineDrawCreate.ts` — draw-to-create booking
+- `useInfiniteTimeline.ts` — buffer management
+
+Hover state uses `useSyncExternalStore` in `HoverContext.tsx` — avoids parent re-renders on hover.
+
+## Remaining Issues
+
+### Prop Drilling (Critical)
+
+`useTimelineState` returns all state to `TimelinePage`, which passes **~35 props** to `TimelineContent`, which distributes to children:
+
+- `TimelineContent → RoomRow → BookingBlock`: drag/keyboard/context-menu callbacks through 3 levels
+- `TimelineContent → MobileSection → MobileTimelineList`: MobileSection is pure pass-through (zero logic)
+- `RoomRow` receives 18 props, most passed to BookingBlock untouched
+
+**Fix**: Introduce `TimelineContext` (data) + `TimelineCallbackContext` (callbacks) as providers at `TimelinePage` level. Children consume via `useTimelineContext()` / `useTimelineCallbacks()` hooks.
+
+### Oversized Components
+
+| File | Lines | Fix |
+|------|-------|-----|
+| `AssignRoomBottomSheet.tsx` | 607 | Extract RoomPickerGrid + AssignConfirmDialog |
+| `MobileTimelineList.tsx` | 587 | Extract filter state to useReducer + sub-components |
+| `InlineCreateBookingForm.tsx` | 509 | Extract form state to useReducer or react-hook-form |
+| `BookingBlock.tsx` | 493 | Extract content + tooltip + drag handles |
+| `TimelineToolbar.tsx` | 479 | Extract ZoomControl + DateNavigation + KPIStrip + RoomTypeFilter |
+| `DesktopOperationsPanel.tsx` | 432 | Extract section components |
+| `PendingAssignmentsSection.tsx` | 431 | Extract list + card components |
