@@ -12,9 +12,9 @@ import {
 } from '@/shared/ui/form'
 import { Input } from '@/shared/ui/input'
 import SearchableComboBox from '@/shared/ui/SearchableComboBox'
-import { customersApi } from '../../../customers/api'
-import CustomerModal from '../../../customers/components/CustomerModal'
-import type { Customer } from '../../../customers/types'
+import { customersApi } from '@/shared/api/customers'
+import CustomerModal, { type CustomerFormValues } from '@/shared/components/CustomerModal'
+import type { Customer } from '@/shared/types/customer'
 import type { CreateBookingFormValues } from '../utils/createBookingSchema'
 
 function formatPhoneDisplay(digits: string): string {
@@ -29,7 +29,8 @@ interface BookingGuestSectionProps {
   setSelectedCustomer: (customer: Customer | null) => void
   customerModalOpen: boolean
   setCustomerModalOpen: (open: boolean) => void
-  handleCustomerCreated: (customer: Customer) => void
+  handleCustomerSave: (values: CustomerFormValues) => void
+  isCreatingCustomer: boolean
 }
 
 export function BookingGuestSection({
@@ -37,7 +38,8 @@ export function BookingGuestSection({
   setSelectedCustomer,
   customerModalOpen,
   setCustomerModalOpen,
-  handleCustomerCreated,
+  handleCustomerSave,
+  isCreatingCustomer,
 }: BookingGuestSectionProps) {
   const form = useFormContext<CreateBookingFormValues>()
 
@@ -134,7 +136,8 @@ export function BookingGuestSection({
       <CustomerModal
         open={customerModalOpen}
         onClose={() => setCustomerModalOpen(false)}
-        onCreated={handleCustomerCreated}
+        onSave={handleCustomerSave}
+        isPending={isCreatingCustomer}
       />
     </>
   )

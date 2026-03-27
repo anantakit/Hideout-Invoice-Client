@@ -5,8 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import { Check, Loader2, AlertTriangle } from 'lucide-react'
 import { formatTHB, todayISO } from '@/shared/utils'
-import CustomerModal from '../../customers/components/CustomerModal'
-import type { Customer } from '../../customers/types'
+import CustomerModal, { type CustomerFormValues } from '@/shared/components/CustomerModal'
+import type { Customer } from '@/shared/types/customer'
+import { useCreateCustomer } from '@/shared/hooks/useCustomerMutations'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { DatePicker } from '@/shared/ui/DatePicker'
 import { Button } from '@/shared/ui/button'
@@ -76,6 +77,13 @@ export default function CreateReceipt() {
       setCustomerModalOpen(false)
     },
     [queryClient, form, setSelectedCustomer],
+  )
+
+  const { mutate: createCustomer, isPending: isCreatingCustomer } = useCreateCustomer(handleCustomerCreated)
+
+  const handleCustomerSave = useCallback(
+    (values: CustomerFormValues) => createCustomer(values),
+    [createCustomer],
   )
 
   return (
@@ -217,7 +225,7 @@ export default function CreateReceipt() {
         </Form>
       </div>
 
-      <CustomerModal open={customerModalOpen} onClose={() => setCustomerModalOpen(false)} onCreated={handleCustomerCreated} />
+      <CustomerModal open={customerModalOpen} onClose={() => setCustomerModalOpen(false)} onSave={handleCustomerSave} isPending={isCreatingCustomer} />
     </>
   )
 }

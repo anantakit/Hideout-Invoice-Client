@@ -1,4 +1,4 @@
-import type { Customer } from '../customers/types'
+import type { Customer } from '@/shared/types/customer'
 import type { Meta } from '@/shared/types/pagination'
 
 export interface ReceiptItem {

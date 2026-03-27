@@ -1,14 +1,8 @@
 import type { Meta } from '@/shared/types/pagination'
+import type { Customer } from '@/shared/types/customer'
 
-export interface Customer {
-  id: string
-  name: string
-  tax_id: string
-  address: string
-  phone: string
-  created_at: string
-  updated_at: string
-}
+// Canonical definition lives in @/shared/types/customer — re-export for feature-internal use
+export type { Customer } from '@/shared/types/customer'
 
 export interface CustomerListResponse {
   data: Customer[]

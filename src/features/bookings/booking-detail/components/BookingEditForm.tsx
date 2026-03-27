@@ -2,8 +2,8 @@ import { X } from 'lucide-react'
 import { Input } from '@/shared/ui/input'
 import { Button } from '@/shared/ui/button'
 import SearchableComboBox from '@/shared/ui/SearchableComboBox'
-import { customersApi } from '../../../customers/api'
-import type { Customer } from '../../../customers/types'
+import { customersApi } from '@/shared/api/customers'
+import type { Customer } from '@/shared/types/customer'
 
 export interface BookingEditFields {
   name: string

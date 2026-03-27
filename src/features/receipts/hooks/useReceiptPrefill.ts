@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { UseFormReturn } from 'react-hook-form'
-import { customersApi } from '../../customers/api'
-import type { Customer } from '../../customers/types'
-import { useInvoicePrefill, useInvoiceCoverage } from '../../bookings/hooks'
+import { customersApi } from '@/shared/api/customers'
+import type { Customer } from '@/shared/types/customer'
+import { useInvoicePrefill, useInvoiceCoverage } from '@/shared/hooks/useInvoicePrefill'
 import type { ReceiptFormValues } from '../schemas'
 import { METHOD_MAP } from '../schemas'
 

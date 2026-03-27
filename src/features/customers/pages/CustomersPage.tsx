@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 import { customersApi } from '../api'
 import { useDeleteCustomer } from '../hooks/useDeleteCustomer'
+import { useCreateCustomer, useUpdateCustomer } from '@/shared/hooks/useCustomerMutations'
 import CustomerModal from '../components/CustomerModal'
+import type { CustomerFormValues } from '../components/CustomerModal'
 import { useDataTable } from '@/shared/hooks/useDataTable'
 import { DataTableShell } from '@/shared/components/DataTableShell'
 import type { Customer } from '../types'
@@ -51,10 +53,19 @@ export default function Customers() {
     setEditingCustomer(null)
   }
 
-  const handleSaved = () => {
+  const handleSaved = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['customers'] })
     handleClose()
-  }
+  }, [queryClient])
+
+  const { mutate: createCustomer, isPending: isCreating } = useCreateCustomer(handleSaved)
+  const { mutate: updateCustomer, isPending: isUpdating } = useUpdateCustomer(handleSaved)
+  const isSaving = isCreating || isUpdating
+
+  const handleSave = useCallback((values: CustomerFormValues) => {
+    if (editingCustomer) updateCustomer({ id: editingCustomer.id, payload: values })
+    else createCustomer(values)
+  }, [editingCustomer, createCustomer, updateCustomer])
 
   return (
     <>
@@ -139,7 +150,8 @@ export default function Customers() {
       <CustomerModal
         open={modalOpen}
         onClose={handleClose}
-        onCreated={handleSaved}
+        onSave={handleSave}
+        isPending={isSaving}
         customer={editingCustomer ?? undefined}
       />
     </>

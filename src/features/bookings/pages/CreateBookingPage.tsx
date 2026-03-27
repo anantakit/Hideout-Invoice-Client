@@ -19,7 +19,7 @@ export default function CreateBookingPage() {
     submitLabel, onSubmit,
     selectedCustomer, setSelectedCustomer,
     customerModalOpen, setCustomerModalOpen,
-    handleCustomerCreated, navigate,
+    handleCustomerSave, isCreatingCustomer, navigate,
   } = useCreateBookingForm()
 
   return (
@@ -99,7 +99,8 @@ export default function CreateBookingPage() {
             setSelectedCustomer={setSelectedCustomer}
             customerModalOpen={customerModalOpen}
             setCustomerModalOpen={setCustomerModalOpen}
-            handleCustomerCreated={handleCustomerCreated}
+            handleCustomerSave={handleCustomerSave}
+            isCreatingCustomer={isCreatingCustomer}
           />
 
           {/* ── 3. Room bookings ─────────────────────────────────────── */}

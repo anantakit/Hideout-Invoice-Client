@@ -11,7 +11,9 @@ import { createBookingSchema } from '../utils/createBookingSchema'
 import type { CreateBookingFormValues } from '../utils/createBookingSchema'
 import { expandGroupedStays } from '../utils/expandGroupedStays'
 import { ROUTES } from '@/app/routes'
-import type { Customer } from '../../../customers/types'
+import type { Customer } from '@/shared/types/customer'
+import type { CustomerFormValues } from '@/shared/components/CustomerModal'
+import { useCreateCustomer } from '@/shared/hooks/useCustomerMutations'
 
 export const SOURCE_OPTIONS = [
   { value: 'advance' as const, label: 'จองล่วงหน้า', desc: 'จองห้องพักล่วงหน้า' },
@@ -77,9 +79,15 @@ export function useCreateBookingForm() {
       setSelectedCustomer(customer)
       form.setValue('customer_id', customer.id)
       setCustomerModalOpen(false)
-      toast.success(`เพิ่มลูกค้า "${customer.name}" สำเร็จ`)
     },
     [queryClient, form],
+  )
+
+  const { mutate: createCustomerMutate, isPending: isCreatingCustomer } = useCreateCustomer(handleCustomerCreated)
+
+  const handleCustomerSave = useCallback(
+    (values: CustomerFormValues) => createCustomerMutate(values),
+    [createCustomerMutate],
   )
 
   const submitLabel =
@@ -147,7 +155,8 @@ export function useCreateBookingForm() {
     setSelectedCustomer,
     customerModalOpen,
     setCustomerModalOpen,
-    handleCustomerCreated,
+    handleCustomerSave,
+    isCreatingCustomer,
     navigate,
   }
 }
