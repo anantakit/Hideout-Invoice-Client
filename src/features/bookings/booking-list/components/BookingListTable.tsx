@@ -12,24 +12,14 @@ import {
 } from '@/shared/ui/table'
 import Pagination from '@/shared/ui/Pagination'
 import { type BookingResponse, getStatusLabel } from '../../types'
+import { bookingStatusVariant } from '../../booking-detail/utils/bookingStatusHelpers'
 import { getRoomInfo, getStayRange } from '../utils/bookingListUtils'
 
 // ── Status badge ────────────────────────────────────────────────────────────
 
-type BadgeVariant = 'blue' | 'green' | 'gray' | 'red' | 'amber'
-
-const STATUS_VARIANTS: Record<string, BadgeVariant> = {
-  CONFIRMED:            'blue',
-  RESERVED:             'gray',
-  PARTIALLY_CHECKED_IN: 'amber',
-  CHECKED_IN:           'green',
-  CHECKED_OUT:          'gray',
-  CANCELLED:            'red',
-}
-
 function StatusBadge({ status }: { status: string }) {
   return (
-    <Badge variant={STATUS_VARIANTS[status] ?? 'gray'}>
+    <Badge variant={bookingStatusVariant(status)}>
       {getStatusLabel(status)}
     </Badge>
   )

@@ -2,16 +2,16 @@ import { differenceInDays, isToday, isBefore, startOfDay, parseISO, addDays } fr
 
 // ─── Badge variant types ─────────────────────────────────────────────────────
 
-export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'gray' | 'green' | 'red' | 'amber'
+export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'blue' | 'gray' | 'green' | 'red' | 'amber'
 
 export function bookingStatusVariant(status: string): BadgeVariant {
   switch (status) {
-    case 'CONFIRMED':            return 'default'
+    case 'CONFIRMED':            return 'blue'
     case 'PARTIALLY_CHECKED_IN': return 'amber'
     case 'CHECKED_IN':           return 'green'
     case 'CHECKED_OUT':          return 'gray'
     case 'CANCELLED':            return 'red'
-    default:                     return 'gray'
+    default:                     return 'default'
   }
 }
 

@@ -10,6 +10,7 @@ import { cn, formatCompactNumber } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Separator } from '@/shared/ui/separator'
 import { type TimelineBooking, getStatusLabel } from '../../types'
+import { bookingStatusVariant } from '../../booking-detail/utils/bookingStatusHelpers'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -18,25 +19,6 @@ function fmtDate(iso: string): string {
     return format(parseISO(iso), 'MMM d')
   } catch {
     return iso
-  }
-}
-
-function statusBadgeVariant(
-  status: string,
-): 'default' | 'amber' | 'green' | 'gray' | 'red' | 'blue' {
-  switch (status) {
-    case 'CONFIRMED':
-      return 'blue'
-    case 'PARTIALLY_CHECKED_IN':
-      return 'amber'
-    case 'CHECKED_IN':
-      return 'green'
-    case 'CHECKED_OUT':
-      return 'gray'
-    case 'CANCELLED':
-      return 'red'
-    default:
-      return 'default'
   }
 }
 
@@ -141,7 +123,7 @@ function BookingBlockTooltip({
 
       <div className="mt-1.5">
         <Badge
-          variant={statusBadgeVariant(booking.status)}
+          variant={bookingStatusVariant(booking.status)}
           className="text-micro px-1.5 py-0"
         >
           {getStatusLabel(booking.status)}

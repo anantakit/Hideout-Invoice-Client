@@ -14,6 +14,7 @@ import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import { fmtThaiDate, formatTHBCurrency, formatPhone } from '@/shared/utils'
 import { type TimelineBooking, getStatusLabel } from '../../types'
+import { bookingStatusVariant } from '../../booking-detail/utils/bookingStatusHelpers'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -27,19 +28,6 @@ export interface SelectedBookingContext {
 interface BookingBottomSheetProps {
   selected: SelectedBookingContext | null
   onClose: () => void
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function statusVariant(status: string): 'default' | 'amber' | 'green' | 'gray' | 'red' | 'blue' {
-  switch (status) {
-    case 'CONFIRMED':             return 'blue'
-    case 'PARTIALLY_CHECKED_IN':  return 'amber'
-    case 'CHECKED_IN':            return 'green'
-    case 'CHECKED_OUT':           return 'gray'
-    case 'CANCELLED':             return 'red'
-    default:                      return 'default'
-  }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -72,7 +60,7 @@ const BookingBottomSheet = React.memo(function BookingBottomSheet({
             <SheetTitle className="text-section leading-tight">
               {booking.guest_name}
             </SheetTitle>
-            <Badge variant={statusVariant(booking.status)}>
+            <Badge variant={bookingStatusVariant(booking.status)}>
               {getStatusLabel(booking.status)}
             </Badge>
           </div>

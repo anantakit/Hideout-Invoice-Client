@@ -11,24 +11,12 @@ import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { ConfirmActionCard } from '@/shared/ui/confirm-action-card'
 import { type TimelineBooking, getStatusLabel } from '../../types'
+import { bookingStatusVariant } from '../../booking-detail/utils/bookingStatusHelpers'
 import { useBooking, useCheckoutRooms } from '../../hooks'
 import { InlineCheckIn } from '../../shared/components/InlineCheckIn'
 import { DepositBadge } from '../../shared/components/DepositBadge'
 import type { SelectedBookingContext } from './OperationsDrawer'
 import { CheckoutAllButton } from './CheckoutAllButton'
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function statusVariant(status: string): 'default' | 'amber' | 'green' | 'gray' | 'red' | 'blue' {
-  switch (status) {
-    case 'CONFIRMED':             return 'blue'
-    case 'PARTIALLY_CHECKED_IN':  return 'amber'
-    case 'CHECKED_IN':            return 'green'
-    case 'CHECKED_OUT':           return 'gray'
-    case 'CANCELLED':             return 'red'
-    default:                      return 'default'
-  }
-}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -94,7 +82,7 @@ export function BookingDetailContent({
             <span className="text-base font-semibold text-foreground truncate">
               {booking.guest_name}
             </span>
-            <Badge variant={statusVariant(booking.status)} className="shrink-0">
+            <Badge variant={bookingStatusVariant(booking.status)} className="shrink-0">
               {getStatusLabel(booking.status)}
             </Badge>
           </div>
