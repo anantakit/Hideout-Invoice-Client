@@ -1,52 +1,19 @@
-import React, { type CSSProperties, useCallback, useMemo, useRef } from 'react'
-import { differenceInDays, format, parseISO } from 'date-fns'
-import { Users, BedDouble, Clock, Footprints, CalendarCheck, ArrowRightLeft, CheckCircle2 } from 'lucide-react'
+import React, { type CSSProperties, useMemo } from 'react'
 import {
   TIMELINE_BLOCK_HEIGHT_PX,
   TIMELINE_BLOCK_GAP_PX,
   TIMELINE_BLOCK_PADDING_PX,
 } from '../utils/tokens'
-import { cn, todayISO, formatCompactNumber } from '@/shared/utils'
+import { cn, todayISO } from '@/shared/utils'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/shared/ui/tooltip'
-import { Badge } from '@/shared/ui/badge'
-import { Separator } from '@/shared/ui/separator'
-import { type TimelineBooking, getStatusLabel } from '../../types'
+import type { TimelineBooking } from '../../types'
 import { useHoveredBookingId, useBookingHoverHandlers } from './HoverContext'
 import type { DragMode, DragState } from '../hooks/useTimelineDrag'
+import { useBookingBlockDrag } from '../hooks/useBookingBlockDrag'
+import BookingBlockContent from './BookingBlockContent'
+import BookingBlockTooltip from './BookingBlockTooltip'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function fmtDate(iso: string): string {
-  try { return format(parseISO(iso), 'MMM d') } catch { return iso }
-}
-
-function statusBadgeVariant(
-  status: string,
-): 'default' | 'amber' | 'green' | 'gray' | 'red' | 'blue' {
-  switch (status) {
-    case 'CONFIRMED':             return 'blue'
-    case 'PARTIALLY_CHECKED_IN':  return 'amber'
-    case 'CHECKED_IN':            return 'green'
-    case 'CHECKED_OUT':           return 'gray'
-    case 'CANCELLED':             return 'red'
-    default:                      return 'default'
-  }
-}
-
-const SOURCE_LABEL: Record<string, string> = {
-  walk_in: 'Walk-in',
-  advance: 'จองล่วงหน้า',
-}
-
-const SOURCE_ICON: Record<string, React.ElementType> = {
-  walk_in:  Footprints,
-  advance:  CalendarCheck,
-}
-
-/** Statuses that can be dragged/resized. */
-const DRAGGABLE_STATUSES = new Set(['CONFIRMED', 'RESERVED', 'ASSIGNED', 'CHECKED_IN', 'PARTIALLY_CHECKED_IN'])
-
-// ─── BookingBlock ─────────────────────────────────────────────────────────────
+// ── Props ────────────────────────────────────────────────────────────────────
 
 export interface BookingBlockProps {
   booking: TimelineBooking
@@ -90,6 +57,8 @@ export interface BookingBlockProps {
   onKeyboardResize?: (booking: TimelineBooking, roomId: string, edge: 'extend' | 'shrink') => void
 }
 
+// ── Component ────────────────────────────────────────────────────────────────
+
 const BookingBlock = React.memo(function BookingBlock({
   booking,
   roomId,
@@ -110,7 +79,6 @@ const BookingBlock = React.memo(function BookingBlock({
   onKeyboardMove,
   onKeyboardResize,
 }: BookingBlockProps) {
-  // Read hover state from external store — only this component re-renders on hover change
   const hoveredBookingId = useHoveredBookingId()
   const { onHoverStart, onHoverEnd } = useBookingHoverHandlers()
 
@@ -119,127 +87,47 @@ const BookingBlock = React.memo(function BookingBlock({
       ? null
       : hoveredBookingId === booking.booking_id
   const isMultiLayer = totalLayers > 1
+  const isMultiRoom = roomCount > 1
+  const status = booking.status
 
-  const isDraggable = DRAGGABLE_STATUSES.has(booking.status)
-  const isBeingDragged =
-    dragState?.booking.room_stay_id === booking.room_stay_id &&
-    dragState?.sourceRoomId === roomId
+  const {
+    isDraggable,
+    isBeingDragged,
+    handleClick,
+    handleDoubleClick,
+    handleKeyDown,
+    handlePointerDown,
+    handleResizeLeftDown,
+    handleResizeRightDown,
+    handleContextMenu,
+  } = useBookingBlockDrag({
+    booking,
+    roomId,
+    roomNumber,
+    onTap,
+    onDoubleTap,
+    onDragStart,
+    dragState,
+    onContextMenu,
+    onKeyboardMove,
+    onKeyboardResize,
+  })
 
   const positionStyle = useMemo<CSSProperties>(() => {
     const base = {
       '--tl-offset': offsetDays,
-      '--tl-span':   spanDays,
+      '--tl-span': spanDays,
     } as CSSProperties
 
     if (!isMultiLayer) {
-      // Single layer: fill row with 4px top/bottom padding (original behavior)
       return { ...base, top: '4px', bottom: '4px' }
     }
 
-    // Multi-layer: stack vertically with fixed block height
     const top =
       TIMELINE_BLOCK_PADDING_PX +
       layerIndex * (TIMELINE_BLOCK_HEIGHT_PX + TIMELINE_BLOCK_GAP_PX)
     return { ...base, top: `${top}px`, height: `${TIMELINE_BLOCK_HEIGHT_PX}px` }
   }, [offsetDays, spanDays, isMultiLayer, layerIndex])
-
-  const isMultiRoom = roomCount > 1
-  const status = booking.status
-
-  // ── Click vs double-click discrimination ──────────────────────────────
-  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const handleClick = useCallback(() => {
-    if (isBeingDragged) return
-    if (onDoubleTap) {
-      // If there's a double-click handler, delay single click to distinguish
-      if (clickTimerRef.current) return // second click pending — ignore
-      clickTimerRef.current = setTimeout(() => {
-        clickTimerRef.current = null
-        onTap(booking)
-      }, 250)
-    } else {
-      onTap(booking)
-    }
-  }, [isBeingDragged, onTap, onDoubleTap, booking])
-
-  const handleDoubleClick = useCallback(() => {
-    if (isBeingDragged) return
-    // Cancel pending single-click
-    if (clickTimerRef.current) {
-      clearTimeout(clickTimerRef.current)
-      clickTimerRef.current = null
-    }
-    onDoubleTap?.(booking)
-  }, [isBeingDragged, onDoubleTap, booking])
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onTap(booking)
-    }
-    // Shift+F10 opens context menu (standard keyboard shortcut)
-    if (e.key === 'F10' && e.shiftKey && onContextMenu) {
-      e.preventDefault()
-      const rect = (e.target as HTMLElement).getBoundingClientRect()
-      onContextMenu(booking, roomId, roomNumber, rect.left + rect.width / 2, rect.top + rect.height / 2)
-    }
-    // Arrow keys: move booking (Shift+Arrow = extend/shrink stay)
-    if (isDraggable && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-      e.preventDefault()
-      if (e.shiftKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
-        onKeyboardResize?.(booking, roomId, e.key === 'ArrowRight' ? 'extend' : 'shrink')
-      } else {
-        const dir = e.key === 'ArrowLeft' ? 'left' : e.key === 'ArrowRight' ? 'right' : e.key === 'ArrowUp' ? 'up' : 'down'
-        onKeyboardMove?.(booking, roomId, dir)
-      }
-    }
-  }, [onTap, booking, onContextMenu, roomId, roomNumber, isDraggable, onKeyboardMove, onKeyboardResize])
-
-  // ── Drag handlers ──────────────────────────────────────────────────────
-
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      if (e.button !== 0) return
-      if (!isDraggable || !onDragStart) return
-      // Don't preventDefault — let click events fire normally for taps.
-      // The drag hook uses a threshold before activating drag mode.
-      onDragStart(e, booking, roomId, 'move')
-    },
-    [isDraggable, onDragStart, booking, roomId],
-  )
-
-  const handleResizeLeftDown = useCallback(
-    (e: React.PointerEvent) => {
-      e.stopPropagation()
-      if (e.button !== 0) return
-      if (!isDraggable || !onDragStart) return
-      onDragStart(e, booking, roomId, 'resize-left')
-    },
-    [isDraggable, onDragStart, booking, roomId],
-  )
-
-  const handleResizeRightDown = useCallback(
-    (e: React.PointerEvent) => {
-      e.stopPropagation()
-      if (e.button !== 0) return
-      if (!isDraggable || !onDragStart) return
-      onDragStart(e, booking, roomId, 'resize-right')
-    },
-    [isDraggable, onDragStart, booking, roomId],
-  )
-
-  // ── Context menu handler ───────────────────────────────────────────────
-
-  const handleContextMenu = useCallback(
-    (e: React.MouseEvent) => {
-      if (!onContextMenu) return
-      e.preventDefault()
-      e.stopPropagation()
-      onContextMenu(booking, roomId, roomNumber, e.clientX, e.clientY)
-    },
-    [onContextMenu, booking, roomId, roomNumber],
-  )
 
   return (
     <Tooltip delayDuration={300}>
@@ -247,38 +135,28 @@ const BookingBlock = React.memo(function BookingBlock({
         <button
           type="button"
           tabIndex={0}
-          data-stay-status={booking.status}
+          data-stay-status={status}
           className={cn(
             'tl-booking-block',
             'absolute',
             'min-h-[40px]',
-            // Card shape
             'rounded-lg border overflow-hidden',
-            // Layout
             'flex items-center px-2.5 gap-1.5',
             'select-none',
-            // Hover & highlight transitions
             'transition-[opacity,box-shadow,filter,transform] duration-150',
-            // Focus-visible for keyboard navigation
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-            // Cursor & touch
             isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
-            // Dragging state — dim the source block
             isBeingDragged && 'opacity-30 pointer-events-none',
-            // Group for resize handle hover
             'group/block',
-            // ── Status-based visual styling ──
             !isBeingDragged && (
               status === 'CANCELLED'
                 ? [
-                    // Cancelled: transparent bg, dashed border, faded
                     'border-dashed border-bk-cancelled/70 bg-transparent text-bk-cancelled-foreground opacity-60',
                     isHighlighted === true  && 'opacity-70 ring-1 ring-inset ring-bk-cancelled/30',
                     isHighlighted === false && 'opacity-15',
                   ]
                 : status === 'CHECKED_OUT'
                   ? [
-                      // Checked-out: same color but reduced opacity
                       'border-transparent shadow-card',
                       colorClass,
                       'opacity-60',
@@ -287,14 +165,12 @@ const BookingBlock = React.memo(function BookingBlock({
                     ]
                   : isUpcoming
                     ? [
-                        // Upcoming / reserved: dashed border, muted
                         'border-dashed border-bk-reserved/60 bg-bk-reserved/20 text-bk-reserved',
                         isHighlighted === null  && 'opacity-80 hover:opacity-95 hover:shadow-md hover:brightness-105',
                         isHighlighted === true  && 'opacity-95 shadow-md ring-2 ring-inset ring-primary/30',
                         isHighlighted === false && 'opacity-20',
                       ]
                     : [
-                        // Active bookings (checked-in, confirmed, etc)
                         'border-transparent shadow-card',
                         colorClass,
                         isHighlighted === null  && 'hover:shadow-md hover:brightness-105',
@@ -302,7 +178,6 @@ const BookingBlock = React.memo(function BookingBlock({
                         isHighlighted === false && 'opacity-25',
                       ]
             ),
-            // Past bookings fade
             !isBeingDragged && !isUpcoming && status !== 'CANCELLED' && status !== 'CHECKED_OUT' &&
               booking.check_out.slice(0, 10) <= todayISO() && 'opacity-60',
           )}
@@ -318,173 +193,28 @@ const BookingBlock = React.memo(function BookingBlock({
           onContextMenu={handleContextMenu}
           aria-label={`${booking.guest_name} — ห้อง ${roomNumber}`}
         >
-          {/* Resize handle — left edge (stays inside block to avoid blocking adjacent cells) */}
-          {isDraggable && !isBeingDragged && (
-            <div
-              className="absolute left-0 inset-y-0 w-3 cursor-col-resize opacity-0 group-hover/block:opacity-100 tl-resize-handle transition-opacity z-10 flex items-center justify-center"
-              onPointerDown={handleResizeLeftDown}
-            >
-              <div className="flex gap-px">
-                <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
-                <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
-              </div>
-            </div>
-          )}
-
-          {/* Resize handle — right edge (stays inside block to avoid blocking adjacent cells) */}
-          {isDraggable && !isBeingDragged && (
-            <div
-              className="absolute right-0 inset-y-0 w-3 cursor-col-resize opacity-0 group-hover/block:opacity-100 tl-resize-handle transition-opacity z-10 flex items-center justify-center"
-              onPointerDown={handleResizeRightDown}
-            >
-              <div className="flex gap-px">
-                <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
-                <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
-              </div>
-            </div>
-          )}
-
-
-
-          {/* Left accent bar for multi-room bookings */}
-          {isMultiRoom && (
-            <div className={cn(
-              'absolute left-0 inset-y-0 w-[3px]',
-              isUpcoming ? 'bg-primary/30' : 'bg-foreground/20',
-            )} />
-          )}
-
-          {/* Right edge checkout indicator */}
-          {showCheckoutEdge && !isUpcoming && (
-            <div className="absolute right-0 inset-y-0 w-[3px] bg-foreground/30 rounded-r-sm" />
-          )}
-
-          {/* Transfer indicator — this stay was created by a room transfer */}
-          {booking.transfer_from_stay_id && !isUpcoming && (
-            <ArrowRightLeft className="w-2.5 h-2.5 shrink-0 opacity-70" />
-          )}
-
-          {/* Early checkout indicator */}
-          {booking.early_checkout && !isUpcoming && (
-            <CheckCircle2 className="w-2.5 h-2.5 shrink-0 text-success opacity-80" />
-          )}
-
-          {/* Clock icon for upcoming */}
-          {isUpcoming && (
-            <Clock className="w-3 h-3 shrink-0 text-muted-foreground/60" />
-          )}
-
-          {/* Top-right indicators: payment dot + source icon */}
-          {!isUpcoming && (
-            <div className="absolute top-0.5 right-1 flex items-center gap-1">
-              {(() => {
-                const SourceIcon = SOURCE_ICON[booking.source]
-                return SourceIcon ? <SourceIcon className="w-2.5 h-2.5 opacity-60" /> : null
-              })()}
-              <span
-                className={cn(
-                  'w-1.5 h-1.5 radius-badge',
-                  Number(booking.balance_amount) > 0
-                    ? 'bg-foreground/80 ring-1 ring-destructive'
-                    : 'bg-foreground/30',
-                )}
-              />
-            </div>
-          )}
-
-          {/* Content */}
-          <div className={cn('flex flex-col min-w-0 flex-1', isMultiRoom && !isUpcoming && 'pl-1')}>
-            <span className="truncate text-micro-sm font-bold leading-tight drop-shadow-sm">
-              {booking.guest_name}
-            </span>
-            <span className="flex items-center gap-0.5 text-[10px] leading-tight opacity-80 truncate">
-              {isMultiRoom
-                ? <Users className="w-2.5 h-2.5 shrink-0" />
-                : <BedDouble className="w-2.5 h-2.5 shrink-0" />}
-              {roomCount} ห้อง
-            </span>
-          </div>
+          <BookingBlockContent
+            booking={booking}
+            roomCount={roomCount}
+            isUpcoming={isUpcoming}
+            isDraggable={isDraggable}
+            isBeingDragged={isBeingDragged}
+            isMultiRoom={isMultiRoom}
+            onResizeLeftDown={handleResizeLeftDown}
+            onResizeRightDown={handleResizeRightDown}
+            showCheckoutEdge={showCheckoutEdge}
+          />
         </button>
       </TooltipTrigger>
 
-      {/* ── Tooltip ──────────────────────────────────────────────────────── */}
       <TooltipContent side="top" className="max-w-[220px]">
-        <p className="font-semibold text-foreground leading-snug">
-          {booking.guest_name}
-        </p>
-
-        <p className="text-micro text-muted-foreground/70 font-mono mt-0.5">
-          #{booking.booking_id.slice(0, 8)}
-        </p>
-
-        <Separator className="my-1.5" />
-
-        <p className="text-helper">ห้อง {roomNumber}</p>
-
-        {isMultiRoom && (
-          <p className="text-helper flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            {roomCount} ห้อง (จองกลุ่ม)
-          </p>
-        )}
-
-        <p className="text-helper mt-0.5">
-          {fmtDate(booking.check_in)} → {fmtDate(booking.check_out)}
-          <span className="ml-1 opacity-70">
-            ({differenceInDays(parseISO(booking.check_out), parseISO(booking.check_in))} คืน)
-          </span>
-        </p>
-
-        {booking.source && (
-          <p className="text-micro text-muted-foreground/70 mt-0.5">
-            ช่องทาง: {SOURCE_LABEL[booking.source] ?? booking.source}
-          </p>
-        )}
-
-        {booking.transfer_from_stay_id && (
-          <p className="text-micro text-info mt-0.5 flex items-center gap-1">
-            <ArrowRightLeft className="w-3 h-3" />
-            ย้ายมาจากห้องอื่น
-          </p>
-        )}
-
-        {booking.early_checkout && (
-          <p className="text-micro text-success mt-0.5 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" />
-            เช็คเอาท์ก่อนกำหนด
-          </p>
-        )}
-
-        {isUpcoming && (
-          <p className="text-helper text-primary/70 flex items-center gap-1 mt-0.5">
-            <Clock className="w-3 h-3" />
-            จะมาถึง
-          </p>
-        )}
-
-        {!isUpcoming && (
-          <p className={cn(
-            'text-helper mt-0.5',
-            Number(booking.balance_amount) > 0 ? 'text-destructive' : 'text-success',
-          )}>
-            {Number(booking.balance_amount) > 0
-              ? `ค้าง ฿${formatCompactNumber(Number(booking.balance_amount))}`
-              : 'ชำระแล้ว'}
-          </p>
-        )}
-
-        <div className="mt-1.5">
-          <Badge
-            variant={statusBadgeVariant(booking.status)}
-            className="text-micro px-1.5 py-0"
-          >
-            {getStatusLabel(booking.status)}
-          </Badge>
-        </div>
-
-        <p className="text-micro text-muted-foreground/50 mt-1.5">
-          คลิกขวาเพื่อดูเมนู
-        </p>
+        <BookingBlockTooltip
+          booking={booking}
+          roomNumber={roomNumber}
+          roomCount={roomCount}
+          isUpcoming={isUpcoming}
+          isMultiRoom={isMultiRoom}
+        />
       </TooltipContent>
     </Tooltip>
   )
