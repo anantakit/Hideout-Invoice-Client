@@ -8,7 +8,7 @@ import {
 } from '@/shared/ui/alert-dialog'
 import { useCheckInRooms } from '../../hooks'
 import type { RoomStayResponse } from '../../types'
-import { useCheckInAvailability } from '../../timeline/hooks/useCheckInData'
+import { useCheckInAvailability } from '../hooks/useCheckInAvailability'
 import { CheckInStayRow } from './CheckInStayRow'
 
 interface InlineCheckInProps {
