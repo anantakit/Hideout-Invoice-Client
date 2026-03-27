@@ -1,20 +1,15 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { adminApi } from '../api'
 import { useDeleteUser } from '../hooks/useDeleteUser'
 import { useAuth } from '@/app/providers/AuthProvider'
 import UserModal from '../components/UserModal'
-import Pagination from '@/shared/ui/Pagination'
+import { useDataTable } from '@/shared/hooks/useDataTable'
+import { DataTableShell } from '@/shared/components/DataTableShell'
 import type { User } from '@/shared/types/auth'
 import { formatThaiDate } from '@/shared/utils'
-import { usePaginatedQuery } from '@/shared/hooks/usePaginatedQuery'
-import { Card } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
-import { Input } from '@/shared/ui/input'
-import { Fab } from '@/shared/ui/Fab'
-import { Skeleton } from '@/shared/ui/skeleton'
 import { Badge } from '@/shared/ui/badge'
 import {
   Table,
@@ -55,12 +50,9 @@ export default function AdminUsers() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | undefined>()
 
-  const { page, limit, searchInput, params, setPage, setLimit, setSearchInput } = usePaginatedQuery()
-
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['admin-users', params],
-    queryFn: () => adminApi.listUsers(params),
-    placeholderData: (prev) => prev,
+  const table = useDataTable<User>({
+    queryKey: 'admin-users',
+    queryFn: adminApi.listUsers,
   })
 
   const deleteMutation = useDeleteUser()
@@ -75,160 +67,97 @@ export default function AdminUsers() {
     setEditingUser(undefined)
   }
 
-  const users = data?.data ?? []
-  const total = data?.meta.total ?? 0
-  const totalPages = data?.meta.total_pages ?? 1
-
   return (
     <>
-      <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-24 md:pb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-section text-2xl">จัดการผู้ใช้</h1>
-            <p className="text-helper mt-1">
-              {data ? `ผู้ใช้ทั้งหมด ${total} คน` : 'กำลังโหลด…'}
-            </p>
-          </div>
-          <Button
-            onClick={() => { setEditingUser(undefined); setModalOpen(true) }}
-            className="hidden md:inline-flex"
-          >
-            <Plus className="w-4 h-4" />
-            เพิ่มผู้ใช้
-          </Button>
-        </div>
-
-        {/* Search */}
-        <div className="bg-card radius-card border border-border p-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="ค้นหาชื่อหรือ username…"
-              className="pl-9"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <Card className="overflow-hidden">
-          {isLoading ? (
-            <div className="p-4 space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-5 w-14 rounded-full" />
-                  <Skeleton className="h-4 w-24 hidden md:block" />
-                  <Skeleton className="h-8 w-8 rounded-md ml-auto" />
-                </div>
-              ))}
-            </div>
-          ) : users.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <p className="text-sm">
-                {searchInput ? 'ไม่พบผู้ใช้ที่ตรงกับการค้นหา' : 'ยังไม่มีผู้ใช้'}
-              </p>
-            </div>
-          ) : (
-            <div className={`transition-opacity duration-150 ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ชื่อ / ชื่อผู้ใช้</TableHead>
-                    <TableHead>บทบาท</TableHead>
-                    <TableHead className="hidden md:table-cell">วันที่สร้าง</TableHead>
-                    <TableHead className="text-center">จัดการ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((u) => (
-                    <TableRow key={u.id} className="hover:bg-muted/50 transition-colors">
-                      <TableCell>
-                        <p className="font-medium text-foreground">{u.full_name}</p>
-                        <p className="text-helper mt-0.5">@{u.username}</p>
-                        {u.must_change_password && (
-                          <span className="text-xs text-warning">ต้องเปลี่ยนรหัสผ่าน</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={ROLE_BADGE_VARIANTS[u.role] ?? 'blue'}>
-                          {ROLE_LABELS[u.role] ?? u.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground hidden md:table-cell">
-                        {formatThaiDate(u.created_at)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-8 h-8"
-                            onClick={() => handleEdit(u)}
-                            aria-label="แก้ไข"
+      <DataTableShell
+        title="จัดการผู้ใช้"
+        subtitle={table.isLoading ? null : `ผู้ใช้ทั้งหมด ${table.total} คน`}
+        searchPlaceholder="ค้นหาชื่อหรือ username…"
+        searchInput={table.searchInput}
+        onSearchChange={table.setSearchInput}
+        addAction={{ label: 'เพิ่มผู้ใช้', onClick: () => { setEditingUser(undefined); setModalOpen(true) } }}
+        isLoading={table.isLoading}
+        isFetching={table.isFetching}
+        isEmpty={table.isEmpty}
+        emptyMessage="ยังไม่มีผู้ใช้"
+        emptySearchMessage="ไม่พบผู้ใช้ที่ตรงกับการค้นหา"
+        pagination={table.paginationProps}
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ชื่อ / ชื่อผู้ใช้</TableHead>
+              <TableHead>บทบาท</TableHead>
+              <TableHead className="hidden md:table-cell">วันที่สร้าง</TableHead>
+              <TableHead className="text-center">จัดการ</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {table.items.map((u) => (
+              <TableRow key={u.id} className="hover:bg-muted/50 transition-colors">
+                <TableCell>
+                  <p className="font-medium text-foreground">{u.full_name}</p>
+                  <p className="text-helper mt-0.5">@{u.username}</p>
+                  {u.must_change_password && (
+                    <span className="text-xs text-warning">ต้องเปลี่ยนรหัสผ่าน</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={ROLE_BADGE_VARIANTS[u.role] ?? 'blue'}>
+                    {ROLE_LABELS[u.role] ?? u.role}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground hidden md:table-cell">
+                  {formatThaiDate(u.created_at)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center justify-center gap-1">
+                    <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => handleEdit(u)} aria-label="แก้ไข">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 radius-button text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
+                          disabled={u.id === me?.id}
+                          aria-label="ลบ"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>ลบผู้ใช้?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            ลบผู้ใช้ "{u.full_name}" ({u.username})?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                          <AlertDialogAction
+                            disabled={deleteMutation.isPending}
+                            onClick={() => {
+                              if (u.id === me?.id) {
+                                toast.error('ไม่สามารถลบบัญชีของตนเองได้')
+                                return
+                              }
+                              deleteMutation.mutate(u.id)
+                            }}
                           >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 radius-button text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
-                                disabled={u.id === me?.id}
-                                aria-label="ลบ"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>ลบผู้ใช้?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  ลบผู้ใช้ "{u.full_name}" ({u.username})?
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                                <AlertDialogAction
-                                  disabled={deleteMutation.isPending}
-                                  onClick={() => {
-                                    if (u.id === me?.id) {
-                                      toast.error('ไม่สามารถลบบัญชีของตนเองได้')
-                                      return
-                                    }
-                                    deleteMutation.mutate(u.id)
-                                  }}
-                                >
-                                  {deleteMutation.isPending ? 'กำลังลบ…' : 'ลบ'}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                total={total}
-                limit={limit}
-                onPageChange={setPage}
-                onLimitChange={setLimit}
-              />
-            </div>
-          )}
-        </Card>
-      </div>
-
-      <Fab
-        onClick={() => { setEditingUser(undefined); setModalOpen(true) }}
-        label="เพิ่มผู้ใช้"
-      />
+                            {deleteMutation.isPending ? 'กำลังลบ…' : 'ลบ'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </DataTableShell>
 
       <UserModal open={modalOpen} onClose={handleClose} user={editingUser} />
     </>
