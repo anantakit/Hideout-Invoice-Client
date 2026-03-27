@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '../../../shared/ui/alert-dialog'
-import { ReceiptDateFilter } from '../components/ReceiptDateFilter'
+import { DateRangeFilter } from '@/shared/components/DateRangeFilter'
 import { Fab } from '../../../shared/ui/Fab'
 import { Skeleton } from '../../../shared/ui/skeleton'
 
@@ -192,7 +192,7 @@ export default function ReceiptHistory() {
         </div>
 
         {/* Date range picker */}
-        <ReceiptDateFilter
+        <DateRangeFilter
           startDate={startDate}
           endDate={endDate}
           onRangeChange={handleDateRangeChange}
