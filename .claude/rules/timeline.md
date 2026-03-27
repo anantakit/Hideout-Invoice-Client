@@ -1,12 +1,13 @@
 ---
 description: "Timeline drag, resize, virtualization, and rendering patterns"
 paths:
-  - "src/features/bookings/pages/TimelinePage.tsx"
-  - "src/features/bookings/timeline/**"
+  - "src/features/timeline/**"
   - "src/shared/components/timeline/**"
 ---
 
 # Timeline Rules
+
+> **Note:** Timeline is a top-level feature at `features/timeline/`. It imports booking types, hooks, and shared components from `@/features/bookings/` (see `feature-structure.md` for boundary rules).
 
 ## Drag & Resize System
 
@@ -31,9 +32,16 @@ paths:
 - `useMemo` for booking color map and room count map
 - `useCallback` for all drag/keyboard handlers to prevent RoomRow re-renders
 
-## Current Architecture (Post Phase 3 Split)
+## Architecture
 
-`TimelinePage.tsx` was split into custom hooks:
+`TimelinePage.tsx` orchestrates 4 context providers:
+
+- `TimelineContext` — data: bookingColorMap, roomTypeNameMap, days, rooms, unassigned stays, zoom
+- `TimelineCallbackContext` — callbacks: onSelectBooking, onDragStart, onDrawStart, onContextMenu, onKeyboardMove/Resize
+- `DrawerContext` — drawer state: mode (ops/booking-detail/create-booking), selectedBooking, prefill
+- `DragStateContext` — drag state: dragState, previewPos, isDragging, drawPreview
+
+Core hooks:
 - `useTimelineState.ts` — centralized state (zoom, dates, selection, drag/draw modes, dialogs)
 - `useTimelineDrag.ts` — drag/resize logic
 - `useTimelineKeyboard.ts` — keyboard shortcuts
@@ -44,16 +52,6 @@ paths:
 Hover state uses `useSyncExternalStore` in `HoverContext.tsx` — avoids parent re-renders on hover.
 
 ## Remaining Issues
-
-### Prop Drilling (Critical)
-
-`useTimelineState` returns all state to `TimelinePage`, which passes **~35 props** to `TimelineContent`, which distributes to children:
-
-- `TimelineContent → RoomRow → BookingBlock`: drag/keyboard/context-menu callbacks through 3 levels
-- `TimelineContent → MobileSection → MobileTimelineList`: MobileSection is pure pass-through (zero logic)
-- `RoomRow` receives 18 props, most passed to BookingBlock untouched
-
-**Fix**: Introduce `TimelineContext` (data) + `TimelineCallbackContext` (callbacks) as providers at `TimelinePage` level. Children consume via `useTimelineContext()` / `useTimelineCallbacks()` hooks.
 
 ### Oversized Components
 
