@@ -1,4 +1,4 @@
-import type { TimelineBooking } from '../types'
+import type { TimelineBooking } from '@/features/bookings/types'
 
 // ─── Shared Timeline Types ──────────────────────────────────────────────────
 

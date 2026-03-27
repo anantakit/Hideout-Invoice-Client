@@ -7,7 +7,7 @@ import { BookingDetailContent } from './BookingDetailContent'
 import { InlineCreateBookingForm } from './InlineCreateBookingForm'
 import { useTimelineContext } from '../context/TimelineContext'
 import { useTimelineCallbacks } from '../context/TimelineCallbackContext'
-import type { SelectedBookingContext } from '../types'
+import type { SelectedBookingContext } from '@/features/timeline/types'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 

@@ -15,7 +15,7 @@ import { Separator } from '@/shared/ui/separator'
 import { fmtThaiDate, formatTHBCurrency, formatPhone } from '@/shared/utils'
 import { getStatusLabel } from '../../types'
 import { bookingStatusVariant } from '../../shared/utils/bookingStatusHelpers'
-import type { SelectedBookingContext } from '../types'
+import type { SelectedBookingContext } from '@/features/timeline/types'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
