@@ -1,5 +1,6 @@
-import React, { useRef, useCallback, useMemo, useSyncExternalStore } from 'react'
+import { useRef, useCallback, useMemo } from 'react'
 import { TooltipProvider } from '@/shared/ui/tooltip'
+import { useIsMobile } from '@/shared/hooks/useIsMobile'
 import TimelineToolbar from '../timeline/components/TimelineToolbar'
 import BookingBottomSheet from '../timeline/components/BookingBottomSheet'
 import BookingContextMenu from '../timeline/components/BookingContextMenu'
@@ -19,26 +20,10 @@ import { TimelineCallbackProvider, type TimelineCallbackContextValue } from '../
 import { DrawerProvider, type DrawerContextValue } from '../timeline/context/DrawerContext'
 import { DragStateProvider, type DragStateContextValue } from '../timeline/context/DragStateContext'
 
-// ─── MobileOnly — renders children only below md (768px) ─────────────────────
-
-const mdQuery = '(min-width: 768px)'
-const subscribe = (cb: () => void) => {
-  const mql = window.matchMedia(mdQuery)
-  mql.addEventListener('change', cb)
-  return () => mql.removeEventListener('change', cb)
-}
-const getSnapshot = () => !window.matchMedia(mdQuery).matches
-const getServerSnapshot = () => true
-
-function MobileOnly({ children }: { children: React.ReactNode }) {
-  const isMobile = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
-  if (!isMobile) return null
-  return <>{children}</>
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TimelinePage() {
+  const isMobile = useIsMobile()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const s = useTimelineState(scrollContainerRef)
@@ -159,9 +144,9 @@ export default function TimelinePage() {
             />
 
             {/* ── Bottom sheet (mobile only) ──────────────────────────── */}
-            <MobileOnly>
+            {isMobile && (
               <BookingBottomSheet selected={s.selectedBooking} onClose={s.handleCloseSheet} />
-            </MobileOnly>
+            )}
 
             {/* ── Context menu (portal) ───────────────────────────────── */}
             {s.contextMenu && (

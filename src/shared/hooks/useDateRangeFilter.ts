@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { format, isBefore } from 'date-fns'
+import { useIsMobile } from '@/shared/hooks/useIsMobile'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -25,17 +26,10 @@ interface UseDateRangeFilterOptions {
 
 export function useDateRangeFilter({ startDate, endDate, onRangeChange }: UseDateRangeFilterOptions) {
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [isMobile, setIsMobile]     = useState(() => window.innerWidth < 768)
+  const isMobile = useIsMobile()
   const [pendingStart, setPendingStart] = useState<Date | null>(null)
   const [pendingEnd,   setPendingEnd]   = useState<Date | null>(null)
   const [hoveredDate,  setHoveredDate]  = useState<Date | null>(null)
-
-  // Track viewport breakpoint
-  useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
 
   // Close picker when crossing mobile / desktop boundary
   useEffect(() => {
