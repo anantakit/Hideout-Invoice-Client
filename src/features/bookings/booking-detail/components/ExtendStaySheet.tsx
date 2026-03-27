@@ -20,7 +20,7 @@ import {
   mapRoomGroups,
   addDaysToISO,
   calcNights,
-} from '../utils/bookingStatusHelpers'
+} from '../../shared/utils/bookingStatusHelpers'
 import type { RoomStayResponse, ExtendStayConflictData } from '../../types'
 
 interface ExtendStaySheetProps {

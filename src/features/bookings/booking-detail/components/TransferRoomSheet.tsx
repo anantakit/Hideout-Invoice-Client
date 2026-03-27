@@ -17,7 +17,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { useIsMobile } from '@/shared/hooks/useIsMobile'
 import { formatTHB } from '@/shared/utils'
 import { useAvailabilityGrouped, useTransferRoom } from '../../hooks'
-import { mapRoomGroups, addDaysToISO } from '../utils/bookingStatusHelpers'
+import { mapRoomGroups, addDaysToISO } from '../../shared/utils/bookingStatusHelpers'
 import type { RoomStayResponse } from '../../types'
 
 interface TransferRoomSheetProps {

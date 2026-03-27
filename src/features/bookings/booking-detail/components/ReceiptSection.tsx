@@ -17,7 +17,7 @@ import {
   AlertDialogCancel,
 } from '@/shared/ui/alert-dialog'
 import { formatThaiDate, formatTHB } from '@/shared/utils'
-import { addDaysToISO } from '../utils/bookingStatusHelpers'
+import { addDaysToISO } from '../../shared/utils/bookingStatusHelpers'
 import type { BookingResponse, RoomStayResponse, InvoiceResponseShort } from '../../types'
 import { useReceiptBillingState } from '../hooks/useReceiptBillingState'
 

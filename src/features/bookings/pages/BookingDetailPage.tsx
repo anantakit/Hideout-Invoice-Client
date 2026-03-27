@@ -18,7 +18,7 @@ import { ReceiptSection } from '../booking-detail/components/ReceiptSection'
 import { EventTimeline } from '../booking-detail/components/EventTimeline'
 import { AddStayPanel } from '../booking-detail/components/AddStayPanel'
 import { BookingEditForm, type BookingEditFields } from '../booking-detail/components/BookingEditForm'
-import { bookingStatusVariant } from '../booking-detail/utils/bookingStatusHelpers'
+import { bookingStatusVariant } from '../shared/utils/bookingStatusHelpers'
 import { getStatusLabel } from '../types'
 
 export default function BookingDetailPage() {

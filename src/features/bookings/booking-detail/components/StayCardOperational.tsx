@@ -17,7 +17,7 @@ import {
   calcNights,
   isCheckInToday,
   isCheckInOverdue,
-} from '../utils/bookingStatusHelpers'
+} from '../../shared/utils/bookingStatusHelpers'
 import type { RoomStayResponse, BookingResponse } from '../../types'
 import { getStatusLabel } from '../../types'
 

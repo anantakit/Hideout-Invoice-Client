@@ -10,7 +10,7 @@ import { cn, formatCompactNumber } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Separator } from '@/shared/ui/separator'
 import { type TimelineBooking, getStatusLabel } from '../../types'
-import { bookingStatusVariant } from '../../booking-detail/utils/bookingStatusHelpers'
+import { bookingStatusVariant } from '../../shared/utils/bookingStatusHelpers'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

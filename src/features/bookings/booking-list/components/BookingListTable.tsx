@@ -12,7 +12,7 @@ import {
 } from '@/shared/ui/table'
 import Pagination from '@/shared/ui/Pagination'
 import { type BookingResponse, getStatusLabel } from '../../types'
-import { bookingStatusVariant } from '../../booking-detail/utils/bookingStatusHelpers'
+import { bookingStatusVariant } from '../../shared/utils/bookingStatusHelpers'
 import { getRoomInfo, getStayRange } from '../utils/bookingListUtils'
 
 // ── Status badge ────────────────────────────────────────────────────────────
