@@ -1,11 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="108" fill="#151821"/>
-  <rect x="1" y="1" width="510" height="510" rx="107" fill="none" stroke="rgba(91,124,250,0.06)" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="111 117 290 290">
+  <defs>
+    <!-- Flowing gradients across the full mark width -->
+    <linearGradient id="front" x1="138" y1="256" x2="374" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1838A8"/>
+      <stop offset="35%" stop-color="#3562E0"/>
+      <stop offset="70%" stop-color="#7BA4FF"/>
+      <stop offset="100%" stop-color="#E4EDFF"/>
+    </linearGradient>
+    <linearGradient id="top" x1="138" y1="256" x2="374" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5078F0"/>
+      <stop offset="35%" stop-color="#6B94FF"/>
+      <stop offset="70%" stop-color="#A8CCFF"/>
+      <stop offset="100%" stop-color="#F2F6FF"/>
+    </linearGradient>
+    <linearGradient id="side" x1="138" y1="256" x2="374" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0E2278"/>
+      <stop offset="35%" stop-color="#1E3FA8"/>
+      <stop offset="70%" stop-color="#4468C0"/>
+      <stop offset="100%" stop-color="#8898B8"/>
+    </linearGradient>
+  </defs>
 
-  <!-- H — filled geometric with depth crossbar -->
-  <rect x="152" y="128" width="48" height="256" rx="14" fill="#5B7CFA"/>
-  <rect x="312" y="128" width="48" height="256" rx="14" fill="#5B7CFA"/>
-  <rect x="200" y="228" width="112" height="40" rx="10" fill="#5B7CFA" opacity=".6"/>
+  <!-- Left Pillar -->
+  <path d="M202,136 L214,124 L214,388 L202,400 Z" fill="url(#side)"/>
+  <path d="M138,136 L202,136 L214,124 L150,124 Z" fill="url(#top)"/>
+  <path d="M138,136 L202,136 L202,400 L138,400 Z" fill="url(#front)"/>
 
-  <text x="256" y="432" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="36" letter-spacing="0.28em" fill="rgba(255,255,255,0.45)">HIDEOUT</text>
+  <!-- Right Pillar -->
+  <path d="M362,136 L374,124 L374,388 L362,400 Z" fill="url(#side)"/>
+  <path d="M298,136 L362,136 L374,124 L310,124 Z" fill="url(#top)"/>
+  <path d="M298,136 L362,136 L362,400 L298,400 Z" fill="url(#front)"/>
+
+  <!-- Crossbar -->
+  <path d="M298,234 L310,222 L310,266 L298,278 Z" fill="url(#side)"/>
+  <path d="M202,234 L298,234 L310,222 L214,222 Z" fill="url(#top)"/>
+  <path d="M202,234 L298,234 L298,278 L202,278 Z" fill="url(#front)"/>
 </svg>

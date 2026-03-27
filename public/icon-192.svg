@@ -1,9 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="40" fill="#151821"/>
-  <rect x="1" y="1" width="190" height="190" rx="39" fill="none" stroke="rgba(91,124,250,0.06)" stroke-width="1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="38 38 116 116">
+  <defs>
+    <linearGradient id="front" x1="52" y1="96" x2="143" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1838A8"/>
+      <stop offset="35%" stop-color="#3562E0"/>
+      <stop offset="70%" stop-color="#7BA4FF"/>
+      <stop offset="100%" stop-color="#E4EDFF"/>
+    </linearGradient>
+    <linearGradient id="top" x1="52" y1="96" x2="143" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5078F0"/>
+      <stop offset="35%" stop-color="#6B94FF"/>
+      <stop offset="70%" stop-color="#A8CCFF"/>
+      <stop offset="100%" stop-color="#F2F6FF"/>
+    </linearGradient>
+    <linearGradient id="side" x1="52" y1="96" x2="143" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0E2278"/>
+      <stop offset="35%" stop-color="#1E3FA8"/>
+      <stop offset="70%" stop-color="#4468C0"/>
+      <stop offset="100%" stop-color="#8898B8"/>
+    </linearGradient>
+  </defs>
 
-  <!-- H — filled geometric with depth crossbar -->
-  <rect x="56" y="48" width="20" height="96" rx="6" fill="#5B7CFA"/>
-  <rect x="116" y="48" width="20" height="96" rx="6" fill="#5B7CFA"/>
-  <rect x="76" y="84" width="40" height="16" rx="4" fill="#5B7CFA" opacity=".6"/>
+  <!-- Left Pillar -->
+  <path d="M76,51 L81,46 L81,145 L76,150 Z" fill="url(#side)"/>
+  <path d="M52,51 L76,51 L81,46 L57,46 Z" fill="url(#top)"/>
+  <path d="M52,51 L76,51 L76,150 L52,150 Z" fill="url(#front)"/>
+
+  <!-- Right Pillar -->
+  <path d="M138,51 L143,46 L143,145 L138,150 Z" fill="url(#side)"/>
+  <path d="M114,51 L138,51 L143,46 L119,46 Z" fill="url(#top)"/>
+  <path d="M114,51 L138,51 L138,150 L114,150 Z" fill="url(#front)"/>
+
+  <!-- Crossbar -->
+  <path d="M114,88 L119,83 L119,101 L114,106 Z" fill="url(#side)"/>
+  <path d="M76,88 L114,88 L119,83 L81,83 Z" fill="url(#top)"/>
+  <path d="M76,88 L114,88 L114,106 L76,106 Z" fill="url(#front)"/>
 </svg>

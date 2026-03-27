@@ -38,20 +38,17 @@
     -->
     <div id="splash" class="splash">
       <style>
-        /* ── Token-derived custom properties (splash-scoped) ───────────── */
+        /* ── Tokens ───────────────────────────────────────────────────── */
         .splash {
           --sp-bg:         hsl(224 16% 7%);
-          --sp-bg-card:    hsl(224 18% 14%);
           --sp-accent:     hsl(222 85% 64%);
-          --sp-accent-alt: hsl(260 67% 67%);
-          --sp-text:       hsl(218 16% 92%);
-          --sp-text-muted: hsl(218 10% 60%);
-          --sp-text-dim:   hsl(218 10% 45%);
-          --sp-glow:       hsl(222 85% 64% / .12);
+          --sp-text:       hsl(218 16% 94%);
+          --sp-text-sub:   hsl(218 10% 52%);
           --sp-ease:       cubic-bezier(.4, 0, .2, 1);
+          --sp-spring:     cubic-bezier(.16, 1, .3, 1);
         }
 
-        /* ── Root ──────────────────────────────────────────────────────── */
+        /* ── Root ─────────────────────────────────────────────────────── */
         .splash {
           position: fixed; inset: 0; z-index: 9999;
           display: flex; flex-direction: column;
@@ -63,153 +60,181 @@
           transition: opacity .5s var(--sp-ease);
         }
 
-        /* ── Background: ambient depth layers ──────────────────────────── */
+        /* ── Background ───────────────────────────────────────────────── */
         .splash__background {
           position: absolute; inset: 0; overflow: hidden;
         }
         .splash__background::before,
         .splash__background::after {
           content: ''; position: absolute; border-radius: 50%;
-          filter: blur(80px);
-          animation: sp-ambient 10s var(--sp-ease) infinite alternate;
+          filter: blur(90px);
+          animation: sp-ambient 12s var(--sp-ease) infinite alternate;
         }
-        /* Top-left warm glow */
         .splash__background::before {
           width: 500px; height: 500px;
           top: -15%; left: -10%;
-          background: radial-gradient(circle, var(--sp-glow), transparent 70%);
+          background: radial-gradient(circle, hsl(222 85% 64% / .10), transparent 70%);
         }
-        /* Bottom-right cool glow */
         .splash__background::after {
           width: 600px; height: 600px;
           bottom: -20%; right: -15%;
-          background: radial-gradient(circle, hsl(260 67% 67% / .06), transparent 70%);
-          animation-delay: -5s;
+          background: radial-gradient(circle, hsl(260 60% 60% / .06), transparent 70%);
+          animation-delay: -6s;
         }
         @keyframes sp-ambient {
           0%   { transform: translate(0, 0) scale(1) }
           100% { transform: translate(30px, -20px) scale(1.1) }
         }
 
-        /* Subtle grid pattern */
         .splash__grid {
           position: absolute; inset: 0;
           background-image:
-            linear-gradient(hsl(224 16% 16% / .3) 1px, transparent 1px),
-            linear-gradient(90deg, hsl(224 16% 16% / .3) 1px, transparent 1px);
+            linear-gradient(hsl(224 16% 16% / .25) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(224 16% 16% / .25) 1px, transparent 1px);
           background-size: 60px 60px;
           mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, black 20%, transparent 70%);
           -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, black 20%, transparent 70%);
-          opacity: .35;
+          opacity: .3;
         }
 
-        /* ── Content wrapper ───────────────────────────────────────────── */
+        /* ── Content ──────────────────────────────────────────────────── */
         .splash__content {
           position: relative; z-index: 1;
           display: flex; flex-direction: column; align-items: center;
-          opacity: 0; transform: translateY(12px);
-          animation: sp-enter .8s var(--sp-ease) .15s forwards;
-        }
-        @keyframes sp-enter {
-          to { opacity: 1; transform: translateY(0) }
         }
 
-        /* ── Logo ──────────────────────────────────────────────────────── */
+        /* ── Shared enter animation ───────────────────────────────────── */
+        @keyframes sp-up {
+          from { opacity: 0; transform: translateY(14px) }
+          to   { opacity: 1; transform: translateY(0) }
+        }
+
+        /* ── Logo — no container, just the floating mark ──────────────── */
         .splash__logo {
           position: relative;
-          width: 88px; height: 88px;
           display: flex; align-items: center; justify-content: center;
-          border-radius: 22px;
-          background: hsl(224 18% 12%);
-          border: 1px solid hsl(222 85% 64% / .06);
-          box-shadow:
-            0 0 40px hsl(222 85% 64% / .10),
-            0 8px 32px hsl(0 0% 0% / .3);
-          animation: sp-float 4s var(--sp-ease) infinite;
+          animation: sp-float 4s ease-in-out 1.6s infinite;
         }
         @keyframes sp-float {
           0%, 100% { transform: translateY(0) }
-          50%      { transform: translateY(-5px) }
+          50%      { transform: translateY(-6px) }
         }
 
         .splash__logo svg {
           position: relative; z-index: 1;
+          filter: drop-shadow(0 4px 20px hsl(222 85% 64% / .25))
+                  drop-shadow(0 8px 30px hsl(0 0% 0% / .20));
         }
 
-        /* ── Brand typography ──────────────────────────────────────────── */
-        .splash__brand {
-          margin-top: 32px; text-align: center;
+        /* Ambient glow behind the H */
+        .splash__logo-glow {
+          position: absolute;
+          width: 140px; height: 140px;
+          border-radius: 50%;
+          background: radial-gradient(circle, hsl(222 85% 64% / .14), transparent 65%);
           opacity: 0;
-          animation: sp-enter .6s var(--sp-ease) .4s forwards;
+          animation: sp-up .8s var(--sp-ease) .9s forwards;
+        }
+
+        /* ── Piece assembly ───────────────────────────────────────────── */
+        .sp-piece { opacity: 0 }
+
+        .sp-piece--left {
+          animation: sp-piece-l .7s var(--sp-spring) .15s forwards;
+        }
+        .sp-piece--right {
+          animation: sp-piece-r .7s var(--sp-spring) .35s forwards;
+        }
+        .sp-piece--bar {
+          animation: sp-piece-b .6s var(--sp-spring) .55s forwards;
+        }
+
+        @keyframes sp-piece-l {
+          from { opacity: 0; transform: translateX(-18px) }
+          to   { opacity: 1; transform: translateX(0) }
+        }
+        @keyframes sp-piece-r {
+          from { opacity: 0; transform: translateX(18px) }
+          to   { opacity: 1; transform: translateX(0) }
+        }
+        @keyframes sp-piece-b {
+          from { opacity: 0; transform: translateY(-10px) scaleX(.85) }
+          to   { opacity: 1; transform: translateY(0) scaleX(1) }
+        }
+
+        /* ── Brand typography ─────────────────────────────────────────── */
+        .splash__brand {
+          margin-top: 40px; text-align: center;
+          display: flex; flex-direction: column; align-items: center;
+          opacity: 0;
+          animation: sp-up .7s var(--sp-ease) .85s forwards;
         }
         .splash__title {
-          font-size: 16px; font-weight: 600; letter-spacing: .32em;
+          font-size: 28px; font-weight: 600; letter-spacing: .28em;
           color: var(--sp-text); line-height: 1;
+          text-indent: .28em;
+        }
+        .splash__divider {
+          width: 36px; height: 1px; margin-top: 14px;
+          background: linear-gradient(90deg, transparent, var(--sp-accent), transparent);
+          opacity: .3;
         }
         .splash__subtitle {
-          font-size: 9px; font-weight: 400; letter-spacing: .55em;
-          color: var(--sp-text-dim); margin-top: 6px;
-          text-indent: .55em; /* center letter-spaced text */
+          font-size: 12px; font-weight: 400; letter-spacing: .45em;
+          color: var(--sp-text-sub); margin-top: 12px;
+          text-indent: .45em;
         }
 
-        /* ── Dot-fade loader ──────────────────────────────────────────── */
+        /* ── Progress bar loader ──────────────────────────────────────── */
         .splash__loader {
-          margin-top: 44px;
-          display: flex; align-items: center; gap: 10px;
+          margin-top: 48px;
+          width: 120px; height: 2px;
+          background: hsl(224 14% 18%);
+          border-radius: 1px;
+          overflow: hidden;
           opacity: 0;
-          animation: sp-enter .6s var(--sp-ease) .6s forwards;
+          animation: sp-up .5s var(--sp-ease) 1.1s forwards;
         }
-        .splash__loader-dot {
-          width: 6px; height: 6px; border-radius: 50%;
-          background: var(--sp-accent);
-          opacity: .15;
-          animation: sp-dot-fade 1.4s var(--sp-ease) infinite;
+        .splash__loader-bar {
+          width: 40%; height: 100%;
+          border-radius: 1px;
+          background: linear-gradient(90deg, var(--sp-accent), hsl(222 85% 76%));
+          animation: sp-progress 1.8s var(--sp-ease) infinite;
         }
-        .splash__loader-dot:nth-child(2) { animation-delay: .2s; }
-        .splash__loader-dot:nth-child(3) { animation-delay: .4s; }
-        @keyframes sp-dot-fade {
-          0%, 100% { opacity: .15 }
-          40%      { opacity: 1 }
+        @keyframes sp-progress {
+          0%   { transform: translateX(-100%) }
+          100% { transform: translateX(350%) }
         }
 
-        /* ── Status messages ───────────────────────────────────────────── */
+        /* ── Status messages ──────────────────────────────────────────── */
         .splash__status {
-          margin-top: 28px; height: 20px;
-          font-size: 12px; font-weight: 400;
-          color: var(--sp-text-dim);
-          letter-spacing: .03em;
+          margin-top: 20px; height: 20px;
+          font-size: 13px; font-weight: 400;
+          color: var(--sp-text-sub);
+          letter-spacing: .02em;
           opacity: 0;
-          animation: sp-enter .6s var(--sp-ease) .8s forwards;
-        }
-        .splash__status span {
-          display: inline-block;
-          animation: sp-msg-cycle 3s var(--sp-ease) forwards;
-        }
-        @keyframes sp-msg-cycle {
-          0%   { opacity: 0; transform: translateY(6px) }
-          8%   { opacity: 1; transform: translateY(0) }
-          90%  { opacity: 1; transform: translateY(0) }
-          100% { opacity: 0; transform: translateY(-6px) }
+          animation: sp-up .5s var(--sp-ease) 1.3s forwards;
         }
 
-        /* ── Footer ────────────────────────────────────────────────────── */
+        /* ── Footer ───────────────────────────────────────────────────── */
         .splash__footer {
           position: absolute;
           bottom: max(28px, env(safe-area-inset-bottom, 28px));
           z-index: 1;
-          font-size: 9px; font-weight: 400; letter-spacing: .2em;
-          color: var(--sp-text-dim);
-          opacity: .55;
-          text-indent: .2em;
+          font-size: 10px; font-weight: 500; letter-spacing: .18em;
+          color: var(--sp-text-sub);
+          opacity: .4;
+          text-indent: .18em;
         }
 
-        /* ── Reduced motion ────────────────────────────────────────────── */
+        /* ── Reduced motion ───────────────────────────────────────────── */
         @media (prefers-reduced-motion: reduce) {
           .splash__logo,
-          .splash__logo::before,
           .splash__background::before,
-          .splash__background::after { animation: none }
-          .splash__loader-dot { animation: none; opacity: .4 }
+          .splash__background::after,
+          .splash__loader-bar { animation: none }
+          .sp-piece { opacity: 1 }
+          .splash__logo-glow { opacity: 1 }
         }
       </style>
 
@@ -221,29 +246,61 @@
       <!-- Main content -->
       <div class="splash__content">
 
-        <!-- Logo mark -->
+        <!-- Logo mark — bare icon, no container -->
         <div class="splash__logo">
-          <svg width="44" height="44" viewBox="0 0 100 100" fill="none">
+          <div class="splash__logo-glow"></div>
+          <svg width="104" height="104" viewBox="0 0 100 100" fill="none">
+            <defs>
+              <linearGradient id="sp-front" x1="14" y1="50" x2="88" y2="50" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#1838A8"/>
+                <stop offset="35%" stop-color="#3562E0"/>
+                <stop offset="70%" stop-color="#7BA4FF"/>
+                <stop offset="100%" stop-color="#E4EDFF"/>
+              </linearGradient>
+              <linearGradient id="sp-top" x1="14" y1="50" x2="88" y2="50" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#5078F0"/>
+                <stop offset="35%" stop-color="#6B94FF"/>
+                <stop offset="70%" stop-color="#A8CCFF"/>
+                <stop offset="100%" stop-color="#F2F6FF"/>
+              </linearGradient>
+              <linearGradient id="sp-side" x1="14" y1="50" x2="88" y2="50" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#0E2278"/>
+                <stop offset="35%" stop-color="#1E3FA8"/>
+                <stop offset="70%" stop-color="#4468C0"/>
+                <stop offset="100%" stop-color="#8898B8"/>
+              </linearGradient>
+            </defs>
             <!-- Left pillar -->
-            <rect x="18" y="18" width="10" height="64" rx="3" fill="hsl(222 85% 64%)"/>
+            <g class="sp-piece sp-piece--left">
+              <path d="M28,19 L30,17 L30,81 L28,83 Z" fill="url(#sp-side)"/>
+              <path d="M14,19 L28,19 L30,17 L16,17 Z" fill="url(#sp-top)"/>
+              <path d="M14,19 L28,19 L28,83 L14,83 Z" fill="url(#sp-front)"/>
+            </g>
             <!-- Right pillar -->
-            <rect x="72" y="18" width="10" height="64" rx="3" fill="hsl(222 85% 64%)"/>
-            <!-- Crossbar — slightly thinner -->
-            <rect x="28" y="43" width="44" height="8" rx="2" fill="hsl(222 85% 64%)" opacity=".6"/>
+            <g class="sp-piece sp-piece--right">
+              <path d="M86,19 L88,17 L88,81 L86,83 Z" fill="url(#sp-side)"/>
+              <path d="M72,19 L86,19 L88,17 L74,17 Z" fill="url(#sp-top)"/>
+              <path d="M72,19 L86,19 L86,83 L72,83 Z" fill="url(#sp-front)"/>
+            </g>
+            <!-- Crossbar -->
+            <g class="sp-piece sp-piece--bar">
+              <path d="M72,44 L74,42 L74,56 L72,58 Z" fill="url(#sp-side)"/>
+              <path d="M28,44 L72,44 L74,42 L30,42 Z" fill="url(#sp-top)"/>
+              <path d="M28,44 L72,44 L72,58 L28,58 Z" fill="url(#sp-front)"/>
+            </g>
           </svg>
         </div>
 
         <!-- Brand name -->
         <div class="splash__brand">
           <div class="splash__title">HIDEOUT</div>
+          <div class="splash__divider"></div>
           <div class="splash__subtitle">RESORT</div>
         </div>
 
-        <!-- Dot-fade loader -->
+        <!-- Progress bar loader -->
         <div class="splash__loader">
-          <div class="splash__loader-dot"></div>
-          <div class="splash__loader-dot"></div>
-          <div class="splash__loader-dot"></div>
+          <div class="splash__loader-bar"></div>
         </div>
 
         <!-- Status text -->
@@ -251,8 +308,8 @@
 
       </div>
 
-      <!-- Footer tagline -->
-      <div class="splash__footer">HOTEL INTELLIGENCE PLATFORM</div>
+      <!-- Footer -->
+      <div class="splash__footer">HOTEL OPERATIONS</div>
 
       <!-- Splash logic -->
       <script>
@@ -260,24 +317,20 @@
           var messages = [
             'Syncing room availability\u2026',
             'Loading booking history\u2026',
-            'Analyzing occupancy intelligence\u2026',
             'Preparing revenue insights\u2026',
-            'Optimizing pricing engine\u2026',
             'Almost ready\u2026'
           ];
           var msgEl  = document.getElementById('sp-msg');
           var idx    = 0;
 
-          // Status message rotator
           function showMsg() {
             if (!msgEl) return;
             msgEl.textContent = messages[idx % messages.length];
             idx++;
           }
           showMsg();
-          var msgInterval = setInterval(showMsg, 3000);
+          var msgInterval = setInterval(showMsg, 2500);
 
-          // Expose cleanup for main.tsx
           window.__splashCleanup = function () { clearInterval(msgInterval); };
         })();
       </script>
