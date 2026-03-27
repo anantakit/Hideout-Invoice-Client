@@ -5,9 +5,9 @@ import type { TimelineRoom } from '../../types'
 import BookingBlock from './BookingBlock'
 import { TIMELINE_WINDOW_DAYS } from '../utils/tokens'
 import { computeRoomLayout } from '../utils/bookingLayout'
-import type { DragState } from '../hooks/useTimelineDrag'
 import { useTimelineContext } from '../context/TimelineContext'
 import { useTimelineCallbacks } from '../context/TimelineCallbackContext'
+import { useDragStateContext } from '../context/DragStateContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,8 +18,6 @@ interface RoomRowProps {
   /** Pre-computed row height (px) — set by the virtualizer based on layer count. */
   rowHeight: number
   isEven?: boolean
-  /** Current drag state — passed through to BookingBlock for visual dimming. */
-  dragState?: DragState | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -58,18 +56,10 @@ const RoomRow = React.memo(function RoomRow({
   roomTypeName,
   rowHeight,
   isEven = false,
-  dragState,
 }: RoomRowProps) {
   const { windowStart, windowEnd, zoomDays, bookingColorMap, bookingRoomCountMap } = useTimelineContext()
-  const {
-    onSelectBooking,
-    onDoubleClickBooking,
-    onContextMenu,
-    onDragStart,
-    onKeyboardMove,
-    onKeyboardResize,
-    onDrawStart,
-  } = useTimelineCallbacks()
+  const { onDrawStart } = useTimelineCallbacks()
+  const { dragState } = useDragStateContext()
 
   const windowDays = zoomDays ?? TIMELINE_WINDOW_DAYS
   const todayStr = useMemo(() => todayISO(), [])
@@ -238,13 +228,6 @@ const RoomRow = React.memo(function RoomRow({
               showCheckoutEdge={showCheckoutEdge}
               layerIndex={layerInfo?.layerIndex ?? 0}
               totalLayers={layout.totalLayers}
-              onTap={onSelectBooking}
-              onDoubleTap={onDoubleClickBooking}
-              onDragStart={onDragStart}
-              dragState={dragState}
-              onContextMenu={onContextMenu}
-              onKeyboardMove={onKeyboardMove}
-              onKeyboardResize={onKeyboardResize}
             />
           )
         })}

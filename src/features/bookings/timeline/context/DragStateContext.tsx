@@ -1,31 +1,26 @@
 import { createContext, useContext } from 'react'
-import type { TimelineRoom, UnassignedStay } from '../../types'
+import type { DragState, DragPreviewPosition } from '../hooks/useTimelineDrag'
+import type { DrawPreviewPosition } from '../hooks/useTimelineDraw'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export interface TimelineContextValue {
-  bookingColorMap: Record<string, string>
-  bookingRoomCountMap: Record<string, number>
-  roomTypeNameMap: Record<string, string>
-  todayStr: string
-  windowStart: Date
-  windowEnd: Date
-  zoomDays: number
-  days: Date[]
-  allRooms: TimelineRoom[]
-  unassignedStays: UnassignedStay[]
+export interface DragStateContextValue {
+  dragState: DragState | null
+  previewPos: DragPreviewPosition | null
+  isDragging: boolean
+  drawPreview: DrawPreviewPosition | null
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
-const TimelineContext = createContext<TimelineContextValue | null>(null)
+const DragStateContext = createContext<DragStateContextValue | null>(null)
 
-export const TimelineProvider = TimelineContext.Provider
+export const DragStateProvider = DragStateContext.Provider
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-export function useTimelineContext(): TimelineContextValue {
-  const ctx = useContext(TimelineContext)
-  if (!ctx) throw new Error('useTimelineContext must be used within TimelineProvider')
+export function useDragStateContext(): DragStateContextValue {
+  const ctx = useContext(DragStateContext)
+  if (!ctx) throw new Error('useDragStateContext must be used within DragStateProvider')
   return ctx
 }

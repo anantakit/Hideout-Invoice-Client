@@ -16,6 +16,8 @@ import { useTimelineState } from '../timeline/hooks/useTimelineState'
 import { useTimelineKeyboard } from '../timeline/hooks/useTimelineKeyboard'
 import { TimelineProvider, type TimelineContextValue } from '../timeline/context/TimelineContext'
 import { TimelineCallbackProvider, type TimelineCallbackContextValue } from '../timeline/context/TimelineCallbackContext'
+import { DrawerProvider, type DrawerContextValue } from '../timeline/context/DrawerContext'
+import { DragStateProvider, type DragStateContextValue } from '../timeline/context/DragStateContext'
 
 // ─── MobileOnly — renders children only below md (768px) ─────────────────────
 
@@ -57,11 +59,12 @@ export default function TimelinePage() {
     windowStart: s.windowStart,
     windowEnd: s.windowEnd,
     zoomDays: s.zoomDays,
+    days: s.days,
     allRooms: s.allRooms,
     unassignedStays: s.unassignedStays,
   }), [
     s.bookingColorMap, s.bookingRoomCountMap, s.roomTypeNameByRoomId,
-    s.todayStr, s.windowStart, s.windowEnd, s.zoomDays,
+    s.todayStr, s.windowStart, s.windowEnd, s.zoomDays, s.days,
     s.allRooms, s.unassignedStays,
   ])
 
@@ -81,10 +84,30 @@ export default function TimelinePage() {
     s.handleDrawStart, s.handleDrawerCheckIn, s.handleDirectCheckOut,
   ])
 
+  const drawerCtx = useMemo<DrawerContextValue>(() => ({
+    drawerMode: s.drawerMode,
+    onCloseDrawer: s.handleCloseDrawer,
+    selectedBooking: s.selectedBooking,
+    createBookingPrefill: s.createBookingPrefill,
+    onBookingCreated: s.handleBookingCreated,
+  }), [
+    s.drawerMode, s.handleCloseDrawer, s.selectedBooking,
+    s.createBookingPrefill, s.handleBookingCreated,
+  ])
+
+  const dragCtx = useMemo<DragStateContextValue>(() => ({
+    dragState: s.dragState,
+    previewPos: s.previewPos,
+    isDragging: s.isDragging,
+    drawPreview: s.drawPreview,
+  }), [s.dragState, s.previewPos, s.isDragging, s.drawPreview])
+
   return (
     <TooltipProvider>
       <TimelineProvider value={dataCtx}>
         <TimelineCallbackProvider value={callbackCtx}>
+          <DrawerProvider value={drawerCtx}>
+            <DragStateProvider value={dragCtx}>
           <div className="flex flex-col h-full overflow-hidden bg-background">
 
             {/* ── Toolbar ─────────────────────────────────────────────── */}
@@ -133,20 +156,10 @@ export default function TimelinePage() {
               isFetching={s.isFetching}
               forceSkeleton={s.forceSkeleton}
               scrollContainerRef={scrollContainerRef}
-              days={s.days}
               selectedRoomTypeId={s.selectedRoomTypeId}
               filteredRooms={s.filteredRooms}
               rowVirtualizer={s.rowVirtualizer}
               gridContainerRef={s.gridContainerRef}
-              dragState={s.dragState}
-              previewPos={s.previewPos}
-              isDragging={s.isDragging}
-              drawPreview={s.drawPreview}
-              drawerMode={s.drawerMode}
-              onCloseDrawer={s.handleCloseDrawer}
-              selectedBooking={s.selectedBooking}
-              createBookingPrefill={s.createBookingPrefill}
-              onBookingCreated={s.handleBookingCreated}
             />
 
             {/* ── Bottom sheet (mobile only) ──────────────────────────── */}
@@ -174,6 +187,8 @@ export default function TimelinePage() {
             <CheckInConfirmDialog target={s.checkInTarget} onClose={() => s.setCheckInTarget(null)} onConfirm={s.handleConfirmCheckIn} />
             <CheckOutConfirmDialog target={s.checkOutTarget} onClose={() => s.setCheckOutTarget(null)} onConfirm={s.handleConfirmCheckOut} />
           </div>
+            </DragStateProvider>
+          </DrawerProvider>
         </TimelineCallbackProvider>
       </TimelineProvider>
     </TooltipProvider>

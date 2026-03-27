@@ -8,7 +8,6 @@ import { cn, todayISO } from '@/shared/utils'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/shared/ui/tooltip'
 import type { TimelineBooking } from '../../types'
 import { useHoveredBookingId, useBookingHoverHandlers } from './HoverContext'
-import type { DragMode, DragState } from '../hooks/useTimelineDrag'
 import { useBookingBlockDrag } from '../hooks/useBookingBlockDrag'
 import BookingBlockContent from './BookingBlockContent'
 import BookingBlockTooltip from './BookingBlockTooltip'
@@ -31,30 +30,6 @@ export interface BookingBlockProps {
   layerIndex?: number
   /** Total number of layers in this room row. */
   totalLayers?: number
-  onTap: (booking: TimelineBooking) => void
-  /** Called on double-click — opens full booking detail page. */
-  onDoubleTap?: (booking: TimelineBooking) => void
-  /** Called when user starts a drag or resize. */
-  onDragStart?: (
-    e: React.PointerEvent,
-    booking: TimelineBooking,
-    roomId: string,
-    mode: DragMode,
-  ) => void
-  /** Current drag state — used to dim the source block while dragging. */
-  dragState?: DragState | null
-  /** Called to open context menu at a given position. */
-  onContextMenu?: (
-    booking: TimelineBooking,
-    roomId: string,
-    roomNumber: string,
-    x: number,
-    y: number,
-  ) => void
-  /** Keyboard: move booking by 1 day or 1 room. */
-  onKeyboardMove?: (booking: TimelineBooking, roomId: string, direction: 'left' | 'right' | 'up' | 'down') => void
-  /** Keyboard: extend/shrink stay by 1 night. */
-  onKeyboardResize?: (booking: TimelineBooking, roomId: string, edge: 'extend' | 'shrink') => void
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -71,13 +46,6 @@ const BookingBlock = React.memo(function BookingBlock({
   showCheckoutEdge = false,
   layerIndex = 0,
   totalLayers = 1,
-  onTap,
-  onDoubleTap,
-  onDragStart,
-  dragState,
-  onContextMenu,
-  onKeyboardMove,
-  onKeyboardResize,
 }: BookingBlockProps) {
   const hoveredBookingId = useHoveredBookingId()
   const { onHoverStart, onHoverEnd } = useBookingHoverHandlers()
@@ -100,18 +68,7 @@ const BookingBlock = React.memo(function BookingBlock({
     handleResizeLeftDown,
     handleResizeRightDown,
     handleContextMenu,
-  } = useBookingBlockDrag({
-    booking,
-    roomId,
-    roomNumber,
-    onTap,
-    onDoubleTap,
-    onDragStart,
-    dragState,
-    onContextMenu,
-    onKeyboardMove,
-    onKeyboardResize,
-  })
+  } = useBookingBlockDrag({ booking, roomId, roomNumber })
 
   const positionStyle = useMemo<CSSProperties>(() => {
     const base = {

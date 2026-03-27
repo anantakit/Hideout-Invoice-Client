@@ -1,31 +1,26 @@
 import { createContext, useContext } from 'react'
-import type { TimelineRoom, UnassignedStay } from '../../types'
+import type { DrawerMode, SelectedBookingContext, CreateBookingPrefill } from '../components/OperationsDrawer'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export interface TimelineContextValue {
-  bookingColorMap: Record<string, string>
-  bookingRoomCountMap: Record<string, number>
-  roomTypeNameMap: Record<string, string>
-  todayStr: string
-  windowStart: Date
-  windowEnd: Date
-  zoomDays: number
-  days: Date[]
-  allRooms: TimelineRoom[]
-  unassignedStays: UnassignedStay[]
+export interface DrawerContextValue {
+  drawerMode: DrawerMode
+  onCloseDrawer: () => void
+  selectedBooking: SelectedBookingContext | null
+  createBookingPrefill: CreateBookingPrefill | null
+  onBookingCreated: (bookingId: string) => void
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
-const TimelineContext = createContext<TimelineContextValue | null>(null)
+const DrawerContext = createContext<DrawerContextValue | null>(null)
 
-export const TimelineProvider = TimelineContext.Provider
+export const DrawerProvider = DrawerContext.Provider
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-export function useTimelineContext(): TimelineContextValue {
-  const ctx = useContext(TimelineContext)
-  if (!ctx) throw new Error('useTimelineContext must be used within TimelineProvider')
+export function useDrawerContext(): DrawerContextValue {
+  const ctx = useContext(DrawerContext)
+  if (!ctx) throw new Error('useDrawerContext must be used within DrawerProvider')
   return ctx
 }

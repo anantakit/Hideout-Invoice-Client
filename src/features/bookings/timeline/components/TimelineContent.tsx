@@ -5,10 +5,6 @@ import { Button } from '@/shared/ui/button'
 import { ROUTES } from '@/app/routes'
 import type { Virtualizer } from '@tanstack/react-virtual'
 import type { TimelineRoom } from '../../types'
-import type { SelectedBookingContext } from './BookingBottomSheet'
-import type { DrawerMode, CreateBookingPrefill } from './OperationsDrawer'
-import type { DrawPreviewPosition } from '../hooks/useTimelineDraw'
-import type { DragState, DragPreviewPosition } from '../hooks/useTimelineDrag'
 import TimelineHeader from './TimelineHeader'
 import TimelineSkeleton from './TimelineSkeleton'
 import ErrorPanel from '@/shared/components/ErrorPanel'
@@ -16,7 +12,8 @@ import RoomRow from './RoomRow'
 import DragPreview from './DragPreview'
 import { OperationsDrawer } from './OperationsDrawer'
 import { useTimelineContext } from '../context/TimelineContext'
-import { useTimelineCallbacks } from '../context/TimelineCallbackContext'
+import { useDrawerContext } from '../context/DrawerContext'
+import { useDragStateContext } from '../context/DragStateContext'
 
 interface TimelineContentProps {
   // Loading/error
@@ -29,28 +26,12 @@ interface TimelineContentProps {
   scrollContainerRef: React.RefObject<HTMLDivElement>
 
   // Timeline data
-  days: Date[]
   selectedRoomTypeId: string | null
   filteredRooms: TimelineRoom[]
 
   // Virtualizer
   rowVirtualizer: Virtualizer<HTMLDivElement, Element>
   gridContainerRef: React.RefObject<HTMLDivElement>
-
-  // Drag
-  dragState: DragState | null
-  previewPos: DragPreviewPosition | null
-  isDragging: boolean
-
-  // Draw
-  drawPreview: DrawPreviewPosition | null
-
-  // Drawer
-  drawerMode: DrawerMode
-  onCloseDrawer: () => void
-  selectedBooking: SelectedBookingContext | null
-  createBookingPrefill: CreateBookingPrefill | null
-  onBookingCreated: (bookingId: string) => void
 }
 
 export function TimelineContent({
@@ -59,24 +40,15 @@ export function TimelineContent({
   isFetching,
   forceSkeleton,
   scrollContainerRef,
-  days,
   selectedRoomTypeId,
   filteredRooms,
   rowVirtualizer,
   gridContainerRef,
-  dragState,
-  previewPos,
-  isDragging,
-  drawPreview,
-  drawerMode,
-  onCloseDrawer,
-  selectedBooking,
-  createBookingPrefill,
-  onBookingCreated,
 }: TimelineContentProps) {
   const navigate = useNavigate()
-  const { zoomDays, roomTypeNameMap, allRooms, todayStr, unassignedStays } = useTimelineContext()
-  const { onDoubleClickBooking, onDrawerCheckIn, onDirectCheckOut } = useTimelineCallbacks()
+  const { zoomDays, days, roomTypeNameMap } = useTimelineContext()
+  const { drawerMode, onCloseDrawer, selectedBooking, createBookingPrefill, onBookingCreated } = useDrawerContext()
+  const { dragState, previewPos, isDragging, drawPreview } = useDragStateContext()
 
   return (
     <div className="hidden md:flex flex-1 overflow-hidden">
@@ -173,7 +145,6 @@ export function TimelineContent({
                           roomTypeName={roomTypeNameMap[room.id]}
                           rowHeight={virtualRow.size}
                           isEven={virtualRow.index % 2 === 0}
-                          dragState={dragState}
                         />
                       </div>
                     )
@@ -206,15 +177,8 @@ export function TimelineContent({
         mode={drawerMode}
         onClose={onCloseDrawer}
         selectedBooking={selectedBooking}
-        onQuickCheckIn={onDrawerCheckIn}
-        onDirectCheckOut={onDirectCheckOut}
-        onOpenDetail={onDoubleClickBooking}
         createBookingPrefill={createBookingPrefill}
         onBookingCreated={onBookingCreated}
-        rooms={allRooms}
-        todayStr={todayStr}
-        roomTypeNameMap={roomTypeNameMap}
-        unassignedStays={unassignedStays}
       />
     </div>
   )

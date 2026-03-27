@@ -2,10 +2,12 @@ import React from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
-import { type TimelineBooking, type TimelineRoom, type UnassignedStay } from '../../types'
+import type { TimelineBooking } from '../../types'
 import { DesktopOperationsPanel } from './DesktopOperationsPanel'
 import { BookingDetailContent } from './BookingDetailContent'
 import { InlineCreateBookingForm } from './InlineCreateBookingForm'
+import { useTimelineContext } from '../context/TimelineContext'
+import { useTimelineCallbacks } from '../context/TimelineCallbackContext'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,45 +31,17 @@ export interface CreateBookingPrefill {
 interface OperationsDrawerProps {
   mode: DrawerMode
   onClose: () => void
-
-  // Booking detail props
   selectedBooking: SelectedBookingContext | null
-  /** Quick check-in action from drawer. */
-  onQuickCheckIn?: (booking: TimelineBooking, roomId?: string) => void
-  /** Check-out action — calls mutation directly (cards have their own confirm). */
-  onDirectCheckOut?: (booking: TimelineBooking) => void
-  /** Navigate to full detail page. */
-  onOpenDetail?: (booking: TimelineBooking) => void
-
-  // Create booking props
   createBookingPrefill?: CreateBookingPrefill | null
-  /** Called after successful booking creation — receives the new booking ID. */
   onBookingCreated?: (bookingId: string) => void
-
-  // Ops panel props
-  rooms: TimelineRoom[]
-  todayStr: string
-  roomTypeNameMap: Record<string, string>
-  unassignedStays: UnassignedStay[]
 }
 
 // ─── Ops Content ───────────────────────────────────────────────────────────────
 
-function OpsContent({
-  rooms,
-  todayStr,
-  roomTypeNameMap,
-  unassignedStays,
-  onClose,
-  onDirectCheckOut,
-}: {
-  rooms: TimelineRoom[]
-  todayStr: string
-  roomTypeNameMap: Record<string, string>
-  unassignedStays: UnassignedStay[]
-  onClose: () => void
-  onDirectCheckOut?: (booking: TimelineBooking) => void
-}) {
+function OpsContent({ onClose }: { onClose: () => void }) {
+  const { allRooms, todayStr, roomTypeNameMap, unassignedStays } = useTimelineContext()
+  const { onDirectCheckOut } = useTimelineCallbacks()
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -87,7 +61,7 @@ function OpsContent({
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         <DesktopOperationsPanel
-          rooms={rooms}
+          rooms={allRooms}
           selectedDateStr={todayStr}
           roomTypeNameMap={roomTypeNameMap}
           unassignedStays={unassignedStays}
@@ -106,16 +80,10 @@ export const OperationsDrawer = React.memo(function OperationsDrawer({
   mode,
   onClose,
   selectedBooking,
-  // onQuickCheckIn — no longer used; check-in handled inline via InlineCheckIn
-  onDirectCheckOut,
-  onOpenDetail,
   createBookingPrefill,
   onBookingCreated,
-  rooms,
-  todayStr,
-  roomTypeNameMap,
-  unassignedStays,
 }: OperationsDrawerProps) {
+  const { onDoubleClickBooking: onOpenDetail } = useTimelineCallbacks()
   const isOpen = mode !== null
 
   return (
@@ -148,14 +116,7 @@ export const OperationsDrawer = React.memo(function OperationsDrawer({
         )}
 
         {mode === 'ops' && (
-          <OpsContent
-            rooms={rooms}
-            todayStr={todayStr}
-            roomTypeNameMap={roomTypeNameMap}
-            unassignedStays={unassignedStays}
-            onClose={onClose}
-            onDirectCheckOut={onDirectCheckOut}
-          />
+          <OpsContent onClose={onClose} />
         )}
       </div>
     </div>
