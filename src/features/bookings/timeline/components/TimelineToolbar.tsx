@@ -1,111 +1,14 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { format } from 'date-fns'
-import {
-  ChevronLeft,
-  ChevronRight,
-  CalendarIcon,
-  PanelRight,
-  LogIn,
-  LogOut,
-  Clock,
-} from 'lucide-react'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/ui/select'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/ui/sheet'
-import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover'
-import { Calendar } from '@/shared/ui/calendar'
-import { cn, THAI_MONTHS_SHORT, todayISO } from '@/shared/utils'
+import React from 'react'
+import { PanelRight } from 'lucide-react'
+import { cn } from '@/shared/utils'
 import type { RoomAvailability } from './AvailabilitySummary'
-import { ZOOM_CONFIG, type ZoomLevel } from '../utils/timelineConstants'
+import type { ZoomLevel } from '../utils/timelineConstants'
+import DateNavigation from './DateNavigation'
+import ZoomControl from './ZoomControl'
+import RoomTypeFilter from './RoomTypeFilter'
+import ToolbarKPIStrip from './ToolbarKPIStrip'
 
-const noop = () => {}
-
-// ─── Thai helpers ────────────────────────────────────────────────────────────
-
-const EN_MONTHS_SHORT = [
-  'Jan','Feb','Mar','Apr','May','Jun',
-  'Jul','Aug','Sep','Oct','Nov','Dec',
-]
-
-function fmtHeaderDate(d: Date): string {
-  return `${d.getDate()} ${EN_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`
-}
-
-// ─── DatePickerContent (shared between desktop dropdown and mobile sheet) ────
-
-function DatePickerContent({
-  displayDate,
-  monthOptions,
-  onDayClick,
-  onMonthJump,
-  mobile,
-}: {
-  displayDate: Date
-  monthOptions: { label: string; value: string; isCurrent: boolean }[]
-  onDayClick: (date: Date) => void
-  onMonthJump: (value: string) => void
-  mobile?: boolean
-}) {
-  const labelCls = mobile
-    ? 'text-caption text-muted-foreground mb-2 uppercase tracking-wider'
-    : 'text-caption text-tl-text-dim mb-1.5 uppercase tracking-wider'
-  const separatorCls = mobile ? 'mt-4 pt-3 border-t border-border' : 'border-t border-tl-border px-3 pb-2.5 pt-2'
-
-  // Single delegated handler — no closure per button
-  const handleMonthClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const value = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-month]')?.dataset.month
-    if (value) onMonthJump(value)
-  }, [onMonthJump])
-
-  return (
-    <>
-      <div className={mobile ? undefined : 'p-3 w-72'}>
-        <Calendar
-          pendingStart={displayDate}
-          pendingEnd={null}
-          hoveredDate={null}
-          onDayClick={onDayClick}
-          onDayHover={noop}
-          initialViewDate={displayDate}
-        />
-      </div>
-      <div className={separatorCls}>
-        <p className={labelCls}>ข้ามไปเดือน</p>
-        <div className={mobile ? 'grid grid-cols-3 gap-1.5' : 'grid grid-cols-3 gap-1'} onClick={handleMonthClick}>
-          {monthOptions.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              data-month={opt.value}
-              className={cn(
-                'text-caption rounded-lg transition-colors text-center',
-                mobile
-                  ? 'px-2 py-2.5 touch-target hover:bg-accent'
-                  : 'px-1.5 py-1.5 hover:bg-accent',
-                opt.isCurrent
-                  ? mobile
-                    ? 'bg-primary/15 text-primary font-semibold'
-                    : 'bg-tl-accent/15 text-tl-accent font-semibold'
-                  : mobile
-                    ? 'text-muted-foreground hover:text-foreground'
-                    : 'text-tl-text-dim hover:text-tl-text',
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    </>
-  )
-}
-
-// ─── Props ───────────────────────────────────────────────────────────────────
+// ─── Props ──────────────────────────────────────────────────────────────────
 
 interface TimelineToolbarProps {
   /** Left edge of the visible viewport (the date the user "is on"). */
@@ -141,11 +44,43 @@ interface TimelineToolbarProps {
   todayPendingCheckinCount?: number
 }
 
-// ─── Shared styles ───────────────────────────────────────────────────────────
+// ─── Ops Drawer Button ──────────────────────────────────────────────────────
 
-const NAV_BTN = 'w-8 h-8 flex items-center justify-center rounded-lg text-tl-text-dim hover:text-tl-text hover:bg-accent transition-colors'
+function OpsDrawerButton({
+  onClick,
+  drawerMode,
+  pendingCount,
+  className,
+}: {
+  onClick: () => void
+  drawerMode: string | null
+  pendingCount: number
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'relative w-9 h-9 flex items-center justify-center rounded-lg transition-colors',
+        drawerMode === 'ops'
+          ? 'bg-tl-accent text-white'
+          : 'text-tl-text-dim hover:text-tl-text hover:bg-accent',
+        className,
+      )}
+      aria-label="Operations panel"
+    >
+      <PanelRight size={18} />
+      {pendingCount > 0 && (
+        <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-micro-sm font-bold text-white tabular-nums">
+          {pendingCount}
+        </span>
+      )}
+    </button>
+  )
+}
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Component ──────────────────────────────────────────────────────────────
 
 const TimelineToolbar = React.memo(function TimelineToolbar({
   visibleStartDate,
@@ -166,311 +101,53 @@ const TimelineToolbar = React.memo(function TimelineToolbar({
   drawerMode,
   todayPendingCheckinCount = 0,
 }: TimelineToolbarProps) {
-  // ── Mobile detection ───────────────────────────────────────────────────
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)')
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-  const displayDate = (isMobile && mobileSelectedDate) ? mobileSelectedDate : visibleStartDate
-
-  // ── Date picker ──────────────────────────────────────────────────────────
-  const [datePickerOpen, setDatePickerOpen] = useState(false)
-
-  const handleJumpToDate = useCallback(
-    (date: Date) => {
-      onJumpToDate(date)
-      setDatePickerOpen(false)
-    },
-    [onJumpToDate],
-  )
-
-  // ── Month jump options ───────────────────────────────────────────────────
-  const monthOptions = useMemo(() => {
-    const now = new Date()
-    const currentKey = `${now.getFullYear()}-${now.getMonth()}`
-    const result: { value: string; label: string; isCurrent: boolean }[] = []
-    for (let i = -2; i <= 6; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
-      result.push({
-        value: format(d, 'yyyy-MM-dd'),
-        label: `${THAI_MONTHS_SHORT[d.getMonth()]} ${(d.getFullYear() + 543) % 100}`,
-        isCurrent: `${d.getFullYear()}-${d.getMonth()}` === currentKey,
-      })
-    }
-    return result
-  }, [])
-
-  const handleMonthJump = useCallback(
-    (isoDate: string) => {
-      const [y, m] = isoDate.split('-').map(Number)
-      const target = new Date(y, m - 1, 1)
-      onJumpToDate(target)
-      setDatePickerOpen(false)
-    },
-    [onJumpToDate],
-  )
-
-  // ── Check if start date is today ─────────────────────────────────────────
-  const isToday = useMemo(
-    () => format(displayDate, 'yyyy-MM-dd') === todayISO(),
-    [displayDate],
-  )
-
-  // ── Occupancy bar width ─────────────────────────────────────────────────
-  const occPct = kpiTotals.total > 0 ? kpiTotals.occupancyPct : 0
-
   return (
     <div className="tl-toolbar h-16 shrink-0 flex items-center border-b border-tl-border bg-tl-header">
 
       {/* ═══════ LEFT: Nav ═══════════════════════════════════════════════ */}
-      <div className="flex items-center gap-2 md:gap-4 pl-4 md:pl-6 min-w-0 flex-1">
-
-        {/* Today pill */}
-        <button
-          type="button"
-          onClick={onToday}
-          className={cn(
-            'shrink-0 h-8 px-3.5 radius-badge text-body font-medium transition-colors',
-            'border border-tl-border',
-            isToday
-              ? 'bg-tl-accent/10 text-tl-accent border-tl-accent/30'
-              : 'text-tl-text-dim hover:text-tl-text hover:bg-accent',
-          )}
-        >
-          วันนี้
-        </button>
-
-        {/* Date navigation group */}
-        <div className="flex items-center">
-          <button type="button" onClick={onPrev} className={NAV_BTN} aria-label="Previous">
-            <ChevronLeft size={18} />
-          </button>
-
-          {isMobile ? (
-            /* Mobile: trigger opens Sheet */
-            <div>
-              <button
-                type="button"
-                onClick={() => setDatePickerOpen(true)}
-                className={cn(
-                  'h-9 px-3 flex items-center gap-2 radius-button transition-colors',
-                  'hover:bg-accent',
-                  datePickerOpen && 'bg-accent',
-                )}
-              >
-                <CalendarIcon size={16} className="text-tl-text-dim shrink-0" />
-                <span className="text-lg font-semibold text-tl-text tabular-nums whitespace-nowrap">
-                  {fmtHeaderDate(displayDate)}
-                </span>
-              </button>
-              <Sheet open={datePickerOpen} onOpenChange={(v) => { if (!v) setDatePickerOpen(false) }}>
-                <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-0 flex flex-col sheet-mobile">
-                  <SheetHeader className="px-5 pt-5 pb-3 border-b border-border shrink-0">
-                    <SheetTitle className="text-base font-semibold tracking-tight text-left">
-                      เลือกวันที่
-                    </SheetTitle>
-                    <SheetDescription className="sr-only">
-                      เลือกวันที่จากปฏิทินเพื่อข้ามไปยังวันนั้น
-                    </SheetDescription>
-                  </SheetHeader>
-                  <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6">
-                    <DatePickerContent
-                      displayDate={displayDate}
-                      monthOptions={monthOptions}
-                      onDayClick={handleJumpToDate}
-                      onMonthJump={handleMonthJump}
-                      mobile
-                    />
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          ) : (
-            /* Desktop: Popover */
-            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    'h-9 px-3 flex items-center gap-2 radius-button transition-colors',
-                    'hover:bg-accent',
-                    datePickerOpen && 'bg-accent',
-                  )}
-                >
-                  <CalendarIcon size={16} className="text-tl-text-dim shrink-0" />
-                  <span className="text-lg font-semibold text-tl-text tabular-nums whitespace-nowrap">
-                    {fmtHeaderDate(displayDate)}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
-                <DatePickerContent
-                  displayDate={displayDate}
-                  monthOptions={monthOptions}
-                  onDayClick={handleJumpToDate}
-                  onMonthJump={handleMonthJump}
-                />
-              </PopoverContent>
-            </Popover>
-          )}
-
-          <button type="button" onClick={onNext} className={NAV_BTN} aria-label="Next">
-            <ChevronRight size={18} />
-          </button>
-        </div>
+      <div className="flex items-center pl-4 md:pl-6 min-w-0 flex-1">
+        <DateNavigation
+          visibleStartDate={visibleStartDate}
+          mobileSelectedDate={mobileSelectedDate}
+          onPrev={onPrev}
+          onNext={onNext}
+          onToday={onToday}
+          onJumpToDate={onJumpToDate}
+        />
       </div>
 
       {/* ═══════ CENTER: Zoom + Filter ════════════════════════════════════ */}
       <div className="hidden md:flex items-center gap-3 px-5 flex-1 min-w-0">
-
-        {/* Zoom segmented control */}
-        <div className="flex items-center h-9 bg-accent/50 rounded-lg p-0.5 gap-0.5">
-          {(['3d', '7d', '14d'] as const).map((level) => (
-            <button
-              key={level}
-              type="button"
-              onClick={() => onZoomChange(level)}
-              className={cn(
-                'px-3.5 h-8 rounded-md text-sm font-medium transition-all',
-                zoomLevel === level
-                  ? 'bg-tl-accent text-white shadow-sm'
-                  : 'text-tl-text-dim hover:text-tl-text',
-              )}
-            >
-              {ZOOM_CONFIG[level].label}
-            </button>
-          ))}
-        </div>
-
-        {/* Room type filter */}
-        <Select
-          value={selectedRoomTypeId ?? '__all__'}
-          onValueChange={(v) => onRoomTypeSelect(v === '__all__' ? null : v)}
-        >
-          <SelectTrigger className="h-8 w-auto min-w-[7rem] text-sm rounded-lg bg-accent/40 border-0 shadow-none px-3 py-1 text-tl-text-dim hover:text-tl-text focus:ring-0 focus:ring-offset-0">
-            <SelectValue placeholder="ทุกประเภท" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">ทุกประเภท</SelectItem>
-            {roomAvailability.map((rt) => (
-              <SelectItem key={rt.room_type_id} value={rt.room_type_id}>
-                {rt.room_type_name} ({rt.available_rooms})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ZoomControl zoomLevel={zoomLevel} onZoomChange={onZoomChange} />
+        <RoomTypeFilter
+          selectedRoomTypeId={selectedRoomTypeId}
+          onRoomTypeSelect={onRoomTypeSelect}
+          roomAvailability={roomAvailability}
+        />
       </div>
 
-      {/* ═══════ RIGHT: KPIs (compact inline) + Actions ═══════════════ */}
+      {/* ═══════ RIGHT: KPIs + Actions ═══════════════════════════════════ */}
       <div className="hidden lg:flex items-center gap-2 pr-4 shrink-0 h-full pl-3">
-
-        {/* KPI pills — grouped: occupancy | operations */}
-        <div className="flex items-center gap-1.5 mr-2">
-
-          {/* ─ Group 1: Occupancy ─ */}
-          <div className="flex items-center gap-2 rounded-lg bg-accent/40 px-3 py-1.5">
-            <div className="w-10 h-1.5 rounded-full bg-tl-border overflow-hidden">
-              <div
-                className={cn(
-                  'h-full rounded-full transition-all duration-300',
-                  occPct >= 90 ? 'bg-destructive' : occPct >= 70 ? 'bg-kpi-occ' : 'bg-tl-accent',
-                )}
-                style={{ width: `${occPct}%` }}
-              />
-            </div>
-            <span className={cn(
-              'text-sm font-bold tabular-nums leading-none',
-              occPct >= 90 ? 'text-destructive' : occPct >= 70 ? 'text-kpi-occ' : 'text-tl-text',
-            )}>
-              {kpiTotals.total > 0 ? `${kpiTotals.occupied}/${kpiTotals.total}` : '—'}
-            </span>
-            <span className="text-xs text-tl-text-dim leading-none">เข้าพัก</span>
-          </div>
-
-          {kpiTotals.unassigned > 0 && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-kpi-pending-muted px-2.5 py-1.5">
-              <Clock size={13} className="text-kpi-pending" />
-              <span className="text-sm font-bold tabular-nums leading-none text-kpi-pending">
-                {kpiTotals.unassigned}
-              </span>
-              <span className="text-xs text-kpi-pending/70 leading-none">รอกำหนด</span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-2.5 py-1.5">
-            <span className={cn(
-              'text-sm font-bold tabular-nums leading-none',
-              kpiTotals.available === 0 ? 'text-destructive' : 'text-kpi-avl',
-            )}>
-              {availLoading ? '…' : kpiTotals.available}
-            </span>
-            <span className="text-xs text-tl-text-dim leading-none">ว่าง</span>
-          </div>
-
-          {/* Divider */}
-          <div className="w-px h-5 bg-tl-border mx-0.5" />
-
-          {/* ─ Group 2: Operations ─ */}
-          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-2.5 py-1.5">
-            <LogIn size={13} className="text-kpi-arr" />
-            <span className="text-sm font-bold tabular-nums leading-none text-kpi-arr">
-              {arrivalsDepartures.arrivals}
-            </span>
-            <span className="text-xs text-tl-text-dim leading-none">เข้า</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 rounded-lg bg-accent/40 px-2.5 py-1.5">
-            <LogOut size={13} className="text-kpi-dep" />
-            <span className="text-sm font-bold tabular-nums leading-none text-kpi-dep">
-              {arrivalsDepartures.departures}
-            </span>
-            <span className="text-xs text-tl-text-dim leading-none">ออก</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
+        <ToolbarKPIStrip
+          kpiTotals={kpiTotals}
+          arrivalsDepartures={arrivalsDepartures}
+          availLoading={availLoading}
+        />
+        <OpsDrawerButton
           onClick={onToggleOpsDrawer}
-          className={cn(
-            'relative w-9 h-9 flex items-center justify-center rounded-lg transition-colors',
-            drawerMode === 'ops'
-              ? 'bg-tl-accent text-white'
-              : 'text-tl-text-dim hover:text-tl-text hover:bg-accent',
-          )}
-          aria-label="Operations panel"
-        >
-          <PanelRight size={18} />
-          {todayPendingCheckinCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-micro-sm font-bold text-white tabular-nums">
-              {todayPendingCheckinCount}
-            </span>
-          )}
-        </button>
+          drawerMode={drawerMode}
+          pendingCount={todayPendingCheckinCount}
+        />
       </div>
 
       {/* ═══════ SM/MD fallback: actions when KPIs are hidden ═══════════ */}
       <div className="flex lg:hidden items-center gap-1.5 pr-4 shrink-0">
-        <button
-          type="button"
+        <OpsDrawerButton
           onClick={onToggleOpsDrawer}
-          className={cn(
-            'relative w-9 h-9 items-center justify-center rounded-lg transition-colors hidden md:flex',
-            drawerMode === 'ops'
-              ? 'bg-tl-accent text-white'
-              : 'text-tl-text-dim hover:text-tl-text hover:bg-accent',
-          )}
-          aria-label="Operations panel"
-        >
-          <PanelRight size={18} />
-          {todayPendingCheckinCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-micro-sm font-bold text-white tabular-nums">
-              {todayPendingCheckinCount}
-            </span>
-          )}
-        </button>
+          drawerMode={drawerMode}
+          pendingCount={todayPendingCheckinCount}
+          className="hidden md:flex"
+        />
       </div>
     </div>
   )
