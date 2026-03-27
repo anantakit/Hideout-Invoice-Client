@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { parseISO, isToday } from 'date-fns'
-import { ChevronDown, BedDouble, LogIn, LogOut, CheckCircle2, Share2, Copy } from 'lucide-react'
-import { cn, todayISO, addDaysISO, fmtShort, formatCompactNumber } from '@/shared/utils'
+import { BedDouble, Share2, Copy } from 'lucide-react'
+import { cn, todayISO, addDaysISO, fmtShort } from '@/shared/utils'
 import { Button } from '@/shared/ui/button'
-import { CardButton } from '@/shared/ui/card-button'
 import { Badge } from '@/shared/ui/badge'
 import type { TimelineRoom, TimelineBooking, UnassignedStay } from '../../types'
 import type { DateRange } from '../../shared/components/DateRangePicker'
@@ -11,11 +10,10 @@ import { StayAvailabilityCard } from './StayAvailabilityCard'
 import { computeDateKPI } from '../utils/computeDateKPI'
 import { computeDateOps } from '../utils/computeDateOps'
 import { computeStayingGuests, buildShareText, shareOrCopy, isMobileDevice } from '../utils/shareOperations'
-import { SingleRoomCheckInCard } from './SingleRoomCheckInCard'
-import { MultiRoomCheckInCard } from './MultiRoomCheckInCard'
-import { SingleRoomCheckOutCard, MultiRoomCheckOutRow, CheckOutAllButton } from './CheckOutCards'
+import { CheckInSection } from './CheckInSection'
+import { CheckOutSection } from './CheckOutSection'
 import { PendingAssignmentsSection } from './PendingAssignmentsSection'
-import { DepositReturnBadge } from '../../shared/components/DepositBadge'
+import { LogIn, LogOut } from 'lucide-react'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -24,7 +22,6 @@ interface DesktopOperationsPanelProps {
   selectedDateStr: string
   roomTypeNameMap: Record<string, string>
   unassignedStays: UnassignedStay[]
-  /** Check-out action — calls mutation directly (cards have their own confirm). */
   onDirectCheckOut?: (booking: TimelineBooking) => void
 }
 
@@ -37,7 +34,6 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
   unassignedStays,
   onDirectCheckOut,
 }: DesktopOperationsPanelProps) {
-  const [expandedCheckoutId, setExpandedCheckoutId] = useState<string | null>(null)
   const [showCheckins, setShowCheckins] = useState(true)
   const [showCheckouts, setShowCheckouts] = useState(true)
   const [stayRange, setStayRange] = useState<DateRange>(() => ({
@@ -204,216 +200,28 @@ export const DesktopOperationsPanel = React.memo(function DesktopOperationsPanel
         )}
       </div>
 
-      {/* ── Check-ins (primary action) ──────────────────────────────── */}
-      {(dateOps.checkins.length > 0 || dateOps.doneCheckins.length > 0) && (
-        <div className="p-4 space-y-2 border-b border-border">
-          <button
-            type="button"
-            onClick={() => setShowCheckins((v) => !v)}
-            className="w-full flex items-center justify-between cursor-pointer hover:opacity-80 transition-opacity"
-          >
-            <span className="text-label text-primary flex items-center space-inline">
-              <LogIn className="w-3 h-3" />
-              เช็คอิน{viewingToday ? 'วันนี้' : ''}
-              <Badge variant="default" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
-                {dateKPI.checkinDone}/{dateKPI.checkinTotal}
-              </Badge>
-            </span>
-            <ChevronDown className={cn(
-              'w-3.5 h-3.5 text-primary/50 transition-transform',
-              showCheckins && 'rotate-180',
-            )} />
-          </button>
+      {/* ── Check-ins ──────────────────────────────────────────────── */}
+      <CheckInSection
+        checkins={dateOps.checkins}
+        doneCheckins={dateOps.doneCheckins}
+        checkinDone={dateKPI.checkinDone}
+        checkinTotal={dateKPI.checkinTotal}
+        viewingToday={viewingToday}
+        show={showCheckins}
+        onToggle={() => setShowCheckins((v) => !v)}
+      />
 
-          {showCheckins && (
-            <>
-              {dateOps.checkins.map((ci) => {
-                const isSingleRoom = ci.totalStays === 1
-                if (isSingleRoom) {
-                  return <SingleRoomCheckInCard key={ci.bookingId} ci={ci} />
-                }
-                return <MultiRoomCheckInCard key={ci.bookingId} ci={ci} />
-              })}
-
-              {/* Already checked-in bookings — shown inline */}
-              {dateOps.doneCheckins.map((ci) => (
-                <div
-                  key={ci.bookingId}
-                  className="w-full radius-card border border-success/20 bg-success/5 space-card opacity-60"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center space-inline min-w-0">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-                      <span className="text-body font-semibold truncate">{ci.guestName}</span>
-                    </div>
-                    <span className="text-helper text-success/80 shrink-0">เข้าพักแล้ว</span>
-                  </div>
-                  {ci.assignedRooms.length > 0 && (
-                    <p className="text-helper mt-1">ห้อง {ci.assignedRooms.join(', ')}</p>
-                  )}
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* ── Check-outs (secondary) ────────────────────────────────── */}
-      {(dateOps.checkouts.length > 0 || dateOps.doneCheckouts.length > 0) && (
-        <div className="p-4 space-y-2 border-b border-border">
-          <button
-            type="button"
-            onClick={() => setShowCheckouts((v) => !v)}
-            className="w-full flex items-center justify-between cursor-pointer hover:opacity-80 transition-opacity"
-          >
-            <span className="text-label text-warning flex items-center space-inline">
-              <LogOut className="w-3 h-3" />
-              เช็คเอาท์{viewingToday ? 'วันนี้' : ''}
-              <Badge variant="amber" className="tabular-nums ml-0.5 text-micro px-1.5 py-0">
-                {dateKPI.checkoutDone}/{dateKPI.checkoutTotal}
-              </Badge>
-            </span>
-            <ChevronDown className={cn(
-              'w-3.5 h-3.5 text-warning/50 transition-transform',
-              showCheckouts && 'rotate-180',
-            )} />
-          </button>
-
-          {showCheckouts && (
-            <>
-              {/* Pending checkouts */}
-              {dateOps.checkouts.map((co) => {
-                const hasBalance = co.balance > 0
-                const isSingleRoom = co.stays.length === 1
-                const pendingStays = co.stays.filter((s) => s.status === 'CHECKED_IN')
-                const doneStays = co.stays.filter((s) => s.status === 'CHECKED_OUT')
-                const isExpanded = expandedCheckoutId === co.bookingId
-
-                if (isSingleRoom) {
-                  const stay = co.stays[0]
-                  const canCheckOut = onDirectCheckOut && stay.status === 'CHECKED_IN'
-                  return (
-                    <SingleRoomCheckOutCard
-                      key={co.bookingId}
-                      co={co}
-                      stay={stay}
-                      canCheckOut={!!canCheckOut}
-                      onCheckOut={() => canCheckOut && onDirectCheckOut!(stay.booking)}
-                    />
-                  )
-                }
-
-                return (
-                  <div key={co.bookingId}>
-                    <CardButton
-                      onClick={() => setExpandedCheckoutId(isExpanded ? null : co.bookingId)}
-                      padding="card"
-                      className={cn(
-                        'border',
-                        isExpanded
-                          ? 'border-border bg-card'
-                          : 'border-border bg-card hover:bg-accent/10',
-                        isExpanded && 'rounded-b-none',
-                      )}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-body font-semibold truncate">{co.guestName}</span>
-                        <span className="text-helper shrink-0">{co.stays.length} ห้อง · {co.nights} คืน</span>
-                      </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-helper">ห้อง {co.roomNumbers.join(', ')}</span>
-                        <ChevronDown className={cn(
-                          'w-3.5 h-3.5 text-muted-foreground/50 transition-transform shrink-0',
-                          isExpanded && 'rotate-180',
-                        )} />
-                      </div>
-                      {hasBalance && (
-                        <p className="text-helper text-destructive font-medium mt-1">
-                          ค้าง ฿{formatCompactNumber(co.balance)}
-                        </p>
-                      )}
-                      <DepositReturnBadge booking={{ key_deposit_amount: co.keyDepositAmount, deposit_paid: co.depositPaid, deposit_status: co.depositStatus }} className="text-helper font-medium mt-0.5" />
-                    </CardButton>
-
-                    {isExpanded && (
-                      <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-helper font-medium shrink-0">
-                              เช็คเอาท์ {doneStays.length}/{co.stays.length} ห้อง
-                            </span>
-                            <div className="flex-1 max-w-24 h-1.5 radius-badge bg-muted overflow-hidden">
-                              <div
-                                className={cn(
-                                  'h-full radius-badge transition-all duration-300',
-                                  doneStays.length === co.stays.length ? 'bg-success' : 'bg-warning',
-                                )}
-                                style={{ width: `${Math.round((doneStays.length / co.stays.length) * 100)}%` }}
-                              />
-                            </div>
-                          </div>
-                          {pendingStays.length > 1 && onDirectCheckOut && (
-                            <CheckOutAllButton
-                              guestName={co.guestName}
-                              pendingStays={pendingStays}
-                              onCheckOutAll={() => {
-                                for (const stay of pendingStays) {
-                                  onDirectCheckOut(stay.booking)
-                                }
-                              }}
-                            />
-                          )}
-                        </div>
-
-                        {pendingStays.map((stay) => (
-                          <MultiRoomCheckOutRow
-                            key={stay.roomStayId}
-                            stay={stay}
-                            guestName={co.guestName}
-                            canCheckOut={!!onDirectCheckOut}
-                            onCheckOut={() => onDirectCheckOut?.(stay.booking)}
-                          />
-                        ))}
-
-                        {doneStays.map((stay) => (
-                          <div
-                            key={stay.roomStayId}
-                            className="flex items-center space-inline radius-button border border-success/20 bg-success/5 px-3 py-2.5 opacity-75"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-                            <span className="text-body font-bold tabular-nums">ห้อง {stay.roomNumber}</span>
-                            <span className="text-helper text-success/80">เช็คเอาท์แล้ว</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-
-              {/* Done checkouts — shown inline */}
-              {dateOps.doneCheckouts.map((co) => (
-                <div
-                  key={co.bookingId}
-                  className="w-full radius-card border border-success/20 bg-success/5 px-3 py-2.5 opacity-60"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center space-inline min-w-0">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-                      <span className="text-body font-semibold truncate">{co.guestName}</span>
-                    </div>
-                    <span className="text-helper shrink-0">ห้อง {co.roomNumbers.join(', ')}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-helper">{co.nights} คืน</span>
-                    <span className="text-helper text-success/80">เช็คเอาท์แล้ว</span>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      )}
+      {/* ── Check-outs ─────────────────────────────────────────────── */}
+      <CheckOutSection
+        checkouts={dateOps.checkouts}
+        doneCheckouts={dateOps.doneCheckouts}
+        checkoutDone={dateKPI.checkoutDone}
+        checkoutTotal={dateKPI.checkoutTotal}
+        viewingToday={viewingToday}
+        show={showCheckouts}
+        onToggle={() => setShowCheckouts((v) => !v)}
+        onDirectCheckOut={onDirectCheckOut}
+      />
 
       {/* ── Pending Assignments ── */}
       {unassignedStays.length > 0 && (

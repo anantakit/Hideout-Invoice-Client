@@ -1,21 +1,15 @@
 import { useState, useMemo } from 'react'
 import { parseISO, differenceInDays } from 'date-fns'
-import { ChevronDown, BedDouble, Loader2, Wand2 } from 'lucide-react'
-import { Button } from '@/shared/ui/button'
+import { ChevronDown, BedDouble } from 'lucide-react'
 import { CardButton } from '@/shared/ui/card-button'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { cn, todayISO, addDaysISO, fmtShortISO, fmtShort, getErrorMessage } from '@/shared/utils'
+import { cn, todayISO, addDaysISO, fmtShort, getErrorMessage } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'
-import {
-  AlertDialog, AlertDialogTrigger, AlertDialogContent,
-  AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
-  AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
-} from '@/shared/ui/alert-dialog'
 import type { UnassignedStay } from '../../types'
-import { useBooking, useAvailabilityGrouped, useAssignRooms } from '../../hooks'
 import { bookingsApi } from '../../api'
 import { toDateStr } from '../utils/operationTypes'
+import { PendingDateSection } from './PendingDateSection'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -141,7 +135,7 @@ export function PendingAssignmentsSection({
 
       <div className="space-y-3">
         {urgentSections.map((section) => (
-          <DateSection
+          <PendingDateSection
             key={section.dateStr}
             section={section}
             expandedBookingId={expandedBookingId}
@@ -172,7 +166,7 @@ export function PendingAssignmentsSection({
           </CardButton>
 
           {showFuture && futureSections.map((section) => (
-            <DateSection
+            <PendingDateSection
               key={section.dateStr}
               section={section}
               expandedBookingId={expandedBookingId}
@@ -188,244 +182,4 @@ export function PendingAssignmentsSection({
   )
 }
 
-// ─── Date Section ────────────────────────────────────────────────────────────
 
-function DateSection({
-  section,
-  expandedBookingId,
-  setExpandedBookingId,
-  autoAssign,
-  autoAssignDate,
-  handleAutoAssign,
-}: {
-  section: { dateStr: string; label: string; isUrgent: boolean; bookings: PendingBookingGroup[]; stayCount: number }
-  expandedBookingId: string | null
-  setExpandedBookingId: (id: string | null) => void
-  autoAssign: { isPending: boolean }
-  autoAssignDate: string | null
-  handleAutoAssign: (date: string) => void
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <p className={cn(
-          'text-xs flex items-center space-inline',
-          section.isUrgent
-            ? 'font-semibold text-warning'
-            : 'font-medium text-muted-foreground',
-        )}>
-          {section.isUrgent && <span className="w-1.5 h-1.5 radius-badge bg-warning" />}
-          {section.label}
-          <span className="font-normal text-muted-foreground/50">{section.stayCount} ห้อง</span>
-        </p>
-        {section.stayCount > 1 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={autoAssign.isPending}
-                className="gap-1.5 h-auto p-0 text-helper hover:text-primary"
-              >
-                {autoAssign.isPending && autoAssignDate === section.dateStr ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Wand2 className="w-3 h-3" />
-                )}
-                อัตโนมัติ
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>ยืนยันจัดห้องอัตโนมัติ</AlertDialogTitle>
-                <AlertDialogDescription>
-                  มอบหมายห้องอัตโนมัติให้ {section.stayCount} ห้อง เข้าพัก{section.label} ระบบจะเลือกห้องที่เหมาะสมที่สุด
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => handleAutoAssign(section.dateStr)}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  จัดอัตโนมัติ
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-      </div>
-
-      {section.bookings.map((booking) => {
-        const isExpanded = expandedBookingId === booking.bookingId
-        return (
-          <div key={booking.bookingId}>
-            <CardButton
-              onClick={() => setExpandedBookingId(isExpanded ? null : booking.bookingId)}
-              padding="card"
-              className={cn(
-                'border',
-                isExpanded
-                  ? 'border-border bg-card rounded-b-none'
-                  : section.isUrgent
-                    ? 'border-border bg-card hover:bg-accent/10'
-                    : 'border-border-soft bg-card/50 hover:bg-card',
-                isExpanded && 'rounded-b-none',
-              )}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className={cn(
-                  'text-body font-semibold truncate',
-                  !section.isUrgent && 'text-muted-foreground',
-                )}>{booking.guestName}</span>
-                <span className="text-helper shrink-0">{booking.nights} คืน</span>
-              </div>
-              <div className="flex items-center justify-between mt-1">
-                <div className="flex items-center space-inline text-helper">
-                  <span>{booking.roomTypeNames.join(', ')}</span>
-                  <span>·</span>
-                  <span className="tabular-nums">{booking.totalRooms} ห้อง</span>
-                </div>
-                <ChevronDown className={cn(
-                  'w-3.5 h-3.5 text-muted-foreground/50 transition-transform shrink-0',
-                  isExpanded && 'rotate-180',
-                )} />
-              </div>
-              <p className="text-helper text-muted-foreground/50 mt-0.5 tabular-nums">
-                {fmtShortISO(booking.checkIn)} → {fmtShortISO(booking.checkOut)}
-              </p>
-            </CardButton>
-
-            {isExpanded && (
-              <InlineRoomPicker
-                bookingId={booking.bookingId}
-                checkIn={booking.checkIn}
-                checkOut={booking.checkOut}
-                onDone={() => setExpandedBookingId(null)}
-              />
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// ─── Inline Room Picker ──────────────────────────────────────────────────────
-
-function InlineRoomPicker({
-  bookingId,
-  checkIn,
-  checkOut,
-  onDone,
-}: {
-  bookingId: string
-  checkIn: string
-  checkOut: string
-  onDone: () => void
-}) {
-  const { data: booking, isLoading: bookingLoading } = useBooking(bookingId)
-  const { data: availability, isLoading: availLoading } = useAvailabilityGrouped(
-    checkIn, checkOut, true, bookingId,
-  )
-  const assignMutation = useAssignRooms(bookingId)
-  const [busyStayId, setBusyStayId] = useState<string | null>(null)
-
-  const unassignedStays = useMemo(() => {
-    if (!booking) return []
-    return booking.room_stays.filter((s) => s.status === 'RESERVED' && !s.room_id)
-  }, [booking])
-
-  const assignedRoomIds = useMemo(() => {
-    if (!booking) return new Set<string>()
-    return new Set(booking.room_stays.filter((s) => s.room_id).map((s) => s.room_id!))
-  }, [booking])
-
-  const neededTypeIds = useMemo(
-    () => new Set(unassignedStays.map((s) => s.room_type_id)),
-    [unassignedStays],
-  )
-
-  const roomsByType = useMemo(() => {
-    if (!availability) return []
-    return availability.room_types
-      .filter((rt) => neededTypeIds.has(rt.room_type_id))
-      .map((rt) => ({
-        typeId: rt.room_type_id,
-        typeName: rt.room_type_name,
-        rooms: rt.rooms.filter((r) => r.available && !assignedRoomIds.has(r.room_id)),
-      }))
-      .filter((rt) => rt.rooms.length > 0)
-  }, [availability, neededTypeIds, assignedRoomIds])
-
-  const handleAssign = async (roomTypeId: string, roomId: string, roomNumber: string) => {
-    const stay = unassignedStays.find((s) => s.room_type_id === roomTypeId)
-    if (!stay) return
-    setBusyStayId(stay.id)
-    try {
-      await assignMutation.mutateAsync([{ room_stay_id: stay.id, room_id: roomId }])
-      toast.success(`กำหนดห้อง ${roomNumber} แล้ว`)
-      if (unassignedStays.length <= 1) onDone()
-    } catch (err) {
-      toast.error((err as Error).message || 'เกิดข้อผิดพลาด')
-    } finally {
-      setBusyStayId(null)
-    }
-  }
-
-  const isLoading = bookingLoading || availLoading
-  const isBusy = assignMutation.isPending
-
-  return (
-    <div className="radius-card rounded-t-none border border-t-0 border-border bg-card space-card space-y-2">
-      {isLoading ? (
-        <div className="flex items-center justify-center py-3">
-          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-        </div>
-      ) : roomsByType.length === 0 ? (
-        <p className="text-xs text-destructive text-center py-2">ไม่มีห้องว่างในประเภทนี้</p>
-      ) : (
-        <>
-          {unassignedStays.length > 0 && (
-            <p className="text-xs text-warning font-medium">
-              รอกำหนด {unassignedStays.length} ห้อง
-            </p>
-          )}
-
-          {roomsByType.map((rt) => (
-            <div key={rt.typeId} className="space-y-1.5">
-              {roomsByType.length > 1 && (
-                <p className="text-xs text-muted-foreground">{rt.typeName}</p>
-              )}
-              <div className="flex flex-wrap gap-1.5">
-                {rt.rooms.map((room) => {
-                  const stayForType = unassignedStays.find((s) => s.room_type_id === rt.typeId)
-                  const isBusyRoom = busyStayId === stayForType?.id
-                  return (
-                    <button
-                      key={room.room_id}
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => handleAssign(rt.typeId, room.room_id, room.room_number)}
-                      className={cn(
-                        'radius-card border border-border bg-card px-3 py-2 min-w-14 text-center',
-                        'text-sm font-bold tabular-nums transition-colors cursor-pointer',
-                        isBusy ? 'opacity-50' : 'hover:border-primary hover:bg-primary/5 active:bg-primary/10',
-                      )}
-                    >
-                      {isBusyRoom && isBusy ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" />
-                      ) : (
-                        room.room_number
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-    </div>
-  )
-}
