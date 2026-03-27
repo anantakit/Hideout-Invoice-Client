@@ -9,72 +9,59 @@ paths:
 
 ## Critical — Must Fix During Refactor
 
-### Oversized Components (> 300 lines)
+### ✅ Oversized Components (> 300 lines) — RESOLVED
 
-Phase 3 split the original god objects (TimelinePage 916→hooks, OperationsDrawer 958→sub-components).
-27 files still exceed the 300-line limit. Top offenders:
+Steps 1–5 split all 27 oversized files. Only shadcn exceptions remain (select.tsx 561, calendar.tsx 411).
 
-| File | Lines | Problem |
-|------|-------|---------|
-| `AssignRoomBottomSheet.tsx` | 607 | Room picker grid + confirm dialog + assignment mutation in one file |
-| `MobileTimelineList.tsx` | 587 | 8 useState, filter/search/sort + room cards + booking items all inline |
-| `InlineCreateBookingForm.tsx` | 509 | 9 useState, guest fields + room selector + form state in one file |
-| `BookingBlock.tsx` | 493 | Content + tooltip + drag handles all inline |
-| `CreateBookingPage.tsx` | 492 | Form state + guest section + stay section in one file |
-| `BookingListPage.tsx` | 483 | Filters + table + row rendering + filter state sync |
-| `TimelineToolbar.tsx` | 479 | Zoom + date nav + KPI strip + room type filter all inline |
-| `AddStayPanel.tsx` | 472 | Form fields + availability check + submit mutation |
-| `DateRangeFilter.tsx` | 460 | Near-identical to ReceiptDateFilter (402) — should be merged |
-| `RoomTypeBookingBuilder.tsx` | 456 | Room selection grid + date sync logic inline |
-| `PaymentPanel.tsx` | 447 | Payment form + history list + CRUD mutations |
+### ✅ Excessive useState (> 5) — RESOLVED
 
-Plus 16 more files in the 300–450 range. **Hotspot**: `bookings/timeline/` accounts for 10 of 27.
+All components now have ≤ 5 useState. Highest is AdminRoomsPage at exactly 5.
 
-**Target**: No component file over 300 lines. Extract sub-components, custom hooks, and utility functions.
+### ✅ Duplicate Code — RESOLVED
 
-### Excessive useState (> 5)
+statusVariant, DateRangeFilter/ReceiptDateFilter merge, toApiDate, etc. — all consolidated.
 
-| Count | File |
-|-------|------|
-| 9 | `InlineCreateBookingForm.tsx` |
-| 8 | `MobileTimelineList.tsx` |
-| 7 | `DateRangeFilter.tsx`, `BookingDetailPage.tsx` |
-| 6 | `ThaiAddressPicker.tsx`, `AdminRoomsPage.tsx`, `ReceiptDateFilter.tsx`, `DateRangePicker.tsx`, `StayCardOperational.tsx`, `ReceiptSection.tsx` |
+### Inline useMutation in Components
 
-**Target**: Max 5 useState per component. Extract related state into `useReducer` or a custom hook.
+Step 6 extracted 6 component files into 7 dedicated hooks. Remaining page-level mutations:
 
-### Duplicate Code
+| File | Mutations | Should extract to |
+|------|-----------|-------------------|
+| `AdminRoomsPage.tsx` | 6 (CRUD room types + rooms) | `useRoomTypeMutations`, `useRoomMutations` |
+| `AdminUsersPage.tsx` | 1 (delete) | `useDeleteUser` |
+| `CustomersPage.tsx` | 1 (delete) | `useDeleteCustomer` |
+| `CreateReceiptPage.tsx` | 1 (create) | `useCreateReceipt` |
+| `ReceiptDetailPage.tsx` | 1 (delete) | `useDeleteReceipt` |
+| `ReceiptHistoryPage.tsx` | 1 (delete) | `useDeleteReceipt` (reuse) |
 
-| What | Where | Fix |
-|------|-------|-----|
-| `statusVariant()` | OperationsDrawer, BookingBottomSheet, bookingStatusHelpers.ts | Single source in `bookingStatusHelpers.ts` |
-| `BadgeVariant` type | BookingListPage, AdminUsersPage, bookingStatusHelpers | Single type in shared types |
-| `SelectedBookingContext` interface | OperationsDrawer, BookingBottomSheet | Single definition, import everywhere |
-| `toApiDate/fromApiDate` | DateRangeFilter, ReceiptDateFilter | Move to `shared/utils.ts` |
-| DateRangeFilter vs ReceiptDateFilter | 460 vs 402 lines, identical presets + effects | Merge into one configurable component |
-| Table page boilerplate | CustomersPage, AdminUsersPage, ReceiptHistoryPage, BookingListPage | Extract shared `DataTablePage` pattern or hook |
-
-## Moderate — Fix When Touching Related Code
+**Target**: No `useMutation` in `.tsx` component files — only in hook files (`hooks/*.ts`).
 
 ### Business Logic in Components
 
-Core algorithms already extracted to utils (`roomAssignment.ts`, `bookingLayout.ts`, `classifyRooms.ts`, `computeDateKPI.ts`).
-Remaining minor violations:
+Core algorithms in utils, but **15+ files** still have inline calculations/transformations:
 
-- `BookingSummary.tsx` — `calcNights()` + cost computation inline → extract to `utils/bookingCalc.ts`
-- `DailyRevenueHeatmap.tsx` — quartile intensity + calendar grid builder inline → extract to `utils/heatmapCalc.ts`
-- `RoomTypeBookingBuilder.tsx` — availability calc inline → extract to existing utils
+| Category | Files | Extract to |
+|----------|-------|------------|
+| Pricing & payment | BookingSummary, BookingPaymentSection, PaymentPanel | `utils/bookingCalc.ts`, `utils/paymentUtils.ts` |
+| Data transforms | BookingListTable (`getRoomInfo`, `getStayRange`), CustomerModal (address parsing) | `utils/bookingListUtils.ts`, `utils/addressUtils.ts` |
+| Dashboard calcs | RevenueTrendChart (YTD, YoY), OccupancyPressureChart (risk score) | `utils/dashboardCalc.ts` |
+| Complex useMemo chains | InlineRoomPicker (4 useMemo), InlineCheckInPanel (3), PendingAssignmentsSection (2) | Custom hooks: `useRoomPickerData`, `useCheckInData`, `usePendingGroups` |
 
-### Prop Drilling
+**Target**: Component files contain only JSX + simple display logic. Calculations, transforms, and multi-step useMemo belong in utils or hooks.
 
-Phase 3 extracted `useTimelineState` hook, but props still waterfall through components:
+### Prop-Heavy Components
 
-- `TimelineContent` receives **~35 props** from `TimelinePage` — god component distributing to children
-- `RoomRow` receives **18 props** — mostly callbacks passed through to `BookingBlock`
-- `MobileSection` is a **pure pass-through wrapper** (12 props, zero logic) → should be eliminated
-- Drag/keyboard/context-menu callbacks drill through 3 levels unchanged
+TimelineContext + TimelineCallbackContext + HoverContext reduced most drilling. Remaining:
 
-**Target**: Introduce `TimelineContext` + `TimelineCallbackContext` so children consume directly via hooks. Goal: no component receives > 10 props.
+| Component | Props | Target | Action |
+|-----------|-------|--------|--------|
+| `TimelineContent` | 19 | < 10 | Move drawer/drag state to context or hook |
+| `BookingBlock` | 18 | < 12 | Verify callbacks use `useTimelineCallbacks()` |
+| `OperationsDrawer` | 12 | < 6 | Read rooms/todayStr/roomTypeNameMap from `useTimelineContext()` |
+
+**Target**: No component receives > 12 props.
+
+## Moderate — Fix When Touching Related Code
 
 ### Inconsistent Patterns
 
