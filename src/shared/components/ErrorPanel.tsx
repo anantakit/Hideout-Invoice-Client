@@ -21,7 +21,7 @@ export default function ErrorPanel({
           <AlertCircle className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
         </div>
 
-        <p className="max-w-[280px] text-sm leading-relaxed text-muted-foreground">
+        <p className="max-w-70 text-sm leading-relaxed text-muted-foreground">
           {message}
         </p>
 

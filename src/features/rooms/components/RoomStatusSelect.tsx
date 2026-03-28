@@ -21,7 +21,7 @@ export function RoomStatusSelect({ room }: { room: Room }) {
       onValueChange={(v) => mutate(v)}
       disabled={isPending}
     >
-      <SelectTrigger className="h-10 w-[110px] md:h-8 md:w-[130px] text-xs">
+      <SelectTrigger className="h-10 w-27.5 md:h-8 md:w-32.5 text-xs">
         <SelectValue />
       </SelectTrigger>
       <SelectContent side="bottom" align="start" sideOffset={4}>

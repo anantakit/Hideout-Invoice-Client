@@ -177,7 +177,7 @@ const BookingContextMenu = React.memo(function BookingContextMenu({
       role="menu"
       onKeyDown={handleMenuKeyDown}
       className={cn(
-        'fixed z-50 min-w-[200px]',
+        'fixed z-50 min-w-50',
         'bg-card border border-border rounded-lg shadow-lg',
         'p-1',
         'animate-in fade-in-0 zoom-in-95 duration-100',

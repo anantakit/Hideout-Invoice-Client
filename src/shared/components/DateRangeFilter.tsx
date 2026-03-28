@@ -193,7 +193,7 @@ export function DateRangeFilter({
                 onClear={clearCustomRange}
               />
             </PopoverTrigger>
-            <PopoverContent className="w-[380px] p-6" align="start" sideOffset={8}>
+            <PopoverContent className="w-95 p-6" align="start" sideOffset={8}>
               <DesktopPicker {...bodyProps} onConfirm={handleConfirm} onCancel={handleCancel} />
             </PopoverContent>
           </Popover>

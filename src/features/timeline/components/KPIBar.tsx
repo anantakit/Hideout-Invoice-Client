@@ -111,7 +111,7 @@ export const KPIBar = React.memo(function KPIBar({
           value={selectedRoomTypeId ?? '__all__'}
           onValueChange={(v) => onSelectRoomType(v === '__all__' ? null : v)}
         >
-          <SelectTrigger className="h-7 w-[120px] text-xs border-border-soft">
+          <SelectTrigger className="h-7 w-30 text-xs border-border-soft">
             <SelectValue placeholder="ทุกประเภท" />
           </SelectTrigger>
           <SelectContent>

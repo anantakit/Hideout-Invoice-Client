@@ -48,7 +48,7 @@ export function RoomTableSection({
         <h2 className="text-section text-base">ห้องพัก</h2>
         <div className="flex items-center gap-2">
           <Select value={filterTypeId} onValueChange={onFilterChange}>
-            <SelectTrigger className="h-9 w-[160px] text-sm">
+            <SelectTrigger className="h-9 w-40 text-sm">
               <SelectValue placeholder="ทุกประเภท" />
             </SelectTrigger>
             <SelectContent>

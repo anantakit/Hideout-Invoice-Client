@@ -215,7 +215,7 @@ export default function CreateReceipt() {
 
               {/* Mobile actions */}
               <div className="pt-2 md:hidden space-y-2">
-                <Button type="submit" disabled={!selectedCustomer || createMutation.isPending} className="w-full min-h-[52px] rounded-xl font-medium">
+                <Button type="submit" disabled={!selectedCustomer || createMutation.isPending} className="w-full min-h-13 rounded-xl font-medium">
                   {createMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> กำลังสร้าง…</> : <><Check className="w-4 h-4" /> สร้างใบเสร็จ</>}
                 </Button>
                 <Button type="button" variant="ghost" onClick={() => navigate('/receipts')} className="w-full touch-target text-muted-foreground">ยกเลิก</Button>

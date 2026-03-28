@@ -50,7 +50,7 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
             value={String(limit)}
             onValueChange={(v) => { onLimitChange(Number(v)); onPageChange(1) }}
           >
-            <SelectTrigger className="h-9 w-[7rem] text-sm">
+            <SelectTrigger className="h-9 w-28 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -79,7 +79,7 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
                 key={n}
                 variant={n === page ? 'default' : 'ghost'}
                 size="icon"
-                className="w-9 h-9 min-h-[44px] min-w-[44px]"
+                className="w-9 h-9 min-h-11 min-w-11"
                 onClick={() => onPageChange(n as number)}
               >
                 {n}
@@ -108,19 +108,19 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
           <Button
             variant="outline"
             size="icon"
-            className="h-9 w-9 min-h-[44px] min-w-[44px]"
+            className="h-9 w-9 min-h-11 min-w-11"
             onClick={() => onPageChange(page - 1)}
             disabled={page === 1}
           >
             ←
           </Button>
-          <span className="text-sm text-muted-foreground tabular-nums min-w-[3rem] text-center">
+          <span className="text-sm text-muted-foreground tabular-nums min-w-12 text-center">
             {page}/{totalPages}
           </span>
           <Button
             variant="outline"
             size="icon"
-            className="h-9 w-9 min-h-[44px] min-w-[44px]"
+            className="h-9 w-9 min-h-11 min-w-11"
             onClick={() => onPageChange(page + 1)}
             disabled={page === totalPages}
           >

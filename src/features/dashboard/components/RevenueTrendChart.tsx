@@ -108,7 +108,7 @@ export function RevenueTrendChart({ data, yearLabel, prevYearLabel }: Props) {
                   setEditValue((entry?.target || 0).toFixed(0))
                 }}
               >
-                <SelectTrigger className="w-[7.5rem] shrink-0">
+                <SelectTrigger className="w-30 shrink-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

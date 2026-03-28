@@ -226,10 +226,10 @@
 
   /* ── 4c. Touch & Sheet tokens ────────────────────────────────── */
   .touch-target {
-    @apply min-h-[44px];
+    @apply min-h-11;
   }
   .touch-target-square {
-    @apply min-h-[44px] min-w-[44px];
+    @apply min-h-11 min-w-11;
   }
   .sheet-mobile {
     @apply max-h-[85vh];

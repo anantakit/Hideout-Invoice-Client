@@ -35,7 +35,7 @@ export function MonthSelector({ month, onChange }: Props) {
       <Button variant="ghost" size="icon" onClick={() => shift(-1)} className="h-8 w-8">
         <ChevronLeft className="w-4 h-4" />
       </Button>
-      <span className="text-sm font-medium text-foreground min-w-[140px] text-center">
+      <span className="text-sm font-medium text-foreground min-w-35 text-center">
         {MONTH_NAMES[m - 1]} {thaiYear}
       </span>
       <Button variant="ghost" size="icon" onClick={() => shift(1)} className="h-8 w-8">

@@ -149,7 +149,7 @@ function MobileCard({ booking, onClick }: { booking: BookingResponse; onClick: (
           </div>
           <div className="flex items-center gap-2 mt-3">
             <StatusBadge status={booking.status} />
-            <span className="text-helper truncate max-w-[140px]">
+            <span className="text-helper truncate max-w-35">
               {(() => { const info = getRoomInfo(booking); return `${info.label} · ${info.count} ห้อง` })()}
             </span>
             {range && (

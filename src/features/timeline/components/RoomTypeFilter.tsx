@@ -28,7 +28,7 @@ const RoomTypeFilter = React.memo(function RoomTypeFilter({
       value={selectedRoomTypeId ?? '__all__'}
       onValueChange={(v) => onRoomTypeSelect(v === '__all__' ? null : v)}
     >
-      <SelectTrigger className="h-8 w-auto min-w-[7rem] text-sm rounded-lg bg-accent/40 border-0 shadow-none px-3 py-1 text-tl-text-dim hover:text-tl-text focus:ring-0 focus:ring-offset-0">
+      <SelectTrigger className="h-8 w-auto min-w-28 text-sm rounded-lg bg-accent/40 border-0 shadow-none px-3 py-1 text-tl-text-dim hover:text-tl-text focus:ring-0 focus:ring-offset-0">
         <SelectValue placeholder="ทุกประเภท" />
       </SelectTrigger>
       <SelectContent>

@@ -68,7 +68,7 @@ export const AvailabilitySummary = React.memo(function AvailabilitySummary({
             Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="w-[110px] md:w-auto h-[96px] rounded-2xl border border-border bg-muted animate-pulse"
+                className="w-27.5 md:w-auto h-24 rounded-2xl border border-border bg-muted animate-pulse"
               />
             ))
           ) : (
@@ -129,7 +129,7 @@ const AvailabilityCard = React.memo(function AvailabilityCard({
   return (
     <Card
       className={cn(
-        'w-[110px] md:w-auto cursor-pointer transition-colors',
+        'w-27.5 md:w-auto cursor-pointer transition-colors',
         isSelected
           ? 'border-primary ring-1 ring-primary/20 bg-primary/5'
           : 'hover:bg-muted',

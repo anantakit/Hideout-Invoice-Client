@@ -58,23 +58,7 @@ pure function, มี test ครอบอยู่
 
 ---
 
-## Phase 4 — React → 19.x
-
-ecosystem พร้อม, code clean
-
-- [ ] อ่าน React 19 migration guide
-- [ ] `npm install react@latest react-dom@latest`
-- [ ] `npm install -D @types/react@latest @types/react-dom@latest`
-- [ ] fix `forwardRef` → ref as prop (shadcn/ui components)
-- [ ] ตรวจ 3rd party compatibility: react-hot-toast, recharts, @react-pdf/renderer, cmdk
-- [ ] `npx tsc --noEmit`
-- [ ] `npm run test`
-- [ ] `npm run build`
-- [ ] commit
-
----
-
-## Phase 5 — React Router → 7.x
+## Phase 4 — React Router → 7.x
 
 มี v6 compat mode, low risk
 
@@ -90,14 +74,13 @@ ecosystem พร้อม, code clean
 
 ---
 
-## Phase 6 — ESLint → 9.x + flat config
+## Phase 5 — ESLint → 9.x
 
-dev-only, ไม่กระทบ runtime
+dev-only, ไม่กระทบ runtime (flat config ย้ายมาแล้วใน Phase 3.5)
 
 - [ ] `npm install -D eslint@9 @typescript-eslint/eslint-plugin@latest @typescript-eslint/parser@latest`
 - [ ] `npm install -D eslint-plugin-react-hooks@latest eslint-plugin-react-refresh@latest`
-- [ ] ลบ `.eslintrc.*` → สร้าง `eslint.config.js` (flat config)
-- [ ] แก้ script `lint` ใน package.json (flat config ไม่ใช้ `--ext`)
+- [ ] อัพเดท `eslint.config.js` ตาม ESLint 9 API changes
 - [ ] `npm run lint`
 - [ ] commit
 
@@ -107,6 +90,7 @@ dev-only, ไม่กระทบ runtime
 
 | Package | Current | Reason |
 |---|---|---|
+| React | 18.3 | เคยลอง 19.2 แล้ว — Radix UI `compose-refs` ทำให้ infinite loop (`Maximum update depth exceeded`), รอ Radix ออก fix ก่อน |
 | Vite | 5.4 | v8 เพิ่งออก, plugin ecosystem ยังไม่นิ่ง |
 | TypeScript | 5.9 | v6 เพิ่ง release, DefinitelyTyped ยังไม่ตาม |
 | Zod | 3.x | v4 เพิ่งออก, hookform/resolvers ยังไม่รองรับ |

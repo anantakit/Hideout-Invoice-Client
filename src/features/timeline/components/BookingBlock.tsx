@@ -96,7 +96,7 @@ const BookingBlock = React.memo(function BookingBlock({
           className={cn(
             'tl-booking-block',
             'absolute',
-            'min-h-[40px]',
+            'min-h-10',
             'rounded-lg border overflow-hidden',
             'flex items-center px-2.5 gap-1.5',
             'select-none',
@@ -117,8 +117,8 @@ const BookingBlock = React.memo(function BookingBlock({
                       'border-transparent shadow-card',
                       colorClass,
                       'opacity-60',
-                      isHighlighted === true  && '!opacity-65 ring-1 ring-inset ring-foreground/20',
-                      isHighlighted === false && '!opacity-15',
+                      isHighlighted === true  && 'opacity-65! ring-1 ring-inset ring-foreground/20',
+                      isHighlighted === false && 'opacity-15!',
                     ]
                   : isUpcoming
                     ? [
@@ -164,7 +164,7 @@ const BookingBlock = React.memo(function BookingBlock({
         </button>
       </TooltipTrigger>
 
-      <TooltipContent side="top" className="max-w-[220px]">
+      <TooltipContent side="top" className="max-w-55">
         <BookingBlockTooltip
           booking={booking}
           roomNumber={roomNumber}

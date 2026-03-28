@@ -76,7 +76,7 @@ export function PressureTooltip({
   const m = MOMENTUM_ICON[entry.momentum] || MOMENTUM_ICON.steady
 
   return (
-    <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg text-xs max-w-[240px]">
+    <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg text-xs max-w-60">
       <p className="font-semibold text-foreground mb-1.5">
         {dateLabel}
         {entry.days_until === 0 ? ' (วันนี้)' : ` (อีก ${entry.days_until} วัน)`}

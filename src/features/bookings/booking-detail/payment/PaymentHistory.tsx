@@ -141,7 +141,7 @@ function PaymentRow({
         )}
         <span>{p.method === 'CASH' ? 'เงินสด' : 'โอนเงิน'}</span>
         {p.note && (
-          <span className="truncate max-w-[120px] text-xs">({p.note})</span>
+          <span className="truncate max-w-30 text-xs">({p.note})</span>
         )}
       </div>
       <div className="flex items-center gap-2">

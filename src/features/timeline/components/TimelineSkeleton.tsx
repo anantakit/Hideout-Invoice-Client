@@ -73,7 +73,7 @@ const TimelineSkeleton = React.memo(function TimelineSkeleton() {
         >
           {/* Room label — sticky left */}
           <div
-            className="shrink-0 border-r border-border-soft flex items-center gap-2.5 px-3 sticky left-0 z-[1] bg-background"
+            className="shrink-0 border-r border-border-soft flex items-center gap-2.5 px-3 sticky left-0 z-1 bg-background"
             style={{ width: 'var(--timeline-room-col-width)' }}
           >
             <div className="h-2 w-2 rounded-full tl-shimmer shrink-0" />

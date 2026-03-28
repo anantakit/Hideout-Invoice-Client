@@ -31,7 +31,7 @@ export const MobileDateStrip = React.memo(function MobileDateStrip({
             type="button"
             onClick={() => onSelectDay(i)}
             className={cn(
-              'flex-shrink-0 w-12 snap-center flex flex-col items-center py-1.5 gap-0.5 text-center transition-colors',
+              'shrink-0 w-12 snap-center flex flex-col items-center py-1.5 gap-0.5 text-center transition-colors',
               isActive
                 ? 'bg-primary/15 text-foreground'
                 : isWeekend

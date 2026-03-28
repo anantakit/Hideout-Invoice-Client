@@ -198,7 +198,7 @@ export function MobileCascadePicker({ value, onChange }: { value: ThaiAddress; o
                       aria-selected={isSelected}
                       onClick={() => handleSelect(item.value)}
                       className={cn(
-                        'flex w-full items-center gap-3 rounded-xl px-4 min-h-[3rem] py-3 text-left transition-colors',
+                        'flex w-full items-center gap-3 rounded-xl px-4 min-h-12 py-3 text-left transition-colors',
                         'active:bg-accent/80',
                         isSelected ? 'bg-primary/10 text-primary' : 'text-foreground',
                       )}

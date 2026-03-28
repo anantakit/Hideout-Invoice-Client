@@ -54,8 +54,8 @@ function BookingBlockContent({
           onPointerDown={onResizeLeftDown}
         >
           <div className="flex gap-px">
-            <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
-            <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
+            <div className="w-0.5 h-5 radius-badge bg-foreground/40" />
+            <div className="w-0.5 h-5 radius-badge bg-foreground/40" />
           </div>
         </div>
       )}
@@ -67,8 +67,8 @@ function BookingBlockContent({
           onPointerDown={onResizeRightDown}
         >
           <div className="flex gap-px">
-            <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
-            <div className="w-[2px] h-5 radius-badge bg-foreground/40" />
+            <div className="w-0.5 h-5 radius-badge bg-foreground/40" />
+            <div className="w-0.5 h-5 radius-badge bg-foreground/40" />
           </div>
         </div>
       )}
@@ -77,7 +77,7 @@ function BookingBlockContent({
       {isMultiRoom && (
         <div
           className={cn(
-            'absolute left-0 inset-y-0 w-[3px]',
+            'absolute left-0 inset-y-0 w-0.75',
             isUpcoming ? 'bg-primary/30' : 'bg-foreground/20',
           )}
         />
@@ -85,7 +85,7 @@ function BookingBlockContent({
 
       {/* Right edge checkout indicator */}
       {showCheckoutEdge && !isUpcoming && (
-        <div className="absolute right-0 inset-y-0 w-[3px] bg-foreground/30 rounded-r-sm" />
+        <div className="absolute right-0 inset-y-0 w-0.75 bg-foreground/30 rounded-r-sm" />
       )}
 
       {/* Transfer indicator */}

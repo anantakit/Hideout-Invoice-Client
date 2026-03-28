@@ -24,7 +24,7 @@ export function FilterChipBar<K extends string = string>({
       {/* Gradient scroll-hint — mobile only */}
       <div
         aria-hidden
-        className="absolute right-0 top-0 bottom-0.5 w-10 bg-gradient-to-l from-card to-transparent pointer-events-none z-10 sm:hidden"
+        className="absolute right-0 top-0 bottom-0.5 w-10 bg-linear-to-l from-card to-transparent pointer-events-none z-10 sm:hidden"
       />
 
       {/* Scrollable chip row — horizontal on mobile, wraps on desktop */}

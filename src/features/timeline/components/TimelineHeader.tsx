@@ -36,7 +36,7 @@ const TimelineHeader = React.memo(function TimelineHeader({ days }: TimelineHead
       <div className="flex" style={{ height: '20px' }}>
         {/* Room-label spacer */}
         <div
-          className="sticky left-0 z-40 bg-sidebar border-r border-border-soft flex-shrink-0"
+          className="sticky left-0 z-40 bg-sidebar border-r border-border-soft shrink-0"
           style={{
             width: 'var(--timeline-room-col-width)',
             minWidth: 'var(--timeline-room-col-width)',
@@ -45,7 +45,7 @@ const TimelineHeader = React.memo(function TimelineHeader({ days }: TimelineHead
         {monthSpans.map((span) => (
           <div
             key={span.key}
-            className="flex items-center px-2 border-r border-timeline-grid/30 flex-shrink-0 overflow-hidden"
+            className="flex items-center px-2 border-r border-timeline-grid/30 shrink-0 overflow-hidden"
             style={{ width: `calc(${span.colSpan} * var(--timeline-cell-width))` }}
           >
             <span className="text-[10px] font-medium text-muted-foreground/70 truncate leading-none">
@@ -59,7 +59,7 @@ const TimelineHeader = React.memo(function TimelineHeader({ days }: TimelineHead
       <div className="flex" style={{ height: '36px' }}>
         {/* Room-label column spacer */}
         <div
-          className="sticky left-0 z-40 bg-sidebar border-r border-border-soft flex-shrink-0"
+          className="sticky left-0 z-40 bg-sidebar border-r border-border-soft shrink-0"
           style={{
             width: 'var(--timeline-room-col-width)',
             minWidth: 'var(--timeline-room-col-width)',
@@ -74,7 +74,7 @@ const TimelineHeader = React.memo(function TimelineHeader({ days }: TimelineHead
             <div
               key={day.toISOString()}
               className={cn(
-                'flex flex-col items-center justify-center gap-0 flex-shrink-0 border-r border-timeline-grid/40',
+                'flex flex-col items-center justify-center gap-0 shrink-0 border-r border-timeline-grid/40',
                 today
                   ? 'bg-primary/10 border-b-2 border-b-timeline-today/50'
                   : isWeekend && 'bg-muted/30',
