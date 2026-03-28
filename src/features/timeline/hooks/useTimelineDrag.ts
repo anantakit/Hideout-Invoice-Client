@@ -1,8 +1,20 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { addDays, differenceInDays, format, parseISO, startOfDay } from 'date-fns'
+import { differenceInDays, format, parseISO, startOfDay } from 'date-fns'
 import toast from 'react-hot-toast'
 import type { TimelineRoom, TimelineBooking } from '@/features/bookings/types'
 import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from '../utils/tokens'
+import {
+  calculateGrabDayOffset,
+  calculateAutoScroll,
+  snapDragToGrid,
+  updatePreviewPosition,
+  computeKeyboardMove,
+  computeKeyboardResize,
+} from '../domain/dragSnapping'
+import type { DragMode, DragPreviewPosition } from '../domain/dragSnapping'
+
+// Re-export types so consumers don't need to change imports
+export type { DragMode, DragPreviewPosition } from '../domain/dragSnapping'
 
 /** Parse a date string that may be YYYY-MM-DD or a full ISO timestamp. */
 function toDate(s: string): Date {
@@ -15,15 +27,7 @@ const DRAG_THRESHOLD_PX = 5
 /** Touch hold delay (ms) before drag activates on touch devices. */
 const TOUCH_HOLD_MS = 400
 
-/** Auto-scroll edge zone (px from container edge). */
-const AUTO_SCROLL_EDGE_PX = 60
-
-/** Max auto-scroll speed (px per 16ms frame). */
-const AUTO_SCROLL_MAX_SPEED = 12
-
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-export type DragMode = 'move' | 'resize-left' | 'resize-right'
 
 export interface DragState {
   /** Booking being dragged/resized. */
@@ -44,17 +48,6 @@ export interface DragState {
   hasConflict: boolean
   /** Whether the target room is in maintenance. */
   isMaintenanceRoom: boolean
-}
-
-export interface DragPreviewPosition {
-  /** Left offset in px from the grid area start. */
-  left: number
-  /** Top offset in px from the virtualizer container top. */
-  top: number
-  /** Width in px. */
-  width: number
-  /** Height in px. */
-  height: number
 }
 
 interface UseTimelineDragOptions {
@@ -139,8 +132,8 @@ export function useTimelineDrag({
 
   // Stable refs for functions used inside RAF loop — avoids restarting the loop
   // when deps like windowStart/windowDays change mid-drag.
-  const snapToGridRef = useRef<typeof snapToGrid>(null!)
-  const updatePreviewPosRef = useRef<typeof updatePreviewPos>(null!)
+  const snapToGridRef = useRef<typeof snapToGridCb>(null!)
+  const updatePreviewPosRef = useRef<typeof updatePreviewPosCb>(null!)
 
   // Keep room maps fresh
   useEffect(() => {
@@ -154,35 +147,9 @@ export function useTimelineDrag({
     roomIndexMap.current = iMap
   }, [rooms])
 
-  // ── Conflict detection ──────────────────────────────────────────────────
+  // ── Snap pointer position to grid (delegates to domain) ─────────────────
 
-  const checkConflict = useCallback(
-    (targetRoomId: string, checkIn: string, checkOut: string, excludeStayId: string): boolean => {
-      const room = roomMapRef.current.get(targetRoomId)
-      if (!room) return true
-      return room.bookings.some(
-        (b) =>
-          b.room_stay_id !== excludeStayId &&
-          b.status !== 'CANCELLED' &&
-          b.status !== 'CHECKED_OUT' &&
-          b.check_in.slice(0, 10) < checkOut &&
-          b.check_out.slice(0, 10) > checkIn,
-      )
-    },
-    [],
-  )
-
-  const isMaintenanceRoom = useCallback(
-    (roomId: string): boolean => {
-      const room = roomMapRef.current.get(roomId)
-      return room?.status === 'MAINTENANCE'
-    },
-    [],
-  )
-
-  // ── Snap pointer position to grid ───────────────────────────────────────
-
-  const snapToGrid = useCallback(
+  const snapToGridCb = useCallback(
     (
       clientX: number,
       clientY: number,
@@ -205,81 +172,46 @@ export function useTimelineDrag({
       // Vertical: convert clientY to virtualizer-relative coordinate
       const relY = clientY - gridRect.top
 
-      // Snap day index — floor so the booking lands in the column the pointer is in
-      const dayIndex = Math.floor(relX / getCellWidthPx())
-
       // Find target room by Y coordinate — O(log n) binary search
       const targetRoomId = getRoomAtY(relY) ?? sourceRoomId
 
-      let newCheckIn: Date
-      let newCheckOut: Date
-
-      if (mode === 'move') {
-        const newOffset = Math.max(0, Math.min(dayIndex - grabDayOffset, windowDays - originalSpanDays))
-        newCheckIn = addDays(windowStart, newOffset)
-        newCheckOut = addDays(newCheckIn, originalSpanDays)
-      } else if (mode === 'resize-right') {
-        newCheckIn = toDate(booking.check_in)
-        const newEndDay = Math.max(
-          differenceInDays(newCheckIn, windowStart) + 1,
-          Math.min(dayIndex + 1, windowDays),
-        )
-        newCheckOut = addDays(windowStart, newEndDay)
-      } else {
-        // resize-left
-        newCheckOut = toDate(booking.check_out)
-        const maxStartDay = differenceInDays(newCheckOut, windowStart) - 1
-        const newStartDay = Math.max(0, Math.min(dayIndex, maxStartDay))
-        newCheckIn = addDays(windowStart, newStartDay)
-      }
-
-      const checkInStr = format(newCheckIn, 'yyyy-MM-dd')
-      const checkOutStr = format(newCheckOut, 'yyyy-MM-dd')
-
-      const hasConflict = checkConflict(targetRoomId, checkInStr, checkOutStr, booking.room_stay_id)
-      const maintenance = isMaintenanceRoom(targetRoomId)
-
-      return {
-        newCheckIn: checkInStr,
-        newCheckOut: checkOutStr,
-        newRoomId: targetRoomId,
-        hasConflict,
-        isMaintenanceRoom: maintenance,
-      }
+      return snapDragToGrid(
+        relX,
+        getCellWidthPx(),
+        mode,
+        originalSpanDays,
+        grabDayOffset,
+        windowStart,
+        windowDays,
+        targetRoomId,
+        booking,
+        roomMapRef.current,
+      )
     },
-    [scrollContainerRef, gridContainerRef, windowStart, windowDays, checkConflict, isMaintenanceRoom, getRoomAtY],
+    [scrollContainerRef, gridContainerRef, windowStart, windowDays, getRoomAtY],
   )
 
-  // ── Update preview position ─────────────────────────────────────────────
+  // ── Update preview position (delegates to domain) ───────────────────────
 
-  const updatePreviewPos = useCallback(
+  const updatePreviewPosCb = useCallback(
     (checkIn: string, checkOut: string, roomId: string) => {
-      const offsetDays = differenceInDays(
-        toDate(checkIn),
+      const pos = updatePreviewPosition(
+        checkIn,
+        checkOut,
+        roomId,
         windowStart,
+        getCellWidthPx(),
+        getRoomTop,
+        getRoomHeight,
       )
-      const spanDays = differenceInDays(
-        toDate(checkOut),
-        toDate(checkIn),
-      )
-      const roomTop = getRoomTop(roomId)
-      const roomHeight = getRoomHeight(roomId)
-
-      if (roomTop === undefined) return
-
-      setPreviewPos({
-        left: TIMELINE_ROOM_COL_PX + offsetDays * getCellWidthPx(),
-        top: roomTop,
-        width: spanDays * getCellWidthPx(),
-        height: roomHeight,
-      })
+      if (pos) setPreviewPos(pos)
     },
     [windowStart, getRoomTop, getRoomHeight],
   )
 
   // Keep refs in sync with latest callback versions
-  snapToGridRef.current = snapToGrid
-  updatePreviewPosRef.current = updatePreviewPos
+  snapToGridRef.current = snapToGridCb
+  updatePreviewPosRef.current = updatePreviewPosCb
 
   // ── Auto-scroll during drag ───────────────────────────────────────────
 
@@ -292,29 +224,7 @@ export function useTimelineDrag({
     }
 
     const rect = el.getBoundingClientRect()
-    const cx = ref.lastClientX
-    const cy = ref.lastClientY
-
-    let dx = 0
-    let dy = 0
-
-    // Horizontal auto-scroll
-    const leftDist = cx - rect.left - TIMELINE_ROOM_COL_PX
-    const rightDist = rect.right - cx
-    if (leftDist < AUTO_SCROLL_EDGE_PX && leftDist > 0) {
-      dx = -AUTO_SCROLL_MAX_SPEED * (1 - leftDist / AUTO_SCROLL_EDGE_PX)
-    } else if (rightDist < AUTO_SCROLL_EDGE_PX && rightDist > 0) {
-      dx = AUTO_SCROLL_MAX_SPEED * (1 - rightDist / AUTO_SCROLL_EDGE_PX)
-    }
-
-    // Vertical auto-scroll
-    const topDist = cy - rect.top
-    const bottomDist = rect.bottom - cy
-    if (topDist < AUTO_SCROLL_EDGE_PX && topDist > 0) {
-      dy = -AUTO_SCROLL_MAX_SPEED * (1 - topDist / AUTO_SCROLL_EDGE_PX)
-    } else if (bottomDist < AUTO_SCROLL_EDGE_PX && bottomDist > 0) {
-      dy = AUTO_SCROLL_MAX_SPEED * (1 - bottomDist / AUTO_SCROLL_EDGE_PX)
-    }
+    const { dx, dy } = calculateAutoScroll(ref.lastClientX, ref.lastClientY, rect)
 
     if (dx !== 0 || dy !== 0) {
       el.scrollLeft += dx
@@ -393,9 +303,13 @@ export function useTimelineDrag({
 
       // Calculate where on the booking the user grabbed (in days from left edge)
       const containerRect = el.getBoundingClientRect()
-      const pointerRelX = e.clientX - containerRect.left - TIMELINE_ROOM_COL_PX + el.scrollLeft
-      const pointerDayIndex = Math.floor(pointerRelX / getCellWidthPx())
-      const grabDayOffset = Math.max(0, pointerDayIndex - offsetDays)
+      const grabOffset = calculateGrabDayOffset(
+        e.clientX,
+        containerRect.left,
+        el.scrollLeft,
+        offsetDays,
+        getCellWidthPx(),
+      )
 
       const isTouch = e.pointerType === 'touch'
 
@@ -410,7 +324,7 @@ export function useTimelineDrag({
         sourceRoomId: roomId,
         originalOffsetDays: offsetDays,
         originalSpanDays: spanDays,
-        grabDayOffset,
+        grabDayOffset: grabOffset,
         isTouch,
         touchHoldTimer: null,
         touchHoldMet: !isTouch, // Mouse doesn't need hold delay
@@ -639,43 +553,26 @@ export function useTimelineDrag({
     }
   }, [])
 
-  // ── Keyboard move / resize ────────────────────────────────────────────
+  // ── Keyboard move / resize (delegates to domain) ────────────────────────
 
   const handleKeyboardMove = useCallback(
     (booking: TimelineBooking, roomId: string, direction: 'left' | 'right' | 'up' | 'down') => {
-      const checkIn = toDate(booking.check_in)
-      const checkOut = toDate(booking.check_out)
+      const result = computeKeyboardMove(
+        booking,
+        roomId,
+        direction,
+        rooms,
+        roomIndexMap.current,
+        roomMapRef.current,
+      )
 
-      let newCheckIn: Date
-      let newCheckOut: Date
-      let newRoomId = roomId
+      if (!result) return
 
-      if (direction === 'left') {
-        newCheckIn = addDays(checkIn, -1)
-        newCheckOut = addDays(checkOut, -1)
-      } else if (direction === 'right') {
-        newCheckIn = addDays(checkIn, 1)
-        newCheckOut = addDays(checkOut, 1)
-      } else {
-        newCheckIn = checkIn
-        newCheckOut = checkOut
-        const currentIdx = roomIndexMap.current.get(roomId) ?? 0
-        const targetIdx = direction === 'up' ? currentIdx - 1 : currentIdx + 1
-        if (targetIdx < 0 || targetIdx >= rooms.length) return
-        newRoomId = rooms[targetIdx].id
-      }
-
-      const ciStr = format(newCheckIn, 'yyyy-MM-dd')
-      const coStr = format(newCheckOut, 'yyyy-MM-dd')
-
-      const hasConflict = checkConflict(newRoomId, ciStr, coStr, booking.room_stay_id)
-      const maintenance = isMaintenanceRoom(newRoomId)
-
-      if (hasConflict) {
+      if (result.hasConflict) {
         toast.error('ห้องไม่ว่างในช่วงเวลาที่เลือก')
         return
       }
-      if (maintenance) {
+      if (result.isMaintenanceRoom) {
         toast.error('ไม่สามารถย้ายไปห้องที่ปิดซ่อมได้')
         return
       }
@@ -683,33 +580,21 @@ export function useTimelineDrag({
       onMoveStay({
         bookingId: booking.booking_id,
         stayId: booking.room_stay_id,
-        newRoomId,
-        newCheckIn: ciStr,
-        newCheckOut: coStr,
+        newRoomId: result.newRoomId,
+        newCheckIn: result.newCheckIn,
+        newCheckOut: result.newCheckOut,
       })
     },
-    [rooms, checkConflict, isMaintenanceRoom, onMoveStay],
+    [rooms, onMoveStay],
   )
 
   const handleKeyboardResize = useCallback(
     (booking: TimelineBooking, roomId: string, edge: 'extend' | 'shrink') => {
-      const checkIn = toDate(booking.check_in)
-      const checkOut = toDate(booking.check_out)
-      const span = differenceInDays(checkOut, checkIn)
+      const result = computeKeyboardResize(booking, roomId, edge, roomMapRef.current)
 
-      let newCheckOut: Date
-      if (edge === 'extend') {
-        newCheckOut = addDays(checkOut, 1)
-      } else {
-        if (span <= 1) return // Minimum 1 night
-        newCheckOut = addDays(checkOut, -1)
-      }
+      if (!result) return
 
-      const ciStr = format(checkIn, 'yyyy-MM-dd')
-      const coStr = format(newCheckOut, 'yyyy-MM-dd')
-
-      const hasConflict = checkConflict(roomId, ciStr, coStr, booking.room_stay_id)
-      if (hasConflict) {
+      if (result.hasConflict) {
         toast.error('ห้องไม่ว่างในช่วงเวลาที่เลือก')
         return
       }
@@ -718,11 +603,11 @@ export function useTimelineDrag({
         bookingId: booking.booking_id,
         stayId: booking.room_stay_id,
         newRoomId: roomId,
-        newCheckIn: ciStr,
-        newCheckOut: coStr,
+        newCheckIn: result.newCheckIn,
+        newCheckOut: result.newCheckOut,
       })
     },
-    [checkConflict, onMoveStay],
+    [onMoveStay],
   )
 
   return {
