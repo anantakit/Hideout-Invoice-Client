@@ -187,27 +187,27 @@ Read-only analytics, medium complexity
 
 ### Rooms
 
-- [ ] `useRoomMutations` — CRUD mutations
-- [ ] `useUpdateRoomStatus` — status update mutation
+- [x] `useRoomMutations` — CRUD mutations
+- [x] `useUpdateRoomStatus` — status update mutation
 
 ### Customers
 
-- [ ] `addressUtils.ts` (ถ้ายังไม่ได้ test ใน Phase 1)
-- [ ] `useCreateCustomer`, `useUpdateCustomer`, `useDeleteCustomer`
+- [x] `addressUtils.ts` (ถ้ายังไม่ได้ test ใน Phase 1)
+- [x] `useCreateCustomer`, `useUpdateCustomer`, `useDeleteCustomer`
 
 ### Auth / Users
 
 - [ ] Login form validation
-- [ ] `useCreateUser`, `useUpdateUser`, `useDeleteUser`
+- [x] `useCreateUser`, `useUpdateUser`, `useDeleteUser`
 
 ---
 
 ## Shared Hooks (ตัดขวาง — ทำเมื่อ test feature ที่ใช้งาน)
 
-- [ ] `usePaginatedQuery` — pagination + query integration
-- [ ] `useDataTable` — sort + pagination state
-- [ ] `useDebounce` — debounce timing
-- [ ] `useIsMobile` — responsive detection
+- [x] `usePaginatedQuery` — pagination + query integration
+- [x] `useDataTable` — sort + pagination state
+- [x] `useDebounce` — debounce timing
+- [x] `useIsMobile` — responsive detection
 
 ---
 
