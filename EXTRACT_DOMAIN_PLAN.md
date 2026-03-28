@@ -54,7 +54,7 @@ Component (UI)              → render + user interaction
 
 Timeline เป็น logic-heavy ที่สุด — geometry math, conflict detection, virtualization ล้วนเป็น pure functions ที่ test ได้ง่ายมากถ้าแยกออกมา
 
-### A1: `useTimelineDrag` → `timeline/domain/dragSnapping.ts`
+### A1: `useTimelineDrag` → `timeline/domain/dragSnapping.ts` ✅
 
 **ปัจจุบัน:** hook ทำทั้ง pointer events + snap geometry + conflict check + auto-scroll + preview
 
@@ -76,7 +76,7 @@ function calculateGrabDayOffset(pointerX, bookingLeftX, cellWidth): number
 
 ---
 
-### A2: `useTimelineState` → `timeline/domain/computeState.ts`
+### A2: `useTimelineState` → `timeline/domain/computeState.ts` ✅
 
 **ปัจจุบัน:** monolithic hook ~800 lines, มี 8+ derived computations ที่เป็น pure
 
@@ -100,7 +100,7 @@ function calculateTodayPendingCheckinCount(unassignedStays, allRooms, todayStr):
 
 ---
 
-### A3: `useInfiniteTimeline` → `timeline/domain/infiniteScroll.ts`
+### A3: `useInfiniteTimeline` → `timeline/domain/infiniteScroll.ts` ✅
 
 **Extract:**
 ```typescript
@@ -116,7 +116,7 @@ function calculateJumpTarget(targetDate, bufferDays, cellWidth): number
 
 ---
 
-### A4: `useTimelineDraw` → `timeline/domain/drawGeometry.ts`
+### A4: `useTimelineDraw` → `timeline/domain/drawGeometry.ts` ✅
 
 **Extract:**
 ```typescript
@@ -131,7 +131,7 @@ function isCellEmpty(roomId, checkIn, checkOut, bookings): boolean
 
 ---
 
-### A5: `usePendingGroups` → `timeline/domain/stayAggregation.ts`
+### A5: `usePendingGroups` → `timeline/domain/stayAggregation.ts` ✅
 
 **Extract:**
 ```typescript
