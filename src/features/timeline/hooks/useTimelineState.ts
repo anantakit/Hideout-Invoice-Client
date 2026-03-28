@@ -21,8 +21,15 @@ import {
   computeRowHeight,
   getCellWidthPx,
 } from '../utils/tokens'
-import { computeRoomLayout } from '../utils/bookingLayout'
-import { getStatusColorClass } from '../utils/statusColors'
+import {
+  buildBookingRoomCountMap,
+  buildBookingColorMap,
+  buildRoomLayerCountMap,
+  buildRoomMaps,
+  filterRoomsByType,
+  buildMobileDateStrip,
+  calculateTodayPendingCheckinCount,
+} from '../domain/computeState'
 import { useInfiniteTimeline } from './useInfiniteTimeline'
 import { useTimelineDrag } from './useTimelineDrag'
 import { useTimelineActions } from './useTimelineActions'
@@ -178,23 +185,10 @@ export function useTimelineState(
     [availRoomTypes],
   )
 
-  const { roomTypeIdByRoomId, roomTypeNameByRoomId, priceByRoomTypeId } = useMemo(() => {
-    const idMap: Record<string, string> = {}
-    const nameMap: Record<string, string> = {}
-    const priceMap: Record<string, number> = {}
-    for (const rt of availRoomTypes) {
-      priceMap[rt.room_type_id] = rt.price_per_night
-      for (const r of rt.rooms) {
-        idMap[r.room_id] = rt.room_type_id
-        nameMap[r.room_id] = rt.room_type_name
-      }
-    }
-    return {
-      roomTypeIdByRoomId: idMap,
-      roomTypeNameByRoomId: nameMap,
-      priceByRoomTypeId: priceMap,
-    }
-  }, [availRoomTypes])
+  const { roomTypeIdByRoomId, roomTypeNameByRoomId, priceByRoomTypeId } = useMemo(
+    () => buildRoomMaps(availRoomTypes),
+    [availRoomTypes],
+  )
   const roomTypeIdByRoomIdRef = useRef(roomTypeIdByRoomId)
   roomTypeIdByRoomIdRef.current = roomTypeIdByRoomId
   const roomTypeNameByRoomIdRef = useRef(roomTypeNameByRoomId)
@@ -202,59 +196,32 @@ export function useTimelineState(
   const priceByRoomTypeIdRef = useRef(priceByRoomTypeId)
   priceByRoomTypeIdRef.current = priceByRoomTypeId
 
-  const filteredRooms = useMemo(() => {
-    if (!selectedRoomTypeId) return allRooms
-    return allRooms.filter((r) => roomTypeIdByRoomId[r.id] === selectedRoomTypeId)
-  }, [allRooms, selectedRoomTypeId, roomTypeIdByRoomId])
+  const filteredRooms = useMemo(
+    () => filterRoomsByType(allRooms, selectedRoomTypeId, roomTypeIdByRoomId),
+    [allRooms, selectedRoomTypeId, roomTypeIdByRoomId],
+  )
 
-  const bookingRoomCountMap = useMemo<Record<string, number>>(() => {
-    const roomSets: Record<string, Set<string>> = {}
-    for (const room of allRooms) {
-      for (const b of room.bookings) {
-        if (!roomSets[b.booking_id]) roomSets[b.booking_id] = new Set()
-        roomSets[b.booking_id].add(room.id)
-      }
-    }
-    const counts: Record<string, number> = {}
-    for (const [bid, s] of Object.entries(roomSets)) counts[bid] = s.size
-    return counts
-  }, [allRooms])
+  const bookingRoomCountMap = useMemo(
+    () => buildBookingRoomCountMap(allRooms),
+    [allRooms],
+  )
 
-  const bookingColorMap = useMemo<Record<string, string>>(() => {
-    const colors: Record<string, string> = {}
-    for (const room of allRooms) {
-      for (const b of room.bookings) {
-        colors[b.room_stay_id] = getStatusColorClass(b.status)
-      }
-    }
-    return colors
-  }, [allRooms])
+  const bookingColorMap = useMemo(
+    () => buildBookingColorMap(allRooms),
+    [allRooms],
+  )
 
-  const roomLayerCountMap = useMemo<Record<string, number>>(() => {
-    const map: Record<string, number> = {}
-    for (const room of allRooms) {
-      if (room.bookings.length <= 1) {
-        map[room.id] = room.bookings.length
-      } else {
-        const layout = computeRoomLayout(room.bookings, fromStr, toStr)
-        map[room.id] = layout.totalLayers
-      }
-    }
-    return map
-  }, [allRooms, fromStr, toStr])
+  const roomLayerCountMap = useMemo(
+    () => buildRoomLayerCountMap(allRooms, fromStr, toStr),
+    [allRooms, fromStr, toStr],
+  )
 
   // ── Mobile date strip derived ─────────────────────────────────────────
-  const mobileStripStart = useMemo(
-    () => subDays(mobileAnchor, MOBILE_CENTER),
+  const mobileDays = useMemo(
+    () => buildMobileDateStrip(mobileAnchor, MOBILE_STRIP_DAYS, MOBILE_CENTER),
     [mobileAnchor],
   )
-  const mobileDays = useMemo(
-    () =>
-      Array.from({ length: MOBILE_STRIP_DAYS }, (_, i) =>
-        addDays(mobileStripStart, i),
-      ),
-    [mobileStripStart],
-  )
+  const mobileStripStart = mobileDays[0]
   const mobileSelectedDate = useMemo(
     () => addDays(mobileStripStart, mobileDayOffset),
     [mobileStripStart, mobileDayOffset],
@@ -295,26 +262,10 @@ export function useTimelineState(
   const todayStr = useMemo(() => todayISO(), [])
 
   // Count pending check-in tasks for today
-  const todayPendingCheckinCount = useMemo(() => {
-    let count = 0
-    count += unassignedStays.filter(
-      (s) =>
-        s.check_in.slice(0, 10) === todayStr &&
-        s.status !== 'CANCELLED' &&
-        s.status !== 'CHECKED_OUT',
-    ).length
-    for (const room of allRooms) {
-      for (const b of room.bookings) {
-        if (
-          b.check_in.slice(0, 10) === todayStr &&
-          (b.status === 'RESERVED' || b.status === 'ASSIGNED')
-        ) {
-          count++
-        }
-      }
-    }
-    return count
-  }, [unassignedStays, allRooms, todayStr])
+  const todayPendingCheckinCount = useMemo(
+    () => calculateTodayPendingCheckinCount(unassignedStays, allRooms, todayStr),
+    [unassignedStays, allRooms, todayStr],
+  )
 
   // ── KPI totals ────────────────────────────────────────────────────────
   const kpiTotals = useMemo(
