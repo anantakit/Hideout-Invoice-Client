@@ -6,10 +6,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { todayISO, addDaysISO } from '@/shared/utils'
 import { useCreateBooking } from '../../hooks'
-import { KEY_DEPOSIT_PER_ROOM } from '../../constants'
 import { createBookingSchema } from '../utils/createBookingSchema'
 import type { CreateBookingFormValues } from '../utils/createBookingSchema'
-import { expandGroupedStays } from '../utils/expandGroupedStays'
+import {
+  validateCreateBookingForm,
+  calculateSubmitLabel,
+  buildCreateBookingPayload,
+} from '../../domain/formValidation'
 import { ROUTES } from '@/app/routes'
 import type { Customer } from '@/shared/types/customer'
 import type { CustomerFormValues } from '@/shared/components/CustomerModal'
@@ -66,11 +69,9 @@ export function useCreateBookingForm() {
   const paymentAmount = useWatch({ control: form.control, name: 'payment_amount' })
   const isSubmitting  = createBooking.isPending
 
-  const hasGuest = guestName.trim().length > 0
-  const hasValidItems = items.every(
-    (item) => item.room_type_id && item.check_in && item.check_out && item.check_out > item.check_in,
+  const { hasGuest, hasValidItems, hasPayment } = validateCreateBookingForm(
+    guestName, items, paymentMode, paymentAmount,
   )
-  const hasPayment = paymentMode === 'reserve' || (paymentAmount != null && paymentAmount > 0)
   const canSubmit = hasGuest && hasValidItems && hasPayment && !isSubmitting
 
   const handleCustomerCreated = useCallback(
@@ -90,54 +91,24 @@ export function useCreateBookingForm() {
     [createCustomerMutate],
   )
 
-  const submitLabel =
-    source === 'walk_in'
-      ? paymentMode === 'reserve'
-        ? 'เช็คอิน (ค้างชำระ)'
-        : 'เช็คอิน & ชำระเงิน'
-      : 'ยืนยันการจอง'
+  const submitLabel = calculateSubmitLabel(source, paymentMode)
 
   const onSubmit = form.handleSubmit((values) => {
-    const stays = expandGroupedStays(values.items)
+    const payload = buildCreateBookingPayload(values)
 
-    const totalRooms = values.items.reduce((s, i) => s + Math.max(1, i.quantity ?? 1), 0)
-    const depositAmount = KEY_DEPOSIT_PER_ROOM * totalRooms
-    const depositStatus = values.payment_mode === 'full_deposit' ? 'COLLECTED' : 'PENDING'
-
-    const payment =
-      values.payment_mode !== 'reserve' && values.payment_amount
-        ? {
-            amount: values.payment_amount,
-            method: values.payment_method,
-            deposit_amount: values.payment_mode === 'full_deposit' ? depositAmount : undefined,
-          }
-        : undefined
-
-    createBooking.mutate(
-      {
-        source: values.source,
-        guest_name: values.guest_name,
-        guest_phone: values.guest_phone,
-        customer_id: values.customer_id || undefined,
-        key_deposit_amount: depositAmount,
-        deposit_status: depositStatus,
-        stays,
-        payment,
+    createBooking.mutate(payload, {
+      onSuccess: (booking) => {
+        toast.success(
+          values.source === 'walk_in'
+            ? 'เช็คอินสำเร็จ'
+            : `สร้างการจอง #${booking.id.slice(0, 8)} สำเร็จ`,
+        )
+        navigate(ROUTES.bookings.detail(booking.id))
       },
-      {
-        onSuccess: (booking) => {
-          toast.success(
-            values.source === 'walk_in'
-              ? 'เช็คอินสำเร็จ'
-              : `สร้างการจอง #${booking.id.slice(0, 8)} สำเร็จ`,
-          )
-          navigate(ROUTES.bookings.detail(booking.id))
-        },
-        onError: (error: Error) => {
-          toast.error(error.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
-        },
+      onError: (error: Error) => {
+        toast.error(error.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
       },
-    )
+    })
   })
 
   return {

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { todayISO } from '@/shared/utils'
 import { useCreateBooking, useAvailabilityGrouped } from '@/features/bookings/hooks'
 import { KEY_DEPOSIT_PER_ROOM } from '@/features/bookings/constants'
+import { calculateSubmitLabel } from '@/features/bookings/domain/formValidation'
 import type { CreateBookingPrefill } from '../components/OperationsDrawer'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -134,10 +135,7 @@ export function useInlineBookingForm(
   const canSubmit = hasGuest && hasPayment && !createBooking.isPending
 
   const roomLabel = selectedRooms.map((r) => r.roomNumber).join(', ')
-  const submitLabel =
-    source === 'walk_in'
-      ? paymentMode === 'reserve' ? 'เช็คอิน (ค้างชำระ)' : 'เช็คอิน & ชำระเงิน'
-      : 'ยืนยันการจอง'
+  const submitLabel = calculateSubmitLabel(source, paymentMode)
 
   const handlePaymentModeChange = useCallback((mode: PaymentMode) => {
     dispatch({ type: 'SET_PAYMENT_MODE', mode, totalAmount, depositAmount })

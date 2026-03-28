@@ -220,7 +220,7 @@ function calculateUnassignedSlots(items): boolean
 
 ---
 
-### B3: `useCreateBookingForm` → `bookings/domain/formValidation.ts`
+### B3: `useCreateBookingForm` → `bookings/domain/formValidation.ts` ✅
 
 **Extract:**
 ```typescript
