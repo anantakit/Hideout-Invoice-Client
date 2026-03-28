@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { InvoicePrefillResponse } from '@/features/bookings/types'
+import type { InvoicePrefillResponse } from '@/shared/hooks/useInvoicePrefill'
 import { mapPrefillToFormValues, buildPrefillNotes } from './prefillLogic'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

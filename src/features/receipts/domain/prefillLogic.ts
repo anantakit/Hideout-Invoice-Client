@@ -1,6 +1,6 @@
 // receipts/domain/prefillLogic.ts — pure functions, no React imports
 
-import type { InvoicePrefillResponse } from '@/features/bookings/types'
+import type { InvoicePrefillResponse } from '@/shared/hooks/useInvoicePrefill'
 import type { ReceiptFormValues } from '../schemas'
 import { METHOD_MAP } from '../schemas'
 
