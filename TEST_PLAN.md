@@ -97,28 +97,28 @@ Feature ใหญ่ที่สุด, core business logic
 - [x] `getRoomInfo(booking)` — สรุปข้อมูลห้องจาก booking
 - [x] `getStayRange(booking)` — หา check-in/check-out range จาก booking
 
-### Hooks (ถ้ามีเวลา)
+### Hooks
 
-- [ ] `useCreateBookingForm` — form state management + validation
-- [ ] `useTotalAmount` — คำนวณยอดรวม reactive
-- [ ] `useBookingListFilters` — filter state + URL sync
+- [x] `useCreateBookingForm` — form state management + validation
+- [x] `useTotalAmount` — คำนวณยอดรวม reactive
+- [x] `useBookingListFilters` — filter state + URL sync
 
 ---
 
-## XXX Phase 3 — Payment & Receipt
+## Phase 3 — Payment & Receipt
 
 เรื่องเงิน — ห้ามพลาด
 
 ### Receipt
 
-- [ ] `useReceiptPrefill` — prefill receipt จาก booking data
-- [ ] `useCreateReceipt` — mutation + optimistic update
-- [ ] `useDeleteReceipt` — mutation + confirmation flow
+- [x] `useReceiptPrefill` — prefill receipt จาก booking data
+- [x] `useCreateReceipt` — mutation + optimistic update
+- [x] `useDeleteReceipt` — mutation + confirmation flow
 
 ### Payment
 
-- [ ] `usePaymentPanel` — payment state + calculations
-- [ ] `useReceiptBillingState` — billing state derivation
+- [x] `usePaymentPanel` — payment state + calculations
+- [x] `useReceiptBillingState` — billing state derivation
 
 ---
 
