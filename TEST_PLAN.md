@@ -24,23 +24,23 @@ Setup test infrastructure ก่อนเขียน test ใดๆ
 
 `src/shared/utils.ts` — ใช้ทุก feature, pure functions ทั้งหมด
 
-- [ ] `formatTHB(amount)` / `formatCurrency(amount)` — format เงินบาท
-- [ ] `formatTHBCurrency(amount)` — format พร้อมสัญลักษณ์ ฿
-- [ ] `formatCompactNumber(n)` / `formatCompact(n)` / `formatKPI(n)` — ย่อตัวเลข
-- [ ] `formatThaiDate(dateString)` / `formatDate(dateString)` — วันที่ภาษาไทย (พ.ศ.)
-- [ ] `fmtShort(d)`, `fmtShortWithYear(d)`, `fmtShortISO(iso)` — short date formats
-- [ ] `fmtThaiDate(iso)`, `fmtShortBE(iso)`, `fmtLongBE(iso)` — Buddhist Era formats
-- [ ] `formatDateInput(dateString)` — format สำหรับ input field
-- [ ] `todayISO()`, `addDaysISO(days)` — ISO date helpers
-- [ ] `formatPhone(phone)` — format เบอร์โทร (รวม null/undefined)
-- [ ] `getErrorMessage(err, fallback?)` — extract error message
-- [ ] `cn(...inputs)` — class name merge (tailwind-merge)
-- [ ] `isMobileDevice()` — mobile detection
+- [x] `formatTHB(amount)` / `formatCurrency(amount)` — format เงินบาท
+- [x] `formatTHBCurrency(amount)` — format พร้อมสัญลักษณ์ ฿
+- [x] `formatCompactNumber(n)` / `formatCompact(n)` / `formatKPI(n)` — ย่อตัวเลข
+- [x] `formatThaiDate(dateString)` / `formatDate(dateString)` — วันที่ภาษาไทย (พ.ศ.)
+- [x] `fmtShort(d)`, `fmtShortWithYear(d)`, `fmtShortISO(iso)` — short date formats
+- [x] `fmtThaiDate(iso)`, `fmtShortBE(iso)`, `fmtLongBE(iso)` — Buddhist Era formats
+- [x] `formatDateInput(dateString)` — format สำหรับ input field
+- [x] `todayISO()`, `addDaysISO(days)` — ISO date helpers
+- [x] `formatPhone(phone)` — format เบอร์โทร (รวม null/undefined)
+- [x] `getErrorMessage(err, fallback?)` — extract error message
+- [x] `cn(...inputs)` — class name merge (tailwind-merge)
+- [x] `isMobileDevice()` — mobile detection
 
 `src/shared/utils/addressUtils.ts`
 
-- [ ] `parseAddressToThaiAddr(address)` — parse ที่อยู่ไทย
-- [ ] `buildAddressString(detail, thai)` — สร้าง string ที่อยู่
+- [x] `parseAddressToThaiAddr(address)` — parse ที่อยู่ไทย
+- [x] `buildAddressString(detail, thai)` — สร้าง string ที่อยู่
 
 ---
 
