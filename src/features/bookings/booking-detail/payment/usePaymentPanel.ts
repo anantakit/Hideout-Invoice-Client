@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { getErrorMessage } from '@/shared/utils'
+import { buildCreatePayload, buildEditPayload } from '../../domain/paymentCalc'
 import { useCreatePayment, useUpdateBooking, useUpdatePayment } from '../../hooks'
 import type { BookingResponse, PaymentResponse } from '../../types'
 
@@ -35,15 +36,8 @@ export function usePaymentPanel(booking: BookingResponse) {
   }
 
   function onEditSubmit(paymentId: string, original: PaymentResponse, values: PaymentFormValues) {
-    const payload: Record<string, unknown> = {}
-    const newAmount = Number(values.amount)
-    if (newAmount !== original.amount) payload.amount = newAmount
-    if (values.method !== original.method) payload.method = values.method
-    const newNote = values.note ?? ''
-    const oldNote = original.note ?? ''
-    if (newNote !== oldNote) payload.note = newNote
-
-    if (Object.keys(payload).length === 0) {
+    const payload = buildEditPayload(original, values)
+    if (!payload) {
       cancelEdit()
       return
     }
@@ -65,9 +59,7 @@ export function usePaymentPanel(booking: BookingResponse) {
   function onCreateSubmit(values: PaymentFormValues) {
     createPayment.mutate(
       {
-        amount: Number(values.amount),
-        method: values.method,
-        note: values.note || undefined,
+        ...buildCreatePayload(values),
         idempotency_key: crypto.randomUUID(),
       },
       {

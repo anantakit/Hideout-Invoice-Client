@@ -259,7 +259,7 @@ function isValidBillingSelection(mode, selections): boolean
 
 ## Extract Phase C — Payment & Receipt (🟡 Medium)
 
-### C1: `usePaymentPanel` → `bookings/domain/paymentCalc.ts`
+### C1: `usePaymentPanel` → `bookings/domain/paymentCalc.ts` ✅
 
 **Extract:**
 ```typescript
