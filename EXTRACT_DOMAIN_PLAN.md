@@ -234,7 +234,7 @@ function buildCreateBookingPayload(values, items, depositAmount): CreateBookingP
 
 ---
 
-### B4: `useCheckInAvailability` → `bookings/domain/checkInAvailability.ts`
+### B4: `useCheckInAvailability` → `bookings/domain/checkInAvailability.ts` ✅
 
 **Extract:**
 ```typescript
@@ -246,7 +246,7 @@ function extractSelectedRoomIds(stays, selections): Set<string>
 
 ---
 
-### B5: `useReceiptBillingState` → `bookings/domain/billingRules.ts`
+### B5: `useReceiptBillingState` → `bookings/domain/billingRules.ts` ✅
 
 **Extract:**
 ```typescript

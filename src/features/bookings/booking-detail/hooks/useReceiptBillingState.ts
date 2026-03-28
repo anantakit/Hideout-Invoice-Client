@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  buildReceiptUrl,
+  isValidBillingSelection,
+} from '../../domain/billingRules'
 
 type BillingMode = 'booking' | 'stay' | 'night'
 
@@ -29,23 +33,23 @@ export function useReceiptBillingState(bookingId: string) {
     setSelectedDate('')
   }
 
-  const canConfirm =
-    billingMode === 'booking' ||
-    (billingMode === 'stay' && selectedStayIds.length > 0) ||
-    (billingMode === 'night' && selectedStayId && selectedDate)
+  const canConfirm = isValidBillingSelection(
+    billingMode,
+    selectedStayIds,
+    selectedStayId,
+    selectedDate,
+  )
 
   function handleConfirm() {
-    const params = new URLSearchParams({ booking_id: bookingId })
-    if (billingMode !== 'booking') params.set('mode', billingMode)
-    if (billingMode === 'stay' && selectedStayIds.length > 0) {
-      params.set('stay_ids', selectedStayIds.join(','))
-    }
-    if (billingMode === 'night' && selectedStayId) {
-      params.set('stay_ids', selectedStayId)
-      if (selectedDate) params.set('date', selectedDate)
-    }
+    const url = buildReceiptUrl(
+      bookingId,
+      billingMode,
+      selectedStayIds,
+      selectedStayId,
+      selectedDate,
+    )
     setShowModeSelect(false)
-    navigate(`/receipts/new?${params.toString()}`)
+    navigate(url)
   }
 
   return {

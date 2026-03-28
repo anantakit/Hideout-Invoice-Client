@@ -263,7 +263,7 @@ This is the last hook in Phase A — branch refactor/extract-timeline is ready f
 
 ## Phase B — Bookings Domain
 
-### B1: useAddStayForm → stayManagement.ts
+### XXX B1: useAddStayForm → stayManagement.ts
 
 ```
 /extract-domain
@@ -324,7 +324,7 @@ Commit: "refactor: extract room assignment logic from useRoomTypeBuilder"
 
 ---
 
-### B3: useCreateBookingForm → formValidation.ts (extend)
+### XXX B3: useCreateBookingForm → formValidation.ts (extend)
 
 ```
 /extract-domain
@@ -354,7 +354,7 @@ Commit: "refactor: extract form validation from useCreateBookingForm"
 
 ---
 
-### B4: useCheckInAvailability → checkInAvailability.ts
+### XXX B4: useCheckInAvailability → checkInAvailability.ts
 
 ```
 /extract-domain
