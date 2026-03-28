@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { format, isBefore } from 'date-fns'
+import { format } from 'date-fns'
 import { useIsMobile } from '@/shared/hooks/useIsMobile'
+import { calculateDayClick } from '@/shared/domain/dateRange'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -62,12 +63,9 @@ export function useDateRangeFilter({ startDate, endDate, onRangeChange }: UseDat
   const handleCancel = useCallback(() => setPickerOpen(false), [])
 
   const handleDayClick = useCallback((day: Date) => {
-    if (!pendingStart || pendingEnd || isBefore(day, pendingStart)) {
-      setPendingStart(day)
-      setPendingEnd(null)
-    } else {
-      setPendingEnd(day)
-    }
+    const result = calculateDayClick(pendingStart, pendingEnd, day)
+    setPendingStart(result.start)
+    setPendingEnd(result.end)
   }, [pendingStart, pendingEnd])
 
   return {

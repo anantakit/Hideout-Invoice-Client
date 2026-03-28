@@ -28,7 +28,7 @@ Component (UI)              → render + user interaction
 ```
 ✅ Phase 0-3  test เสร็จแล้ว (safety net พร้อม)
 ⬜ Phase 4-6  test ที่เหลือ
-⬜ Extract    ย้าย logic ออกจาก hooks → pure functions
+✅ Extract    ย้าย logic ออกจาก hooks → pure functions
 ⬜ Migrate    ย้าย test ให้ตรง layer
 ```
 
@@ -292,7 +292,7 @@ function buildPrefillNotes(guestName?: string, guestPhone?: string): string | un
 
 ## Extract Phase D — Shared (🟢 Low)
 
-### D1: `useDateRangeFilter` → `shared/domain/dateRange.ts`
+### D1: `useDateRangeFilter` → `shared/domain/dateRange.ts` ✅
 
 **Extract:**
 ```typescript
