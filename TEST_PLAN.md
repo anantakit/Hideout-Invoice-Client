@@ -146,38 +146,38 @@ Read-only analytics, medium complexity
 
 `utils/bookingLayout.ts`
 
-- [ ] `computeRoomLayout(bookings, windowStart, windowEnd)` — คำนวณ layout layers
+- [x] `computeRoomLayout(bookings, windowStart, windowEnd)` — คำนวณ layout layers
 
 `utils/classifyRooms.ts`
 
-- [ ] `overlapsRange(stay, rangeStart, rangeEnd)` — เช็ค date overlap
-- [ ] `classifyRooms(rooms, dateStr, roomTypeNameMap)` — จำแนกสถานะห้อง
+- [x] `overlapsRange(stay, rangeStart, rangeEnd)` — เช็ค date overlap
+- [x] `classifyRooms(rooms, dateStr, roomTypeNameMap)` — จำแนกสถานะห้อง
 
 `utils/computeDateKPI.ts`
 
-- [ ] `computeDateKPI(rooms, unassignedStays, dateStr, roomTypeNameMap)` — KPI รายวัน
+- [x] `computeDateKPI(rooms, unassignedStays, dateStr, roomTypeNameMap)` — KPI รายวัน
 
 `utils/computeDateOps.ts`
 
-- [ ] `computeDateOps(rooms, unassignedStays, selectedDateStr, roomTypeNameMap)` — checkin/checkout lists
+- [x] `computeDateOps(rooms, unassignedStays, selectedDateStr, roomTypeNameMap)` — checkin/checkout lists
 
 `utils/operationTypes.ts`
 
-- [ ] `toDateStr(s)` — extract date string
-- [ ] `formatNightsLabel(ci)` — format "N คืน" label
+- [x] `toDateStr(s)` — extract date string
+- [x] `formatNightsLabel(ci)` — format "N คืน" label
 
 `utils/shareOperations.ts`
 
-- [ ] `computeStayingGuests(rooms, dateStr)` — หา guests ที่ยังอยู่
-- [ ] `buildShareText(...)` — สร้าง text สำหรับ share ประจำวัน
+- [x] `computeStayingGuests(rooms, dateStr)` — หา guests ที่ยังอยู่
+- [x] `buildShareText(...)` — สร้าง text สำหรับ share ประจำวัน
 
 `utils/statusColors.ts`
 
-- [ ] `getStatusColorClass(status)` — map status → color class
+- [x] `getStatusColorClass(status)` — map status → color class
 
 `utils/tokens.ts`
 
-- [ ] `getCellWidthPx()`, `computeRowHeight(layerCount)` — layout calculations
+- [x] `getCellWidthPx()`, `computeRowHeight(layerCount)` — layout calculations
 
 ---
 
