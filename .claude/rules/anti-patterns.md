@@ -36,18 +36,11 @@ Step 6 extracted 6 component files into 7 dedicated hooks. Remaining page-level 
 
 **Target**: No `useMutation` in `.tsx` component files — only in hook files (`hooks/*.ts`).
 
-### Business Logic in Components
+### Business Logic in Hooks → Extract to Domain
 
-Core algorithms in utils, but **15+ files** still have inline calculations/transformations:
+Hooks contain pure business logic mixed with React orchestration. See **`EXTRACT_DOMAIN_PLAN.md`** for the full extraction plan (Phase A–D) and **`/extract-domain`** skill for workflow.
 
-| Category | Files | Extract to |
-|----------|-------|------------|
-| Pricing & payment | BookingSummary, BookingPaymentSection, PaymentPanel | `utils/bookingCalc.ts`, `utils/paymentUtils.ts` |
-| Data transforms | BookingListTable (`getRoomInfo`, `getStayRange`), CustomerModal (address parsing) | `utils/bookingListUtils.ts`, `utils/addressUtils.ts` |
-| Dashboard calcs | RevenueTrendChart (YTD, YoY), OccupancyPressureChart (risk score) | `utils/dashboardCalc.ts` |
-| Complex useMemo chains | InlineRoomPicker (4 useMemo), InlineCheckInPanel (3), PendingAssignmentsSection (2) | Custom hooks: `useRoomPickerData`, `useCheckInData`, `usePendingGroups` |
-
-**Target**: Component files contain only JSX + simple display logic. Calculations, transforms, and multi-step useMemo belong in utils or hooks.
+**Target**: Hook files contain only state + effects + orchestration. Pure logic lives in `domain/*.ts` files.
 
 ### Prop-Heavy Components
 
