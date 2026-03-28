@@ -12,11 +12,11 @@
 
 Setup test infrastructure ก่อนเขียน test ใดๆ
 
-- [ ] ติดตั้ง dependencies: `vitest`, `@vitest/ui`, `@vitest/coverage-v8`, `@testing-library/react`, `@testing-library/user-event`, `happy-dom`
-- [ ] สร้าง `vitest.config.ts` (extend จาก vite.config.ts, ใช้ happy-dom)
-- [ ] เพิ่ม scripts ใน `package.json`: `test`, `test:ui`, `test:coverage`
-- [ ] สร้าง `src/test/setup.ts` สำหรับ global test setup
-- [ ] สร้าง `src/test/helpers.ts` สำหรับ shared test utilities (renderWithProviders, mock query client)
+- [x] ติดตั้ง dependencies: `vitest`, `@vitest/ui`, `@vitest/coverage-v8`, `@testing-library/react`, `@testing-library/user-event`, `happy-dom`
+- [x] สร้าง `vitest.config.ts` (extend จาก vite.config.ts, ใช้ happy-dom)
+- [x] เพิ่ม scripts ใน `package.json`: `test`, `test:ui`, `test:coverage`
+- [x] สร้าง `src/test/setup.ts` สำหรับ global test setup
+- [x] สร้าง `src/test/helpers.ts` สำหรับ shared test utilities (renderWithProviders, mock query client)
 
 ---
 

@@ -2,6 +2,7 @@ dist
 dist-ssr
 *.local
 
+
 # Created by https://www.toptal.com/developers/gitignore/api/node,visualstudiocode,windows,macos,linux,test
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,visualstudiocode,windows,macos,linux,test
 
@@ -295,3 +296,9 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/node,visualstudiocode,windows,macos,linux,test
+
+# Allow test infrastructure (must be after *test pattern)
+!src/test/
+!src/test/**
+!**/*.test.ts
+!**/*.test.tsx
