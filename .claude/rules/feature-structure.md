@@ -18,6 +18,7 @@ features/<name>/
   pages/             → route-level page components
   components/        → feature-specific UI components
   hooks/             → TanStack Query hooks + custom hooks
+  domain/            → pure business logic functions (no React, no API calls)
   context/           → React context providers (if needed)
   utils/             → pure utility functions
   shared/            → components/hooks/utils shared across sub-modules

@@ -104,12 +104,13 @@ function usePaymentPanel() {
 | Geometry/layout | `xxxGeometry.ts` | `snapToGrid`, `getDayIndex` |
 | Mixed (หลายอย่าง) | `xxxLogic.ts` | ใช้เมื่อ hook มี logic หลายแบบรวมกัน |
 
-## ลำดับการทำ
+## Domain Files ปัจจุบัน
 
-ดู `frontend/EXTRACT_DOMAIN_PLAN.md` สำหรับ priority matrix:
-- **Phase A**: Timeline (critical — geometry + conflict detection)
-- **Phase B**: Bookings (high — pricing + room assignment)
-- **Phase C**: Payment & Receipt (medium)
-- **Phase D**: Shared (low)
+| Feature | Domain Files | ตัวอย่าง |
+|---------|:---:|-----------|
+| Timeline | 8 | dragSnapping, computeState, infiniteScroll, drawGeometry, stayAggregation, roomFiltering, checkInPrep |
+| Bookings | 7 | formValidation, stayManagement, roomAssignment, checkInAvailability, billingRules, paymentCalc |
+| Receipts | 1 | prefillLogic |
+| Shared | 1 | dateRange |
 
-ใช้ `/extract-domain` skill เพื่อ execute ทีละ hook
+เมื่อเพิ่ม business logic ใหม่ใน hook → extract เป็น pure function ใน `domain/` ตามกฎด้านบน

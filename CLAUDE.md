@@ -16,11 +16,15 @@ src/
   app/                   → routes, providers (AuthProvider, QueryClient)
   features/              → feature modules (bookings, timeline, receipts, customers)
     bookings/            → booking CRUD, detail, stays, payments
+      domain/            → pure business logic (formValidation, stayManagement, etc.)
     timeline/            → timeline view (drag/resize, virtualization, draw-to-create)
+      domain/            → pure business logic (dragSnapping, computeState, etc.)
     receipts/            → receipt generation
+      domain/            → pure business logic (prefillLogic)
     customers/           → customer management
   shared/
     api/client.ts        → axios instance, token management, 401 interceptor
+    domain/              → cross-feature pure functions (dateRange)
     ui/                  → shadcn/ui primitives (button, card, dialog, etc.)
     components/          → shared app components (Sidebar, Layout, Pagination, etc.)
     hooks/               → shared hooks (useIsMobile, usePaginatedQuery)
@@ -47,6 +51,17 @@ src/
 - Available: alert-dialog, badge, button, calendar, card, command, dialog, form, input, label, popover, select, separator, sheet, skeleton, table, textarea, tooltip
 - Custom shared: BottomBar, DatePicker, Fab, FilterChipBar, Pagination, SearchableComboBox, ThaiAddressPicker, ToggleGroup
 
+## Testing
+
+```bash
+npm run test             # vitest (all tests)
+npm run test:coverage    # with coverage report
+```
+
+- **Framework**: Vitest + React Testing Library + happy-dom
+- **Plan**: `TEST_PLAN.md` — all phases (0–6) complete
+- **Pattern**: domain (pure, no mocks) → hook (mock API) → component (mock hook, assert outcome)
+
 ## Rules
 
 See `.claude/rules/` for detailed guidance on:
@@ -55,3 +70,5 @@ See `.claude/rules/` for detailed guidance on:
 - `design-system.md` — dark theme tokens, color system
 - `feature-structure.md` — feature module boundaries, import rules
 - `timeline.md` — timeline drag/resize/virtualization
+- `extract-domain.md` — conventions for domain files (pure functions, no React)
+- `testing.md` — test conventions and patterns
