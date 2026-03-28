@@ -1,6 +1,12 @@
 import { useState, useCallback, useRef, useLayoutEffect, useEffect, useMemo } from 'react'
-import { addDays, subDays, startOfDay, format } from 'date-fns'
+import { addDays, format, startOfDay } from 'date-fns'
 import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from '../utils/tokens'
+import {
+  calculateBufferStart,
+  calculateVisibleRange,
+  shouldShiftBuffer,
+  calculateJumpScrollLeft,
+} from '../domain/infiniteScroll'
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -30,7 +36,7 @@ export function useInfiniteTimeline({
 }: UseInfiniteTimelineOptions) {
   // bufferStart: first date rendered in the DOM
   const [bufferStart, setBufferStart] = useState<Date>(() =>
-    subDays(startOfDay(new Date()), BUFFER_DAYS),
+    calculateBufferStart(new Date(), BUFFER_DAYS),
   )
 
   const bufferEnd = useMemo(() => addDays(bufferStart, TOTAL_DAYS), [bufferStart])
@@ -101,28 +107,28 @@ export function useInfiniteTimeline({
     const totalWidth = TOTAL_DAYS * cellW
 
     // Update visible range for toolbar display (throttled by day change)
-    const dayOffset = Math.round(scrollLeft / cellW)
-    if (dayOffset !== lastVisibleDayOffset.current) {
-      lastVisibleDayOffset.current = dayOffset
-      setVisibleStartDate(addDays(bufferStartRef.current, dayOffset))
-      const vpDays = Math.ceil((viewportWidth - TIMELINE_ROOM_COL_PX) / cellW)
-      setVisibleDays(vpDays)
+    const range = calculateVisibleRange(
+      scrollLeft, cellW, viewportWidth, TIMELINE_ROOM_COL_PX, bufferStartRef.current,
+    )
+    if (range.dayOffset !== lastVisibleDayOffset.current) {
+      lastVisibleDayOffset.current = range.dayOffset
+      setVisibleStartDate(range.visibleStartDate)
+      setVisibleDays(range.visibleDays)
     }
 
     // Check if we need to extend the buffer
-    const rightRemaining = totalWidth - scrollLeft - viewportWidth + TIMELINE_ROOM_COL_PX
-    const leftRemaining = scrollLeft
-    const thresholdPx = THRESHOLD_DAYS * cellW
-
-    if (rightRemaining < thresholdPx) {
+    const direction = shouldShiftBuffer(
+      scrollLeft, totalWidth, viewportWidth, TIMELINE_ROOM_COL_PX, THRESHOLD_DAYS * cellW,
+    )
+    if (direction === 'right') {
       isShiftingRef.current = true
       pendingCorrection.current = -(SHIFT_DAYS * cellW)
       setBufferStart(prev => addDays(prev, SHIFT_DAYS))
       requestAnimationFrame(() => { isShiftingRef.current = false })
-    } else if (leftRemaining < thresholdPx) {
+    } else if (direction === 'left') {
       isShiftingRef.current = true
       pendingCorrection.current = SHIFT_DAYS * cellW
-      setBufferStart(prev => subDays(prev, SHIFT_DAYS))
+      setBufferStart(prev => addDays(prev, -SHIFT_DAYS))
       requestAnimationFrame(() => { isShiftingRef.current = false })
     }
   }, [])
@@ -143,8 +149,8 @@ export function useInfiniteTimeline({
 
   const jumpToDate = useCallback((date: Date) => {
     const cellW = getCellWidthPx()
-    const targetStart = subDays(startOfDay(date), BUFFER_DAYS)
-    jumpScrollTarget.current = BUFFER_DAYS * cellW
+    const targetStart = calculateBufferStart(date, BUFFER_DAYS)
+    jumpScrollTarget.current = calculateJumpScrollLeft(BUFFER_DAYS, cellW)
     setBufferStart(targetStart)
   }, [])
 
