@@ -111,14 +111,14 @@ Feature ใหญ่ที่สุด, core business logic
 
 ### Receipt
 
-- [ ] `useReceiptPrefill` — prefill receipt จาก booking data
-- [ ] `useCreateReceipt` — mutation + optimistic update
-- [ ] `useDeleteReceipt` — mutation + confirmation flow
+- [x] `useReceiptPrefill` — prefill receipt จาก booking data
+- [x] `useCreateReceipt` — mutation + optimistic update
+- [x] `useDeleteReceipt` — mutation + confirmation flow
 
 ### Payment
 
-- [ ] `usePaymentPanel` — payment state + calculations
-- [ ] `useReceiptBillingState` — billing state derivation
+- [x] `usePaymentPanel` — payment state + calculations
+- [x] `useReceiptBillingState` — billing state derivation
 
 ---
 
