@@ -1,10 +1,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
-ENV NODE_ENV=production
 ARG VITE_API_BASE_URL=""
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 COPY package*.json ./
-RUN npm ci --include=dev
+RUN npm ci
+ENV NODE_ENV=production
 COPY . .
 RUN npm run build
 
