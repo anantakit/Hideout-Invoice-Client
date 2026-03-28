@@ -22,8 +22,7 @@ describe('calculateDayClick', () => {
     expect(result).toEqual({ start: jan1, end: null })
   })
 
-  it('click same day as start → resets (isBefore is false, no end → sets end same as start)', () => {
-    // isBefore(jan3, jan3) = false, pendingEnd = null → sets end
+  it('click same day as start → sets end equal to start (single-day range)', () => {
     const result = calculateDayClick(jan3, null, jan3)
     expect(result).toEqual({ start: jan3, end: jan3 })
   })
