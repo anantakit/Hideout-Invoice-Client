@@ -52,23 +52,23 @@ Feature ใหญ่ที่สุด, core business logic
 
 `create-booking/utils/bookingCalc.ts`
 
-- [ ] `calcNights(checkIn, checkOut)` — คำนวณจำนวนคืน
-- [ ] `calcLineTotal(price, qty, nights)` — คำนวณยอดรวมต่อรายการ
-- [ ] `calcKeyDeposit(totalRooms)` — คำนวณค่ามัดจำกุญแจ
+- [x] `calcNights(checkIn, checkOut)` — คำนวณจำนวนคืน
+- [x] `calcLineTotal(price, qty, nights)` — คำนวณยอดรวมต่อรายการ
+- [x] `calcKeyDeposit(totalRooms)` — คำนวณค่ามัดจำกุญแจ
 
 `create-booking/utils/bookingSummaryCalc.ts`
 
-- [ ] `calcLineItems(items, priceMap, nameMap)` — สร้าง line items สำหรับ summary
-- [ ] `calcDepositSplit(paymentMode, totalRooms)` — แบ่งมัดจำตาม payment mode
-- [ ] `calcTotalRooms(items)` — นับจำนวนห้องทั้งหมด
+- [x] `calcLineItems(items, priceMap, nameMap)` — สร้าง line items สำหรับ summary
+- [x] `calcDepositSplit(paymentMode, totalRooms)` — แบ่งมัดจำตาม payment mode
+- [x] `calcTotalRooms(items)` — นับจำนวนห้องทั้งหมด
 
 `create-booking/utils/expandGroupedStays.ts`
 
-- [ ] `expandGroupedStays(items)` — แปลง grouped room types → individual stay payloads
+- [x] `expandGroupedStays(items)` — แปลง grouped room types → individual stay payloads
 
 `create-booking/utils/roomAssignment.ts`
 
-- [ ] `proximityAutoAssignAll(items, availData)` — auto-assign ห้องด้วย proximity scoring
+- [x] `proximityAutoAssignAll(items, availData)` — auto-assign ห้องด้วย proximity scoring
   - test: Manhattan distance calculation
   - test: same-side bonus
   - test: tiebreak logic
@@ -76,26 +76,26 @@ Feature ใหญ่ที่สุด, core business logic
 
 `shared/utils/bookingStatusHelpers.ts`
 
-- [ ] `bookingStatusVariant(status)` — map status → badge variant
-- [ ] `stayStatusVariant(status)` — map stay status → badge variant
-- [ ] `mapRoomGroups(source, stayRoomTypeId, excludeRoomId?)` — จัดกลุ่มห้อง
-- [ ] `addDaysToISO(iso, n)` — เพิ่มวันใน ISO string
-- [ ] `calcNights(checkIn, checkOut)` — คำนวณคืน (duplicate ของ bookingCalc)
-- [ ] `isCheckInToday(checkIn)` — เช็ควันนี้เป็นวัน check-in ไหม
-- [ ] `isCheckInOverdue(checkIn)` — เช็ค check-in เลยกำหนด
+- [x] `bookingStatusVariant(status)` — map status → badge variant
+- [x] `stayStatusVariant(status)` — map stay status → badge variant
+- [x] `mapRoomGroups(source, stayRoomTypeId, excludeRoomId?)` — จัดกลุ่มห้อง
+- [x] `addDaysToISO(iso, n)` — เพิ่มวันใน ISO string
+- [x] `calcNights(checkIn, checkOut)` — คำนวณคืน (duplicate ของ bookingCalc)
+- [x] `isCheckInToday(checkIn)` — เช็ควันนี้เป็นวัน check-in ไหม
+- [x] `isCheckInOverdue(checkIn)` — เช็ค check-in เลยกำหนด
 
 `shared/utils/paymentUtils.ts`
 
-- [ ] `filterPaymentsByType(payments, types)` — filter payments ตาม type
+- [x] `filterPaymentsByType(payments, types)` — filter payments ตาม type
 
 `shared/availabilityCalc.ts`
 
-- [ ] `calcAvailableCount(physicalAvail, unassignedCount)` — คำนวณห้องว่างจริง
+- [x] `calcAvailableCount(physicalAvail, unassignedCount)` — คำนวณห้องว่างจริง
 
 `booking-list/utils/bookingListUtils.ts`
 
-- [ ] `getRoomInfo(booking)` — สรุปข้อมูลห้องจาก booking
-- [ ] `getStayRange(booking)` — หา check-in/check-out range จาก booking
+- [x] `getRoomInfo(booking)` — สรุปข้อมูลห้องจาก booking
+- [x] `getStayRange(booking)` — หา check-in/check-out range จาก booking
 
 ### Hooks (ถ้ามีเวลา)
 
