@@ -2,39 +2,39 @@
 
 > 1 conversation = 1 phase, commit ทีละ phase, รัน test ทุกรอบ
 
-## Pre-flight (ทำก่อนเริ่ม Phase 1)
+## Pre-flight (ทำก่อนเริ่ม Phase 1) ✅
 
-- [ ] สร้าง branch `feat/deps-upgrade`
-- [ ] รัน `npm run test` — บันทึกจำนวน test ผ่าน (baseline)
-- [ ] รัน `npm run build` — บันทึก build size (baseline)
+- [x] สร้าง branch `feat/deps-upgrade`
+- [x] รัน `npm run test` — บันทึกจำนวน test ผ่าน (baseline)
+- [x] รัน `npm run build` — บันทึก build size (baseline)
 
 ---
 
-## Phase 1 — lucide-react → 1.x
+## Phase 1 — lucide-react → 1.x ✅
 
 isolated, ไม่กระทบ logic, failure = compile error
 
-- [ ] `npm install lucide-react@latest`
-- [ ] grep icon imports ทั้งหมด — ตรวจ icon ที่ถูก rename/remove
-- [ ] `npx tsc --noEmit`
-- [ ] `npm run test`
-- [ ] `npm run build`
-- [ ] commit
+- [x] `npm install lucide-react@latest`
+- [x] grep icon imports ทั้งหมด — ตรวจ icon ที่ถูก rename/remove
+- [x] `npx tsc --noEmit`
+- [x] `npm run test`
+- [x] `npm run build`
+- [x] commit
 
 ---
 
-## Phase 2 — date-fns → 4.x
+## Phase 2 — date-fns → 4.x ✅
 
 pure function, มี test ครอบอยู่
 
-- [ ] อ่าน changelog/migration guide ของ date-fns 4
-- [ ] `npm install date-fns@latest`
-- [ ] grep ทุกไฟล์ที่ import date-fns — ตรวจ API ที่เปลี่ยน
-- [ ] ตรวจ `formatThaiDate`, `formatDate` และ helpers ที่ใช้ date-fns
-- [ ] `npx tsc --noEmit`
-- [ ] `npm run test`
-- [ ] `npm run build`
-- [ ] commit
+- [x] อ่าน changelog/migration guide ของ date-fns 4
+- [x] `npm install date-fns@latest`
+- [x] grep ทุกไฟล์ที่ import date-fns — ตรวจ API ที่เปลี่ยน
+- [x] ตรวจ `formatThaiDate`, `formatDate` และ helpers ที่ใช้ date-fns
+- [x] `npx tsc --noEmit`
+- [x] `npm run test`
+- [x] `npm run build`
+- [x] commit
 
 ---
 
