@@ -23,7 +23,7 @@ interface TimelineContentProps {
   forceSkeleton: boolean | '' | undefined
 
   // Scroll container ref (ALWAYS mounted for infinite scroll hook)
-  scrollContainerRef: React.RefObject<HTMLDivElement>
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>
 
   // Timeline data
   selectedRoomTypeId: string | null
@@ -31,7 +31,7 @@ interface TimelineContentProps {
 
   // Virtualizer
   rowVirtualizer: Virtualizer<HTMLDivElement, Element>
-  gridContainerRef: React.RefObject<HTMLDivElement>
+  gridContainerRef: React.RefObject<HTMLDivElement | null>
 }
 
 export function TimelineContent({
