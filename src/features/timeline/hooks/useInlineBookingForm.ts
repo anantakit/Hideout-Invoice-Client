@@ -4,7 +4,12 @@ import toast from 'react-hot-toast'
 import { todayISO } from '@/shared/utils'
 import { useCreateBooking, useAvailabilityGrouped } from '@/features/bookings/hooks'
 import { KEY_DEPOSIT_PER_ROOM } from '@/features/bookings/constants'
-import { calculateSubmitLabel } from '@/features/bookings/domain/formValidation'
+import {
+  calculateTotalAmount,
+  validateBookingForm,
+  buildSubmitLabel,
+  buildInlineBookingPayload,
+} from '@/features/bookings/domain/formValidation'
 import type { CreateBookingPrefill } from '../components/OperationsDrawer'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -125,17 +130,17 @@ export function useInlineBookingForm(
 
   const nights = differenceInDays(parseISO(prefill.checkOut), parseISO(prefill.checkIn))
   const totalAmount = useMemo(
-    () => selectedRooms.reduce((sum, r) => sum + nights * (r.chargedPrice ?? r.pricePerNight), 0),
+    () => calculateTotalAmount(selectedRooms, nights),
     [selectedRooms, nights],
   )
   const depositAmount = KEY_DEPOSIT_PER_ROOM * selectedRooms.length
 
   const hasGuest = guestName.trim().length > 0
   const hasPayment = paymentMode === 'reserve' || (paymentAmount !== '' && Number(paymentAmount) > 0)
-  const canSubmit = hasGuest && hasPayment && !createBooking.isPending
+  const canSubmit = validateBookingForm(hasGuest, hasPayment, createBooking.isPending)
 
   const roomLabel = selectedRooms.map((r) => r.roomNumber).join(', ')
-  const submitLabel = calculateSubmitLabel(source, paymentMode)
+  const submitLabel = buildSubmitLabel(source, paymentMode)
 
   const handlePaymentModeChange = useCallback((mode: PaymentMode) => {
     dispatch({ type: 'SET_PAYMENT_MODE', mode, totalAmount, depositAmount })
@@ -144,48 +149,26 @@ export function useInlineBookingForm(
   const handleSubmit = useCallback(() => {
     if (!canSubmit) return
 
-    const depositStatus = paymentMode === 'full_deposit' ? 'COLLECTED' : 'PENDING'
-
-    const payment =
-      paymentMode !== 'reserve' && paymentAmount
-        ? {
-            amount: Number(paymentAmount),
-            method: paymentMethod,
-            deposit_amount: paymentMode === 'full_deposit' ? depositAmount : undefined,
-          }
-        : undefined
-
-    createBooking.mutate(
-      {
-        source,
-        guest_name: guestName.trim(),
-        guest_phone: guestPhone.trim(),
-        key_deposit_amount: depositAmount,
-        deposit_status: depositStatus,
-        stays: selectedRooms.map((r) => ({
-          room_type_id: r.roomTypeId,
-          room_id: r.roomId,
-          check_in: prefill.checkIn,
-          check_out: prefill.checkOut,
-          ...(r.chargedPrice != null ? { charged_price: r.chargedPrice } : {}),
-        })),
-        payment,
-      },
-      {
-        onSuccess: (booking) => {
-          toast.success(
-            source === 'walk_in'
-              ? `เช็คอิน ห้อง ${roomLabel} สำเร็จ`
-              : `สร้างการจอง ห้อง ${roomLabel} สำเร็จ`,
-          )
-          onBookingCreated?.(booking.id)
-        },
-        onError: (err: Error) => {
-          toast.error(err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
-        },
-      },
+    const payload = buildInlineBookingPayload(
+      { source, guestName, guestPhone, paymentMode, paymentAmount, paymentMethod, selectedRooms },
+      prefill,
+      depositAmount,
     )
-  }, [canSubmit, paymentMode, paymentAmount, paymentMethod, depositAmount, source, guestName, guestPhone, selectedRooms, prefill, roomLabel, createBooking, onBookingCreated])
+
+    createBooking.mutate(payload, {
+      onSuccess: (booking) => {
+        toast.success(
+          source === 'walk_in'
+            ? `เช็คอิน ห้อง ${roomLabel} สำเร็จ`
+            : `สร้างการจอง ห้อง ${roomLabel} สำเร็จ`,
+        )
+        onBookingCreated?.(booking.id)
+      },
+      onError: (err: Error) => {
+        toast.error(err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+      },
+    })
+  }, [canSubmit, source, guestName, guestPhone, paymentMode, paymentAmount, paymentMethod, selectedRooms, prefill, depositAmount, roomLabel, createBooking, onBookingCreated])
 
   return {
     // State

@@ -170,7 +170,7 @@ function extractAssignedRoomIds(booking): Set<string>
 
 ---
 
-### A8: `useInlineBookingForm` → (ใช้ shared domain ร่วมกับ Bookings)
+### A8: `useInlineBookingForm` → (ใช้ shared domain ร่วมกับ Bookings) ✅
 
 **Extract:**
 ```typescript
