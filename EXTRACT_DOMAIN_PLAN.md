@@ -279,7 +279,7 @@ function onEditSubmit(paymentId, original, values) {
 
 ---
 
-### C2: `useReceiptPrefill` → `receipts/domain/prefillLogic.ts`
+### C2: `useReceiptPrefill` → `receipts/domain/prefillLogic.ts` ✅
 
 **Extract:**
 ```typescript

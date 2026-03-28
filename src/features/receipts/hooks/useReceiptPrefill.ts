@@ -5,7 +5,7 @@ import { customersApi } from '@/shared/api/customers'
 import type { Customer } from '@/shared/types/customer'
 import { useInvoicePrefill, useInvoiceCoverage } from '@/shared/hooks/useInvoicePrefill'
 import type { ReceiptFormValues } from '../schemas'
-import { METHOD_MAP } from '../schemas'
+import { mapPrefillToFormValues } from '../domain/prefillLogic'
 
 interface UseReceiptPrefillParams {
   bookingId: string | undefined
@@ -69,26 +69,10 @@ export function useReceiptPrefill({
     if (!prefill || prefilled) return
     setPrefilled(true)
 
-    if (prefill.check_in_date) {
-      form.setValue('check_in_date', prefill.check_in_date.slice(0, 10))
+    const values = mapPrefillToFormValues(prefill)
+    for (const [key, value] of Object.entries(values)) {
+      form.setValue(key as keyof ReceiptFormValues, value as ReceiptFormValues[keyof ReceiptFormValues])
     }
-    if (prefill.payment_method) {
-      form.setValue('payment_method', METHOD_MAP[prefill.payment_method] ?? prefill.payment_method)
-    }
-    if (prefill.items.length > 0) {
-      form.setValue(
-        'items',
-        prefill.items.map((item) => ({
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-        })),
-      )
-    }
-    const noteParts: string[] = []
-    if (prefill.guest_name) noteParts.push(`ผู้เข้าพัก: ${prefill.guest_name}`)
-    if (prefill.guest_phone) noteParts.push(`โทร: ${prefill.guest_phone}`)
-    if (noteParts.length > 0) form.setValue('notes', noteParts.join('\n'))
   }, [prefill, prefilled, form])
 
   return {
