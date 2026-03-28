@@ -105,20 +105,20 @@ Feature ใหญ่ที่สุด, core business logic
 
 ---
 
-## Phase 3 — Payment & Receipt
+## XXX Phase 3 — Payment & Receipt
 
 เรื่องเงิน — ห้ามพลาด
 
 ### Receipt
 
-- [x] `useReceiptPrefill` — prefill receipt จาก booking data
-- [x] `useCreateReceipt` — mutation + optimistic update
-- [x] `useDeleteReceipt` — mutation + confirmation flow
+- [ ] `useReceiptPrefill` — prefill receipt จาก booking data
+- [ ] `useCreateReceipt` — mutation + optimistic update
+- [ ] `useDeleteReceipt` — mutation + confirmation flow
 
 ### Payment
 
-- [x] `usePaymentPanel` — payment state + calculations
-- [x] `useReceiptBillingState` — billing state derivation
+- [ ] `usePaymentPanel` — payment state + calculations
+- [ ] `useReceiptBillingState` — billing state derivation
 
 ---
 
@@ -128,15 +128,15 @@ Read-only analytics, medium complexity
 
 `utils/dashboardCalc.ts`
 
-- [ ] `calcYTDCumulative(data)` — สะสมยอดรายเดือน
-- [ ] `calcYoYPercent(current, previous)` — คำนวณ % เทียบปีก่อน (รวม edge: previous = 0)
-- [ ] `calcPressureKPI(data)` — คำนวณ occupancy pressure
-- [ ] `getTopInsights(data, limit)` — เรียง top insights
+- [x] `calcYTDCumulative(data)` — สะสมยอดรายเดือน
+- [x] `calcYoYPercent(current, previous)` — คำนวณ % เทียบปีก่อน (รวม edge: previous = 0)
+- [x] `calcPressureKPI(data)` — คำนวณ occupancy pressure
+- [x] `getTopInsights(data, limit)` — เรียง top insights
 
 `utils/heatmapCalc.ts`
 
-- [ ] `getIntensityClass(amount, max)` — map ค่า → CSS class
-- [ ] `buildCalendarGrid(year, monthIdx, data)` — สร้าง grid ปฏิทิน
+- [x] `getIntensityClass(amount, max)` — map ค่า → CSS class
+- [x] `buildCalendarGrid(year, monthIdx, data)` — สร้าง grid ปฏิทิน
 
 ---
 
