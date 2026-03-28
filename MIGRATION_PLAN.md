@@ -38,22 +38,22 @@ pure function, มี test ครอบอยู่
 
 ---
 
-## Phase 3 — Tailwind CSS → 4.x (PR แยก)
+## Phase 3 — Tailwind CSS → 4.x (PR แยก) ✅
 
 งานเยอะสุด — visual debt ยิ่งรอยิ่งหนัก
 
-- [ ] อ่าน Tailwind v4 upgrade guide
-- [ ] `npm install tailwindcss@latest @tailwindcss/vite`
-- [ ] ลบ/แปลง `tailwind.config.js` → CSS `@theme` directive
-- [ ] จัดการ `tailwindcss-animate` (เปลี่ยนเป็น v4-compatible หรือ built-in)
-- [ ] จัดการ `postcss.config.js` / `autoprefixer` (Tailwind 4 ไม่ต้องใช้ PostCSS)
-- [ ] อัพเดท `vite.config.ts` ถ้าต้องใช้ `@tailwindcss/vite` plugin
-- [ ] ตรวจ shadcn/ui components ทุกตัว — re-generate ถ้าจำเป็น
-- [ ] ตรวจ class names ที่ deprecated/เปลี่ยน
-- [ ] `npx tsc --noEmit`
-- [ ] `npm run test`
-- [ ] `npm run build`
-- [ ] visual test: เปิดทุกหน้าหลักตรวจ UI ด้วยตา
+- [x] อ่าน Tailwind v4 upgrade guide
+- [x] `npm install tailwindcss@latest @tailwindcss/vite`
+- [x] ลบ/แปลง `tailwind.config.js` → CSS `@theme` directive
+- [x] จัดการ `tailwindcss-animate` → `tw-animate-css` (v4-compatible)
+- [x] จัดการ `postcss.config.js` / `autoprefixer` (ลบทั้งคู่ — Tailwind 4 ไม่ต้องใช้ PostCSS)
+- [x] อัพเดท `vite.config.ts` — เพิ่ม `@tailwindcss/vite` plugin
+- [x] ตรวจ shadcn/ui components ทุกตัว — ไม่ต้อง re-generate
+- [x] ตรวจ class names ที่ deprecated/เปลี่ยน — ไม่มีที่ต้องแก้
+- [x] `npx tsc --noEmit`
+- [x] `npm run test` (55 files, 790 tests passed)
+- [x] `npm run build`
+- [x] visual test: เปิดทุกหน้าหลักตรวจ UI ด้วยตา
 - [ ] commit → เปิด PR แยก
 
 ---

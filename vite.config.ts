@@ -1,11 +1,13 @@
 import path from 'path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     react(),
     process.env.ANALYZE === 'true' && visualizer({ open: true, gzipSize: true, filename: 'dist/stats.html' }),
     VitePWA({
