@@ -44,15 +44,18 @@ export interface CardButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof cardButtonVariants> {}
 
-function CardButton({ className, variant, padding, ref, ...props }: CardButtonProps & { ref?: React.Ref<HTMLButtonElement> }) {
-  return (
-    <button
-      ref={ref}
-      type="button"
-      className={cn(cardButtonVariants({ variant, padding, className }))}
-      {...props}
-    />
-  )
-}
+const CardButton = React.forwardRef<HTMLButtonElement, CardButtonProps>(
+  ({ className, variant, padding, ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        type="button"
+        className={cn(cardButtonVariants({ variant, padding, className }))}
+        {...props}
+      />
+    )
+  },
+)
+CardButton.displayName = 'CardButton'
 
 export { CardButton, cardButtonVariants }

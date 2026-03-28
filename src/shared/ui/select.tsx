@@ -94,7 +94,10 @@ const SelectGroup = SelectPrimitive.Group
 // ─── SelectValue ──────────────────────────────────────────────────────────────
 // On desktop: Radix's SelectValue. On mobile: reads from MobileCtx.
 
-function SelectValue({ placeholder, className, ref, ...props }: React.ComponentPropsWithRef<typeof SelectPrimitive.Value>) {
+const SelectValue = React.forwardRef<
+  HTMLSpanElement,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Value>
+>(({ placeholder, className, ...props }, ref) => {
   const mobileCtx = React.useContext(MobileCtx)
 
   if (mobileCtx) {
@@ -111,14 +114,18 @@ function SelectValue({ placeholder, className, ref, ...props }: React.ComponentP
   }
 
   return <SelectPrimitive.Value ref={ref} placeholder={placeholder} className={className} {...props} />
-}
+})
+SelectValue.displayName = 'SelectValue'
 
 // ─── SelectTrigger ────────────────────────────────────────────────────────────
 
 const TRIGGER_BASE =
   'flex h-10 w-full items-center justify-between radius-button border border-input bg-card px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1'
 
-function SelectTrigger({ className, children, disabled, ref, ...props }: React.ComponentPropsWithRef<typeof SelectPrimitive.Trigger>) {
+const SelectTrigger = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
+>(({ className, children, disabled, ...props }, ref) => {
   const mobileCtx = React.useContext(MobileCtx)
 
   // On mobile: plain button that opens Sheet
@@ -155,50 +162,50 @@ function SelectTrigger({ className, children, disabled, ref, ...props }: React.C
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   )
-}
+})
+SelectTrigger.displayName = 'SelectTrigger'
 
 // ─── Desktop scroll buttons ──────────────────────────────────────────────────
 
-function SelectScrollUpButton({ className, ref, ...props }: React.ComponentPropsWithRef<typeof SelectPrimitive.ScrollUpButton>) {
-  return (
-    <SelectPrimitive.ScrollUpButton
-      ref={ref}
-      className={cn('flex cursor-default items-center justify-center py-1', className)}
-      {...props}
-    >
-      <ChevronUp className="h-4 w-4" />
-    </SelectPrimitive.ScrollUpButton>
-  )
-}
+const SelectScrollUpButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollUpButton
+    ref={ref}
+    className={cn('flex cursor-default items-center justify-center py-1', className)}
+    {...props}
+  >
+    <ChevronUp className="h-4 w-4" />
+  </SelectPrimitive.ScrollUpButton>
+))
+SelectScrollUpButton.displayName = 'SelectScrollUpButton'
 
-function SelectScrollDownButton({ className, ref, ...props }: React.ComponentPropsWithRef<typeof SelectPrimitive.ScrollDownButton>) {
-  return (
-    <SelectPrimitive.ScrollDownButton
-      ref={ref}
-      className={cn('flex cursor-default items-center justify-center py-1', className)}
-      {...props}
-    >
-      <ChevronDown className="h-4 w-4" />
-    </SelectPrimitive.ScrollDownButton>
-  )
-}
+const SelectScrollDownButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollDownButton
+    ref={ref}
+    className={cn('flex cursor-default items-center justify-center py-1', className)}
+    {...props}
+  >
+    <ChevronDown className="h-4 w-4" />
+  </SelectPrimitive.ScrollDownButton>
+))
+SelectScrollDownButton.displayName = 'SelectScrollDownButton'
 
 // ─── SelectContent ────────────────────────────────────────────────────────────
 
-function SelectContent({
-  className,
-  children,
-  position = 'popper',
-  sheetTitle,
-  searchable,
-  ref,
-  ...props
-}: React.ComponentPropsWithRef<typeof SelectPrimitive.Content> & {
-  /** Title shown in mobile bottom sheet header */
-  sheetTitle?: string
-  /** Enable search in mobile bottom sheet (auto-enabled when > 6 items) */
-  searchable?: boolean
-}) {
+const SelectContent = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & {
+    /** Title shown in mobile bottom sheet header */
+    sheetTitle?: string
+    /** Enable search in mobile bottom sheet (auto-enabled when > 6 items) */
+    searchable?: boolean
+  }
+>(({ className, children, position = 'popper', sheetTitle, searchable, ...props }, ref) => {
   const mobileCtx = React.useContext(MobileCtx)
 
   // ── Mobile: bottom sheet ──────────────────────────────────────────────
@@ -246,7 +253,8 @@ function SelectContent({
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   )
-}
+})
+SelectContent.displayName = 'SelectContent'
 
 // ─── Mobile Bottom Sheet ──────────────────────────────────────────────────────
 
@@ -478,20 +486,25 @@ function MobileSelectSheet({
 
 // ─── SelectLabel ──────────────────────────────────────────────────────────────
 
-function SelectLabel({ className, ref, ...props }: React.ComponentPropsWithRef<typeof SelectPrimitive.Label>) {
-  return (
-    <SelectPrimitive.Label
-      ref={ref}
-      className={cn('py-1.5 pl-8 pr-2 text-xs font-semibold text-muted-foreground', className)}
-      {...props}
-    />
-  )
-}
+const SelectLabel = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Label
+    ref={ref}
+    className={cn('py-1.5 pl-8 pr-2 text-xs font-semibold text-muted-foreground', className)}
+    {...props}
+  />
+))
+SelectLabel.displayName = SelectPrimitive.Label.displayName
 
 // ─── SelectItem ───────────────────────────────────────────────────────────────
 // On desktop: Radix item. On mobile: just a data carrier (not rendered visually).
 
-function SelectItem({ className, children, ref, ...props }: React.ComponentPropsWithRef<typeof SelectPrimitive.Item>) {
+const SelectItem = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
+>(({ className, children, ...props }, ref) => {
   const mobileCtx = React.useContext(MobileCtx)
 
   // On mobile, SelectItem is only used for data extraction by MobileSelectSheet.
@@ -515,19 +528,22 @@ function SelectItem({ className, children, ref, ...props }: React.ComponentProps
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   )
-}
+})
+SelectItem.displayName = SelectPrimitive.Item.displayName
 
 // ─── SelectSeparator ──────────────────────────────────────────────────────────
 
-function SelectSeparator({ className, ref, ...props }: React.ComponentPropsWithRef<typeof SelectPrimitive.Separator>) {
-  return (
-    <SelectPrimitive.Separator
-      ref={ref}
-      className={cn('-mx-1 my-1 h-px bg-border', className)}
-      {...props}
-    />
-  )
-}
+const SelectSeparator = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Separator
+    ref={ref}
+    className={cn('-mx-1 my-1 h-px bg-border', className)}
+    {...props}
+  />
+))
+SelectSeparator.displayName = SelectPrimitive.Separator.displayName
 
 // ─── Exports ──────────────────────────────────────────────────────────────────
 

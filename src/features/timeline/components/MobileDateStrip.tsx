@@ -12,7 +12,7 @@ export const MobileDateStrip = React.memo(function MobileDateStrip({
   days: Date[]
   selectedIndex: number
   todayStr: string
-  stripRef: React.RefObject<HTMLDivElement | null>
+  stripRef: React.RefObject<HTMLDivElement>
   onSelectDay: (index: number) => void
 }) {
   return (

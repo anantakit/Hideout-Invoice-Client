@@ -58,18 +58,18 @@ pure function, มี test ครอบอยู่
 
 ---
 
-## Phase 4 — React → 19.x ✅
+## Phase 4 — React → 19.x
 
 ecosystem พร้อม, code clean
 
-- [x] อ่าน React 19 migration guide
-- [x] `npm install react@latest react-dom@latest` (19.2.4)
-- [x] `npm install -D @types/react@latest @types/react-dom@latest` (19.2.14 / 19.2.3)
-- [x] fix `forwardRef` → ref as prop (18 shadcn/ui components + 2 timeline RefObject types)
-- [x] ตรวจ 3rd party compatibility: react-hot-toast, recharts, @react-pdf/renderer, cmdk — all compatible
-- [x] `npx tsc --noEmit`
-- [x] `npm run test` (55 files, 790 tests passed)
-- [x] `npm run build`
+- [ ] อ่าน React 19 migration guide
+- [ ] `npm install react@latest react-dom@latest`
+- [ ] `npm install -D @types/react@latest @types/react-dom@latest`
+- [ ] fix `forwardRef` → ref as prop (shadcn/ui components)
+- [ ] ตรวจ 3rd party compatibility: react-hot-toast, recharts, @react-pdf/renderer, cmdk
+- [ ] `npx tsc --noEmit`
+- [ ] `npm run test`
+- [ ] `npm run build`
 - [ ] commit
 
 ---
