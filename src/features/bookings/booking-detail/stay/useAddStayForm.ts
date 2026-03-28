@@ -5,6 +5,12 @@ import { todayISO, addDaysISO } from '@/shared/utils'
 import { useRoomTypes, useAddStays, AVAILABILITY_GROUPED_KEY } from '../../hooks'
 import { bookingsApi } from '../../api'
 import type { AvailabilityGroupedResponse } from '../../types'
+import {
+  calculateStayTotalPrice,
+  isRoomTakenByOtherRow as isRoomTakenPure,
+  deduplicateDatePairs,
+  buildStayPayloads,
+} from '../../domain/stayManagement'
 
 // ── Types & Reducer ─────────────────────────────────────────────────────────
 
@@ -74,16 +80,7 @@ export function useAddStayForm(bookingId: string) {
   const addStays = useAddStays(bookingId)
 
   // ── Multi-availability queries (deduplicated by date pair) ───────────
-  const uniqueDatePairs = useMemo(() => {
-    const seen = new Map<string, { checkIn: string; checkOut: string }>()
-    for (const d of drafts) {
-      if (d.checkIn && d.checkOut && d.checkOut > d.checkIn) {
-        const key = `${d.checkIn}|${d.checkOut}`
-        if (!seen.has(key)) seen.set(key, { checkIn: d.checkIn, checkOut: d.checkOut })
-      }
-    }
-    return Array.from(seen.values())
-  }, [drafts])
+  const uniqueDatePairs = useMemo(() => deduplicateDatePairs(drafts), [drafts])
 
   const availQueries = useQueries({
     queries: open
@@ -106,28 +103,16 @@ export function useAddStayForm(bookingId: string) {
 
   // ── Rooms already selected in other rows with overlapping dates ─────
   const isRoomTakenByOtherRow = useCallback(
-    (currentKey: string, roomId: string, checkIn: string, checkOut: string) => {
-      for (const d of drafts) {
-        if (d.key === currentKey || d.roomId !== roomId) continue
-        if (d.checkIn < checkOut && d.checkOut > checkIn) return true
-      }
-      return false
-    },
+    (currentKey: string, roomId: string, checkIn: string, checkOut: string) =>
+      isRoomTakenPure(currentKey, roomId, checkIn, checkOut, drafts),
     [drafts],
   )
 
   // ── Price computation ───────────────────────────────────────────────
-  const totalPrice = useMemo(() => {
-    return drafts.reduce((sum, d) => {
-      const rt = roomTypes?.find((t) => t.id === d.roomTypeId)
-      if (!rt?.price_per_night || !d.checkIn || !d.checkOut || d.checkOut <= d.checkIn) return sum
-      const nights = Math.round(
-        (new Date(d.checkOut).getTime() - new Date(d.checkIn).getTime()) / 86400000,
-      )
-      const price = d.chargedPrice ?? rt.price_per_night
-      return sum + price * nights
-    }, 0)
-  }, [drafts, roomTypes])
+  const totalPrice = useMemo(
+    () => calculateStayTotalPrice(drafts, roomTypes ?? []),
+    [drafts, roomTypes],
+  )
 
   const canSubmit =
     drafts.length > 0 &&
@@ -143,15 +128,7 @@ export function useAddStayForm(bookingId: string) {
   function handleSubmit() {
     if (!canSubmit) return
     addStays.mutate(
-      {
-        stays: drafts.map((d) => ({
-          room_type_id: d.roomTypeId,
-          room_id: d.roomId || undefined,
-          check_in: d.checkIn,
-          check_out: d.checkOut,
-          ...(d.chargedPrice != null ? { charged_price: d.chargedPrice } : {}),
-        })),
-      },
+      { stays: buildStayPayloads(drafts) },
       {
         onSuccess: () => {
           toast.success(

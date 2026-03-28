@@ -187,7 +187,7 @@ function buildCreateBookingPayload(state, prefill, depositAmount): CreateBooking
 
 ## Extract Phase B — Bookings Domain (🟠 High)
 
-### B1: `useAddStayForm` → `bookings/domain/stayManagement.ts`
+### B1: `useAddStayForm` → `bookings/domain/stayManagement.ts` ✅
 
 **ปัจจุบัน:** hook ทำทั้ง pricing + conflict detection + draft management
 
