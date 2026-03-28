@@ -145,7 +145,7 @@ function formatDateLabel(dateStr, todayStr): string
 
 ---
 
-### A6: `useMobileTimelineFilters` → `timeline/domain/roomFiltering.ts`
+### A6: `useMobileTimelineFilters` → `timeline/domain/roomFiltering.ts` ✅
 
 **Extract:**
 ```typescript

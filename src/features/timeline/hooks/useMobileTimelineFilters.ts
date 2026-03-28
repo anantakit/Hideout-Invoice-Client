@@ -2,8 +2,8 @@ import { useReducer, useMemo, useEffect } from 'react'
 import { todayISO as todayISOUtil, addDaysISO } from '@/shared/utils'
 import type { UnassignedStay } from '@/features/bookings/types'
 import type { DateRange } from '@/features/bookings/shared/components/DateRangePicker'
-import { toDateStr } from '../utils/operationTypes'
-import { overlapsRange, ALL_FILTERS, RANGE_FILTERS, type FilterValue, type RoomEntry, type RoomCounts } from '../utils/classifyRooms'
+import { ALL_FILTERS, RANGE_FILTERS, type FilterValue, type RoomEntry, type RoomCounts } from '../utils/classifyRooms'
+import { countUnassignedForDate, buildRangeEntries, filterEntriesByStatus } from '../domain/roomFiltering'
 
 // ── State & Actions ───────────────────────────────────────────────────────────
 
@@ -86,36 +86,15 @@ export function useMobileTimelineFilters(
   const stayRangeValid = !!(stayRange.checkIn && stayRange.checkOut && stayRange.checkOut > stayRange.checkIn)
 
   // ── Unassigned stays overlapping selectedDate ──
-  const unassignedForDate = useMemo(() => {
-    let count = 0
-    for (const s of unassignedStays) {
-      const ci = toDateStr(s.check_in)
-      const co = toDateStr(s.check_out)
-      if (ci <= selectedDateStr && co > selectedDateStr && s.status !== 'CANCELLED' && s.status !== 'CHECKED_OUT') {
-        count++
-      }
-    }
-    return count
-  }, [unassignedStays, selectedDateStr])
+  const unassignedForDate = useMemo(
+    () => countUnassignedForDate(unassignedStays, selectedDateStr),
+    [unassignedStays, selectedDateStr],
+  )
 
   // ── Range entries (for "ช่วงเข้าพัก" mode) ──
   const rangeEntries = useMemo(() => {
     if (!stayRangeValid) return { entries: [] as RoomEntry[], counts: { range_available: 0, range_occupied: 0, maintenance: 0 } }
-    const result: RoomEntry[] = []
-    const c = { range_available: 0, range_occupied: 0, maintenance: 0 }
-    for (const e of entries) {
-      if (e.room.status === 'MAINTENANCE') {
-        c.maintenance++
-        result.push({ ...e, status: 'maintenance' })
-      } else if (e.room.bookings.some((b) => overlapsRange(b, stayRange.checkIn, stayRange.checkOut))) {
-        c.range_occupied++
-        result.push({ ...e, status: 'range_occupied' })
-      } else {
-        c.range_available++
-        result.push({ ...e, status: 'range_available' })
-      }
-    }
-    return { entries: result, counts: c }
+    return buildRangeEntries(entries, stayRange)
   }, [entries, stayRange, stayRangeValid])
 
   // ── Displayed & filtered entries ──
@@ -124,7 +103,7 @@ export function useMobileTimelineFilters(
     : entries
 
   const filtered = useMemo(
-    () => filter === 'all' ? displayedEntries : displayedEntries.filter((e) => e.status === filter),
+    () => filterEntriesByStatus(displayedEntries, filter),
     [displayedEntries, filter],
   )
 
