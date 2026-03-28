@@ -1,7 +1,6 @@
 // paymentCalc.ts — pure functions for payment payload construction
 
-import type { PaymentResponse } from '../types'
-import type { PaymentFormValues } from '../booking-detail/payment/usePaymentPanel'
+import type { PaymentFormValues, PaymentResponse } from '../types'
 
 // ── Build create payload ────────────────────────────────────────────────────
 

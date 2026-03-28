@@ -3,15 +3,9 @@ import toast from 'react-hot-toast'
 import { getErrorMessage } from '@/shared/utils'
 import { buildCreatePayload, buildEditPayload } from '../../domain/paymentCalc'
 import { useCreatePayment, useUpdateBooking, useUpdatePayment } from '../../hooks'
-import type { BookingResponse, PaymentResponse } from '../../types'
+import type { BookingResponse, PaymentFormValues, PaymentResponse } from '../../types'
 
-// ── Types ────────────────────────────────────────────────────────────────────
-
-export interface PaymentFormValues {
-  amount: string
-  method: 'CASH' | 'TRANSFER'
-  note?: string
-}
+export type { PaymentFormValues } from '../../types'
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 

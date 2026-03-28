@@ -181,6 +181,12 @@ export interface BookingFormValues {
   stays: StayFormItem[]
 }
 
+export interface PaymentFormValues {
+  amount: string
+  method: 'CASH' | 'TRANSFER'
+  note?: string
+}
+
 export interface BookingListResponse {
   data: BookingResponse[]
   meta: {

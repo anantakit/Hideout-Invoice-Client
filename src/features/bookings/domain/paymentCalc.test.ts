@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildCreatePayload, buildEditPayload } from './paymentCalc'
-import type { PaymentResponse } from '../types'
-import type { PaymentFormValues } from '../booking-detail/payment/usePaymentPanel'
+import type { PaymentFormValues, PaymentResponse } from '../types'
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
