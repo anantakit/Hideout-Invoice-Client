@@ -157,7 +157,7 @@ function filterEntriesByStatus(entries, status): RoomEntry[]
 
 ---
 
-### A7: `useCheckInData` → `timeline/domain/checkInPrep.ts`
+### A7: `useCheckInData` → `timeline/domain/checkInPrep.ts` ✅
 
 **Extract:**
 ```typescript
