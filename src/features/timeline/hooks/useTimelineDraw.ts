@@ -1,15 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { addDays } from 'date-fns'
 import type { TimelineRoom } from '@/features/bookings/types'
 import { TIMELINE_ROOM_COL_PX, getCellWidthPx } from '../utils/tokens'
-
-/** Fast ISO date formatter — avoids date-fns format() overhead on every pointermove. */
-function formatDateISO(d: Date): string {
-  const yyyy = d.getFullYear()
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
-}
+import { getDayIndex, calculateDrawDateRange, isCellRangeEmpty } from '../domain/drawGeometry'
 
 /** Minimum pointer movement (px) before a draw activates. */
 const DRAW_THRESHOLD_PX = 8
@@ -78,29 +70,23 @@ export function useTimelineDraw({
 
   // ── Snap helper ─────────────────────────────────────────────────────────
 
-  const getDayIndex = useCallback(
+  const getDayIdx = useCallback(
     (clientX: number): number => {
       const el = scrollContainerRef.current
       if (!el) return 0
       const rect = el.getBoundingClientRect()
       const relX = clientX - rect.left - TIMELINE_ROOM_COL_PX + el.scrollLeft
-      return Math.max(0, Math.min(Math.floor(relX / getCellWidthPx()), windowDays - 1))
+      return getDayIndex(relX, getCellWidthPx(), windowDays)
     },
     [scrollContainerRef, windowDays],
   )
 
-  // Check if a cell is empty (no booking covers it)
+  // Check if a cell range is empty (no active booking covers it)
   const isCellEmpty = useCallback(
     (roomId: string, checkIn: string, checkOut: string): boolean => {
       const room = roomMapRef.current.get(roomId)
       if (!room) return false
-      return !room.bookings.some(
-        (b) =>
-          b.status !== 'CANCELLED' &&
-          b.status !== 'CHECKED_OUT' &&
-          b.check_in.slice(0, 10) < checkOut &&
-          b.check_out.slice(0, 10) > checkIn,
-      )
+      return isCellRangeEmpty(room.bookings, checkIn, checkOut)
     },
     [],
   )
@@ -111,7 +97,7 @@ export function useTimelineDraw({
     (e: React.PointerEvent, roomId: string) => {
       if (e.button !== 0 || isDragging) return
 
-      const dayIndex = getDayIndex(e.clientX)
+      const dayIndex = getDayIdx(e.clientX)
       const isTouch = e.pointerType === 'touch'
 
       drawRef.current = {
@@ -135,7 +121,7 @@ export function useTimelineDraw({
         }, TOUCH_HOLD_MS)
       }
     },
-    [isDragging, getDayIndex],
+    [isDragging, getDayIdx],
   )
 
   const handlePointerMove = useCallback(
@@ -165,18 +151,18 @@ export function useTimelineDraw({
       }
 
       // Calculate date range from start to current position
-      const currentDay = getDayIndex(e.clientX)
-      const minDay = Math.min(ref.startDayIndex, currentDay)
-      const maxDay = Math.max(ref.startDayIndex, currentDay)
-
-      const checkIn = formatDateISO(addDays(windowStart, minDay))
-      const checkOut = formatDateISO(addDays(windowStart, maxDay + 1))
+      const currentDay = getDayIdx(e.clientX)
+      const { checkIn, checkOut } = calculateDrawDateRange(
+        ref.startDayIndex, currentDay, windowStart,
+      )
 
       const isEmpty = isCellEmpty(ref.roomId, checkIn, checkOut)
 
       setDrawState(isEmpty ? { roomId: ref.roomId, checkIn, checkOut } : null)
 
       // Update preview
+      const minDay = Math.min(ref.startDayIndex, currentDay)
+      const maxDay = Math.max(ref.startDayIndex, currentDay)
       const roomTop = getRoomTop(ref.roomId)
       const roomHeight = getRoomHeight(ref.roomId)
       if (roomTop !== undefined) {
@@ -188,7 +174,7 @@ export function useTimelineDraw({
         })
       }
     },
-    [getDayIndex, windowStart, isCellEmpty, getRoomTop, getRoomHeight],
+    [getDayIdx, windowStart, isCellEmpty, getRoomTop, getRoomHeight],
   )
 
   // Suppress the click event that fires after a completed draw —
@@ -209,11 +195,10 @@ export function useTimelineDraw({
       }
 
       // Compute final draw result from ref data + pointer position.
-      const currentDay = getDayIndex(e.clientX)
-      const minDay = Math.min(ref.startDayIndex, currentDay)
-      const maxDay = Math.max(ref.startDayIndex, currentDay)
-      const checkIn = formatDateISO(addDays(windowStart, minDay))
-      const checkOut = formatDateISO(addDays(windowStart, maxDay + 1))
+      const currentDay = getDayIdx(e.clientX)
+      const { checkIn, checkOut } = calculateDrawDateRange(
+        ref.startDayIndex, currentDay, windowStart,
+      )
 
       if (isCellEmpty(ref.roomId, checkIn, checkOut)) {
         setCompletedDraw({ roomId: ref.roomId, checkIn, checkOut })
@@ -226,7 +211,7 @@ export function useTimelineDraw({
       setDrawState(null)
       setDrawPreview(null)
     },
-    [getDayIndex, windowStart, isCellEmpty],
+    [getDayIdx, windowStart, isCellEmpty],
   )
 
   // ── Global listeners ────────────────────────────────────────────────────
