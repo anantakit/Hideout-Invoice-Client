@@ -4,6 +4,7 @@ import { useFieldArray, useFormContext, useWatch } from 'react-hook-form'
 import { todayISO, addDaysISO } from '@/shared/utils'
 import { useAvailabilityGrouped } from '../../hooks'
 import { proximityAutoAssignAll } from '../utils/roomAssignment'
+import { syncItemDates, calculateUnassignedSlots } from '../../domain/roomAssignment'
 import type { CreateBookingFormValues } from '../utils/createBookingSchema'
 import type { RoomTypeResponse } from '../../types'
 import { calcAvailableCount } from '../../shared/availabilityCalc'
@@ -31,10 +32,7 @@ export function useRoomTypeBuilder() {
     unifiedDatesValid && items.some((it) => it.room_type_id),
   )
 
-  const hasUnassignedSlots = items.some((item) => {
-    const assigned = item.assigned_room_ids?.length ?? 0
-    return item.room_type_id && assigned < item.quantity
-  })
+  const hasUnassignedSlots = calculateUnassignedSlots(items)
 
   const handleUnifiedAutoAssign = useCallback(() => {
     if (!unifiedAvailData) return
@@ -48,25 +46,26 @@ export function useRoomTypeBuilder() {
   // Keep items 1+ in sync with item 0's dates when sameDates is on
   useEffect(() => {
     if (!sameDates) return
-    fields.forEach((_, i) => {
-      if (i === 0) return
-      form.setValue(`items.${i}.check_in`,  firstCheckIn,  { shouldValidate: false })
-      form.setValue(`items.${i}.check_out`, firstCheckOut, { shouldValidate: false })
-      form.setValue(`items.${i}.assigned_room_ids`, [])
-    })
+    const overrides = syncItemDates(fields.length, firstCheckIn, firstCheckOut)
+    for (const [idx, vals] of Object.entries(overrides)) {
+      const i = Number(idx)
+      form.setValue(`items.${i}.check_in`,  vals.check_in,  { shouldValidate: false })
+      form.setValue(`items.${i}.check_out`, vals.check_out, { shouldValidate: false })
+      form.setValue(`items.${i}.assigned_room_ids`, vals.assigned_room_ids)
+    }
   }, [sameDates, firstCheckIn, firstCheckOut, fields.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleSameDates() {
     const next = !sameDates
     form.setValue('same_dates', next)
     if (next && firstCheckIn && firstCheckOut) {
-      fields.forEach((_, i) => {
-        if (i > 0) {
-          form.setValue(`items.${i}.check_in`,  firstCheckIn,  { shouldValidate: false })
-          form.setValue(`items.${i}.check_out`, firstCheckOut, { shouldValidate: false })
-          form.setValue(`items.${i}.assigned_room_ids`, [])
-        }
-      })
+      const overrides = syncItemDates(fields.length, firstCheckIn, firstCheckOut)
+      for (const [idx, vals] of Object.entries(overrides)) {
+        const i = Number(idx)
+        form.setValue(`items.${i}.check_in`,  vals.check_in,  { shouldValidate: false })
+        form.setValue(`items.${i}.check_out`, vals.check_out, { shouldValidate: false })
+        form.setValue(`items.${i}.assigned_room_ids`, vals.assigned_room_ids)
+      }
       toast.success('ซิงค์วันที่ทุกรายการแล้ว')
     }
   }

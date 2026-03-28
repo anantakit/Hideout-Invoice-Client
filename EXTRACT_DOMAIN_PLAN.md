@@ -207,7 +207,7 @@ function buildStayPayload(draft): CreateStayPayload
 
 ---
 
-### B2: `useRoomTypeBuilder` → `bookings/domain/roomAssignment.ts`
+### B2: `useRoomTypeBuilder` → `bookings/domain/roomAssignment.ts` ✅
 
 **Extract:**
 ```typescript
