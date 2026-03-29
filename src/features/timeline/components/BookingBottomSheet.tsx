@@ -1,6 +1,6 @@
 import React from 'react'
 import { differenceInDays, parseISO } from 'date-fns'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { DoorOpen, CheckCircle2, CircleAlert, Phone } from 'lucide-react'
 import {
   Sheet,

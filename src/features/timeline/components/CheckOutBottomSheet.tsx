@@ -24,7 +24,7 @@ import { useBooking, useCheckoutRooms } from '@/features/bookings/hooks'
 import type { RoomStayResponse } from '@/features/bookings/types'
 import { DepositReturnBadge } from '@/features/bookings/shared/components/DepositBadge'
 import { cn, fmtShortISO, formatTHBCurrency } from '@/shared/utils'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

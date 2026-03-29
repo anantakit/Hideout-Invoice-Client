@@ -58,19 +58,18 @@ pure function, มี test ครอบอยู่
 
 ---
 
-## Phase 4 — React Router → 7.x
+## Phase 4 — React Router → 7.x ✅
 
-มี v6 compat mode, low risk
+v7 ไม่มี breaking changes ถ้าเปิด future flags แล้ว (เปิดอยู่แล้ว)
 
-- [ ] อ่าน React Router v7 migration guide
-- [ ] `npm install react-router-dom@latest` (หรือ `react-router@latest` ถ้า v7 เปลี่ยนชื่อ package)
-- [ ] เปิด v6 compat mode ก่อน — ยืนยันว่าทุกอย่างทำงาน
-- [ ] ตรวจ `useNavigate`, `useParams`, `useSearchParams`, `<Link>`, `<Route>`, `<Outlet>`
-- [ ] `npx tsc --noEmit`
-- [ ] `npm run test`
-- [ ] `npm run build`
+- [x] อ่าน React Router v7 migration guide
+- [x] `npm install react-router@latest` + `npm uninstall react-router-dom` (v7 รวม package เป็น `react-router`)
+- [x] เปลี่ยน import ทุกไฟล์ (33 source + 5 test) จาก `react-router-dom` → `react-router`
+- [x] ลบ v7 future flags จาก `BrowserRouter` (เป็น default แล้วใน v7)
+- [x] `npx tsc --noEmit`
+- [x] `npm run test` (55 files, 790 tests passed)
+- [x] `npm run build`
 - [ ] commit
-- [ ] (optional) migrate จาก compat mode → v7 native patterns ทีหลัง
 
 ---
 

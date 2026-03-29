@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router'
 import { usePaginatedQuery } from '@/shared/hooks/usePaginatedQuery'
 import { useBookings } from '../../hooks'
 import type { FilterChip } from '@/shared/ui/FilterChipBar'

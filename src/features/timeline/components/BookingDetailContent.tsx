@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { differenceInDays, parseISO } from 'date-fns'
 import toast from 'react-hot-toast'
 import {

@@ -1,5 +1,5 @@
 import { useId, useMemo } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router'
 import {
   BarChart3,
   BedDouble,

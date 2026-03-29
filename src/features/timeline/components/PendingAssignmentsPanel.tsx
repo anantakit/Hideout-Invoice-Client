@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { ChevronDown, ChevronUp, BedDouble, ArrowRight, Wand2, Loader2 } from 'lucide-react'
 import { cn, fmtShortISO } from '@/shared/utils'
 import { Card } from '@/shared/ui/card'

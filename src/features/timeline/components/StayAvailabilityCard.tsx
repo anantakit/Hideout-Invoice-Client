@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { todayISO, addDaysISO, cn } from '@/shared/utils'
 import { Loader2, Search, ChevronDown } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import { ROUTES } from '@/app/routes'

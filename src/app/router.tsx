@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 import { AuthProvider } from './providers/AuthProvider'
 import { ThemeProvider } from './providers/ThemeProvider'
 import ProtectedRoute from '@/shared/components/ProtectedRoute'
@@ -40,7 +40,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BrowserRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public */}

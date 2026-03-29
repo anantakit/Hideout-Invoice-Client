@@ -8,7 +8,7 @@ import { useCreateBookingForm, SOURCE_OPTIONS } from './useCreateBookingForm'
 const mockNavigate = vi.fn()
 const mockSearchParams = new URLSearchParams()
 const mockSetSearchParams = vi.fn()
-vi.mock('react-router-dom', () => ({
+vi.mock('react-router', () => ({
   useNavigate: () => mockNavigate,
   useSearchParams: () => [mockSearchParams, mockSetSearchParams],
 }))

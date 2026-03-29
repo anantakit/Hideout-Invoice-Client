@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router'
 import { ArrowLeft, Phone, User, Receipt, CreditCard, Pencil } from 'lucide-react'
 import { Skeleton } from '@/shared/ui/skeleton'
 import toast from 'react-hot-toast'

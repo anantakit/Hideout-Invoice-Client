@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react'
 import { parseISO, isToday, addDays, format } from 'date-fns'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { ChevronDown, BedDouble, LogOut } from 'lucide-react'
 import { cn, fmtShort, todayISO as todayISOUtil } from '@/shared/utils'
 import { Badge } from '@/shared/ui/badge'

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router'
 import { Menu } from 'lucide-react'
 import { cn } from '@/shared/utils'
 import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/sheet'

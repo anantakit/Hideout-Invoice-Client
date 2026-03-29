@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Banknote, TrendingUp, TrendingDown, BedDouble, AlertTriangle, ChevronRight, CalendarPlus } from 'lucide-react'
 import { Card, CardContent } from '@/shared/ui/card'
 import { formatKPI } from '@/shared/utils'

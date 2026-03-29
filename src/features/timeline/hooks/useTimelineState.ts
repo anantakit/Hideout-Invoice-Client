@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { addDays, format, startOfDay, subDays } from 'date-fns'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import toast from 'react-hot-toast'
 import { ROUTES } from '@/app/routes'

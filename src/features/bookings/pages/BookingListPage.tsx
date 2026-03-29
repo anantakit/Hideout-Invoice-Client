@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Plus } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { Fab } from '@/shared/ui/Fab'

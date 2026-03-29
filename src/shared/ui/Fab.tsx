@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Plus } from 'lucide-react'
 import { cn } from '@/shared/utils'
 

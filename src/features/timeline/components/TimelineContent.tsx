@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { CalendarPlus } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { ROUTES } from '@/app/routes'

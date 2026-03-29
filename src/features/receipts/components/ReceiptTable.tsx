@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Eye } from 'lucide-react'
 import type { Receipt } from '../types'
 import { formatTHB, formatThaiDate } from '@/shared/utils'
