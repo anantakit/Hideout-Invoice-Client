@@ -9,18 +9,6 @@ paths:
 
 ## Critical — Must Fix During Refactor
 
-### ✅ Oversized Components (> 300 lines) — RESOLVED
-
-Steps 1–5 split all 27 oversized files. Only shadcn exceptions remain (select.tsx 561, calendar.tsx 411).
-
-### ✅ Excessive useState (> 5) — RESOLVED
-
-All components now have ≤ 5 useState. Highest is AdminRoomsPage at exactly 5.
-
-### ✅ Duplicate Code — RESOLVED
-
-statusVariant, DateRangeFilter/ReceiptDateFilter merge, toApiDate, etc. — all consolidated.
-
 ### Inline useMutation in Components
 
 Step 6 extracted 6 component files into 7 dedicated hooks. Remaining page-level mutations:
@@ -38,7 +26,7 @@ Step 6 extracted 6 component files into 7 dedicated hooks. Remaining page-level 
 
 ### Business Logic in Hooks → Extract to Domain
 
-Hooks contain pure business logic mixed with React orchestration. See **`EXTRACT_DOMAIN_PLAN.md`** for the full extraction plan (Phase A–D) and **`/extract-domain`** skill for workflow.
+Hooks contain pure business logic mixed with React orchestration. See **`extract-domain.md`** rule for conventions and workflow.
 
 **Target**: Hook files contain only state + effects + orchestration. Pure logic lives in `domain/*.ts` files.
 

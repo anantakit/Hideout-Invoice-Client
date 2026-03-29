@@ -62,6 +62,10 @@ npm run test:coverage    # with coverage report
 - **Plan**: `TEST_PLAN.md` — all phases (0–6) complete
 - **Pattern**: domain (pure, no mocks) → hook (mock API) → component (mock hook, assert outcome)
 
+## Skills
+
+See `.claude/skills/` — `react-best-practices`, `ui-ux-pro-max`, `frontend-design`
+
 ## Rules
 
 See `.claude/rules/` for detailed guidance on:

@@ -51,16 +51,3 @@ Core hooks:
 
 Hover state uses `useSyncExternalStore` in `HoverContext.tsx` — avoids parent re-renders on hover.
 
-## Remaining Issues
-
-### Oversized Components
-
-| File | Lines | Fix |
-|------|-------|-----|
-| `AssignRoomBottomSheet.tsx` | 607 | Extract RoomPickerGrid + AssignConfirmDialog |
-| `MobileTimelineList.tsx` | 587 | Extract filter state to useReducer + sub-components |
-| `InlineCreateBookingForm.tsx` | 509 | Extract form state to useReducer or react-hook-form |
-| `BookingBlock.tsx` | 493 | Extract content + tooltip + drag handles |
-| `TimelineToolbar.tsx` | 479 | Extract ZoomControl + DateNavigation + KPIStrip + RoomTypeFilter |
-| `DesktopOperationsPanel.tsx` | 432 | Extract section components |
-| `PendingAssignmentsSection.tsx` | 431 | Extract list + card components |
