@@ -271,7 +271,7 @@ export function useTimelineDrag({
     if (!ref) return
     if (ref.touchHoldTimer) clearTimeout(ref.touchHoldTimer)
     ref.target.closest('.tl-booking-block')?.classList.remove('tl-touch-drag-active')
-    try { ref.target.releasePointerCapture(ref.pointerId) } catch {}
+    try { ref.target.releasePointerCapture(ref.pointerId) } catch { /* pointer already released */ }
     dragRef.current = null
     if (autoScrollRaf.current) {
       cancelAnimationFrame(autoScrollRaf.current)
@@ -464,7 +464,7 @@ export function useTimelineDrag({
       // If still pending (threshold never exceeded), just clean up.
       // The click event will fire normally for tap behavior.
       if (ref.phase === 'pending') {
-        try { ref.target.releasePointerCapture(ref.pointerId) } catch {}
+        try { ref.target.releasePointerCapture(ref.pointerId) } catch { /* pointer already released */ }
         return
       }
 

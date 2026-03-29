@@ -38,8 +38,10 @@ describe('cn', () => {
   })
 
   it('handles conditional classes', () => {
-    expect(cn('px-4', false && 'hidden', 'py-2')).toBe('px-4 py-2')
-    expect(cn('px-4', true && 'hidden', 'py-2')).toBe('px-4 hidden py-2')
+    const hide = false
+    const show = true
+    expect(cn('px-4', hide && 'hidden', 'py-2')).toBe('px-4 py-2')
+    expect(cn('px-4', show && 'hidden', 'py-2')).toBe('px-4 hidden py-2')
   })
 
   it('resolves tailwind conflicts (last wins)', () => {

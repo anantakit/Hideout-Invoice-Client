@@ -36,7 +36,7 @@ function createFormWrapper(items: CreateBookingFormValues['items']) {
         payment_method: 'CASH',
       },
     })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return React.createElement(QueryWrapper, null,
       React.createElement(FormProvider, { ...form as any, children }),
     )
