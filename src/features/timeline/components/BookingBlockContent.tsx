@@ -90,17 +90,17 @@ function BookingBlockContent({
 
       {/* Transfer indicator */}
       {booking.transfer_from_stay_id && !isUpcoming && (
-        <ArrowRightLeft className="w-2.5 h-2.5 shrink-0 opacity-70" />
+        <ArrowRightLeft className="w-2.5 h-2.5 shrink-0 opacity-50" />
       )}
 
       {/* Early checkout indicator */}
       {booking.early_checkout && !isUpcoming && (
-        <CheckCircle2 className="w-2.5 h-2.5 shrink-0 text-success opacity-80" />
+        <CheckCircle2 className="w-2.5 h-2.5 shrink-0 text-success opacity-60" />
       )}
 
       {/* Clock icon for upcoming */}
       {isUpcoming && (
-        <Clock className="w-3 h-3 shrink-0 text-muted-foreground/60" />
+        <Clock className="w-3 h-3 shrink-0 text-muted-foreground/50" />
       )}
 
       {/* Top-right indicators: payment dot + source icon */}
@@ -123,21 +123,21 @@ function BookingBlockContent({
         </div>
       )}
 
-      {/* Guest name & room count */}
+      {/* Guest name & room count — 3-level hierarchy */}
       <div
         className={cn(
-          'flex flex-col min-w-0 flex-1',
+          'flex flex-col min-w-0 flex-1 gap-0.5',
           isMultiRoom && !isUpcoming && 'pl-1',
         )}
       >
-        <span className="truncate text-micro-sm font-bold leading-tight drop-shadow-sm">
+        <span className="truncate text-[13px] font-medium leading-tight text-foreground/92 tracking-[0.01em]">
           {booking.guest_name}
         </span>
-        <span className="flex items-center gap-0.5 text-[10px] leading-tight opacity-80 truncate">
+        <span className="flex items-center gap-0.5 text-[11px] leading-tight text-foreground/55 truncate">
           {isMultiRoom ? (
-            <Users className="w-2.5 h-2.5 shrink-0" />
+            <Users className="w-2.5 h-2.5 shrink-0 opacity-60" />
           ) : (
-            <BedDouble className="w-2.5 h-2.5 shrink-0" />
+            <BedDouble className="w-2.5 h-2.5 shrink-0 opacity-60" />
           )}
           {roomCount} ห้อง
         </span>

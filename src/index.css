@@ -50,6 +50,12 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
+  /* Brand accent (luxury coffee gold) */
+  --color-brand: hsl(var(--brand));
+  --color-brand-strong: hsl(var(--brand-strong));
+  --color-brand-soft: hsl(var(--brand-soft));
+  --color-brand-muted: hsl(var(--brand-muted));
+
   /* Booking status colors */
   --color-bk-reserved: hsl(var(--bk-reserved));
   --color-bk-reserved-foreground: hsl(var(--bk-reserved-fg));
@@ -221,7 +227,67 @@
 
   /* ── 4b. Active chip shadow ────────────────────────────────────── */
   .shadow-active-chip {
-    box-shadow: 0 1px 3px rgba(91, 124, 250, 0.35);
+    box-shadow: 0 1px 3px hsl(32 35% 60% / 0.35);
+  }
+
+  /* ── Booking block accent-bar system ────────────────── */
+  /* Neutral bg + left accent bar = status without noise  */
+  /* ── Booking block: accent bar + tinted background ────────── */
+  /* Status hierarchy: checked-in (strongest) > reserved > no-show > checked-out (faintest) */
+  .bk-block {
+    border-color: hsl(0 0% 100% / 0.10);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    transition: background 150ms, border-color 150ms, opacity 150ms;
+  }
+  .bk-block:hover { border-color: hsl(0 0% 100% / 0.18) }
+
+  /* Reserved — moderate gold tint (upcoming) */
+  .bk-accent-reserved {
+    background: hsl(var(--bk-reserved) / 0.14);
+    box-shadow: inset 4px 0 0 hsl(var(--bk-reserved)), 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .bk-accent-reserved:hover { background: hsl(var(--bk-reserved) / 0.22) }
+
+  /* Checked-in — STRONGEST tint (current guests = most important) */
+  .bk-accent-checked-in {
+    background: hsl(var(--bk-checked-in) / 0.22);
+    box-shadow: inset 4px 0 0 hsl(var(--bk-checked-in)), 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .bk-accent-checked-in:hover { background: hsl(var(--bk-checked-in) / 0.30) }
+
+  /* Checked-out — very faint (past, de-emphasized) */
+  .bk-accent-checked-out {
+    background: hsl(var(--bk-checked-out) / 0.06);
+    box-shadow: inset 3px 0 0 hsl(var(--bk-checked-out) / 0.5), 0 1px 4px rgba(0,0,0,0.15);
+  }
+
+  /* No-show — moderate amber */
+  .bk-accent-no-show {
+    background: hsl(var(--bk-no-show) / 0.14);
+    box-shadow: inset 4px 0 0 hsl(var(--bk-no-show)), 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .bk-accent-no-show:hover { background: hsl(var(--bk-no-show) / 0.22) }
+
+  /* Light mode — same hierarchy, adjusted for light bg */
+  .light .bk-block {
+    border-color: hsl(0 0% 0% / 0.12);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .light .bk-accent-reserved {
+    background: hsl(var(--bk-reserved) / 0.12);
+    box-shadow: inset 4px 0 0 hsl(var(--bk-reserved)), 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .light .bk-accent-checked-in {
+    background: hsl(var(--bk-checked-in) / 0.18);
+    box-shadow: inset 4px 0 0 hsl(var(--bk-checked-in)), 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .light .bk-accent-checked-out {
+    background: hsl(var(--bk-checked-out) / 0.05);
+    box-shadow: inset 3px 0 0 hsl(var(--bk-checked-out) / 0.4), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .light .bk-accent-no-show {
+    background: hsl(var(--bk-no-show) / 0.12);
+    box-shadow: inset 4px 0 0 hsl(var(--bk-no-show)), 0 1px 4px rgba(0,0,0,0.08);
   }
 
   /* ── 4c. Touch & Sheet tokens ────────────────────────────────── */
@@ -291,23 +357,28 @@
 @layer base {
   :root {
     /* ══════════════════════════════════════════════════════════════════
-       Professional PMS Theme — Soft Graphite
-       Designed for 8–12 hour front-desk readability.
-       Layered surfaces, muted accents, calm status palette.
+       Professional PMS Theme — Neutral-first, Brand-accent only
+       90% neutral + 10% gold. Designed for 8–12 hour readability.
        ══════════════════════════════════════════════════════════════════ */
 
-    /* ── Surface Layers ────────────────────────────────── */
-    --background: 224 16% 10%;       /* #151821 — app bg */
-    --foreground: 218 16% 92%;       /* #E6EAF2 — primary text */
+    /* ── Surface Layers (cool blue-gray — professional SaaS) ────── */
+    --background: 224 16% 10%;       /* #151821 */
+    --foreground: 218 16% 92%;       /* #E6EAF2 */
 
-    --card: 224 18% 14%;             /* #1C212B — card / panel bg */
+    --card: 224 18% 14%;             /* #1C212B */
     --card-foreground: 218 16% 92%;
 
-    --sidebar: 224 20% 12%;          /* #181C25 */
+    --sidebar: 224 22% 11%;          /* darker for contrast */
     --sidebar-foreground: 218 16% 90%;
 
-    /* ── Primary Accent — Muted SaaS Blue ────────────── */
-    --primary: 222 85% 64%;          /* #5B8CFF */
+    /* ── Brand Accent — Luxury Gold (accent only) ────── */
+    --brand: 32 35% 60%;
+    --brand-strong: 32 40% 52%;
+    --brand-soft: 32 30% 14%;
+    --brand-muted: 32 25% 20%;
+
+    /* ── Primary — Blue (interaction only) ───────────── */
+    --primary: 222 60% 55%;
     --primary-foreground: 0 0% 100%;
 
     /* ── Secondary / Muted ─────────────────────────────── */
@@ -325,7 +396,7 @@
     --border: 224 12% 26%;
     --border-soft: 224 10% 22%;
     --input: 224 14% 14%;
-    --ring: 222 85% 64%;
+    --ring: 222 60% 55%;
 
     /* ── Status Colors (muted for dark UI) ────────────── */
     --success: 150 45% 44%;
@@ -348,18 +419,18 @@
 
     --radius: 0.85rem;
 
-    /* ── Booking Status Colors ─────────────────────────── */
-    /* Calm tones for reservation bars on dark surfaces.   */
-    --bk-reserved: 222 85% 64%;      /* blue */
-    --bk-reserved-fg: 0 0% 100%;
-    --bk-checked-in: 150 45% 44%;    /* green */
-    --bk-checked-in-fg: 0 0% 100%;
-    --bk-checked-out: 218 10% 55%;   /* gray */
-    --bk-checked-out-fg: 0 0% 100%;
-    --bk-no-show: 38 60% 50%;        /* amber */
-    --bk-no-show-fg: 0 0% 100%;
-    --bk-cancelled: 218 10% 50%;     /* muted gray */
-    --bk-cancelled-fg: 218 16% 92%;
+    /* ── Booking Status — accent-bar approach ─────────── */
+    /* Blocks are neutral; status shown via left accent   */
+    --bk-reserved: 32 45% 65%;       /* gold accent — visible */
+    --bk-reserved-fg: 218 16% 92%;   /* normal text */
+    --bk-checked-in: 150 45% 42%;    /* green — visible accent */
+    --bk-checked-in-fg: 218 16% 92%;
+    --bk-checked-out: 218 10% 50%;   /* gray */
+    --bk-checked-out-fg: 218 16% 92%;
+    --bk-no-show: 32 45% 52%;        /* amber */
+    --bk-no-show-fg: 218 16% 92%;
+    --bk-cancelled: 218 10% 40%;     /* muted gray */
+    --bk-cancelled-fg: 218 10% 60%;
 
     /* ── Room Status Indicator Colors ──────────────────── */
     --room-clean: 150 50% 52%;       /* green dot */
@@ -368,28 +439,28 @@
     --room-ooo-tint: 0 48% 56%;
 
     /* ── Timeline View ─────────────────────────────────── */
-    --timeline-bg: 224 16% 12%;      /* lighter than app bg */
-    --timeline-grid: 224 12% 28%;    /* subtle but visible grid */
-    --timeline-today: 200 80% 60%;   /* softer cyan indicator */
+    --timeline-bg: 224 16% 12%;      /* slightly lighter than bg */
+    --timeline-grid: 224 10% 30%;    /* readable grid */
+    --timeline-today: 32 35% 60%;    /* brand gold (used at low alpha) */
     --timeline-row-hover: 0 0% 100%; /* used at low alpha */
 
     --timeline-cell-width: 7.5rem;
-    --timeline-row-height: 3.5rem;
+    --timeline-row-height: 3rem;
     --timeline-room-col-width: 8.75rem;
 
     /* ── Timeline Toolbar (PMS Header) ──────────────── */
-    --tl-header-bg: 224 18% 13%;    /* blends with sidebar */
-    --tl-border: 224 14% 26%;       /* matches --border */
-    --tl-text: 218 16% 92%;         /* matches --foreground */
-    --tl-text-dim: 218 10% 65%;     /* readable secondary */
-    --tl-accent: 222 85% 64%;       /* matches --primary */
+    --tl-header-bg: 224 18% 13%;
+    --tl-border: 224 14% 26%;
+    --tl-text: 218 16% 92%;
+    --tl-text-dim: 218 10% 65%;
+    --tl-accent: 32 35% 60%;        /* brand gold */
 
     /* ── KPI Colors (muted analytics) ──────────────── */
     --kpi-occ: 150 50% 46%;         /* muted green */
     --kpi-arr: 200 70% 55%;         /* muted sky */
     --kpi-dep: 38 70% 52%;          /* muted amber */
     --kpi-avl: 263 60% 70%;         /* muted purple */
-    --kpi-pending: 25 95% 60%;      /* vivid orange — 4.6:1 on #1B1F2A */
+    --kpi-pending: 25 95% 60%;      /* vivid orange */
     --kpi-pending-muted: 25 70% 16%; /* bg tint */
   }
 
@@ -399,97 +470,101 @@
      ══════════════════════════════════════════════════════════════════ */
   .light {
     /* ── Surface Layers ────────────────────────────────── */
-    --background: 210 40% 98%;       /* #F8FAFC — slate-50 */
-    --foreground: 222 47% 11%;       /* #0F172A — slate-900 */
+    --background: 40 20% 97%;        /* warm off-white */
+    --foreground: 220 20% 15%;       /* dark warm gray */
 
-    --card: 0 0% 100%;               /* #FFFFFF */
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 100%;               /* white */
+    --card-foreground: 220 20% 15%;
 
-    --sidebar: 210 40% 96%;          /* #F1F5F9 — slate-100 */
-    --sidebar-foreground: 222 47% 11%;
+    --sidebar: 40 20% 94%;           /* warm light gray */
+    --sidebar-foreground: 220 20% 15%;
 
-    /* ── Primary Accent — Deeper blue for light bg ────── */
-    --primary: 224 76% 48%;          /* #2563EB — vivid enough for bg, dark enough for text (5.3:1) */
+    /* ── Brand Accent — Luxury Coffee Gold ───────────── */
+    --brand: 32 35% 52%;
+    --brand-strong: 32 40% 45%;
+    --brand-soft: 32 30% 90%;
+    --brand-muted: 32 25% 85%;
+
+    /* ── Primary — Muted Blue (reduced role) ─────────── */
+    --primary: 222 60% 45%;
     --primary-foreground: 0 0% 100%;
 
     /* ── Secondary / Muted ─────────────────────────────── */
-    --secondary: 210 40% 96%;        /* #F1F5F9 */
-    --secondary-foreground: 215 25% 27%;  /* #334155 — slate-700 */
+    --secondary: 40 20% 94%;
+    --secondary-foreground: 220 15% 30%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 20% 40%;      /* #546378 — between slate-500/600, 5.6:1 on white */
+    --muted: 40 20% 94%;
+    --muted-foreground: 220 10% 40%;
 
     /* ── Accent (hover / subtle highlight) ─────────────── */
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 40 20% 94%;
+    --accent-foreground: 220 20% 15%;
 
     /* ── Borders / Inputs / Ring ────────────────────────── */
-    --border: 214 32% 91%;               /* #E2E8F0 — slate-200 */
-    --border-soft: 210 40% 94%;          /* #EDF2F7 */
-    --input: 0 0% 100%;                  /* white */
-    --ring: 224 76% 48%;
+    --border: 220 20% 88%;
+    --border-soft: 220 20% 92%;
+    --input: 0 0% 100%;
+    --ring: 222 60% 45%;
 
     /* ── Status Colors ───────────────────────────────────
        Darkened for WCAG AA text contrast on white/light bg.
-       All pass 4.5:1 for normal text and work as bg with
-       white foreground (≥4.5:1).
        ─────────────────────────────────────────────────── */
-    --success: 152 70% 28%;              /* #147A4A — 7.3:1 on white */
+    --success: 150 50% 35%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 152 40% 93%;
-    --success-muted-foreground: 152 65% 25%;
+    --success-muted: 150 35% 93%;
+    --success-muted-foreground: 150 55% 28%;
 
-    --warning: 32 85% 35%;               /* #A15C0B — 5.8:1 on white */
+    --warning: 32 55% 45%;
     --warning-foreground: 0 0% 100%;
-    --warning-muted: 40 80% 93%;
-    --warning-muted-foreground: 28 80% 28%;
+    --warning-muted: 32 50% 93%;
+    --warning-muted-foreground: 32 60% 30%;
 
-    --info: 200 80% 38%;                 /* #0B7AAF — 4.6:1 on white */
+    --info: 210 50% 45%;
     --info-foreground: 0 0% 100%;
-    --info-muted: 200 60% 94%;
-    --info-muted-foreground: 200 75% 28%;
+    --info-muted: 210 40% 94%;
+    --info-muted-foreground: 210 55% 30%;
 
-    --destructive: 0 72% 45%;            /* #C5282E — 5.1:1 on white */
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
     /* ── Booking Status Colors ─────────────────────────── */
-    --bk-reserved: 224 76% 48%;      /* blue — matches primary */
+    --bk-reserved: 32 35% 52%;       /* brand gold */
     --bk-reserved-fg: 0 0% 100%;
-    --bk-checked-in: 152 70% 28%;    /* green — matches success */
+    --bk-checked-in: 150 50% 35%;    /* green */
     --bk-checked-in-fg: 0 0% 100%;
     --bk-checked-out: 215 14% 55%;   /* gray */
     --bk-checked-out-fg: 0 0% 100%;
-    --bk-no-show: 32 85% 35%;        /* amber — matches warning */
+    --bk-no-show: 32 55% 45%;        /* amber — matches warning */
     --bk-no-show-fg: 0 0% 100%;
     --bk-cancelled: 215 14% 65%;     /* muted gray */
-    --bk-cancelled-fg: 215 25% 27%;
+    --bk-cancelled-fg: 220 15% 30%;
 
     /* ── Room Status Indicator Colors ──────────────────── */
-    --room-clean: 152 60% 34%;
-    --room-dirty: 32 75% 42%;
+    --room-clean: 150 55% 36%;
+    --room-dirty: 32 70% 44%;
     --room-ooo: 0 65% 45%;
     --room-ooo-tint: 0 65% 45%;
 
     /* ── Timeline View ─────────────────────────────────── */
-    --timeline-bg: 210 40% 97%;
-    --timeline-grid: 214 32% 88%;
-    --timeline-today: 200 80% 38%;        /* matches --info */
+    --timeline-bg: 40 20% 97%;
+    --timeline-grid: 220 20% 88%;
+    --timeline-today: 32 40% 50%;        /* brand gold */
     --timeline-row-hover: 0 0% 0%;
 
     /* ── Timeline Toolbar ───────────────────────────────── */
     --tl-header-bg: 0 0% 100%;
-    --tl-border: 214 32% 91%;
-    --tl-text: 222 47% 11%;
-    --tl-text-dim: 215 20% 40%;           /* matches --muted-foreground */
-    --tl-accent: 224 76% 48%;
+    --tl-border: 220 20% 88%;
+    --tl-text: 220 20% 15%;
+    --tl-text-dim: 220 10% 40%;
+    --tl-accent: 32 35% 52%;             /* brand gold */
 
     /* ── KPI Colors ─────────────────────────────────────── */
-    --kpi-occ: 152 70% 28%;              /* matches success */
-    --kpi-arr: 200 80% 38%;              /* matches info */
-    --kpi-dep: 32 85% 35%;               /* matches warning */
-    --kpi-avl: 263 55% 45%;              /* darker purple — 5.1:1 */
-    --kpi-pending: 25 90% 42%;           /* burnt orange — 5.3:1 on white */
-    --kpi-pending-muted: 30 80% 93%;     /* light orange tint */
+    --kpi-occ: 150 50% 35%;              /* matches success */
+    --kpi-arr: 210 50% 45%;              /* matches info */
+    --kpi-dep: 32 55% 45%;               /* matches warning */
+    --kpi-avl: 263 50% 48%;              /* muted purple */
+    --kpi-pending: 25 80% 44%;           /* warm orange */
+    --kpi-pending-muted: 30 60% 93%;     /* light orange tint */
   }
 
   /* Restore v3 border-color default (v4 defaults to currentColor) */

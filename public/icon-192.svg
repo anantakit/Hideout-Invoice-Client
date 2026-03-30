@@ -1,37 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="38 38 116 116">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 64">
   <defs>
-    <linearGradient id="front" x1="52" y1="96" x2="143" y2="96" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#1838A8"/>
-      <stop offset="35%" stop-color="#3562E0"/>
-      <stop offset="70%" stop-color="#7BA4FF"/>
-      <stop offset="100%" stop-color="#E4EDFF"/>
-    </linearGradient>
-    <linearGradient id="top" x1="52" y1="96" x2="143" y2="96" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#5078F0"/>
-      <stop offset="35%" stop-color="#6B94FF"/>
-      <stop offset="70%" stop-color="#A8CCFF"/>
-      <stop offset="100%" stop-color="#F2F6FF"/>
-    </linearGradient>
-    <linearGradient id="side" x1="52" y1="96" x2="143" y2="96" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0E2278"/>
-      <stop offset="35%" stop-color="#1E3FA8"/>
-      <stop offset="70%" stop-color="#4468C0"/>
-      <stop offset="100%" stop-color="#8898B8"/>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#E7C9A5"/>
+      <stop offset="100%" stop-color="#CFA77A"/>
     </linearGradient>
   </defs>
-
-  <!-- Left Pillar -->
-  <path d="M76,51 L81,46 L81,145 L76,150 Z" fill="url(#side)"/>
-  <path d="M52,51 L76,51 L81,46 L57,46 Z" fill="url(#top)"/>
-  <path d="M52,51 L76,51 L76,150 L52,150 Z" fill="url(#front)"/>
-
-  <!-- Right Pillar -->
-  <path d="M138,51 L143,46 L143,145 L138,150 Z" fill="url(#side)"/>
-  <path d="M114,51 L138,51 L143,46 L119,46 Z" fill="url(#top)"/>
-  <path d="M114,51 L138,51 L138,150 L114,150 Z" fill="url(#front)"/>
-
-  <!-- Crossbar -->
-  <path d="M114,88 L119,83 L119,101 L114,106 Z" fill="url(#side)"/>
-  <path d="M76,88 L114,88 L119,83 L81,83 Z" fill="url(#top)"/>
-  <path d="M76,88 L114,88 L114,106 L76,106 Z" fill="url(#front)"/>
+  <path d="M22,2 L7,2 Q2,2 2,7 L2,57 Q2,62 7,62 L22,62"
+        stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <rect x="24" y="16" width="8" height="32" rx="3" fill="#E6E6E6"/>
+  <rect x="42" y="16" width="8" height="32" rx="3" fill="#E6E6E6"/>
+  <rect x="24" y="29" width="26" height="8" rx="3" fill="#E6E6E6"/>
 </svg>

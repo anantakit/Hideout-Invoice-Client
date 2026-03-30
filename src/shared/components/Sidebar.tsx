@@ -1,4 +1,4 @@
-import { useId, useMemo } from 'react'
+import { useMemo } from 'react'
 import { NavLink, useNavigate } from 'react-router'
 import {
   BarChart3,
@@ -86,48 +86,18 @@ const NAV_SECTIONS: NavSectionConfig[] = [
 
 // ── Logo ──────────────────────────────────────────────────────────────────────
 
-/** Shared logo mark — 3D isometric H with flowing blue gradient. */
+/** Shared logo mark — bracket + H monogram (Hideout brand frame). */
 export function Logo({ className = 'w-8 h-8' }: { className?: string }) {
-  const uid = useId()
-  const f = `${uid}-f`
-  const t = `${uid}-t`
-  const s = `${uid}-s`
-
   return (
     <div className={`${className} shrink-0`}>
-      <svg viewBox="0 0 100 100" fill="none" className="w-full h-full" aria-hidden>
-        <defs>
-          <linearGradient id={f} x1="15" y1="50" x2="89" y2="50" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#1838A8" />
-            <stop offset="35%" stopColor="#3562E0" />
-            <stop offset="70%" stopColor="#7BA4FF" />
-            <stop offset="100%" stopColor="#E4EDFF" />
-          </linearGradient>
-          <linearGradient id={t} x1="15" y1="50" x2="89" y2="50" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#5078F0" />
-            <stop offset="35%" stopColor="#6B94FF" />
-            <stop offset="70%" stopColor="#A8CCFF" />
-            <stop offset="100%" stopColor="#F2F6FF" />
-          </linearGradient>
-          <linearGradient id={s} x1="15" y1="50" x2="89" y2="50" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#0E2278" />
-            <stop offset="35%" stopColor="#1E3FA8" />
-            <stop offset="70%" stopColor="#4468C0" />
-            <stop offset="100%" stopColor="#8898B8" />
-          </linearGradient>
-        </defs>
-        {/* Left Pillar */}
-        <path d="M29,19 L31,17 L31,81 L29,83 Z" fill={`url(#${s})`} />
-        <path d="M15,19 L29,19 L31,17 L17,17 Z" fill={`url(#${t})`} />
-        <path d="M15,19 L29,19 L29,83 L15,83 Z" fill={`url(#${f})`} />
-        {/* Right Pillar */}
-        <path d="M87,19 L89,17 L89,81 L87,83 Z" fill={`url(#${s})`} />
-        <path d="M73,19 L87,19 L89,17 L75,17 Z" fill={`url(#${t})`} />
-        <path d="M73,19 L87,19 L87,83 L73,83 Z" fill={`url(#${f})`} />
-        {/* Crossbar */}
-        <path d="M73,44 L75,42 L75,56 L73,58 Z" fill={`url(#${s})`} />
-        <path d="M29,44 L73,44 L75,42 L31,42 Z" fill={`url(#${t})`} />
-        <path d="M29,44 L73,44 L73,58 L29,58 Z" fill={`url(#${f})`} />
+      <svg viewBox="0 0 54 64" fill="none" className="w-full h-full" aria-hidden>
+        {/* Bracket — brand gold, adapts to theme */}
+        <path d="M22,2 L7,2 Q2,2 2,7 L2,57 Q2,62 7,62 L22,62"
+              className="stroke-brand-strong" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        {/* H — foreground color, adapts to theme */}
+        <rect x="24" y="16" width="8" height="32" rx="3" className="fill-foreground/85" />
+        <rect x="42" y="16" width="8" height="32" rx="3" className="fill-foreground/85" />
+        <rect x="24" y="29" width="26" height="8" rx="3" className="fill-foreground/85" />
       </svg>
     </div>
   )
@@ -167,7 +137,7 @@ function NavItem({
           'flex items-center gap-3 radius-button text-sm font-medium transition-colors',
           'px-3 py-2.5 md:px-2.5 md:justify-center xl:px-3 xl:justify-start',
           isActive
-            ? 'bg-primary/15 text-primary border-l-2 border-l-primary'
+            ? 'bg-foreground/6 text-foreground border-l-2 border-l-brand'
             : 'text-muted-foreground hover:bg-accent hover:text-foreground',
         )
       }

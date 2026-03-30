@@ -176,7 +176,7 @@ const RoomRow = React.memo(function RoomRow({
                   className={cn(
                     'border-r border-timeline-grid/50 shrink-0',
                     todayCell
-                      ? 'bg-primary/8'
+                      ? 'bg-timeline-today/12 border-l border-l-foreground/8 border-r-foreground/8'
                       : isWeekend
                         ? 'bg-muted/20'
                         : isEven && 'bg-accent/4',
@@ -191,7 +191,7 @@ const RoomRow = React.memo(function RoomRow({
         {/* Today vertical indicator line */}
         {todayOffset >= 0 && (
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-timeline-today/60 z-20 pointer-events-none"
+            className="absolute top-0 bottom-0 w-0.5 bg-timeline-today/70 z-20 pointer-events-none"
             style={{ left: `calc(${todayOffset} * var(--timeline-cell-width))` }}
           />
         )}

@@ -76,7 +76,7 @@ const TimelineHeader = React.memo(function TimelineHeader({ days }: TimelineHead
               className={cn(
                 'flex flex-col items-center justify-center gap-0 shrink-0 border-r border-timeline-grid/40',
                 today
-                  ? 'bg-primary/10 border-b-2 border-b-timeline-today/50'
+                  ? 'bg-timeline-today/12 border-b-2 border-b-timeline-today/60'
                   : isWeekend && 'bg-muted/30',
               )}
               style={{ width: 'var(--timeline-cell-width)' }}
