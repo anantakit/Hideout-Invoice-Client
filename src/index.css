@@ -241,19 +241,19 @@
   }
   .bk-block:hover { border-color: hsl(0 0% 100% / 0.18) }
 
-  /* Reserved — moderate gold tint (upcoming) */
+  /* Reserved/Assigned — subtle gold (upcoming, less urgent) */
   .bk-accent-reserved {
-    background: hsl(var(--bk-reserved) / 0.14);
-    box-shadow: inset 4px 0 0 hsl(var(--bk-reserved)), 0 2px 8px rgba(0,0,0,0.25);
+    background: hsl(var(--bk-reserved) / 0.08);
+    box-shadow: inset 3px 0 0 hsl(var(--bk-reserved) / 0.7), 0 2px 8px rgba(0,0,0,0.25);
   }
-  .bk-accent-reserved:hover { background: hsl(var(--bk-reserved) / 0.22) }
+  .bk-accent-reserved:hover { background: hsl(var(--bk-reserved) / 0.14) }
 
-  /* Checked-in — STRONGEST tint (current guests = most important) */
+  /* Checked-in — STRONGEST (current guests = most important) */
   .bk-accent-checked-in {
-    background: hsl(var(--bk-checked-in) / 0.22);
+    background: hsl(var(--bk-checked-in) / 0.30);
     box-shadow: inset 4px 0 0 hsl(var(--bk-checked-in)), 0 2px 8px rgba(0,0,0,0.25);
   }
-  .bk-accent-checked-in:hover { background: hsl(var(--bk-checked-in) / 0.30) }
+  .bk-accent-checked-in:hover { background: hsl(var(--bk-checked-in) / 0.38) }
 
   /* Checked-out — very faint (past, de-emphasized) */
   .bk-accent-checked-out {
@@ -274,11 +274,11 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   }
   .light .bk-accent-reserved {
-    background: hsl(var(--bk-reserved) / 0.12);
-    box-shadow: inset 4px 0 0 hsl(var(--bk-reserved)), 0 1px 4px rgba(0,0,0,0.08);
+    background: hsl(var(--bk-reserved) / 0.06);
+    box-shadow: inset 3px 0 0 hsl(var(--bk-reserved) / 0.6), 0 1px 4px rgba(0,0,0,0.08);
   }
   .light .bk-accent-checked-in {
-    background: hsl(var(--bk-checked-in) / 0.18);
+    background: hsl(var(--bk-checked-in) / 0.15);
     box-shadow: inset 4px 0 0 hsl(var(--bk-checked-in)), 0 1px 4px rgba(0,0,0,0.08);
   }
   .light .bk-accent-checked-out {
@@ -419,18 +419,18 @@
 
     --radius: 0.85rem;
 
-    /* ── Booking Status — accent-bar approach ─────────── */
-    /* Blocks are neutral; status shown via left accent   */
-    --bk-reserved: 32 45% 65%;       /* gold accent — visible */
-    --bk-reserved-fg: 218 16% 92%;   /* normal text */
-    --bk-checked-in: 150 45% 42%;    /* green — visible accent */
-    --bk-checked-in-fg: 218 16% 92%;
-    --bk-checked-out: 218 10% 50%;   /* gray */
-    --bk-checked-out-fg: 218 16% 92%;
-    --bk-no-show: 32 45% 52%;        /* amber */
-    --bk-no-show-fg: 218 16% 92%;
-    --bk-cancelled: 218 10% 40%;     /* muted gray */
-    --bk-cancelled-fg: 218 10% 60%;
+    /* ── Booking Status — solid fills (instant scan) ──── */
+    /* Blue = reserved, Green = checked-in (front desk standard) */
+    --bk-reserved: 222 60% 55%;      /* blue — not yet here */
+    --bk-reserved-fg: 0 0% 100%;
+    --bk-checked-in: 150 45% 44%;    /* green — currently staying */
+    --bk-checked-in-fg: 0 0% 100%;
+    --bk-checked-out: 218 10% 55%;   /* gray — past */
+    --bk-checked-out-fg: 0 0% 100%;
+    --bk-no-show: 38 60% 50%;        /* amber — needs attention */
+    --bk-no-show-fg: 0 0% 100%;
+    --bk-cancelled: 218 10% 50%;     /* muted gray */
+    --bk-cancelled-fg: 218 16% 92%;
 
     /* ── Room Status Indicator Colors ──────────────────── */
     --room-clean: 150 50% 52%;       /* green dot */

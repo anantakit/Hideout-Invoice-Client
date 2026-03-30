@@ -108,34 +108,36 @@ const BookingBlock = React.memo(function BookingBlock({
             !isBeingDragged && (
               status === 'CANCELLED'
                 ? [
-                    'border-dashed border-muted-foreground/30 bk-block text-muted-foreground opacity-40',
-                    isHighlighted === true  && 'opacity-55! ring-1 ring-inset ring-muted-foreground/20',
+                    'border-dashed border-bk-cancelled/70 bg-transparent text-bk-cancelled-foreground opacity-60',
+                    isHighlighted === true  && 'opacity-70 ring-1 ring-inset ring-bk-cancelled/30',
                     isHighlighted === false && 'opacity-10!',
                   ]
                 : status === 'CHECKED_OUT'
                   ? [
+                      'border-transparent shadow-card',
                       colorClass,
-                      'opacity-40',
-                      isHighlighted === true  && 'opacity-55! ring-1 ring-inset ring-foreground/15',
+                      'opacity-60',
+                      isHighlighted === true  && 'opacity-65! ring-1 ring-inset ring-foreground/20',
                       isHighlighted === false && 'opacity-10!',
                     ]
                   : isUpcoming
                     ? [
-                        'border-dashed bk-block border-bk-reserved/40 bk-accent-reserved text-foreground',
-                        isHighlighted === null  && 'opacity-65 hover:opacity-85 hover:shadow-md',
-                        isHighlighted === true  && 'opacity-90 shadow-md ring-2 ring-inset ring-bk-reserved/40',
+                        'border-dashed border-bk-reserved/60 bg-bk-reserved/20 text-bk-reserved',
+                        isHighlighted === null  && 'opacity-80 hover:opacity-95 hover:shadow-md hover:brightness-105',
+                        isHighlighted === true  && 'opacity-95 shadow-md ring-2 ring-inset ring-primary/30',
                         isHighlighted === false && 'opacity-10!',
                       ]
                     : [
+                        'border-transparent shadow-card',
                         colorClass,
                         isHighlighted === null  && 'hover:shadow-md hover:brightness-105',
-                        isHighlighted === true  && 'shadow-md ring-2 ring-inset ring-foreground/25',
+                        isHighlighted === true  && 'shadow-md ring-2 ring-inset ring-foreground/30',
                         isHighlighted === false && 'opacity-10!',
                       ]
             ),
             !isBeingDragged && !isUpcoming && status !== 'CANCELLED' && status !== 'CHECKED_OUT' &&
               isHighlighted !== false &&
-              booking.check_out.slice(0, 10) <= todayISO() && 'opacity-50',
+              booking.check_out.slice(0, 10) <= todayISO() && 'opacity-60',
           )}
           style={positionStyle}
           onMouseEnter={() => onHoverStart(booking.booking_id)}
