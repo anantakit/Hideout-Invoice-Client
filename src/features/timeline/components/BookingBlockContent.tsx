@@ -130,10 +130,10 @@ function BookingBlockContent({
           isMultiRoom && !isUpcoming && 'pl-1',
         )}
       >
-        <span className="truncate text-[13px] font-medium leading-tight text-foreground/92 tracking-[0.01em]">
+        <span className="truncate text-[13px] font-medium leading-tight tracking-[0.01em] drop-shadow-sm">
           {booking.guest_name}
         </span>
-        <span className="flex items-center gap-0.5 text-[11px] leading-tight text-foreground/55 truncate">
+        <span className="flex items-center gap-0.5 text-[11px] leading-tight opacity-80 truncate">
           {isMultiRoom ? (
             <Users className="w-2.5 h-2.5 shrink-0 opacity-60" />
           ) : (
