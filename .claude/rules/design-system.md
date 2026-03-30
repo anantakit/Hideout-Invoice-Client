@@ -1,5 +1,5 @@
 ---
-description: "Design system — neutral-first with brand gold accent, dark/light theme tokens, timeline UI conventions"
+description: "Design system — blue-gray SaaS surfaces, solid-fill booking blocks, brand gold accent, timeline UI conventions"
 paths:
   - "**/*.tsx"
   - "**/*.css"
@@ -10,9 +10,10 @@ paths:
 
 ## Design Philosophy
 
-> **"Neutral-first, Brand-accent only"**
-> 90% neutral gray + 10% gold accent. Calm, readable, pro SaaS.
-> Designed for 8–12 hour front-desk readability.
+> **Professional SaaS + instant readability**
+> Blue-gray surfaces, vivid blue primary, solid color booking blocks.
+> Brand gold used sparingly (logo, sidebar, today column).
+> Designed for 8–12 hour front-desk use.
 
 ## Theme Architecture
 
@@ -21,7 +22,7 @@ Dark mode = default, light mode via `.light` class.
 
 ## Color System
 
-### Surface Tokens (cool blue-gray — professional SaaS)
+### Surface Tokens (cool blue-gray)
 
 | Token | Dark | Light | Usage |
 |-------|------|-------|-------|
@@ -30,11 +31,18 @@ Dark mode = default, light mode via `.light` class.
 | `--sidebar` | `224 22% 11%` | `40 20% 94%` | Sidebar (darker than bg) |
 | `--border` | `224 12% 26%` | `220 20% 88%` | Default borders |
 
-### Brand Accent (gold — accent only, never fills)
+### Primary (vivid blue — CTA, interaction)
+
+| Token | Dark | Light | Usage |
+|-------|------|-------|-------|
+| `--primary` | `222 85% 64%` | `224 76% 48%` | Buttons, links, focus rings |
+
+### Brand Accent (gold — logo, sidebar, today column only)
 
 | Token | Dark | Light | Usage |
 |-------|------|-------|-------|
 | `--brand` | `32 35% 60%` | `32 35% 52%` | Gold accent elements |
+| `--brand-strong` | `32 42% 52%` | `32 40% 45%` | Logo bracket stroke |
 | `--brand-soft` | `32 30% 14%` | `32 30% 90%` | Soft gold tint |
 
 ### Text Tokens
@@ -44,45 +52,38 @@ Dark mode = default, light mode via `.light` class.
 | `--foreground` | `218 16% 92%` | `220 20% 15%` | Primary text |
 | `--muted-foreground` | `218 10% 60%` | `220 10% 40%` | Secondary/meta text |
 
-### Primary (interaction only — blue, reduced role)
+## Booking Block System (solid color fills)
 
-| Token | Dark | Light | Usage |
-|-------|------|-------|-------|
-| `--primary` | `222 60% 55%` | `222 60% 45%` | Buttons, links, focus rings |
+> **CRITICAL**: Booking blocks use **solid color fills** for instant status recognition.
+> Front desk staff must identify status at a glance — color is the primary differentiator.
+> Do NOT use accent-bar or subtle-tint approaches (tested and rejected by real users).
 
-## Booking Block System (accent-bar approach)
+### Status Color Map
 
-> **CRITICAL**: Booking blocks use neutral background + left accent bar.
-> Never use solid color fills for booking blocks.
+| Status | Dark | Light | Color | Meaning |
+|--------|------|-------|-------|---------|
+| Reserved/Assigned | `222 60% 55%` | `224 76% 48%` | **Blue** | Not yet here |
+| Checked-in | `150 45% 44%` | `152 70% 28%` | **Green** | Currently staying |
+| Checked-out | `218 10% 55%` | `215 14% 55%` | **Gray** | Past |
+| No-show | `38 60% 50%` | `32 85% 35%` | **Amber** | Needs attention |
+| Cancelled | `218 10% 50%/30` | `215 14% 65%/30` | **Gray dashed** | Cancelled |
 
-### How It Works
-
-```
-┌─────────────────────┐
-│▌ Guest Name          │  ← 3px inset accent bar (left)
-│  2 ห้อง              │  ← neutral bg (white/7%)
-└─────────────────────┘
-```
-
-### CSS Classes
-
-| Class | Effect |
-|-------|--------|
-| `bk-block` | Neutral bg (`white/7%`) + border (`white/10%`) + elevation shadow |
-| `bk-accent-reserved` | Gold left accent bar (`--bk-reserved`) |
-| `bk-accent-checked-in` | Green left accent bar (`--bk-checked-in`) |
-| `bk-accent-checked-out` | Gray left accent bar |
-| `bk-accent-no-show` | Amber left accent bar |
-
-### Status Color Map (statusColors.ts)
+### statusColors.ts
 
 ```typescript
-CONFIRMED:   'bk-block bk-accent-reserved text-foreground'
-CHECKED_IN:  'bk-block bk-accent-checked-in text-foreground'
-CHECKED_OUT: 'bk-block bk-accent-checked-out text-foreground'
-NO_SHOW:     'bk-block bk-accent-no-show text-foreground'
-CANCELLED:   'bk-block text-muted-foreground'
+CONFIRMED:   'bg-bk-reserved text-bk-reserved-foreground'
+CHECKED_IN:  'bg-bk-checked-in text-bk-checked-in-foreground'
+CHECKED_OUT: 'bg-bk-checked-out text-bk-checked-out-foreground'
+NO_SHOW:     'bg-bk-no-show text-bk-no-show-foreground'
+CANCELLED:   'bg-bk-cancelled/30 text-bk-cancelled-foreground'
 ```
+
+### Special States (BookingBlock.tsx)
+
+- **Past checkout** (`checkout <= today`): `opacity-60` — shows overdue/late checkout
+- **Upcoming** (future check-in): dashed border, `bg-bk-reserved/20`
+- **Hover dimming**: non-highlighted blocks → `opacity-10!` (important to prevent override)
+- **Text**: inherits from `text-bk-*-foreground` (white on colored fills), NOT `text-foreground`
 
 ## Typography Hierarchy (3 levels)
 
@@ -90,21 +91,21 @@ CANCELLED:   'bk-block text-muted-foreground'
 
 | Level | Font | Weight | Color | Usage |
 |-------|------|--------|-------|-------|
-| Primary | `13px` | `medium` | `foreground/92` | Guest name (scan target) |
-| Secondary | `11px` | `regular` | `foreground/55` | Room count, metadata |
+| Primary | `13px` | `medium` | inherited (white on fills) | Guest name (scan target) |
+| Secondary | `11px` | `regular` | `opacity-80` | Room count, metadata |
 | Decorative | — | — | `opacity-50-60` | Icons, indicators |
 
 ## Timeline UI Rules
 
 ### Grid
 - Use `1px` dividers only — no heavy borders
-- `--timeline-grid`: subtle, visible enough to scan columns
+- `--timeline-grid: 224 10% 30%` — subtle but scannable
 
 ### Today Column
 - Background: `bg-timeline-today/12` (brand gold tint)
-- Subtle border left + right (`foreground/8`)
+- Border left + right: `foreground/8`
 - Today indicator line: `bg-timeline-today/70`
-- Bookings inside today = full opacity
+- Header: `bg-timeline-today/12 border-b-2 border-b-timeline-today/60`
 
 ### Row Density
 - `--timeline-row-height: 3rem` — compact, see more rooms per screen
@@ -113,33 +114,33 @@ CANCELLED:   'bk-block text-muted-foreground'
 
 ## Sidebar Rules
 
-- Background: darker than content area for contrast
+- Background: darker than content area (`224 22% 11%`)
 - Active item: `bg-foreground/6 text-foreground border-l-2 border-l-brand`
 - Inactive: `text-muted-foreground hover:bg-accent hover:text-foreground`
+
+## Logo System (bracket + H)
+
+- Gold bracket `[` frames neutral `H` monogram
+- Bracket: `stroke-brand-strong` (theme-aware), 2.5px stroke, taller than H
+- H: `fill-foreground/85` (theme-aware)
+- ViewBox: `0 0 54 64`
 
 ## Component Styling Rules
 
 1. **Never hardcode colors** — always use CSS tokens via Tailwind classes
 2. **No `bg-black` or `bg-white`** — use `bg-background`, `bg-card`
 3. **Overlays**: `bg-background/60` (not `bg-black/50`)
-4. **Card must float** from background — use border + subtle elevation shadow
-5. **Hover**: lift + brighten (`bg increase ~2-3%`, border increase ~4%`)
-6. **Transitions**: always `≤ 150ms`, use `transition-all duration-150`
-
-## Logo System (bracket + H)
-
-- Gold bracket `[` frames neutral `H` monogram
-- Bracket: thin stroke (2.5px), taller than H = clear hierarchy
-- H: neutral fill (`#E6E6E6`), inside bracket space
-- ViewBox: `0 0 54 64`
+4. **Hover**: `hover:shadow-md hover:brightness-105`
+5. **Transitions**: always `≤ 150ms`
+6. **Booking text on colored fills**: use `text-bk-*-foreground`, not `text-foreground`
 
 ## Global UX Principles
 
-1. **Contrast**: card must always "float" above background
-2. **Hierarchy**: 1 card = 1 focus point (guest name). Everything else = secondary
-3. **Density**: "แน่นแต่ไม่อึดอัด" — tight vertical rhythm, consistent spacing
-4. **Motion**: hover ≤ 150ms, no flashy animations
-5. **Readability > Beauty**: UI that reads fast is better than UI that looks fancy
+1. **Color = status**: solid fills for instant recognition (front desk tested)
+2. **Hierarchy**: 1 card = 1 focus point (guest name), everything else = secondary
+3. **Density**: compact but breathable — `3rem` row height, `13px/11px` text
+4. **Readability > Beauty**: if it looks good but reads slow, it's wrong
+5. **Consistency**: same colors in dark and light mode (blue=reserved, green=checked-in)
 
 ## Token vs Utility Layer Pitfall
 
@@ -158,29 +159,3 @@ CANCELLED:   'bk-block text-muted-foreground'
 - Always check `@/shared/ui/` for existing components before building custom
 - Extend via `className` prop — don't wrap in unnecessary container divs
 - Toast: `react-hot-toast` (NOT sonner, NOT shadcn toast)
-
-## AI / Team Prompt
-
-When generating UI for this project:
-
-```
-Design a hotel timeline (calendar-style) UI using a dark SaaS style.
-
-STRICT RULES:
-- Cool blue-gray background (224 16% 10%)
-- Cards: subtle elevation via border + soft background (rgba white 4-7%)
-- 1px dividers only, no heavy borders
-- Typography hierarchy: Primary (medium) > Secondary (muted) > Icons (dimmed)
-- Max 2 lines per booking card, always truncate
-- "Today" column: soft gold tint, subtly brighter
-- Sidebar: dark, active = left gold accent border
-- Style: calm, minimal, professional (Linear / Stripe)
-- No gradients, no loud colors, no visual noise
-- Brand gold (#C8A97E) as accent ONLY — never as fills
-
-DO NOT:
-- Use bright/solid color backgrounds for booking blocks
-- Use thick borders
-- Mix too many font weights
-- Break visual hierarchy
-```
