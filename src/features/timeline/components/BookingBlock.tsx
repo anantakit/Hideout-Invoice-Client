@@ -124,16 +124,17 @@ const BookingBlock = React.memo(function BookingBlock({
                         'border-dashed bk-block border-bk-reserved/40 bk-accent-reserved text-foreground',
                         isHighlighted === null  && 'opacity-65 hover:opacity-85 hover:shadow-md',
                         isHighlighted === true  && 'opacity-90 shadow-md ring-2 ring-inset ring-bk-reserved/40',
-                        isHighlighted === false && 'opacity-10',
+                        isHighlighted === false && 'opacity-10!',
                       ]
                     : [
                         colorClass,
                         isHighlighted === null  && 'hover:shadow-md hover:brightness-105',
                         isHighlighted === true  && 'shadow-md ring-2 ring-inset ring-foreground/25',
-                        isHighlighted === false && 'opacity-10',
+                        isHighlighted === false && 'opacity-10!',
                       ]
             ),
             !isBeingDragged && !isUpcoming && status !== 'CANCELLED' && status !== 'CHECKED_OUT' &&
+              isHighlighted !== false &&
               booking.check_out.slice(0, 10) <= todayISO() && 'opacity-50',
           )}
           style={positionStyle}
