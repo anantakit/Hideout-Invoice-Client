@@ -527,17 +527,17 @@
     --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    /* ── Booking Status Colors ─────────────────────────── */
-    --bk-reserved: 32 35% 52%;       /* brand gold */
+    /* ── Booking Status — same hues as dark, adjusted for light bg ── */
+    --bk-reserved: 224 76% 48%;      /* blue — matches dark */
     --bk-reserved-fg: 0 0% 100%;
-    --bk-checked-in: 150 50% 35%;    /* green */
+    --bk-checked-in: 152 70% 28%;    /* green — darker for contrast */
     --bk-checked-in-fg: 0 0% 100%;
     --bk-checked-out: 215 14% 55%;   /* gray */
     --bk-checked-out-fg: 0 0% 100%;
-    --bk-no-show: 32 55% 45%;        /* amber — matches warning */
+    --bk-no-show: 32 85% 35%;        /* amber */
     --bk-no-show-fg: 0 0% 100%;
     --bk-cancelled: 215 14% 65%;     /* muted gray */
-    --bk-cancelled-fg: 220 15% 30%;
+    --bk-cancelled-fg: 215 25% 27%;
 
     /* ── Room Status Indicator Colors ──────────────────── */
     --room-clean: 150 55% 36%;
