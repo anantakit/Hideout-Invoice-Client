@@ -158,7 +158,7 @@ export default function SearchableComboBox<T extends object>({
       </PopoverAnchor>
 
       <PopoverContent
-        className="w-[--radix-popover-trigger-width] p-0 max-h-60 overflow-y-auto"
+        className="w-(--radix-popover-trigger-width) p-0 max-h-60 overflow-y-auto"
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}

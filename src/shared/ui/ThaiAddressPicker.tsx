@@ -147,7 +147,7 @@ const DesktopComboBox = ({ label, placeholder, items, itemSubs, value, onSelect,
             <ChevronDown className={cn('ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform duration-150', open && 'rotate-180')} />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
           <Command>
             <CommandInput placeholder={`ค้นหา${label}…`} />
             <CommandList className="max-h-80">
