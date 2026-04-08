@@ -125,7 +125,7 @@ export default function CreateReceipt() {
                   <FormField control={form.control} name="issue_date" render={({ field }) => (
                     <FormItem>
                       <FormLabel>วันที่ออกเอกสาร</FormLabel>
-                      <DatePicker value={field.value ?? ''} onChange={field.onChange} maxDate={new Date()} />
+                      <DatePicker value={field.value ?? ''} onChange={field.onChange} />
                       <FormMessage />
                     </FormItem>
                   )} />
