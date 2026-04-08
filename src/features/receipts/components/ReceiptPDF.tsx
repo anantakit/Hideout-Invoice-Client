@@ -23,23 +23,24 @@ Font.register({
 })
 Font.registerHyphenationCallback((word) => [word])
 
-// Thai text shaping fix — fontkit merges Thai tone-marked characters with a
-// following ASCII character (e.g. "ใหญ่)") into a single shaping cluster and
-// mis-computes advance width, clipping the trailing glyph. Inserting a
-// zero-width space between Thai and non-Thai codepoints forces fontkit to
-// shape them as independent clusters so every glyph renders.
+// Thai text shaping fix — two separate react-pdf/fontkit bugs with Sarabun:
+//   (a) Strings ending in a Thai character get their last glyph clipped
+//       unless a non-whitespace pad follows. NBSP survives trimming, thin
+//       space does not.
+//   (b) Thai tone-marked characters followed by ASCII (e.g. "ใหญ่)") get
+//       merged into a single shaping cluster with mis-computed advance
+//       width, clipping the trailing glyph. Inserting a zero-width space
+//       between Thai and non-Thai forces independent clusters.
+const NBSP = '\u00A0'
 const ZWSP = '\u200B'
 const THAI_BOUNDARY = /([\u0E00-\u0E7F])(?=[^\u0E00-\u0E7F])/g
-const fixThaiClip = (s: string) => s.replace(THAI_BOUNDARY, `$1${ZWSP}`)
+const fixThaiClip = (s: string) => s.replace(THAI_BOUNDARY, `$1${ZWSP}`) + NBSP
 
 function Text({ style, children }: { style?: Style | Style[]; children?: ReactNode }) {
   if (typeof children === 'string') {
     return <RawText style={style}>{fixThaiClip(children)}</RawText>
   }
-  if (typeof children === 'number') {
-    return <RawText style={style}>{children}</RawText>
-  }
-  return <RawText style={style}>{children}</RawText>
+  return <RawText style={style}>{children}{NBSP}</RawText>
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
