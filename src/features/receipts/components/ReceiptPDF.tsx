@@ -23,8 +23,11 @@ Font.register({
 })
 Font.registerHyphenationCallback((word) => [word])
 
-// Thai text clip fix — append thin space to every text node
-const THIN = '\u2009'
+// Thai text clip fix — append NBSP to every text node.
+// Must be non-trimmed whitespace (NBSP, not thin space) so react-pdf
+// doesn't strip it before measuring, otherwise the real last glyph
+// (e.g. ")" after a Thai tone mark) gets clipped.
+const THIN = '\u00A0'
 function Text({ style, children }: { style?: Style | Style[]; children?: ReactNode }) {
   return <RawText style={style}>{children}{THIN}</RawText>
 }
