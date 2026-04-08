@@ -23,16 +23,23 @@ Font.register({
 })
 Font.registerHyphenationCallback((word) => [word])
 
-// Thai text clip fix — append NBSP to every text node.
-// Must be concatenated into a single string (not a sibling node) so react-pdf
-// treats it as one run; otherwise the last glyph of the primary run (e.g. ")"
-// following a Thai tone mark like "ใหญ่") gets clipped by Sarabun shaping.
-const PAD = '\u00A0'
+// Thai text shaping fix — fontkit merges Thai tone-marked characters with a
+// following ASCII character (e.g. "ใหญ่)") into a single shaping cluster and
+// mis-computes advance width, clipping the trailing glyph. Inserting a
+// zero-width space between Thai and non-Thai codepoints forces fontkit to
+// shape them as independent clusters so every glyph renders.
+const ZWSP = '\u200B'
+const THAI_BOUNDARY = /([\u0E00-\u0E7F])(?=[^\u0E00-\u0E7F])/g
+const fixThaiClip = (s: string) => s.replace(THAI_BOUNDARY, `$1${ZWSP}`)
+
 function Text({ style, children }: { style?: Style | Style[]; children?: ReactNode }) {
-  if (typeof children === 'string' || typeof children === 'number') {
-    return <RawText style={style}>{`${children}${PAD}`}</RawText>
+  if (typeof children === 'string') {
+    return <RawText style={style}>{fixThaiClip(children)}</RawText>
   }
-  return <RawText style={style}>{children}{PAD}</RawText>
+  if (typeof children === 'number') {
+    return <RawText style={style}>{children}</RawText>
+  }
+  return <RawText style={style}>{children}</RawText>
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -102,7 +109,7 @@ const s = StyleSheet.create({
   },
   cardLabel: { marginBottom: 3 },
   labelTH: { fontSize: 7.5, color: LABEL },
-  custName: { fontSize: 11.5, fontWeight: 'bold', color: INK, marginBottom: 2, paddingRight: 20, letterSpacing: 0.2 },
+  custName: { fontSize: 11.5, fontWeight: 'bold', color: INK, marginBottom: 2 },
   custDetail: { fontSize: 8.5, color: BODY, lineHeight: 1.7 },
   custDivider: { borderBottomWidth: 0.5, borderBottomColor: FAINT, marginVertical: 6 },
   payRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 4 },
@@ -205,7 +212,7 @@ export function ReceiptPDF({ receipt }: ReceiptPDFProps) {
           <View style={s.cardLabel}>
             <Text style={s.labelTH}>ผู้ชำระเงิน</Text>
           </View>
-          <Text style={s.custName}>{cu.name.replace(/([\u0E00-\u0E7F])(?=[^\u0E00-\u0E7F])/g, '$1\u200B')}</Text>
+          <Text style={s.custName}>{cu.name}</Text>
           <View style={s.custDetail}>
             {cu.address ? <Text>{formatAddressForDisplay(cu.address)}</Text> : null}
             {cu.tax_id ? <Text>เลขประจำตัวผู้เสียภาษี {cu.tax_id}</Text> : null}
