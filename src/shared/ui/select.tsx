@@ -13,9 +13,8 @@ interface MobileSelectCtx {
   setOpen: (v: boolean) => void
   value: string
   onValueChange: (v: string) => void
-  /** Resolved display text for the selected value (set by SelectContent) */
+  /** Resolved display text for the selected value (derived from children in Select) */
   displayText: string
-  setDisplayText: (text: string) => void
 }
 
 const MobileCtx = React.createContext<MobileSelectCtx | null>(null)
@@ -38,9 +37,15 @@ interface SelectProps {
 function Select({ children, value, defaultValue, onValueChange, open: openProp, onOpenChange, ...rest }: SelectProps) {
   const isMobile = useIsMobile()
   const [internalValue, setInternalValue] = useState(defaultValue ?? '')
-  const [displayText, setDisplayText] = useState('')
 
   const currentValue = value ?? internalValue
+
+  // Derive display text from children (mobile only uses it, but cheap to compute)
+  const displayText = useMemo(() => {
+    if (!isMobile) return ''
+    const options = extractOptions(children)
+    return options.find((o) => o.value === currentValue)?.label ?? ''
+  }, [isMobile, children, currentValue])
   const handleValueChange = useCallback(
     (v: string) => {
       setInternalValue(v)
@@ -67,7 +72,6 @@ function Select({ children, value, defaultValue, onValueChange, open: openProp, 
           value: currentValue,
           onValueChange: handleValueChange,
           displayText,
-          setDisplayText,
         }}
       >
         {children}
@@ -218,7 +222,6 @@ const SelectContent = React.forwardRef<
         onValueChange={mobileCtx.onValueChange}
         open={mobileCtx.open}
         onOpenChange={mobileCtx.setOpen}
-        setDisplayText={mobileCtx.setDisplayText}
       >
         {children}
       </MobileSelectSheet>
@@ -309,7 +312,6 @@ function MobileSelectSheet({
   onValueChange,
   open,
   onOpenChange,
-  setDisplayText,
 }: {
   children: React.ReactNode
   title?: string
@@ -318,7 +320,6 @@ function MobileSelectSheet({
   onValueChange: (v: string) => void
   open: boolean
   onOpenChange: (v: boolean) => void
-  setDisplayText: (text: string) => void
 }) {
   const [search, setSearch] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
@@ -326,12 +327,6 @@ function MobileSelectSheet({
 
   const options = useMemo(() => extractOptions(children), [children])
   const isSearchable = searchableProp ?? options.length > 6
-
-  // Sync display text for the trigger whenever value or options change
-  useEffect(() => {
-    const matched = options.find((o) => o.value === value)
-    setDisplayText(matched?.label ?? '')
-  }, [value, options, setDisplayText])
 
   const filtered = useMemo(() => {
     if (!search) return options
