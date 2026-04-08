@@ -24,12 +24,15 @@ Font.register({
 Font.registerHyphenationCallback((word) => [word])
 
 // Thai text clip fix — append NBSP to every text node.
-// Must be non-trimmed whitespace (NBSP, not thin space) so react-pdf
-// doesn't strip it before measuring, otherwise the real last glyph
-// (e.g. ")" after a Thai tone mark) gets clipped.
-const THIN = '\u00A0'
+// Must be concatenated into a single string (not a sibling node) so react-pdf
+// treats it as one run; otherwise the last glyph of the primary run (e.g. ")"
+// following a Thai tone mark like "ใหญ่") gets clipped by Sarabun shaping.
+const PAD = '\u00A0'
 function Text({ style, children }: { style?: Style | Style[]; children?: ReactNode }) {
-  return <RawText style={style}>{children}{THIN}</RawText>
+  if (typeof children === 'string' || typeof children === 'number') {
+    return <RawText style={style}>{`${children}${PAD}`}</RawText>
+  }
+  return <RawText style={style}>{children}{PAD}</RawText>
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -99,7 +102,7 @@ const s = StyleSheet.create({
   },
   cardLabel: { marginBottom: 3 },
   labelTH: { fontSize: 7.5, color: LABEL },
-  custName: { fontSize: 11.5, fontWeight: 'bold', color: INK, marginBottom: 2 },
+  custName: { fontSize: 11.5, fontWeight: 'bold', color: INK, marginBottom: 2, paddingRight: 20, letterSpacing: 0.2 },
   custDetail: { fontSize: 8.5, color: BODY, lineHeight: 1.7 },
   custDivider: { borderBottomWidth: 0.5, borderBottomColor: FAINT, marginVertical: 6 },
   payRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 4 },
@@ -202,7 +205,7 @@ export function ReceiptPDF({ receipt }: ReceiptPDFProps) {
           <View style={s.cardLabel}>
             <Text style={s.labelTH}>ผู้ชำระเงิน</Text>
           </View>
-          <Text style={s.custName}>{cu.name}</Text>
+          <Text style={s.custName}>{cu.name.replace(/([\u0E00-\u0E7F])(?=[^\u0E00-\u0E7F])/g, '$1\u200B')}</Text>
           <View style={s.custDetail}>
             {cu.address ? <Text>{formatAddressForDisplay(cu.address)}</Text> : null}
             {cu.tax_id ? <Text>เลขประจำตัวผู้เสียภาษี {cu.tax_id}</Text> : null}
