@@ -77,6 +77,10 @@ export function MobileCascadePicker({ value, onChange }: { value: ThaiAddress; o
   const hasFull = value.province && value.amphoe && value.district
   const hasPartial = value.province && !hasFull
   const config = STEP_CONFIG[step]
+  const isBkk = (p: string) => p === 'กรุงเทพมหานคร'
+  const districtLabel = (p: string, d: string) => (isBkk(p) ? `แขวง${d}` : `ต.${d}`)
+  const amphoeLabel = (p: string, a: string) => (isBkk(p) ? `เขต${a}` : `อ.${a}`)
+  const provinceLabel = (p: string) => (isBkk(p) ? p : `จ.${p}`)
 
   return (
     <div className="space-y-1.5">
@@ -92,11 +96,11 @@ export function MobileCascadePicker({ value, onChange }: { value: ThaiAddress; o
         <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
         {hasFull ? (
           <span className="flex-1 truncate text-foreground">
-            ต.{value.district} อ.{value.amphoe} จ.{value.province} {value.zipcode}
+            {`${districtLabel(value.province, value.district)} ${amphoeLabel(value.province, value.amphoe)} ${provinceLabel(value.province)} ${value.zipcode}`}
           </span>
         ) : hasPartial ? (
           <span className="flex-1 truncate text-muted-foreground">
-            จ.{value.province}{value.amphoe ? ` อ.${value.amphoe}` : ''} — กดเพื่อเลือกต่อ
+            {`${provinceLabel(value.province)}${value.amphoe ? ` ${amphoeLabel(value.province, value.amphoe)}` : ''}`} — กดเพื่อเลือกต่อ
           </span>
         ) : (
           <span className="flex-1 text-muted-foreground">เลือกที่อยู่</span>
@@ -144,7 +148,7 @@ export function MobileCascadePicker({ value, onChange }: { value: ThaiAddress; o
                 </DialogPrimitive.Title>
                 {step !== 'province' && (
                   <p className="text-micro-sm text-muted-foreground truncate mt-0.5">
-                    จ.{draft.province}{step === 'district' ? ` › อ.${draft.amphoe}` : ''}
+                    {`${provinceLabel(draft.province)}${step === 'district' ? ` › ${amphoeLabel(draft.province, draft.amphoe)}` : ''}`}
                   </p>
                 )}
               </div>

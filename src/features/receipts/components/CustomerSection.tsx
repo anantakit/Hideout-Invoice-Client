@@ -1,6 +1,6 @@
 import { Controller } from 'react-hook-form'
 import type { Control, FieldErrors } from 'react-hook-form'
-import { formatPhone } from '@/shared/utils'
+import { formatPhone, formatAddressForDisplay } from '@/shared/utils'
 import SearchableComboBox from '@/shared/ui/SearchableComboBox'
 import { customersApi } from '@/shared/api/customers'
 import type { Customer } from '@/shared/types/customer'
@@ -56,7 +56,7 @@ export function CustomerSection({
         {selectedCustomer && (
           <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground space-y-1 border border-border">
             <p className="font-semibold text-foreground">{selectedCustomer.name}</p>
-            {selectedCustomer.address && <p>{selectedCustomer.address}</p>}
+            {selectedCustomer.address && <p>{formatAddressForDisplay(selectedCustomer.address)}</p>}
             {selectedCustomer.phone && <p>โทร: {formatPhone(selectedCustomer.phone)}</p>}
             {selectedCustomer.tax_id && <p>เลขผู้เสียภาษี: {selectedCustomer.tax_id}</p>}
           </div>

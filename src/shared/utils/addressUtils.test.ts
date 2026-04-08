@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseAddressToThaiAddr, buildAddressString, emptyAddr } from './addressUtils'
+import { parseAddressToThaiAddr, buildAddressString, formatAddressForDisplay, emptyAddr } from './addressUtils'
 
 // ── parseAddressToThaiAddr ──────────────────────────────────────
 
@@ -88,10 +88,55 @@ describe('buildAddressString', () => {
     expect(result).toBe('123 ต.ในเมือง อ.เมือง จ.เชียงใหม่ 50000')
   })
 
+  it('builds Bangkok address with แขวง/เขต and no จ. prefix', () => {
+    const result = buildAddressString('55 ถนนสุขุมวิท', {
+      district: 'คลองเตยเหนือ',
+      amphoe: 'วัฒนา',
+      province: 'กรุงเทพมหานคร',
+      zipcode: '10110',
+    })
+    expect(result).toBe('55 ถนนสุขุมวิท แขวงคลองเตยเหนือ เขตวัฒนา กรุงเทพมหานคร 10110')
+  })
+
   it('roundtrips with parseAddressToThaiAddr', () => {
     const original = '123/4 หมู่ 5 ต.ในเมือง อ.เมือง จ.เชียงใหม่ 50000'
     const parsed = parseAddressToThaiAddr(original)
     const rebuilt = buildAddressString(parsed.detail, parsed.thai)
     expect(rebuilt).toBe(original)
+  })
+})
+
+// ── formatAddressForDisplay ─────────────────────────────────────
+
+describe('formatAddressForDisplay', () => {
+  it('rewrites stored Bangkok address with ต./อ./จ. to แขวง/เขต', () => {
+    const input = '75/120-121 ชั้น 42 ซอยสุขุมวิท19 ต.คลองเตยเหนือ อ.วัฒนา จ.กรุงเทพมหานคร 10110'
+    expect(formatAddressForDisplay(input)).toBe(
+      '75/120-121 ชั้น 42 ซอยสุขุมวิท19 แขวงคลองเตยเหนือ เขตวัฒนา กรุงเทพมหานคร 10110',
+    )
+  })
+
+  it('leaves non-Bangkok address unchanged', () => {
+    const input = '123/4 หมู่ 5 ต.ในเมือง อ.เมือง จ.เชียงใหม่ 50000'
+    expect(formatAddressForDisplay(input)).toBe(input)
+  })
+
+  it('leaves already-formatted Bangkok address unchanged', () => {
+    const input = '55 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110'
+    expect(formatAddressForDisplay(input)).toBe(input)
+  })
+
+  it('returns empty string as-is', () => {
+    expect(formatAddressForDisplay('')).toBe('')
+  })
+
+  it('does not rewrite non-Bangkok address whose detail mentions กรุงเทพมหานคร', () => {
+    const input = '123 สาขากรุงเทพมหานคร ต.ในเมือง อ.เมือง จ.เชียงใหม่ 50000'
+    expect(formatAddressForDisplay(input)).toBe(input)
+  })
+
+  it('returns original for unparseable address', () => {
+    const input = 'freeform กรุงเทพมหานคร without structure'
+    expect(formatAddressForDisplay(input)).toBe(input)
   })
 })

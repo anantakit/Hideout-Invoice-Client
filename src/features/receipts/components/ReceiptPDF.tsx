@@ -10,7 +10,7 @@ import type { Style } from '@react-pdf/types'
 import type { ReactNode } from 'react'
 import { bahttext } from 'bahttext'
 import type { Receipt } from '../types'
-import { THAI_MONTHS_SHORT } from '@/shared/utils'
+import { THAI_MONTHS_SHORT, formatAddressForDisplay } from '@/shared/utils'
 
 // ── Font ─────────────────────────────────────────────────────────────────────
 Font.register({
@@ -172,9 +172,11 @@ export function ReceiptPDF({ receipt }: ReceiptPDFProps) {
         </View>
 
         {/* ── Detail rows (line-by-line aligned) ── */}
-        <View style={s.detailRow}>
-          <Text style={s.brandText}>{co?.address}</Text>
-        </View>
+        {co?.address ? (
+          <View style={s.detailRow}>
+            <Text style={s.brandText}>{formatAddressForDisplay(co.address)}</Text>
+          </View>
+        ) : null}
         <View style={s.detailRow}>
           <Text style={s.brandText}>โทรศัพท์ {co?.phone}</Text>
           <View style={s.metaWrap}>
@@ -199,7 +201,7 @@ export function ReceiptPDF({ receipt }: ReceiptPDFProps) {
           </View>
           <Text style={s.custName}>{cu.name}</Text>
           <View style={s.custDetail}>
-            {cu.address ? <Text>{cu.address}</Text> : null}
+            {cu.address ? <Text>{formatAddressForDisplay(cu.address)}</Text> : null}
             {cu.tax_id ? <Text>เลขประจำตัวผู้เสียภาษี {cu.tax_id}</Text> : null}
           </View>
           {receipt.payment_method ? (

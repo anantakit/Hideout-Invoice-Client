@@ -18,12 +18,21 @@ export function parseAddressToThaiAddr(address: string): { detail: string; thai:
 /** Build a formatted address string from detail + ThaiAddress parts. */
 export function buildAddressString(detail: string, thai: ThaiAddress): string {
   if (!thai.district && !thai.amphoe && !thai.province) return detail.trim()
+  const isBangkok = thai.province === 'กรุงเทพมหานคร'
   const parts = [detail.trim()]
-  if (thai.district) parts.push(`ต.${thai.district}`)
-  if (thai.amphoe) parts.push(`อ.${thai.amphoe}`)
-  if (thai.province) parts.push(`จ.${thai.province}`)
+  if (thai.district) parts.push(`${isBangkok ? 'แขวง' : 'ต.'}${thai.district}`)
+  if (thai.amphoe) parts.push(`${isBangkok ? 'เขต' : 'อ.'}${thai.amphoe}`)
+  if (thai.province) parts.push(isBangkok ? thai.province : `จ.${thai.province}`)
   if (thai.zipcode) parts.push(thai.zipcode)
   return parts.filter(Boolean).join(' ')
+}
+
+/** Normalize a stored address string for display — Bangkok uses แขวง/เขต instead of ต./อ. */
+export function formatAddressForDisplay(address: string): string {
+  if (!address) return address
+  const { detail, thai } = parseAddressToThaiAddr(address)
+  if (thai.province !== 'กรุงเทพมหานคร') return address
+  return buildAddressString(detail, thai)
 }
 
 export { emptyAddr }
