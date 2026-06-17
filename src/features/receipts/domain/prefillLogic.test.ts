@@ -17,7 +17,6 @@ function makePrefill(
     check_out_date: '',
     nights: 1,
     room_numbers: '101',
-    payment_method: '',
     total_amount: 1000,
     paid_amount: 0,
     balance_amount: 1000,
@@ -70,27 +69,6 @@ describe('mapPrefillToFormValues', () => {
     expect(result.check_in_date).toBe('2025-03-15')
   })
 
-  it('maps CASH payment method via METHOD_MAP', () => {
-    const result = mapPrefillToFormValues(
-      makePrefill({ payment_method: 'CASH' }),
-    )
-    expect(result.payment_method).toBe('เงินสด')
-  })
-
-  it('maps TRANSFER payment method via METHOD_MAP', () => {
-    const result = mapPrefillToFormValues(
-      makePrefill({ payment_method: 'TRANSFER' }),
-    )
-    expect(result.payment_method).toBe('โอนเงิน')
-  })
-
-  it('passes through unknown payment method as-is', () => {
-    const result = mapPrefillToFormValues(
-      makePrefill({ payment_method: 'CREDIT_CARD' }),
-    )
-    expect(result.payment_method).toBe('CREDIT_CARD')
-  })
-
   it('maps items keeping only description, quantity, unit_price', () => {
     const result = mapPrefillToFormValues(
       makePrefill({
@@ -126,7 +104,6 @@ describe('mapPrefillToFormValues', () => {
   it('omits fields when source data is empty', () => {
     const result = mapPrefillToFormValues(makePrefill())
     expect(result.check_in_date).toBeUndefined()
-    expect(result.payment_method).toBeUndefined()
     expect(result.items).toBeUndefined()
     expect(result.notes).toBeUndefined()
   })
@@ -135,7 +112,6 @@ describe('mapPrefillToFormValues', () => {
     const result = mapPrefillToFormValues(
       makePrefill({
         check_in_date: '2025-06-01T00:00:00Z',
-        payment_method: 'CASH',
         guest_name: 'วิชัย',
         guest_phone: '0811111111',
         items: [{ description: 'ห้อง Deluxe', quantity: 3, unit_price: 2500, amount: 7500 }],
@@ -143,7 +119,6 @@ describe('mapPrefillToFormValues', () => {
     )
     expect(result).toEqual({
       check_in_date: '2025-06-01',
-      payment_method: 'เงินสด',
       items: [{ description: 'ห้อง Deluxe', quantity: 3, unit_price: 2500 }],
       notes: 'ผู้เข้าพัก: วิชัย\nโทร: 0811111111',
     })

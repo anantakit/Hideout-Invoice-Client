@@ -49,7 +49,7 @@ export default function ReceiptDetail() {
     return <ErrorPage variant="error" title="ไม่พบใบเสร็จ" description="ใบเสร็จนี้อาจถูกลบไปแล้ว หรือเกิดข้อผิดพลาดในการโหลดข้อมูล" />
   }
 
-  const hasStayInfo = receipt.check_in_date || receipt.payment_method
+  const hasStayInfo = receipt.check_in_date
 
   const deleteDialog = (
     <AlertDialog>
@@ -108,9 +108,6 @@ export default function ReceiptDetail() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                 {receipt.check_in_date && (
                   <div className="flex justify-between"><span className="text-sm text-muted-foreground">วันที่เข้าพัก</span><span className="text-sm font-medium text-foreground">{formatThaiDate(receipt.check_in_date)}</span></div>
-                )}
-                {receipt.payment_method && (
-                  <div className="flex justify-between"><span className="text-sm text-muted-foreground">วิธีชำระเงิน</span><span className="text-sm font-medium text-foreground">{receipt.payment_method}</span></div>
                 )}
               </div>
             </CardContent>

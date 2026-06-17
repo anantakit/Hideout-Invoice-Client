@@ -10,7 +10,6 @@ import type { ReceiptFormValues } from '../schemas'
 const mockPrefillData = {
   customer_id: 'cust-1',
   check_in_date: '2025-03-15T00:00:00Z',
-  payment_method: 'CASH',
   guest_name: 'สมชาย ใจดี',
   guest_phone: '0812345678',
   items: [
@@ -136,7 +135,6 @@ describe('useReceiptPrefill', () => {
       expect(form.setValue).toHaveBeenCalledWith('check_in_date', '2025-03-15')
     })
 
-    expect(form.setValue).toHaveBeenCalledWith('payment_method', 'เงินสด')
     expect(form.setValue).toHaveBeenCalledWith('items', [
       { description: 'ห้อง Deluxe', quantity: 2, unit_price: 1500 },
     ])
@@ -144,50 +142,6 @@ describe('useReceiptPrefill', () => {
       'notes',
       'ผู้เข้าพัก: สมชาย ใจดี\nโทร: 0812345678',
     )
-  })
-
-  it('maps TRANSFER payment method to Thai', async () => {
-    const prefillWithTransfer = { ...mockPrefillData, payment_method: 'TRANSFER' }
-    vi.mocked(useInvoicePrefill).mockReturnValue({ data: prefillWithTransfer } as never)
-
-    const form = createMockForm()
-    renderHook(
-      () =>
-        useReceiptPrefill({
-          bookingId: 'b1',
-          prefillMode: 'booking',
-          prefillStayIds: undefined,
-          prefillDate: undefined,
-          form,
-        }),
-      { wrapper: createQueryWrapper() },
-    )
-
-    await waitFor(() => {
-      expect(form.setValue).toHaveBeenCalledWith('payment_method', 'โอนเงิน')
-    })
-  })
-
-  it('passes through unknown payment methods as-is', async () => {
-    const prefillWithOther = { ...mockPrefillData, payment_method: 'CREDIT_CARD' }
-    vi.mocked(useInvoicePrefill).mockReturnValue({ data: prefillWithOther } as never)
-
-    const form = createMockForm()
-    renderHook(
-      () =>
-        useReceiptPrefill({
-          bookingId: 'b1',
-          prefillMode: 'booking',
-          prefillStayIds: undefined,
-          prefillDate: undefined,
-          form,
-        }),
-      { wrapper: createQueryWrapper() },
-    )
-
-    await waitFor(() => {
-      expect(form.setValue).toHaveBeenCalledWith('payment_method', 'CREDIT_CARD')
-    })
   })
 
   it('does not prefill notes when guest_name and guest_phone are absent', async () => {

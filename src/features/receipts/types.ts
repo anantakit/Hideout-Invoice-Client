@@ -37,7 +37,6 @@ export interface Receipt {
   check_out_date?: string
   nights?: number
   room_number?: string
-  payment_method?: string
   items: ReceiptItem[]
   covered_stays?: CoveredStay[]
   created_by?: string
@@ -74,6 +73,5 @@ export interface CreateReceiptPayload {
   check_out_date?: string
   nights?: number
   room_number?: string
-  payment_method?: string
   covered_stays?: CoveredStayPayload[]
 }

@@ -113,10 +113,6 @@ const s = StyleSheet.create({
   custName: { fontSize: 11.5, fontWeight: 'bold', color: INK, marginBottom: 2 },
   custDetail: { fontSize: 8.5, color: BODY, lineHeight: 1.7 },
   custDivider: { borderBottomWidth: 0.5, borderBottomColor: FAINT, marginVertical: 6 },
-  payRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 4 },
-  payLabel: { fontSize: 8, color: LABEL },
-  payVal: { fontSize: 8.5, fontWeight: 'semibold' as 'bold', color: INK },
-
   // ═══ Table ═════════════════════════════════════════════════════════════════
   table: { marginBottom: 6 },
   tHead: {
@@ -218,12 +214,6 @@ export function ReceiptPDF({ receipt }: ReceiptPDFProps) {
             {cu.address ? <Text>{formatAddressForDisplay(cu.address)}</Text> : null}
             {cu.tax_id ? <Text>เลขประจำตัวผู้เสียภาษี {cu.tax_id}</Text> : null}
           </View>
-          {receipt.payment_method ? (
-            <View style={s.payRow}>
-              <Text style={s.payLabel}>วิธีชำระเงิน</Text>
-              <Text style={s.payVal}>{receipt.payment_method}</Text>
-            </View>
-          ) : null}
         </View>
 
         {/* ── Table ── */}

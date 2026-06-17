@@ -141,7 +141,6 @@ export interface InvoicePrefillResponse {
   check_out_date: string
   nights: number
   room_numbers: string
-  payment_method: string
   total_amount: number
   paid_amount: number
   balance_amount: number

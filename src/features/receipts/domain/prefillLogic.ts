@@ -2,12 +2,10 @@
 
 import type { InvoicePrefillResponse } from '@/shared/hooks/useInvoicePrefill'
 import type { ReceiptFormValues } from '../schemas'
-import { METHOD_MAP } from '../schemas'
 
 /**
  * Map prefill data from booking API into partial receipt form values.
- * Handles payment method translation via METHOD_MAP, items mapping,
- * and notes generation.
+ * Handles items mapping and notes generation.
  */
 export function mapPrefillToFormValues(
   prefill: InvoicePrefillResponse,
@@ -16,9 +14,6 @@ export function mapPrefillToFormValues(
 
   if (prefill.check_in_date) {
     values.check_in_date = prefill.check_in_date.slice(0, 10)
-  }
-  if (prefill.payment_method) {
-    values.payment_method = METHOD_MAP[prefill.payment_method] ?? prefill.payment_method
   }
   if (prefill.items.length > 0) {
     values.items = prefill.items.map((item) => ({

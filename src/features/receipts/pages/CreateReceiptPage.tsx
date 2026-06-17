@@ -13,7 +13,6 @@ import { DatePicker } from '@/shared/ui/DatePicker'
 import { Button } from '@/shared/ui/button'
 import { Textarea } from '@/shared/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/shared/ui/form'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { receiptSchema, type ReceiptFormValues } from '../schemas'
 import { useReceiptPrefill } from '../hooks/useReceiptPrefill'
 import { ReceiptLineItems } from '../components/ReceiptLineItems'
@@ -38,7 +37,6 @@ export default function CreateReceipt() {
       notes: '',
       items: [{ description: '', quantity: 1, unit_price: 0 }],
       check_in_date: todayISO(),
-      payment_method: '',
     },
   })
 
@@ -64,7 +62,6 @@ export default function CreateReceipt() {
         description: item.description, quantity: Number(item.quantity), unit_price: Number(item.unit_price),
       })),
       check_in_date: values.check_in_date ? new Date(values.check_in_date).toISOString() : undefined,
-      payment_method: values.payment_method || undefined,
       covered_stays: prefill?.covered_stays,
     })
   }
@@ -147,31 +144,13 @@ export default function CreateReceipt() {
                   <CardTitle className="text-base font-semibold tracking-tight">รายละเอียดการเข้าพัก</CardTitle>
                 </CardHeader>
                 <CardContent className="p-5 md:p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="check_in_date" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>วันที่เข้าพัก</FormLabel>
-                        <DatePicker value={field.value ?? ''} onChange={field.onChange} />
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="payment_method" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>วิธีชำระเงิน</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger><SelectValue placeholder="เลือกวิธีชำระเงิน…" /></SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="เงินสด">เงินสด</SelectItem>
-                            <SelectItem value="โอนเงิน">โอนเงิน</SelectItem>
-                            <SelectItem value="บัตรเครดิต">บัตรเครดิต</SelectItem>
-                            <SelectItem value="บัตรเดบิต">บัตรเดบิต</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )} />
-                  </div>
+                  <FormField control={form.control} name="check_in_date" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>วันที่เข้าพัก</FormLabel>
+                      <DatePicker value={field.value ?? ''} onChange={field.onChange} />
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                 </CardContent>
               </Card>
 
